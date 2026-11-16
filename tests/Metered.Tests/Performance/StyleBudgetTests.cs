@@ -169,18 +169,50 @@ public class StyleBudgetTests
 
     // METERED_BENCH leaves the diagnostics off, and then the trace sees nothing: every budget would pass.
     [AvaloniaFact]
-    public void The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off()
-    {
-        AppContext.SetSwitch(StyleTrace.DiagnosticsSwitch, false);
-        try
+    public void The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off() =>
+        WithSwitch(StyleTrace.DiagnosticsSwitch, false, () =>
         {
             var refused = Assert.Throws<InvalidOperationException>(() => StyleTrace.ChecksFor(new TextBlock(), new BaseTheme()));
             Assert.Contains(StyleTrace.BenchVariable, refused.Message, StringComparison.Ordinal);
+        });
+
+    /// <summary>
+    /// Sets a switch while <paramref name="body"/> runs, then puts back what it was, so a test leaves
+    /// the process as it found it (with METERED_BENCH the diagnostics start off). A switch never set
+    /// reads as off, here and in <see cref="StyleTrace"/>, and can't be unset, so it goes back to off.
+    /// </summary>
+    private static void WithSwitch(string name, bool value, Action body)
+    {
+        var was = AppContext.TryGetSwitch(name, out var enabled) && enabled;
+        AppContext.SetSwitch(name, value);
+        try
+        {
+            body();
         }
         finally
         {
-            AppContext.SetSwitch(StyleTrace.DiagnosticsSwitch, true);
+            AppContext.SetSwitch(name, was);
         }
+    }
+
+    // The switch once went back to on whatever it had been (#19). Each case has a switch of its own.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [InlineData(null)]
+    public void A_Switch_Goes_Back_To_What_It_Was(bool? before)
+    {
+        var name = $"Metered.Tests.SwitchProbe.{before?.ToString() ?? "Unset"}";
+        if (before is { } value)
+        {
+            AppContext.SetSwitch(name, value);
+        }
+
+        var wanted = !(before ?? false);
+        WithSwitch(name, wanted, () => Assert.True(AppContext.TryGetSwitch(name, out var during) && during == wanted));
+
+        Assert.True(AppContext.TryGetSwitch(name, out var after));
+        Assert.Equal(before ?? false, after);
     }
 
     [AvaloniaFact]
