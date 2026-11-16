@@ -18,8 +18,13 @@ Button and ButtonGroup, to settle the approach before the inventory:
 
 ## Next, before more controls
 
-1. **Cost.** Profile opening a Button (about 1 to 1.5 ms headless); the mirrored pseudoclasses and
-   the generated state styles are the suspects.
+1. **Cost: decide whether to reduce it** (#10). Profiled 2026-11-16 (`docs/performance/README.md`):
+   about 0.6 ms and 174 KB to open a Button headless, nearly half of it its parts' themes' styles,
+   most of that state styles it doesn't match (31 % of the work, 45 % of the allocation), as Avalonia
+   instances every style of a `ControlTheme` on every element. The mirroring itself is 9 %.
+   No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
+   allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
+   a phone.
 3. **A font.** An OFL substitute for Uber Move, chosen by metrics against baseweb.design, which
    serves Uber Move.
 4. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
@@ -31,6 +36,7 @@ Done since the pilot (2026-11-16):
 - [x] A theme builder: `BaseTheme.CreateTheme` / `CreateDarkTheme` and `ThemeProvider` for a
       subtree, every derived key written out, the derivation read from Base Web's own functions
       (ADR 0002, `docs/theming.md`). 18.2.0's `createTheme` takes overrides only, not primitives
+- [x] The cost, profiled by phase and ablation (`Spikes/StyleCostProfile`, spike 2)
 
 Borrowed from Cornflower and Avonic (2026-11-16):
 
