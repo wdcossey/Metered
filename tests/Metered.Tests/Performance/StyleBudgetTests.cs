@@ -169,17 +169,42 @@ public class StyleBudgetTests
 
     // METERED_BENCH leaves the diagnostics off, and then the trace sees nothing: every budget would pass.
     [AvaloniaFact]
-    public void The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off()
-    {
-        AppContext.SetSwitch(StyleTrace.DiagnosticsSwitch, false);
-        try
+    public void The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off() =>
+        WithSwitch(StyleTrace.DiagnosticsSwitch, false, () =>
         {
             var refused = Assert.Throws<InvalidOperationException>(() => StyleTrace.ChecksFor(new TextBlock(), new BaseTheme()));
             Assert.Contains(StyleTrace.BenchVariable, refused.Message, StringComparison.Ordinal);
+        });
+
+    // It once put the switch back on whatever it had been (#19). It starts off as under METERED_BENCH, and on as in any other run.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_Refusal_Test_Puts_The_Diagnostics_Switch_Back_As_It_Was(bool before) =>
+        WithSwitch(StyleTrace.DiagnosticsSwitch, before, () =>
+        {
+            The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off();
+
+            AppContext.TryGetSwitch(StyleTrace.DiagnosticsSwitch, out var after);
+            Assert.True(after == before, $"The refusal test found Avalonia's diagnostics switch {(before ? "on" : "off")} and left it {(after ? "on" : "off")}.");
+        });
+
+    /// <summary>
+    /// Sets a switch while <paramref name="body"/> runs, then puts back its value. A switch never set
+    /// reads as off, here and in <see cref="StyleTrace"/>, and can't be unset, so it goes back set to
+    /// off, which reads the same.
+    /// </summary>
+    private static void WithSwitch(string name, bool value, Action body)
+    {
+        AppContext.TryGetSwitch(name, out var was);
+        AppContext.SetSwitch(name, value);
+        try
+        {
+            body();
         }
         finally
         {
-            AppContext.SetSwitch(StyleTrace.DiagnosticsSwitch, true);
+            AppContext.SetSwitch(name, was);
         }
     }
 
