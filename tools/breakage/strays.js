@@ -1,11 +1,12 @@
 // What a breakage run leaves running from its clone, and killing it (for run.js). A timeout kills only `dotnet`, not the test host it
 // started, which would keep the clone's binaries locked and make every later break NO BUILD.
 //
-// A process is a stray when its executable or command line holds the clone's path. On Linux and macOS, never this process or one of its
-// ancestors: run.js has the clone's path on its own command line, and so may whatever started it (a shell, a script). The candidates
-// come from `pgrep -f`, which matches the full command line and leaves itself out; the ancestors from one `ps` snapshot. Neither runs in
-// a shell, which would hold the path in its own command line. The path is matched literally, as itself or its real path, and only
-// whole: `/tmp/clone` isn't `/tmp/clone2`. On Windows only this process is spared. `node tools/breakage/strays.test.js` tests it.
+// A process is a stray when its command line (on Windows, or its executable) holds the clone's path. On Linux and macOS, never this
+// process or one of its ancestors: run.js has the clone's path on its own command line, and so may whatever started it (a shell, a
+// script). The candidates come from `pgrep -f`, which matches the full command line and leaves itself out; the ancestors from one `ps`
+// snapshot. Neither runs in a shell, which would hold the path in its own command line. The path is matched literally, as itself or its
+// real path, and only whole: `/tmp/clone` isn't `/tmp/clone2` or `/var/tmp/clone`. On Windows only this process is spared (#24). `node
+// tools/breakage/strays.test.js` tests it.
 const { execFileSync, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -37,11 +38,16 @@ const real = (where) => {
     }
 };
 
+// What can stand either side of a whole path on a command line: an argument's edge, a quote, or a separator in an option's value
+// (`--x=<path>`, `-p:X=<path>;...`). A path inside a longer one (`/var/tmp/clone`, `/tmp/clone2`) has a name's character there instead.
+const BEFORE = `(^|[ =:;,"'])`;
+const AFTER = `([/ :;,"']|$)`;
+
 const killPosix = (where) => {
     const paths = [...new Set([where, real(where)])].map(literal);
     let listed;
     try {
-        listed = read('pgrep', ['-f', '--', `(${paths.join('|')})(/| |$)`]);
+        listed = read('pgrep', ['-f', '--', `${BEFORE}(${paths.join('|')})${AFTER}`]);
     } catch (error) {
         // pgrep exits 1 when nothing matches.
         if (error.status !== 1) console.error(`Strays left running: pgrep failed (${error.code || `exit ${error.status}`}).`);
