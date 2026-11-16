@@ -25,8 +25,6 @@ Button and ButtonGroup, to settle the approach before the inventory:
    No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
    allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
    a phone.
-2. **A theme builder.** Base Web's `createTheme` / `createDarkTheme`, and a subtree theme: spike 1
-   says it must write every derived key, not only the foundation.
 3. **A font.** An OFL substitute for Uber Move, chosen by metrics against baseweb.design, which
    serves Uber Move.
 4. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
@@ -35,6 +33,9 @@ Button and ButtonGroup, to settle the approach before the inventory:
 
 Done since the pilot (2026-11-16):
 
+- [x] A theme builder: `BaseTheme.CreateTheme` / `CreateDarkTheme` and `ThemeProvider` for a
+      subtree, every derived key written out, the derivation read from Base Web's own functions
+      (ADR 0002, `docs/theming.md`). 18.2.0's `createTheme` takes overrides only, not primitives
 - [x] The cost, profiled by phase and ablation (`Spikes/StyleCostProfile`, spike 2)
 
 Borrowed from Cornflower and Avonic (2026-11-16):

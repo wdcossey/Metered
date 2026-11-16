@@ -99,6 +99,18 @@
         <b:Button Content="Drinks" />
         <b:Button Content="Dessert" />
       </b:ButtonGroup>
+
+      <TextBlock Classes="h" Text="Theme" />
+      <TextBlock Classes="l" Text="A subtree's own createTheme, light and dark" />
+      <!-- Given its themes in code: MainWindow.axaml.cs. -->
+      <Border x:Name="Branded" Padding="12" Background="{DynamicResource colors.backgroundPrimary}">
+        <WrapPanel>
+          <b:Button Content="Primary" />
+          <b:Button Kind="Secondary" Content="Secondary" />
+          <b:Button Kind="Outline" Content="Outline" />
+          <b:Button x:Name="BrandedLoading" Content="Click to load" />
+        </WrapPanel>
+      </Border>
     </StackPanel>
   </ScrollViewer>
 </Window>

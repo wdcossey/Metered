@@ -97,6 +97,18 @@ public class Button : AvaloniaButton
             [BaseButtonPart, StartEnhancerPart, EndEnhancerPart, StartEnhancerButtonContentContainerPart, LoadingSpinnerContainerPart, LoadingSpinnerPart],
             new Dictionary<string, string> { ["Root"] = BaseButtonPart });
         UpdateAllStates();
+
+        // The sizing tokens read in code (ArtworkSize, the tap band) follow a theme given or changed above
+        // the button after it is attached, and a variant switch between a ThemeProvider's Theme and
+        // DarkTheme, which Avalonia doesn't report as a change of resources.
+        ResourcesChanged += (_, _) => UpdateSizingTokens();
+        ActualThemeVariantChanged += (_, _) => UpdateSizingTokens();
+    }
+
+    private void UpdateSizingTokens()
+    {
+        UpdateArtworkSize();
+        if (MinHitArea == ButtonMinHitArea.Tap) InvalidateArrange();
     }
 
     /// <summary>Base Web's <c>kind</c>. Primary by default.</summary>

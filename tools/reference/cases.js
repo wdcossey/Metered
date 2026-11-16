@@ -1,6 +1,7 @@
 // Writes tests/Metered.Tests/Reference/*.oracle.json: what Base Web's own style functions give for
 // each case the tests build, resolved for its interaction state (oracle.js) and converted to
-// Avalonia's units. The tests build the same case in Avalonia and compare.
+// Avalonia's units. The tests build the same case in Avalonia and compare. theme.oracle.json is
+// Base Web's createTheme and createDarkTheme (themes.js).
 //
 //   node tools/reference/cases.js          write the files
 //   node tools/reference/cases.js --check  fail if a file would change
@@ -137,6 +138,8 @@ for (const size of SIZES) {
 const files = {
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
+  // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).
+  'theme.oracle.json': require('./themes').oracle(version),
 };
 
 fs.mkdirSync(outDir, { recursive: true });
