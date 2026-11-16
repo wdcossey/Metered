@@ -205,13 +205,14 @@ public class ThemeProviderTests
     [AvaloniaFact]
     public void The_theme_outranks_styles_added_after_it_and_outlasts_their_clearing()
     {
-        var button = new Button { Content = "Button", Kind = Metered.Controls.ButtonKind.Secondary };
+        var button = new Button { Content = "Button" };
         using var scene = new Scene(new StackPanel { Children = { button } });
         // As <Window metered:ThemeProvider.Theme="…"><Window.Styles><BaseTheme/> applies them: the attribute first.
-        ThemeProvider.SetTheme(scene.Window, Built("lightOverrides"));
+        ThemeProvider.SetTheme(scene.Window, Built("lightFoundation"));
         scene.Window.Styles.Add(new BaseTheme());
         scene.Pump();
-        Assert.Equal(Expected("lightOverrides", "colors.buttonSecondaryFill"), Fill(button));
+        Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(button));
+        Assert.NotEqual(Expected("light", "colors.buttonPrimaryFill"), Fill(button));
 
         var (_, inside, subtree, sub) = Open(s => ThemeProvider.SetTheme(s, Built("lightFoundation")));
         using (sub)

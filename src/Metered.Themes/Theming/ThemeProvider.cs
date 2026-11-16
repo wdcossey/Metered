@@ -115,20 +115,35 @@ public sealed class ThemeProvider
         element.Styles.CollectionChanged += keep;
     }
 
+    [ThreadStatic]
+    private static bool _keeping;
+
     /// <summary>
-    /// The theme last in the element's styles, where Avalonia looks first; put back if taken out. One change at
-    /// a time: the change raises this again, and then finds the theme last.
+    /// The theme last in the element's styles, where Avalonia looks first; put back if something else took it
+    /// out (<c>Styles.Clear()</c>). Taken out and added again, not moved: Avalonia doesn't look up resources
+    /// again after a move.
     /// </summary>
     private static void KeepLast(Styles styles, Styles provided)
     {
         var index = styles.IndexOf(provided);
-        if (index < 0)
+        if (_keeping || (index >= 0 && index == styles.Count - 1))
         {
+            return;
+        }
+
+        _keeping = true;
+        try
+        {
+            if (index >= 0)
+            {
+                styles.RemoveAt(index);
+            }
+
             styles.Add(provided);
         }
-        else if (index != styles.Count - 1)
+        finally
         {
-            styles.Move(index, styles.Count - 1);
+            _keeping = false;
         }
     }
 }
