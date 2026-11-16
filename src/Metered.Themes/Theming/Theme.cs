@@ -13,8 +13,9 @@ namespace Metered.Themes;
 /// <see cref="BaseTheme.CreateDarkTheme"/>, as Base Web's functions of those names build one (ADR 0002).
 /// </summary>
 /// <remarks>
-/// Colours are held as <see cref="Color"/> and given to the resources as solid brushes, as the
-/// generated dictionaries give them; every other value has the generated dictionaries' type
+/// Colours are held as <see cref="Color"/> and given to the resources as immutable solid brushes
+/// (<see cref="ISolidColorBrush"/>, where the generated dictionaries give a mutable
+/// <see cref="SolidColorBrush"/>: read a token's brush as <see cref="ISolidColorBrush"/>); every other value has the generated dictionaries' type
 /// (<see cref="double"/> for sizing and font sizes, <see cref="CornerRadius"/> for radii,
 /// <see cref="BoxShadows"/> for lighting, and so on).
 /// </remarks>

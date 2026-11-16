@@ -4735,6 +4735,11 @@
      "value": 20
     },
     {
+     "key": "sizing.scale1200",
+     "type": "double",
+     "value": 56
+    },
+    {
      "key": "lighting.shallowBelow",
      "type": "boxShadows",
      "value": "0 2 6 0 #4D000000"
@@ -5685,6 +5690,11 @@
      "key": "sizing.scale600",
      "type": "double",
      "value": 20
+    },
+    {
+     "key": "sizing.scale1200",
+     "type": "double",
+     "value": 56
     },
     {
      "key": "typography.font350.fontSize",

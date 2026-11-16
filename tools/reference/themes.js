@@ -38,7 +38,7 @@ const CASES = [
     name: 'lightOverrides', create: 'createTheme',
     overrides: {
       colors: { accent: '#00A86B', backgroundPrimary: '#FAFAFA', buttonPrimaryFill: '#0B3D2E', buttonOuterBorder: '#7356BF', buttonPrimaryHoverOverlay: 'rgba(255, 255, 255, 0.3)' },
-      sizing: { scale0: '3px', scale600: '20px' },
+      sizing: { scale0: '3px', scale600: '20px', scale1200: '56px' },
       lighting: { shallowBelow: '0px 2px 6px rgba(0, 0, 0, 0.3)' },
       borders: { radius300: '12px' },
       typography: { LabelMedium: { fontSize: '18px' } },

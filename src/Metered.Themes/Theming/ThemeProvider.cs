@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
@@ -16,7 +17,10 @@ namespace Metered.Themes;
 /// lower in the tree (docs/spikes, spike 1), so a subtree gets every key, as Base Web's context gives a
 /// subtree a whole theme object. <c>Styles</c> rather than <c>Resources</c>, which XAML or code can
 /// replace whole (a <c>&lt;Border.Resources&gt;&lt;ResourceDictionary&gt;</c> after the attribute);
-/// <c>Styles</c> can't be replaced, and the element's own <c>Resources</c> still come first.
+/// <c>Styles</c> can't be replaced, and the element's own <c>Resources</c> still come first. Avalonia
+/// looks in an element's styles from the last to the first, so the theme is kept last: a
+/// <c>&lt;Window.Styles&gt;&lt;BaseTheme/&gt;</c> added after the attribute doesn't outrank it, and
+/// one taken out (<c>Styles.Clear()</c>) is put back.
 /// </para>
 /// <para>
 /// As in Base Web, <see cref="ThemeProperty"/> alone fixes the subtree to that theme whatever the app's
@@ -37,6 +41,10 @@ public sealed class ThemeProvider
     /// <summary>What this class put in the element's styles, to take out again.</summary>
     private static readonly AttachedProperty<Styles?> ProvidedProperty =
         AvaloniaProperty.RegisterAttached<ThemeProvider, StyledElement, Styles?>("Provided");
+
+    /// <summary>The handler that keeps <see cref="ProvidedProperty"/> last in the element's styles.</summary>
+    private static readonly AttachedProperty<NotifyCollectionChangedEventHandler?> KeeperProperty =
+        AvaloniaProperty.RegisterAttached<ThemeProvider, StyledElement, NotifyCollectionChangedEventHandler?>("Keeper");
 
     static ThemeProvider()
     {
@@ -80,6 +88,12 @@ public sealed class ThemeProvider
 
     private static void Provide(StyledElement element)
     {
+        if (element.GetValue(KeeperProperty) is { } keeper)
+        {
+            element.Styles.CollectionChanged -= keeper;
+            element.ClearValue(KeeperProperty);
+        }
+
         if (element.GetValue(ProvidedProperty) is { } old)
         {
             element.ClearValue(ProvidedProperty);
@@ -96,5 +110,25 @@ public sealed class ThemeProvider
         var provided = new Styles { Resources = CreateResources(theme, dark) };
         element.SetValue(ProvidedProperty, provided);
         element.Styles.Add(provided);
+        NotifyCollectionChangedEventHandler keep = (_, _) => KeepLast(element.Styles, provided);
+        element.SetValue(KeeperProperty, keep);
+        element.Styles.CollectionChanged += keep;
+    }
+
+    /// <summary>
+    /// The theme last in the element's styles, where Avalonia looks first; put back if taken out. One change at
+    /// a time: the change raises this again, and then finds the theme last.
+    /// </summary>
+    private static void KeepLast(Styles styles, Styles provided)
+    {
+        var index = styles.IndexOf(provided);
+        if (index < 0)
+        {
+            styles.Add(provided);
+        }
+        else if (index != styles.Count - 1)
+        {
+            styles.Move(index, styles.Count - 1);
+        }
     }
 }

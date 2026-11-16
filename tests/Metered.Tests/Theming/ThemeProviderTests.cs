@@ -203,6 +203,56 @@ public class ThemeProviderTests
     }
 
     [AvaloniaFact]
+    public void The_theme_outranks_styles_added_after_it_and_outlasts_their_clearing()
+    {
+        var button = new Button { Content = "Button", Kind = Metered.Controls.ButtonKind.Secondary };
+        using var scene = new Scene(new StackPanel { Children = { button } });
+        // As <Window metered:ThemeProvider.Theme="…"><Window.Styles><BaseTheme/> applies them: the attribute first.
+        ThemeProvider.SetTheme(scene.Window, Built("lightOverrides"));
+        scene.Window.Styles.Add(new BaseTheme());
+        scene.Pump();
+        Assert.Equal(Expected("lightOverrides", "colors.buttonSecondaryFill"), Fill(button));
+
+        var (_, inside, subtree, sub) = Open(s => ThemeProvider.SetTheme(s, Built("lightFoundation")));
+        using (sub)
+        {
+            subtree.Styles.Clear();
+            sub.Pump();
+            Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(inside));
+            Assert.Single(subtree.Styles);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_buttons_tap_band_follows_the_variant_between_a_theme_and_a_dark_theme()
+    {
+        // button/styled-components.js, getMinHitAreaStyles: the tap band is the theme's sizing.scale1200 tall;
+        // lightOverrides changes it.
+        var band = Oracle.Themes["lightOverrides"].Changed.Single(t => t.Key == "sizing.scale1200").Value.GetDouble();
+        var (_, inside, _, scene) = Open(s =>
+        {
+            ThemeProvider.SetTheme(s, Built("light"));
+            ThemeProvider.SetDarkTheme(s, Built("lightOverrides"));
+        });
+        inside.Size = Metered.Controls.ButtonSize.XSmall;
+        inside.MinHitArea = Metered.Controls.ButtonMinHitArea.Tap;
+        using (scene)
+        {
+            scene.Pump();
+            var light = inside.Bounds.Height;
+            Assert.NotEqual(band, light);
+
+            scene.Window.RequestedThemeVariant = ThemeVariant.Dark;
+            scene.Pump();
+            Assert.Equal(band, inside.Bounds.Height, 3);
+
+            scene.Window.RequestedThemeVariant = ThemeVariant.Light;
+            scene.Pump();
+            Assert.Equal(light, inside.Bounds.Height, 3);
+        }
+    }
+
+    [AvaloniaFact]
     public void App_wide_on_the_window()
     {
         var button = new Button { Content = "Button", Kind = Metered.Controls.ButtonKind.Secondary };
