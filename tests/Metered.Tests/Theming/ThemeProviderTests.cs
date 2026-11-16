@@ -125,12 +125,12 @@ public class ThemeProviderTests
             ThemeProvider.SetTheme(subtree, Built("lightOverrides"));
             scene.Pump();
             Assert.Equal(Expected("lightOverrides", "colors.buttonPrimaryFill"), Fill(inside));
-            Assert.Single(subtree.Resources.MergedDictionaries);
+            Assert.Single(subtree.Styles);
 
             ThemeProvider.SetTheme(subtree, null);
             scene.Pump();
             Assert.Equal(Expected("light", "colors.buttonPrimaryFill"), Fill(inside));
-            Assert.Empty(subtree.Resources.MergedDictionaries);
+            Assert.Empty(subtree.Styles);
         }
     }
 
@@ -151,7 +151,7 @@ public class ThemeProviderTests
             subtree.Resources = new ResourceDictionary();
             scene.Pump();
             Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(inside));
-            Assert.Single(subtree.Resources.MergedDictionaries);
+            Assert.Single(subtree.Styles);
         }
     }
 
@@ -172,6 +172,33 @@ public class ThemeProviderTests
             scene.Pump();
             Assert.Equal(small, inside.ArtworkSize);
             Assert.Equal(before, outside.ArtworkSize);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_buttons_artwork_size_follows_the_variant_between_a_theme_and_a_dark_theme()
+    {
+        // getArtworkSize as above; the dark theme here is lightOverrides, whose sizing.scale600 Base Web changed.
+        var small = Oracle.Themes["lightOverrides"].Changed.Single(t => t.Key == "sizing.scale600").Value.GetDouble();
+        var (_, inside, _, scene) = Open(s =>
+        {
+            ThemeProvider.SetTheme(s, Built("light"));
+            ThemeProvider.SetDarkTheme(s, Built("lightOverrides"));
+        });
+        inside.Size = Metered.Controls.ButtonSize.Small;
+        using (scene)
+        {
+            scene.Pump();
+            var light = inside.ArtworkSize;
+            Assert.NotEqual(small, light);
+
+            scene.Window.RequestedThemeVariant = ThemeVariant.Dark;
+            scene.Pump();
+            Assert.Equal(small, inside.ArtworkSize);
+
+            scene.Window.RequestedThemeVariant = ThemeVariant.Light;
+            scene.Pump();
+            Assert.Equal(light, inside.ArtworkSize);
         }
     }
 

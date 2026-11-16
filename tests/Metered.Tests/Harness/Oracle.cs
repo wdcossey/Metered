@@ -66,12 +66,11 @@ internal sealed record ThemeOracle(string Baseui, ThemeCase[] Cases)
 
 /// <summary>
 /// One call of createTheme, createLightTheme or createDarkTheme: its overrides in Metered's keys, every colour
-/// (null where Base Web gives no colour), every Button box-shadow, the other groups' leaves that changed, and the
-/// groups that didn't change at all.
+/// (null where Base Web gives no colour), every Button box-shadow, and the other groups' leaves that changed.
 /// </summary>
 internal sealed record ThemeCase(
     string Name, string Create, string ThemeName, OracleToken[] Overrides,
-    Dictionary<string, string?> Colours, Dictionary<string, string> BoxShadows, string[] Unchanged, OracleToken[] Changed)
+    Dictionary<string, string?> Colours, Dictionary<string, string> BoxShadows, OracleToken[] Changed)
 {
     public override string ToString() => Name;
 }

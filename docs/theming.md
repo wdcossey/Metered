@@ -30,6 +30,10 @@ var brandDark = BaseTheme.CreateDarkTheme(new Dictionary<string, object> { ["col
 `BaseTheme.DarkTheme` are Base Web's own, what `BaseTheme` gives. A built theme's tokens are in
 `theme.Tokens` (colours as `Color`).
 
+Some of Base Web's tokens are one object under two names (`typography.font350` is
+`typography.LabelMedium`): an override of either changes both, and if the overrides give both, the
+one later in the dictionary's order wins, as in Base Web's deep merge.
+
 ## Give it to a subtree
 
 ```xml
@@ -50,7 +54,9 @@ Application.Current!.Resources.MergedDictionaries.Add(ThemeProvider.CreateResour
 ```
 
 `BaseTheme` still has to be in the styles: it holds the controls' templates, and a theme only
-replaces their tokens. Clearing `ThemeProvider.Theme` gives the subtree back the app's tokens.
+replaces their tokens. Clearing `ThemeProvider.Theme`, and `ThemeProvider.DarkTheme` if it was
+given, gives the subtree back the app's tokens: a `DarkTheme` left alone still holds in the dark
+variant.
 
 ## What doesn't change
 

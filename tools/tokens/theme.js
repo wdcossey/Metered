@@ -95,7 +95,15 @@ const colourSentinel = (run, i) => '#' + hex2(0x10 + run) + hex2(i >> 8) + hex2(
 const lightingSentinel = (run, j) => '#' + hex2(0x30 + run) + '00' + hex2(j);
 const sizingSentinel = (run, j) => 100000 + run * 1000 + j;
 
+// One per variant and run, built once: Base Web's style function only reads it.
+const sentinelThemes = new Map();
 function sentinelTheme(variant, run) {
+  const id = `${variant} ${run}`;
+  if (!sentinelThemes.has(id)) sentinelThemes.set(id, Object.freeze(buildSentinelTheme(variant, run)));
+  return sentinelThemes.get(id);
+}
+
+function buildSentinelTheme(variant, run) {
   const t = structuredClone(BASE[variant]);
   colourKeys.forEach((k, i) => { t.colors[k] = colourSentinel(run, i); });
   lightingKeys.forEach((k, j) => { t.lighting[k] = `0px 0px 0px 0px ${lightingSentinel(run, j)}`; });

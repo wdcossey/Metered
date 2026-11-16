@@ -62,7 +62,11 @@ Read in `node_modules/baseui/themes/` and `styles/theme-provider.js`:
    shared paths), then the Button's shadows from the merged theme, since Base Web's style function
    reads the finished theme.
 5. **`ThemeProvider`** is attached: `ThemeProvider.Theme` on any element puts the theme's whole
-   dictionary (`Theme.ToResourceDictionary()`) in that element's `Resources.MergedDictionaries`.
+   dictionary (`Theme.ToResourceDictionary()`) in that element's `Styles`, as a `Styles` of
+   resources and no rule. Not in its `Resources`, which XAML replaces whole when a
+   `<Border.Resources><ResourceDictionary>` follows the attribute; `Styles` can't be replaced, and
+   the element's own `Resources` still come first. The brushes are immutable, as one set is shared
+   by every dictionary of a theme.
    Every key is a value of its own, so nothing resolves at the app's level (spike 1). Set on a
    window it is app-wide for that window; for `Application.Resources`,
    `ThemeProvider.CreateResources(theme, darkTheme)` gives the same dictionary.

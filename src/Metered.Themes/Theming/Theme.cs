@@ -50,7 +50,9 @@ public sealed class Theme
     /// </summary>
     public ResourceDictionary ToResourceDictionary()
     {
-        _resources ??= _tokens.ToDictionary(p => p.Key, p => p.Value is Color c ? new SolidColorBrush(c) : p.Value, StringComparer.Ordinal);
+        // Immutable: one brush is shared by every dictionary of the theme, so none may change it, and it
+        // belongs to no thread.
+        _resources ??= _tokens.ToDictionary(p => p.Key, p => p.Value is Color c ? new Avalonia.Media.Immutable.ImmutableSolidColorBrush(c) : p.Value, StringComparer.Ordinal);
         var dictionary = new ResourceDictionary();
         foreach (var (key, value) in _resources)
         {

@@ -5,7 +5,7 @@
 // Per case: the overrides, flattened to Metered's keys; every colour token (null where Base Web gives
 // no colour, ''); every Button box-shadow, from Base Web's Button style function on the built theme
 // (tools/tokens/button-shadows.js); the leaves of the other groups that differ from the theme
-// createTheme starts from; and the groups that don't differ at all.
+// createTheme starts from.
 'use strict';
 
 const { isDeepStrictEqual } = require('util');
@@ -91,12 +91,11 @@ function oracle(version) {
     const flatOverrides = Object.entries(overrides).flatMap(([group, v]) => leaves(v).map(([p, x]) => leaf(group, p, x)));
     const colours = Object.fromEntries(Object.entries(theme.colors).map(([k, v]) => [`colors.${k}`, leaf('colors', [k], v).value]));
     const boxShadows = Object.fromEntries(shadows.ALL.map(([kind, s, safe]) => [shadows.key(kind, s, safe), shadows.buttonShadow(theme, kind, s, safe)]));
-    const unchanged = GROUPS.filter((g) => isDeepStrictEqual(theme[g], base[g]));
-    const changed = GROUPS.filter((g) => !unchanged.includes(g)).flatMap((g) => {
+    const changed = GROUPS.filter((g) => !isDeepStrictEqual(theme[g], base[g])).flatMap((g) => {
       const was = new Map(leaves(base[g]).map(([p, v]) => [p.join('.'), v]));
       return leaves(theme[g]).filter(([p, v]) => was.get(p.join('.')) !== v).map(([p, v]) => leaf(g, p, v));
     });
-    return { name, create, themeName: theme.name, overrides: flatOverrides, colours, boxShadows, unchanged, changed };
+    return { name, create, themeName: theme.name, overrides: flatOverrides, colours, boxShadows, changed };
   });
   return { baseui: version, cases };
 }

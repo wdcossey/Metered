@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
-using Avalonia.Threading;
 
 namespace Metered.Themes;
 
@@ -12,10 +11,12 @@ namespace Metered.Themes;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The theme's whole dictionary, every token written out, goes into the element's
-/// <c>Resources.MergedDictionaries</c>: a derived token can't follow a foundation colour given lower
-/// in the tree (docs/spikes, spike 1), so a subtree gets every key, as Base Web's context gives a
-/// subtree a whole theme object.
+/// The theme's whole dictionary, every token written out, goes into the element's <c>Styles</c>, as a
+/// <see cref="Styles"/> of resources and no rule: a derived token can't follow a foundation colour given
+/// lower in the tree (docs/spikes, spike 1), so a subtree gets every key, as Base Web's context gives a
+/// subtree a whole theme object. <c>Styles</c> rather than <c>Resources</c>, which XAML or code can
+/// replace whole (a <c>&lt;Border.Resources&gt;&lt;ResourceDictionary&gt;</c> after the attribute);
+/// <c>Styles</c> can't be replaced, and the element's own <c>Resources</c> still come first.
 /// </para>
 /// <para>
 /// As in Base Web, <see cref="ThemeProperty"/> alone fixes the subtree to that theme whatever the app's
@@ -33,9 +34,9 @@ public sealed class ThemeProvider
     public static readonly AttachedProperty<Theme?> DarkThemeProperty =
         AvaloniaProperty.RegisterAttached<ThemeProvider, StyledElement, Theme?>("DarkTheme");
 
-    /// <summary>The dictionary this class put in the element's resources, to take out again.</summary>
-    private static readonly AttachedProperty<ResourceDictionary?> ProvidedProperty =
-        AvaloniaProperty.RegisterAttached<ThemeProvider, StyledElement, ResourceDictionary?>("Provided");
+    /// <summary>What this class put in the element's styles, to take out again.</summary>
+    private static readonly AttachedProperty<Styles?> ProvidedProperty =
+        AvaloniaProperty.RegisterAttached<ThemeProvider, StyledElement, Styles?>("Provided");
 
     static ThemeProvider()
     {
@@ -81,9 +82,8 @@ public sealed class ThemeProvider
     {
         if (element.GetValue(ProvidedProperty) is { } old)
         {
-            element.ResourcesChanged -= KeepProvided;
             element.ClearValue(ProvidedProperty);
-            element.Resources.MergedDictionaries.Remove(old);
+            element.Styles.Remove(old);
         }
 
         var theme = GetTheme(element);
@@ -93,35 +93,8 @@ public sealed class ThemeProvider
             return;
         }
 
-        var provided = CreateResources(theme, dark);
-        element.Resources.MergedDictionaries.Add(provided);
+        var provided = new Styles { Resources = CreateResources(theme, dark) };
         element.SetValue(ProvidedProperty, provided);
-        element.ResourcesChanged += KeepProvided;
-    }
-
-    /// <summary>
-    /// Gives the theme again when the element's <c>Resources</c> is replaced by a new dictionary, as XAML does
-    /// when a <c>&lt;Border.Resources&gt;&lt;ResourceDictionary&gt;</c> property element follows the attribute.
-    /// Avalonia raises <c>ResourcesChanged</c> for a replacement before the new dictionary is in place, so
-    /// the check runs again once the dispatcher is free.
-    /// </summary>
-    private static void KeepProvided(object? sender, ResourcesChangedEventArgs e)
-    {
-        if (sender is StyledElement element)
-        {
-            Restore(element);
-            Dispatcher.UIThread.Post(() => Restore(element));
-        }
-    }
-
-    /// <summary>A new copy, if the element's dictionary lost the theme: the one given before belongs to the old one.</summary>
-    private static void Restore(StyledElement element)
-    {
-        if (element.GetValue(ProvidedProperty) is { } provided && !element.Resources.MergedDictionaries.Contains(provided))
-        {
-            var again = CreateResources(GetTheme(element), GetDarkTheme(element));
-            element.SetValue(ProvidedProperty, again);
-            element.Resources.MergedDictionaries.Add(again);
-        }
+        element.Styles.Add(provided);
     }
 }

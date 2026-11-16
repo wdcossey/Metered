@@ -921,13 +921,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 0 0 2 #FFF3F3F3",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 4 16 0 #1F000000, 0 0 0 2 #FFF3F3F3"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -1850,13 +1843,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 0 0 2 #FF292929",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 4 16 0 #1F000000, 0 0 0 2 #FF292929"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -2815,13 +2801,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 0 0 2 #FFF3F3F3",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 4 16 0 #1F000000, 0 0 0 2 #FFF3F3F3"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -3780,13 +3759,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 0 0 2 #FF292929",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 4 16 0 #1F000000, 0 0 0 2 #FF292929"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -4720,13 +4692,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 0 0 2 #FFF3F3F3",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 4 16 0 #1F000000, 0 0 0 2 #FFF3F3F3"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -5700,9 +5665,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #14000000, 0 0 0 3 #14000000, 0 0 0 3 #FFF3F3F3",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #14000000, 0 0 0 3 #14000000, 0 2 6 0 #4D000000, 0 0 0 3 #FFF3F3F3"
    },
-   "unchanged": [
-    "animation"
-   ],
    "changed": [
     {
      "key": "borders.radius300",
@@ -6667,13 +6629,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 0 0 2 #FFF3F3F3",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #14000000, 0 0 0 2 #14000000, 0 4 16 0 #1F000000, 0 0 0 2 #FFF3F3F3"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   },
   {
@@ -7602,13 +7557,6 @@
     "button.boxShadow.outline.active": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 0 0 2 #FF292929",
     "button.boxShadow.outline.active.safe": "inset 999 999 0 0 #26FFFFFF, 0 0 0 2 #26FFFFFF, 0 4 16 0 #1F000000, 0 0 0 2 #FF292929"
    },
-   "unchanged": [
-    "animation",
-    "borders",
-    "lighting",
-    "sizing",
-    "typography"
-   ],
    "changed": []
   }
  ]
