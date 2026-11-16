@@ -5,7 +5,7 @@
 // runner. The runner starts two strays with the clone's path on their command lines and a bystander with the sibling's, kills the strays
 // and reports. Every link has to survive, and the runner; both strays have to go; the bystander has to stay, as the path is matched
 // literally. On Windows the branch spares only the runner, not its ancestors, so the chain there has no links.
-const { spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -44,7 +44,7 @@ const link = (depth, clone, sibling) => {
     const next = depth > 0 ? ['link', String(depth - 1), clone, sibling] : ['runner', clone, sibling];
     const child = spawn(process.execPath, [__filename, ...next], { stdio: ['ignore', 'pipe', 'inherit'] });
     child.stdout.pipe(process.stdout, { end: false });
-    child.on('exit', (code) => {
+    child.on('close', (code) => {
         console.log(JSON.stringify({ survived: `link ${depth}` }));
         process.exitCode = code === null ? 1 : code;
     });
@@ -57,6 +57,7 @@ const runner = async (clone, sibling) => {
     const all = [...strays, bystander];
     try {
         await Promise.all(all.map(ready));
+        console.log(JSON.stringify({ started: all.map((child) => child.pid) }));
         killStrays(clone);
         const killed = await Promise.all(strays.map((child) => gone(child, 5000)));
         console.log(JSON.stringify({ survived: 'runner', killed, bystander: alive(bystander.pid) }));
@@ -67,6 +68,26 @@ const runner = async (clone, sibling) => {
             } catch {
                 // It has gone already.
             }
+        }
+    }
+};
+
+// When the runner was killed before it could stop what it started: those of its processes still running from the test's folder, so
+// that a process ID taken since by another is left alone. The folder's name, from mkdtemp, holds nothing a pattern reads specially.
+const stopLeftovers = (root, started) => {
+    if (process.platform === 'win32' || started.length === 0) return;
+    let listed = '';
+    try {
+        listed = execFileSync('pgrep', ['-f', '--', path.basename(root)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    } catch {
+        // None left.
+    }
+    const running = new Set(listed.split('\n').map(Number));
+    for (const pid of started.filter((pid) => running.has(pid))) {
+        try {
+            process.kill(pid, 'SIGKILL');
+        } catch {
+            // It has gone already.
         }
     }
 };
@@ -85,12 +106,21 @@ const main = () => {
         text += chunk;
     });
     const timer = setTimeout(() => child.kill('SIGKILL'), WAIT);
-    child.on('exit', (code, signal) => {
+    // On close, not exit, so that all it printed has been read.
+    child.on('close', (code, signal) => {
         clearTimeout(timer);
-        fs.rmSync(root, { recursive: true, force: true });
-        const lines = text.split('\n').filter(Boolean).map((line) => JSON.parse(line));
+        // A link killed mid-write leaves half a line.
+        const lines = text.split('\n').flatMap((line) => {
+            try {
+                return [JSON.parse(line)];
+            } catch {
+                return [];
+            }
+        });
         const survived = new Set(lines.map((line) => line.survived));
         const report = lines.find((line) => line.survived === 'runner');
+        if (!report) stopLeftovers(root, lines.flatMap((line) => line.started || []));
+        fs.rmSync(root, { recursive: true, force: true });
         const checks = [
             ['the runner survived', Boolean(report)],
             ...Array.from({ length: depth }, (_, at) => [`link ${at} survived (an ancestor with the path)`, survived.has(`link ${at}`)]),
