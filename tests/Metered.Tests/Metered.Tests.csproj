@@ -13,7 +13,6 @@
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Avalonia.Headless.XUnit" />
     <PackageReference Include="Avalonia.Skia" />
-    <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -22,6 +21,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Metered.Controls\Metered.Controls.csproj" />
     <ProjectReference Include="..\..\src\Metered.Themes\Metered.Themes.csproj" />
+  </ItemGroup>
+
+  <!-- The OFL substitutes for Uber Move, from fonts/ (docs/decisions/0003-font.md): one collection,
+       avares://Metered.Tests/Fonts, registered in Harness/TestApp.cs. -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- What Base Web's own style functions give, written by tools/reference/cases.js. -->

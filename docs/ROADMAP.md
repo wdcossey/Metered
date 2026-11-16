@@ -25,11 +25,13 @@ Button and ButtonGroup, to settle the approach before the inventory:
    No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
    allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
    a phone.
-3. **A font.** An OFL substitute for Uber Move, chosen by metrics against baseweb.design, which
-   serves Uber Move.
-4. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
+2. **Ship the fonts** (#9). A package (the theme, or a `Metered.Fonts`) carrying Instrument Sans and
+   Figtree and the family mapping, licensed OFL-1.1 beside MIT. Today only the tests and the sample
+   embed them (ADR 0003).
+3. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
    exists (`samples/Metered.Sample.Desktop`, one page); still to come: a page per control, an
-   Android head, and a scripted real-window run.
+   Android head, and a scripted real-window run. The sample's subtree theme and the new fonts haven't
+   been seen in a real window (#5).
 
 Done since the pilot (2026-11-16):
 
@@ -37,6 +39,8 @@ Done since the pilot (2026-11-16):
       subtree, every derived key written out, the derivation read from Base Web's own functions
       (ADR 0002, `docs/theming.md`). 18.2.0's `createTheme` takes overrides only, not primitives
 - [x] The cost, profiled by phase and ablation (`Spikes/StyleCostProfile`, spike 2)
+- [x] A font: Instrument Sans for UberMoveText, Figtree for UberMove, chosen by measurement against
+      baseweb.design (ADR 0003, `tools/reference/fonts.js`)
 
 Borrowed from Cornflower and Avonic (2026-11-16):
 
@@ -56,9 +60,9 @@ unless Avonic is named.
 |---|---|---|
 | **A test clock and a manual render timer**: `TestClock` (time moves only when the test says, each callback run at its own time), `ManualRenderTimer` (a frame only on a forced tick), and the harness's own tests | `tests/Cornflower.Tests/TestClock.cs`, `ManualRenderTimer.cs`, `Harness/`; the clock it replaces, `CornflowerClock`, is in `src/Cornflower.Controls` | The first control whose motion must match Base Web frame by frame. Avalonia 12's animation clock is internal, so `Transitions` and `Animation` run on real time and are tested at their end value (Cornflower's ADR 0003); the spinner's ring is the first candidate |
 | **The control loop and a pull request template**: plan, build, compare, review, document, with a checklist per control and the rule of one control per pull request | `docs/PROCESS.md`, `.github/PULL_REQUEST_TEMPLATE.md`; Avonic's `docs/PROCESS.md` and `docs/LESSONS_LEARNED.md` | Before the inventory starts, when controls go through pull requests one at a time. The plan step's spec here is Base Web's props and style functions, which the oracle already reads |
-| **The sample as a library with a page per control, and its tests**: a shared sample project the desktop and Android heads both show, `CatalogueTests` and a test per page | `samples/Cornflower.Sample`, `tests/Cornflower.Tests/Sample/` | With item 4 above. Also brings `PerformanceMonitor` (the Debug line) and the timing benchmark with its trend table (`Performance/StyleCostBenchmark.cs`), which item 1 wants |
-| **An Android head, its CI job and the device run** | `samples/Cornflower.Sample.Android`, the `android` job in `.github/workflows/ci.yml`, `tools/android/run.ps1` | With item 4. The job builds the head so it can't break unnoticed; the run puts it on the phone over ADB |
-| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 4. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
+| **The sample as a library with a page per control, and its tests**: a shared sample project the desktop and Android heads both show, `CatalogueTests` and a test per page | `samples/Cornflower.Sample`, `tests/Cornflower.Tests/Sample/` | With item 3 above. Also brings `PerformanceMonitor` (the Debug line) and the timing benchmark with its trend table (`Performance/StyleCostBenchmark.cs`), which item 1 wants |
+| **An Android head, its CI job and the device run** | `samples/Cornflower.Sample.Android`, the `android` job in `.github/workflows/ci.yml`, `tools/android/run.ps1` | With item 3. The job builds the head so it can't break unnoticed; the run puts it on the phone over ADB |
+| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 3. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
 
 ## Inventory
 
