@@ -35,8 +35,8 @@ Never without the developer's go-ahead in the conversation, whatever the label, 
   automated fetches), a real browser session (Claude in Chrome), VMs, phones.
 - **Anything that leaves the repo's branches:** tags, releases, NuGet packages and ID reservations,
   publishing anything, repo settings, branch protection, deleting remote branches, rewriting history.
-- **Commands that change the system:** installs (beyond `npm install` / `dotnet restore` in a worktree),
-  registry, services, stopping processes Claude didn't start.
+- **Commands that change the system:** installs (beyond `npm install`, `npm ci` and `dotnet restore` in a
+  worktree or a clone of this repository), registry, services, stopping processes Claude didn't start.
 - **Decisions that aren't Claude's:** a change to an accepted ADR's design (for example a Button theme
   pruned by kind, size and shape: `docs/performance/README.md`), a deviation from Base Web that Avalonia
   doesn't force, a new dependency, the public API's names where Base Web's don't map.
@@ -51,8 +51,8 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
 
 ## 3. Build
 
-1. **Worktree** from an up-to-date `main`, one per branch, in the sibling folder `../Metered-wt/`, outside
-   the repository:
+1. **Worktree** from an up-to-date `main`, one per branch, in `Metered-wt/` beside the main clone, outside
+   the repository. From the main clone (the paths are relative to it):
    `git fetch origin && git worktree add --no-track ../Metered-wt/<slug> -b <type>/<slug> origin/main`,
    then `npm install` there; first push `git push -u origin HEAD`.
    **Every command runs in the worktree by absolute path:** a Bash call's working directory can reset to
@@ -68,7 +68,11 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
    Metered.sln`; when `tools/` or anything generated changes, also `node tools/tokens/gen.js --check` and
    `node tools/reference/cases.js --check`. `CLAUDE.md`'s rules hold throughout (generated files, the
    oracle, literal colours, the style budget).
-5. **Document** in the same PR: `CLAUDE.md` (it states only what exists), `docs/ROADMAP.md`, an ADR in
+5. **A control** (the inventory): one control per PR. Its plan lists Base Web's props and the style
+   functions behind them; its oracle cases come from those functions (`tools/reference/`); it is compared
+   with Base Web in headless frames beside baseweb.design's; and it gets `docs/controls/<Name>/` with what
+   matches, what differs and why.
+6. **Document** in the same PR: `CLAUDE.md` (it states only what exists), `docs/ROADMAP.md`, an ADR in
    `docs/decisions/` for a design decision, `docs/controls/<Name>/` for a control, and any deviation from
    Base Web with its measurement.
 
@@ -87,11 +91,13 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
 
 ## 5. The PR
 
-- From the template, ending `Closes #<issue>`.
+- From the template, with `Closes #<issue>` under **What and why**.
 - **Review:** what each pass found, fixed and waived, with reasons; the breakage numbers.
 - **Screenshots:** pushed to the `pr-assets` branch (`pr/<issue>/<name>.png`), linked pinned to its commit:
-  `https://github.com/wdcossey/Metered/blob/<sha>/pr/<issue>/<name>.png?raw=true`. Agents share that
-  branch: fetch, `git rebase origin/pr-assets` (only the unpushed commit moves), push, and repeat on a
+  `https://github.com/wdcossey/Metered/blob/<sha>/pr/<issue>/<name>.png?raw=true`. It is an orphan branch
+  that is never merged and holds only those pictures. If `origin/pr-assets` doesn't exist yet, make it in a
+  separate worktree with `git switch --orphan pr-assets`, commit only the pictures, and push. Agents share
+  that branch: fetch, `git rebase origin/pr-assets` (only the unpushed commit moves), push, and repeat on a
   rejected push.
 - **For you to decide:** questions settled with the conservative choice, each with the alternative.
 - **Hands-on follow-ups:** issues filed for the steps this PR couldn't do.
@@ -119,16 +125,19 @@ Claude merges its own PRs once **all** of these hold:
 
 - The required checks (`build-test`, `generated`) are green on the PR's **head commit**
   (`gh pr view <n> --json headRefOid,statusCheckRollup`; `gh pr checks` alone can report an older run).
-- Both review passes are done and the PR says what they found.
+- The review passes §4 asks for (two, or one for docs and chores) are done and the PR says what they
+  found.
 - It isn't a draft, it touches only what its issue needs, and the developer hasn't asked to hold it.
 
 **One at a time:** merge, then bring the next PR up to date (`gh pr update-branch <n>`, or merge
 `origin/main` into it and push; no force-push); in its worktree `git pull` and check `git rev-parse HEAD`
-equals the PR's `headRefOid`; wait for its checks on that head, merge. Use `gh pr merge --auto` only when
-nothing but CI is left on the current head. **Counters** two PRs both bump from one base (the limits in
+equals the PR's `headRefOid`; wait for its checks on that head, merge. Until branch protection and
+auto-merge are turned on (ask-first, §2), GitHub won't stop a merge on red or pending checks: read
+`statusCheckRollup` on the head commit every time, and don't use `gh pr merge --auto`. **Counters** two PRs both bump from one base (the limits in
 `StyleBudgetTests`) merge "cleanly" but wrong: re-bump on top. **Shared docs** (`CLAUDE.md`,
 `docs/ROADMAP.md`) conflict the same way: merge `origin/main` in and fold both changes. After each merge:
-`main`'s CI is green, the local branch and worktree are removed (`git branch -D` once the PR shows MERGED).
+`main`'s CI is green, the worktree is removed (`git worktree remove`), then its local branch
+(`git branch -D` once the PR shows MERGED).
 Avoid stacked PRs in a batch.
 
 ## 8. When the developer is away
@@ -140,5 +149,6 @@ return. §2 still holds.
 ## 9. Keeping the next session going
 
 At the end of a session: a short project memory with what's in flight (branches, PRs, worktrees, agents)
-and what's next. The repo is the record: check `gh pr list`, `gh issue list` and `git worktree list`
+and what's next. Traps worth keeping for every project go in `~/.claude/ways-of-working/LESSONS.md`, with
+the project and date. The repo is the record: check `gh pr list`, `gh issue list` and `git worktree list`
 before trusting a note.

@@ -20,15 +20,16 @@ You're building one Metered issue while one or two other agents build others. Re
 
 - **Your files are your issue's.** Stage them by name; never `git add -A` or `git add .`. Check
   `git status` before each commit.
-- **Shared files:** `CLAUDE.md`, `docs/ROADMAP.md`, `docs/PROCESS.md`, this brief, `.github/`,
+- **Shared files:** `docs/PROCESS.md`, this brief, `.github/`,
   `Metered.sln`, `Directory.Build.*`, `Directory.Packages.props`, `global.json`, `package.json` and
   `package-lock.json`, `tools/tokens/gen.js`, `tools/reference/cases.js`, `tools/README.md`,
   `tests/Metered.Tests/Harness/`, `tests/Metered.Tests/Performance/StyleBudgetTests.cs`,
   `docs/spikes/README.md`, `docs/performance/README.md`. Don't change them unless your issue can't be
   done without it; then change only what it needs and say so. A change you'd *like* goes under
   **Proposed for shared files** in the PR, with the exact text.
-- **Docs everyone edits:** change only your own rows and paragraphs, in their natural place, never
-  appended at the end of a table, where two agents collide.
+- **Docs everyone edits** (`CLAUDE.md`, `docs/ROADMAP.md`): PROCESS §3 asks you to keep them true for your
+  change. Change only your own rows and paragraphs, in their natural place, never appended at the end of a
+  table or list, where two agents collide; the coordinator folds the rest at merge.
 - **Temp files** in your own temp folder, never in the repo or a shared scratchpad.
 - **Processes:** don't stop anything you didn't start. Other projects run on this machine.
 - **Never** do anything on the ask-first list (PROCESS §2): no real window, no phone, no publishing. If your
@@ -40,7 +41,8 @@ You're building one Metered issue while one or two other agents build others. Re
 ## Getting it right
 
 - **Read Base Web before writing a line:** its props, its style functions in
-  `node_modules/baseui/<component>/styled-components.js`, and its `__tests__/*.scenario.tsx`. Every value a
+  `node_modules/baseui/<component>/styled-components.js`, and its scenarios, which the npm package
+  doesn't ship: `src/<component>/__tests__/*.scenario.tsx` in `github.com/uber/baseweb` at tag `v18.2.0`. Every value a
   test expects comes from Base Web: the oracle (`tools/reference/`), or a value read from its source with
   the file named (CLAUDE.md, rule 3). Never re-record an expected value from Avalonia's output.
 - **Never hand-edit a generated file** (`CLAUDE.md`, rule 1): change the generator and run it, then both
@@ -51,6 +53,7 @@ You're building one Metered issue while one or two other agents build others. Re
   the budget, and a raise is said in the commit with the new total.
 - **Uber Move is never downloaded, saved or embedded** (PROCESS §2).
 - **LF line endings** everywhere; scripts in Node or `pwsh`, portable to Linux and macOS.
+- **Traps already hit** in the developer's other projects: `~/.claude/ways-of-working/LESSONS.md`.
 - **Numbers in the PR are measured,** not estimated: test counts, breakage counts, timings.
 - **Review findings can be wrong.** Check each against the code and Base Web before acting.
 - **Never restore a file over uncommitted work:** commit first, then break things to prove the tests.
@@ -58,7 +61,7 @@ You're building one Metered issue while one or two other agents build others. Re
 
 ## Review and PR
 
-- PROCESS §4 in full: two `code-review` passes (`high origin/main...<branch> --max-findings all`), proof
+- PROCESS §4 in full: two `code-review` passes (one for a docs-only or chore PR) (`high origin/main...<branch> --max-findings all`), proof
   the tests can fail, a clean run, screenshots.
 - Push, `gh pr create` with the template and `Closes #<issue>`. Check it isn't a draft.
 - **CI must be green on your exact commit:** `gh run list --commit <sha>`. Fix it if it's red.
