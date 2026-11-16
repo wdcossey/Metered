@@ -1,0 +1,6 @@
+<!-- Spike 1: a token derived from another (Base Web's semantic colours from its foundation ones). -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Color x:Key="spike.accent">#FFFF0000</Color>
+  <SolidColorBrush x:Key="spike.backgroundAccent" Color="{DynamicResource spike.accent}" />
+</ResourceDictionary>

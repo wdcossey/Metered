@@ -1,0 +1,72 @@
+<!--
+  Base Web's ButtonGroup (baseui 18.2.0, button-group/): its one part, Root, the row of buttons.
+  ButtonGroup.StyledRoot is Base Web's StyledRoot: display flex, a column gap of sizing.scale300,
+  a row gap of scale500 for the extra-small size and scale300 otherwise, wrap or a sideways scroll,
+  and the horizontal padding.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="ButtonGroup.StyledRoot" TargetType="Border">
+    <Style Selector="^:padding-default">
+      <!-- paddingLeft and paddingRight: sizing.scale600. -->
+      <Setter Property="Padding" Value="16,0" />
+    </Style>
+    <Style Selector="^:padding-none">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type b:ButtonGroup}" TargetType="b:ButtonGroup">
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="{DynamicResource sizing.scale300}" />
+      </ItemsPanelTemplate>
+    </Setter>
+    <!-- Overflow visible, as a flex row's: the buttons' rings and shadows aren't clipped. -->
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="Root" Theme="{DynamicResource ButtonGroup.StyledRoot}">
+          <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" ClipToBounds="False" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- wrap: flexWrap wrap, with the row gap. -->
+    <Style Selector="^:wrap">
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <WrapPanel Orientation="Horizontal"
+                     ItemSpacing="{DynamicResource sizing.scale300}"
+                     LineSpacing="{DynamicResource sizing.scale300}" />
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="^:wrap:size-xsmall">
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <WrapPanel Orientation="Horizontal"
+                     ItemSpacing="{DynamicResource sizing.scale300}"
+                     LineSpacing="{DynamicResource sizing.scale500}" />
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <!-- wrap false: overflowX auto with no scroll bar (which clips, as CSS's overflow does). -->
+    <Style Selector="^:nowrap">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="Root" Theme="{DynamicResource ButtonGroup.StyledRoot}">
+            <ScrollViewer Name="PART_ScrollViewer"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled">
+              <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+            </ScrollViewer>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

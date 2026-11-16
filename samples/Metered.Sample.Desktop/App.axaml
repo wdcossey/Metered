@@ -1,0 +1,11 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:base="using:Metered.Themes"
+             x:Class="Metered.Sample.Desktop.App"
+             RequestedThemeVariant="Light">
+  <Application.Styles>
+    <!-- Simple first, so BaseTheme's ControlThemes win where it has them. -->
+    <SimpleTheme />
+    <base:BaseTheme />
+  </Application.Styles>
+</Application>

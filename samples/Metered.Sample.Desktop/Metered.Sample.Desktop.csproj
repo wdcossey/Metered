@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The desktop sample: the pilot's controls in a phone-sized window, to see them by hand. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" />
+    <!-- Underneath BaseTheme, for the Window, ScrollViewer and TextBlock it doesn't theme yet. -->
+    <PackageReference Include="Avalonia.Themes.Simple" />
+    <!-- Uber Move is proprietary: Base Web's stack falls back, to Inter, as in the tests. -->
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Metered\Metered.csproj" />
+  </ItemGroup>
+
+</Project>

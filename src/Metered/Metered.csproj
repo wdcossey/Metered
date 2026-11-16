@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Umbrella package: references the controls and Base Web's themes. Contains no code of its own. -->
+  <PropertyGroup>
+    <PackageId>Metered</PackageId>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Metered.Controls\Metered.Controls.csproj" />
+    <ProjectReference Include="..\Metered.Themes\Metered.Themes.csproj" />
+  </ItemGroup>
+
+</Project>

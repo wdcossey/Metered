@@ -1,0 +1,77 @@
+<!--
+  Base Web's Button (baseui 18.2.0, button/button.tsx and button-internals.tsx), as a template of
+  named parts. Each part's look is its own theme, Button.Styled<Part> (Button.Parts.g.axaml), which
+  the button's Overrides merge over: this file holds only the structure.
+
+  BaseButton
+    Panel
+      DockPanel (the content: hidden, keeping its size, while loading)
+        EndEnhancer                              (docked right)
+        StartEnhancerButtonContentContainer      (centred in the rest)
+          StartEnhancer
+          the content
+      LoadingSpinnerContainer
+        LoadingSpinner
+  minHitArea="tap" is the Button's own (Metered.Controls.Button.ArrangeCore).
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Button}" TargetType="b:Button">
+    <!-- display: inline-flex: the button hugs its content unless widthType is fill. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Base Web's rings and shadows are drawn outside the button: overflow visible. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="BaseButton" Theme="{DynamicResource Button.StyledBaseButton}">
+            <Panel>
+              <DockPanel Name="PART_Content">
+                <ContentPresenter Name="EndEnhancer"
+                                  DockPanel.Dock="Right"
+                                  Theme="{DynamicResource Button.StyledEndEnhancer}"
+                                  Content="{TemplateBinding EndEnhancer}"
+                                  IsVisible="{TemplateBinding EndEnhancer, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <StackPanel Name="StartEnhancerButtonContentContainer"
+                            Theme="{DynamicResource Button.StyledStartEnhancerButtonContentContainer}">
+                  <ContentPresenter Name="StartEnhancer"
+                                    Theme="{DynamicResource Button.StyledStartEnhancer}"
+                                    Content="{TemplateBinding StartEnhancer}"
+                                    IsVisible="{TemplateBinding StartEnhancer, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  <ContentPresenter Name="PART_ContentPresenter"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    RecognizesAccessKey="True"
+                                    VerticalAlignment="Center" />
+                </StackPanel>
+              </DockPanel>
+              <Panel Name="LoadingSpinnerContainer" Theme="{DynamicResource Button.StyledLoadingSpinnerContainer}">
+                <b:ButtonLoadingSpinner Name="LoadingSpinner" Theme="{DynamicResource Button.StyledLoadingSpinner}" />
+              </Panel>
+            </Panel>
+          </Border>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- width: 100%, unless the shape fixes the width (getShapeStyles comes after getDimensionStyles). -->
+    <Style Selector="^:width-fill:not(:fixed-shape)">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="^:width-fill /template/ StackPanel#StartEnhancerButtonContentContainer">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <!-- Loading: the content keeps its size but isn't drawn (Base Web: opacity 0). -->
+    <Style Selector="^:is-loading /template/ DockPanel#PART_Content">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

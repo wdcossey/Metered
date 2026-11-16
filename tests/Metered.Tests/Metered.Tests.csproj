@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Libraries target net8.0 (Directory.Build.props). Tests run on the current runtime:
+         xunit.v3 test projects are executables and need the SDK's own apphost pack. -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Skia" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Metered.Controls\Metered.Controls.csproj" />
+    <ProjectReference Include="..\..\src\Metered.Themes\Metered.Themes.csproj" />
+  </ItemGroup>
+
+  <!-- What Base Web's own style functions give, written by tools/reference/cases.js. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Reference/*.oracle.json" LogicalName="Metered.Tests.Reference.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Metered.Controls</PackageId>
+    <Description>Metered's controls and the overrides API: behaviour, properties and states, no visual opinion. Base Web's names, for AvaloniaUI.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Metered.Themes" />
+    <InternalsVisibleTo Include="Metered.Tests" />
+  </ItemGroup>
+
+</Project>
