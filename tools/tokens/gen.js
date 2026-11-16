@@ -7,6 +7,9 @@
 // and state, from Base Web's own style function (tools/reference/oracle.js), because a BoxShadows
 // value is parsed whole and can't hold a DynamicResource colour.
 //
+// And Theming/ThemeDerivation.g.cs: what Base Web's createTheme and createDarkTheme derive from the
+// foundation colours, and what each Button shadow is made of (theme.js).
+//
 //   node tools/tokens/gen.js          write the files
 //   node tools/tokens/gen.js --check  fail if a file would change
 'use strict';
@@ -14,8 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const css = require('../reference/css');
-const { THEMES, evaluate, resolve } = require('../reference/oracle');
-const button = require('baseui/button/styled-components');
+const { THEMES } = require('../reference/oracle');
 const version = require('baseui/package.json').version;
 
 const root = path.resolve(__dirname, '../..');
@@ -118,42 +120,19 @@ files['Typography.g.axaml'] = dictionary('theme.typography: each style\'s family
     ];
   }));
 
-// The Button's box-shadows. State order is Base Web's cascade (oracle.js): a later state wins.
-const KINDS = ['primary', 'secondary', 'tertiary', 'dangerPrimary', 'dangerSecondary', 'dangerTertiary', 'outline'];
-const STATES = {
-  rest: { props: {}, state: {} },
-  selected: { props: { $isSelected: true }, state: {} },
-  focusVisible: { props: { $isFocusVisible: true }, state: { focusVisible: true } },
-  hover: { props: {}, state: { hover: true } },
-  active: { props: {}, state: { active: true } },
-};
-function buttonShadow(theme, kind, stateName, safe) {
-  const { props, state } = STATES[stateName];
-  const style = evaluate(button.BaseButton, theme, {
-    $kind: kind, $size: 'medium', $shape: 'rectangular', $isSelected: false, $isLoading: false,
-    $disabled: false, $isFocusVisible: false, $backgroundSafe: safe, $widthType: 'hug', $minHitArea: 'click',
-    ...props,
-  });
-  const { self, after } = resolve(style, state);
-  // outline draws its hover and press overlay on ::after: a fill and a ring over the element's own
-  // ring. As one BoxShadows list on the element, the ::after's shadows come first (on top).
-  const parts = [];
-  if (after.boxShadow && after.backgroundColor && after.backgroundColor !== 'transparent') {
-    parts.push(`inset 999 999 0 0 ${css.color(after.backgroundColor)}`);
-    parts.push(css.boxShadows(after.boxShadow));
-  }
-  const own = css.boxShadows(self.boxShadow ?? 'none');
-  if (own !== 'none') parts.push(own);
-  return parts.length ? parts.join(', ') : 'none';
-}
+// The Button's box-shadows (button-shadows.js).
+const shadows = require('./button-shadows');
 files['ButtonBoxShadows.g.axaml'] = dictionary(
   'The box-shadows of Base Web\'s Button, from its own style function: button.boxShadow.<kind>.<state>[.safe].',
-  KINDS.flatMap((kind) => Object.keys(STATES).flatMap((s) => [false, true].map((safe) => ({
+  shadows.ALL.map(([kind, s, safe]) => ({
     key: `${kind}.${s}.${safe}`,
-    element: (t) => `<BoxShadows x:Key="button.boxShadow.${kind}.${s}${safe ? '.safe' : ''}">${buttonShadow(t, kind, s, safe)}</BoxShadows>`,
-  })))));
+    element: (t) => `<BoxShadows x:Key="${shadows.key(kind, s, safe)}">${shadows.buttonShadow(t, kind, s, safe)}</BoxShadows>`,
+  })));
 
 files['../Controls/Button.Parts.g.axaml'] = require('./button').file(version);
+
+// What createTheme and createDarkTheme derive, for Metered.Themes.Theme (theme.js).
+files['../Theming/ThemeDerivation.g.cs'] = require('./theme').file(version);
 
 fs.mkdirSync(outDir, { recursive: true });
 let stale = [];

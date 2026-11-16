@@ -15,6 +15,9 @@ internal static class Oracle
 
     public static ButtonGroupOracle ButtonGroup { get; } = Load<ButtonGroupOracle>("button-group.oracle.json");
 
+    /// <summary>Base Web's createTheme and createDarkTheme (tools/reference/themes.js).</summary>
+    public static ThemeOracle Themes { get; } = Load<ThemeOracle>("theme.oracle.json");
+
     private static T Load<T>(string name)
     {
         using var stream = typeof(Oracle).Assembly.GetManifestResourceStream("Metered.Tests.Reference." + name)
@@ -55,6 +58,25 @@ internal sealed record GroupRootCase(string Size, string Padding, bool? Wrap, do
 {
     public override string ToString() => $"{Size} padding {Padding} wrap {Wrap?.ToString() ?? "unset"}";
 }
+
+internal sealed record ThemeOracle(string Baseui, ThemeCase[] Cases)
+{
+    public ThemeCase this[string name] => Cases.Single(c => c.Name == name);
+}
+
+/// <summary>
+/// One call of createTheme, createLightTheme or createDarkTheme: its overrides in Metered's keys, every colour
+/// (null where Base Web gives no colour), every Button box-shadow, and the other groups' leaves that changed.
+/// </summary>
+internal sealed record ThemeCase(
+    string Name, string Create, string ThemeName, OracleToken[] Overrides,
+    Dictionary<string, string?> Colours, Dictionary<string, string> BoxShadows, OracleToken[] Changed)
+{
+    public override string ToString() => Name;
+}
+
+/// <summary>A token in Avalonia's terms: its key, its type (colour, double, boxShadows, cornerRadius, …) and value.</summary>
+internal sealed record OracleToken(string Key, string Type, JsonElement Value);
 
 /// <summary>Reads a radius that is a number, or "half" for 50% (as null).</summary>
 internal sealed class RadiusConverter : JsonConverter<double?>

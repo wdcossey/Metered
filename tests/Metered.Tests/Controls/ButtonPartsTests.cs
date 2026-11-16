@@ -100,18 +100,32 @@ public class ButtonPartsTests
         Assert.Equal(without.Bounds.Width + Oracle.Button.Enhancers.StartMarginRight, with.Bounds.Width, 3);
     }
 
-    [AvaloniaFact]
-    public void Filled_the_end_enhancer_sits_at_the_end_and_the_content_in_the_middle()
+    // The label at its own width, which the font sets, and at a set width whose centre is a whole
+    // pixel whatever the font, where the check is exact.
+    [AvaloniaTheory]
+    [InlineData(double.NaN)]
+    [InlineData(40.0)]
+    public void Filled_the_end_enhancer_sits_at_the_end_and_the_content_in_the_middle(double width)
     {
         var end = new Border { Width = 20, Height = 20 };
-        var label = new TextBlock { Text = "Label" };
+        var label = new TextBlock { Text = "Label", Width = width };
         var button = new Button { Content = label, EndEnhancer = end, WidthType = ButtonWidthType.Fill };
         using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { button } });
         var e = end.TranslatePoint(default, button)!.Value;
         Assert.Equal(button.Bounds.Width - 16 - 20, e.X, 3);
         var l = label.TranslatePoint(default, button)!.Value;
         var room = button.Bounds.Width - 16 - 16 - 20 - Oracle.Button.Enhancers.EndMarginLeft;
-        Assert.Equal(16 + (room - label.Bounds.Width) / 2, l.X, 1);
+        // Centred, as CSS centres it, to Avalonia's layout rounding: at scaling 1 the label sits on a
+        // whole pixel, so a half-pixel centre (an odd room left by the label's width) lands on the
+        // pixel either side of it, and a whole-pixel centre exactly on it.
+        var centre = 16 + (room - label.Bounds.Width) / 2;
+        if (!double.IsNaN(width))
+        {
+            Assert.Equal(Math.Round(centre), centre, 3);
+        }
+
+        Assert.Equal(Math.Round(l.X), l.X, 3);
+        Assert.InRange(l.X, Math.Floor(centre) - 0.001, Math.Ceiling(centre) + 0.001);
     }
 
     [AvaloniaTheory]

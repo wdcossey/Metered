@@ -7,8 +7,8 @@ Base Web's `Button` (baseui 18.2.0, `button/`), as `Metered.Controls.Button`, an
 
 Each row is a kind (primary, secondary, tertiary, dangerPrimary, dangerSecondary, dangerTertiary,
 outline), each column a state; then the four sizes with the circle and pill shapes, and two
-ButtonGroups. Drawn by `Controls/ButtonFrames` with `METERED_FRAMES` set, in Inter, as Uber Move isn't
-available.
+ButtonGroups. Drawn by `Controls/ButtonFrames` with `METERED_FRAMES` set, in Instrument Sans, the
+substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
 
 ## API
 
@@ -53,5 +53,7 @@ available.
    button that isn't square.
 7. **`minHitArea="tap"`** widens the Button's bounds to the 48 px band after layout (spikes);
    `Bounds` is the band, the `BaseButton` part keeps the button's own size.
-8. **Fonts**: Base Web's stack starts with Uber Move, which isn't shipped; Avalonia falls back
-   along it to the platform's default.
+8. **Fonts**: Base Web's stack starts with Uber Move, which can't ship. The label's UberMoveText
+   draws in Instrument Sans ([ADR 0003](../../decisions/0003-font.md)): at the label's four sizes its
+   width is within 0.53 px of baseweb.design's on average (worst 1.1 px narrower), and its baseline
+   sits 0.04 to 0.76 px lower.
