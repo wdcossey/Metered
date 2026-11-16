@@ -1,8 +1,11 @@
+using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.VisualTree;
+using Metered.Themes;
 using Button = Metered.Controls.Button;
 
 namespace Metered.Tests.Typography;
@@ -11,12 +14,14 @@ namespace Metered.Tests.Typography;
 /// Base Web's families draw in the substitutes chosen for Uber Move (docs/decisions/0003-font.md): each
 /// ramp token's family, at its own weight, resolves to the embedded face of that weight, so no text
 /// falls back to another font or to a synthesised weight. UberMoveMono, the Mono styles' family, has
-/// no substitute (the ADR).
+/// no substitute (the ADR). The expected families aren't Base Web's, whose value is Uber Move itself:
+/// they are the substitutes ADR 0003 chose by measurement against baseweb.design.
 /// </summary>
 public class FontSubstituteTests
 {
     private const string Primary = "UberMoveText";
     private const string Secondary = "UberMove";
+    private const string Mono = "UberMoveMono";
 
     // A static Medium or SemiBold face names its family "Instrument Sans Medium" (name ID 1) and
     // the whole family only as its typographic family (ID 16), which Regular and Bold don't carry.
@@ -36,19 +41,48 @@ public class FontSubstituteTests
     {
         using var scene = new Scene();
         var family = (FontFamily)scene.Window.FindResource($"typography.{token}.fontFamily")!;
-        var weight = (FontWeight)scene.Window.FindResource($"typography.{token}.fontWeight")!;
+        Assert.NotEqual(Mono, family.FamilyNames[0]);
+        Assert.Null(Mismatch(scene, token));
+    }
 
-        Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(family, FontStyle.Normal, weight), out var face));
+    // Every generated style, the named ones (ParagraphMedium, HeadingLarge, ...) as well as the ramp,
+    // read from the theme's own keys; the Mono styles have no substitute (the ADR).
+    [AvaloniaFact]
+    public void Every_generated_style_draws_in_its_substitute_at_its_weight()
+    {
+        using var scene = new Scene();
+        var styles = new BaseTheme().Resources.MergedDictionaries.OfType<ResourceInclude>()
+            .Select(include => include.Loaded).OfType<ResourceDictionary>()
+            .SelectMany(d => d.Keys).OfType<string>()
+            .Select(k => Regex.Match(k, @"^typography\.(\w+)\.fontFamily$")).Where(m => m.Success).Select(m => m.Groups[1].Value)
+            .Where(s => ((FontFamily)scene.Window.FindResource($"typography.{s}.fontFamily")!).FamilyNames[0] != Mono)
+            .ToList();
 
+        Assert.Contains("ParagraphMedium", styles);
+        Assert.Contains("DisplayLarge", styles);
+        Assert.Empty(styles.Select(s => Mismatch(scene, s)).OfType<string>());
+    }
+
+    // What's wrong with a style's face, or null: its family, at its weight, must resolve to the
+    // substitute's face of exactly that weight, unsynthesised.
+    private static string? Mismatch(Scene scene, string style)
+    {
+        var family = (FontFamily)scene.Window.FindResource($"typography.{style}.fontFamily")!;
+        var weight = (FontWeight)scene.Window.FindResource($"typography.{style}.fontWeight")!;
         var expected = family.FamilyNames[0] switch
         {
             Primary => TestApp.TextFamily,
             Secondary => TestApp.DisplayFamily,
-            var other => throw new InvalidOperationException($"{token}: an unexpected family, {other}"),
+            var other => $"an unexpected family, {other}",
         };
-        Assert.Equal(expected, Family(face));
-        Assert.Equal(weight, face.Weight);
-        Assert.Equal(FontSimulations.None, face.FontSimulations);
+        if (!FontManager.Current.TryGetGlyphTypeface(new Typeface(family, FontStyle.Normal, weight), out var face))
+        {
+            return $"{style}: no face";
+        }
+
+        return Family(face) == expected && face.Weight == weight && face.FontSimulations == FontSimulations.None
+            ? null
+            : $"{style}: {Family(face)} {face.Weight} ({face.FontSimulations}), expected {expected} {weight}";
     }
 
     // A family Avalonia can't find falls back to the default; were that a substitute, the ramp test
