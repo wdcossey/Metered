@@ -52,45 +52,59 @@ public class StyleCostProfile(ITestOutputHelper output)
 
     private static string Unit => OperatingSystem.IsWindows() ? "kcycles" : "kticks";
 
-    private static void Add(Phase phase, long clock, long bytes)
+    // The phases being timed, innermost last: a phase's time and bytes are its own, less those of a phase timed inside it.
+    private static readonly Stack<Phase> Open = new();
+
+    private static T Time<T>(Phase phase, Func<T> action)
     {
-        Clock[(int)phase] += clock;
-        Bytes[(int)phase] += bytes;
+        Open.Push(phase);
+        var t = Now();
+        var b = GC.GetAllocatedBytesForCurrentThread();
+        try
+        {
+            return action();
+        }
+        finally
+        {
+            var clock = Now() - t;
+            var bytes = GC.GetAllocatedBytesForCurrentThread() - b;
+            Open.Pop();
+            Clock[(int)phase] += clock;
+            Bytes[(int)phase] += bytes;
+            if (Open.TryPeek(out var outer))
+            {
+                Clock[(int)outer] -= clock;
+                Bytes[(int)outer] -= bytes;
+            }
+        }
     }
 
-    /// <summary>The Button, its template and its <c>Parts.Attach</c> timed apart.</summary>
+    private static void Time(Phase phase, Action action) => Time(phase, () => { action(); return 0; });
+
+    /// <summary>The Button, its template and its <c>Parts.Attach</c> timed apart, out of whichever phase they fall in.</summary>
     private class TimedButton : Button
     {
         protected override Size MeasureCore(Size availableSize)
         {
-            var t = Now();
-            var b = GC.GetAllocatedBytesForCurrentThread();
-            ApplyTemplate();
-            Add(Phase.Template, Now() - t, GC.GetAllocatedBytesForCurrentThread() - b);
-            t = Now();
-            b = GC.GetAllocatedBytesForCurrentThread();
-            var size = base.MeasureCore(availableSize);
-            Add(Phase.Measure, Now() - t, GC.GetAllocatedBytesForCurrentThread() - b);
-            return size;
+            Time(Phase.Template, () => ApplyTemplate());
+            return Time(Phase.Measure, () => base.MeasureCore(availableSize));
         }
 
-        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-        {
-            var t = Now();
-            var b = GC.GetAllocatedBytesForCurrentThread();
-            base.OnApplyTemplate(e);
-            Add(Phase.Attach, Now() - t, GC.GetAllocatedBytesForCurrentThread() - b);
-        }
+        protected override void OnApplyTemplate(TemplateAppliedEventArgs e) => Time(Phase.Attach, () => base.OnApplyTemplate(e));
     }
 
     /// <summary>A button whose parts <c>Parts</c> doesn't find: nothing is mirrored onto them.</summary>
     private sealed class UnmirroredButton : TimedButton
     {
-        public UnmirroredButton() =>
-            typeof(Parts).GetField("_names", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(PartSet, Array.Empty<string>());
+        private static readonly FieldInfo Names = typeof(Parts).GetField("_names", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("Parts has no _names field: the no-mirroring ablation needs updating.");
+
+        public UnmirroredButton() => Names.SetValue(PartSet, Array.Empty<string>());
     }
 
     /// <summary>A button whose parts take their states as the template is built, before they are styled.</summary>
+    /// <remarks><c>Button.OnApplyTemplate</c> attaches the parts again and finds every state already set: that second
+    /// pass is this variant's Attach column; the first is in its Template column.</remarks>
     private sealed class PreseededButton : TimedButton
     {
         public static int ThemedAtBuild, Built;
@@ -124,10 +138,28 @@ public class StyleCostProfile(ITestOutputHelper output)
         selector.Split(':').All(c => !(c.StartsWith("kind-") || c.StartsWith("size-") || c.StartsWith("shape-") || c is "icon-shape" or "fixed-shape")
             || c is "kind-primary" or "size-medium" or "shape-default");
 
-    private sealed record Variant(string Name, Func<int, Control> Make, Action<IResourceDictionary, Func<string, ControlTheme>>? Resources = null);
+    /// <summary>Finds a resource from the scene's window: a part theme by its key, or a token.</summary>
+    private delegate object? Find(object key);
 
-    private static Action<IResourceDictionary, Func<string, ControlTheme>> AllParts(Func<string, bool> keep, bool plain = false, bool literal = false) =>
-        (r, theme) => { foreach (var p in PartKeys) r["Button.Styled" + p] = Filter(theme("Button.Styled" + p), keep, plain, literal); };
+    private sealed record Variant(string Name, Func<int, Control> Make, Action<IResourceDictionary, Find>? Resources = null);
+
+    private static ControlTheme Theme(Find find, string key) =>
+        find(key) as ControlTheme ?? throw new InvalidOperationException($"No part theme {key}.");
+
+    private static Action<IResourceDictionary, Find> AllParts(Func<string, bool> keep, bool plain = false, bool literal = false) =>
+        (r, find) =>
+        {
+            var kept = 0;
+            foreach (var p in PartKeys)
+            {
+                var copy = Filter(Theme(find, "Button.Styled" + p), keep, plain, literal ? find : null);
+                kept += copy.Children.Count;
+                r["Button.Styled" + p] = copy;
+            }
+
+            // A selector written otherwise than keep expects would empty every theme, and the variant would measure that instead.
+            if (kept == 0 && keep("^:kind-primary")) throw new InvalidOperationException("The filter kept no style.");
+        };
 
     [AvaloniaFact]
     public void Where_the_time_goes()
@@ -142,22 +174,19 @@ public class StyleCostProfile(ITestOutputHelper output)
             new("Button, timed", timed),
             new("no mirroring", i => new UnmirroredButton { Content = "Button " + i }),
             new("states before styling", i => new PreseededButton { Content = "Button " + i }),
-            new("spinner themes empty", timed, (r, theme) =>
+            new("spinner's theme, container's styles", timed, (r, find) =>
             {
-                r["Button.StyledLoadingSpinnerContainer"] = Filter(theme("Button.StyledLoadingSpinnerContainer"), s => s == "^", plain: false);
+                r["Button.StyledLoadingSpinnerContainer"] = Filter(Theme(find, "Button.StyledLoadingSpinnerContainer"), _ => false, plain: false);
                 r["Button.StyledLoadingSpinner"] = new ControlTheme(typeof(ButtonLoadingSpinner));
             }),
-            new("spinner without its animation", timed, (r, theme) =>
-                r["Button.StyledLoadingSpinner"] = Filter(theme("Button.StyledLoadingSpinner"), s => s != "^:is-loading", plain: false)),
+            new("spinner without its animation", timed, (r, find) =>
+                r["Button.StyledLoadingSpinner"] = Filter(Theme(find, "Button.StyledLoadingSpinner"), s => s != "^:is-loading", plain: false)),
             new("one kind's styles (primary's)", timed, AllParts(s => !s.Contains(":kind-") || s.Contains(":kind-primary"))),
             new("kind's, size's and shape's styles", timed, AllParts(Fits)),
             new("matching styles only", timed, AllParts(Matching.Contains)),
             new("matching styles, plain", timed, AllParts(Matching.Contains, plain: true)),
-            new("all styles, no resource setters", timed, AllParts(_ => true, literal: true)),
-            new("part themes empty", timed, (r, theme) =>
-            {
-                foreach (var p in PartKeys) r["Button.Styled" + p] = new ControlTheme(theme("Button.Styled" + p).TargetType!);
-            }),
+            new("all styles, resources as values", timed, AllParts(_ => true, literal: true)),
+            new("part themes without styles", timed, AllParts(_ => false)),
         };
 
         output.WriteLine($"{Count} elements a run, {Runs} runs, variants interleaved in a new order each run. Per element: thread {Unit} (median, the quartiles' spread, the least), stopwatch µs (median), GC pause µs (median), KB allocated.");
@@ -213,7 +242,7 @@ public class StyleCostProfile(ITestOutputHelper output)
     {
         var panel = new WrapPanel { Orientation = Orientation.Horizontal };
         using var scene = new Scene(panel, width: 1200, height: 4000);
-        variant.Resources?.Invoke(scene.Window.Resources, key => (ControlTheme)scene.Window.FindResource(key)!);
+        variant.Resources?.Invoke(scene.Window.Resources, key => scene.Window.TryFindResource(key, scene.Window.ActualThemeVariant, out var value) ? value : null);
         scene.Pump();
         Array.Clear(Clock);
         Array.Clear(Bytes);
@@ -223,23 +252,26 @@ public class StyleCostProfile(ITestOutputHelper output)
         GC.Collect();
 
         if (noGc && !GC.TryStartNoGCRegion(NoGcBudget)) throw new InvalidOperationException("No no-GC region.");
-        var gcs = GC.CollectionCount(0);
-        var paused = GC.GetTotalPauseDuration();
-        var watch = Stopwatch.StartNew();
-        var made = new Control[Count];
-        Time(Phase.Construct, () => { for (var i = 0; i < Count; i++) made[i] = variant.Make(i); });
-        Time(Phase.Add, () => { foreach (var c in made) panel.Children.Add(c); });
-        Time(Phase.Layout, scene.Window.UpdateLayout);
-        Time(Phase.Render, () => scene.Window.CaptureRenderedFrame());
-        Time(Phase.Jobs, () => Dispatcher.UIThread.RunJobs());
-        var wall = watch.Elapsed.TotalMicroseconds / Count;
-        var pause = (GC.GetTotalPauseDuration() - paused).TotalMicroseconds / Count;
-        Collections += GC.CollectionCount(0) - gcs;
-        if (System.Runtime.GCSettings.LatencyMode == System.Runtime.GCLatencyMode.NoGCRegion) GC.EndNoGCRegion();
-
-        // Layout includes the template and the measure timed inside it; the template includes Parts.Attach.
-        foreach (var p in new[] { Phase.Template, Phase.Measure }) Subtract(Phase.Layout, p);
-        Subtract(Phase.Template, Phase.Attach);
+        double wall, pause;
+        try
+        {
+            var gcs = GC.CollectionCount(0);
+            var paused = GC.GetTotalPauseDuration();
+            var watch = Stopwatch.StartNew();
+            var made = new Control[Count];
+            Time(Phase.Construct, () => { for (var i = 0; i < Count; i++) made[i] = variant.Make(i); });
+            Time(Phase.Add, () => { foreach (var c in made) panel.Children.Add(c); });
+            Time(Phase.Layout, scene.Window.UpdateLayout);
+            Time(Phase.Render, () => scene.Window.CaptureRenderedFrame());
+            Time(Phase.Jobs, () => Dispatcher.UIThread.RunJobs());
+            wall = watch.Elapsed.TotalMicroseconds / Count;
+            pause = (GC.GetTotalPauseDuration() - paused).TotalMicroseconds / Count;
+            Collections += GC.CollectionCount(0) - gcs;
+        }
+        finally
+        {
+            EndNoGcRegion();
+        }
 
         return (Clock.Select(t => t / 1000.0 / Count).ToArray(), Bytes.ToArray(), wall, pause);
     }
@@ -249,42 +281,48 @@ public class StyleCostProfile(ITestOutputHelper output)
     // More than a run allocates (about 52 MB for 300 Buttons), within what the GC allows a no-GC region.
     private const long NoGcBudget = 200L * 1024 * 1024;
 
-    private static void Subtract(Phase from, Phase part)
+    private static void EndNoGcRegion()
     {
-        Clock[(int)from] -= Clock[(int)part];
-        Bytes[(int)from] -= Bytes[(int)part];
-    }
-
-    private static void Time(Phase phase, Action action)
-    {
-        var t = Now();
-        var b = GC.GetAllocatedBytesForCurrentThread();
-        action();
-        Add(phase, Now() - t, GC.GetAllocatedBytesForCurrentThread() - b);
+        if (System.Runtime.GCSettings.LatencyMode == System.Runtime.GCLatencyMode.NoGCRegion) GC.EndNoGCRegion();
     }
 
     /// <summary>A copy of a part theme with only the styles whose selector <paramref name="keep"/> keeps; <paramref name="plain"/>, made always true (but <c>:loaded</c>).</summary>
-    /// <remarks><paramref name="literal"/>: each setter whose value is a resource (a binding) sets the property's default instead.</remarks>
-    private static ControlTheme Filter(ControlTheme theme, Func<string, bool> keep, bool plain, bool literal = false)
+    /// <remarks><paramref name="resources"/>: each setter whose value is a <c>DynamicResource</c> (a binding) sets the
+    /// resource's value as it is now instead, so the part looks the same without the binding.
+    /// A theme this copy can't reproduce (a base theme, animations of its own, a nested style) fails the bench.</remarks>
+    private static ControlTheme Filter(ControlTheme theme, Func<string, bool> keep, bool plain, Find? resources = null)
     {
+        if (theme.BasedOn is not null || theme.Animations.Count > 0)
+            throw new InvalidOperationException($"The {theme.TargetType?.Name} part theme has a base or animations of its own: Filter would drop them.");
         var copy = new ControlTheme(theme.TargetType!);
-        foreach (var setter in theme.Setters) copy.Setters.Add(setter);
+        foreach (var setter in theme.Setters) copy.Setters.Add(Value(setter, theme.TargetType!, resources));
         foreach (var child in theme.Children)
         {
-            if (child is not Style s || !keep(s.Selector!.ToString())) continue;
+            if (child is not Style s) throw new InvalidOperationException($"A part theme holds a {child.GetType().Name}: Filter would drop it.");
+            if (s.Children.Count > 0) throw new InvalidOperationException($"{s.Selector} has nested styles: Filter would drop them.");
+            if (!keep(s.Selector!.ToString())) continue;
             var c = plain && s.Selector.ToString() != "^:loaded" ? new Style(x => x.Nesting()) : new Style { Selector = s.Selector };
-            foreach (var setter in s.Setters)
-            {
-                c.Setters.Add(literal && setter is Setter { Value: Avalonia.Data.BindingBase, Property: { } p }
-                    ? new Setter(p, ((IStyledPropertyMetadata)p.GetMetadata(theme.TargetType!)).DefaultValue)
-                    : setter);
-            }
-
+            foreach (var setter in s.Setters) c.Setters.Add(Value(setter, theme.TargetType!, resources));
             foreach (var animation in s.Animations) c.Animations.Add(animation);
             copy.Children.Add(c);
         }
 
         return copy;
+    }
+
+    /// <summary>The setter; or, given <paramref name="resources"/> and a <c>DynamicResource</c> value, a setter of the resource's value now.</summary>
+    private static SetterBase Value(SetterBase setter, Type target, Find? resources)
+    {
+        if (resources is null || setter is not Setter { Value: Avalonia.Data.BindingBase binding, Property: { } property }) return setter;
+        if (binding is not Avalonia.Markup.Xaml.MarkupExtensions.DynamicResourceExtension { ResourceKey: { } key })
+            throw new InvalidOperationException($"{target.Name}.{property.Name} is bound by a {binding.GetType().Name}, not a DynamicResource.");
+        var value = resources(key) ?? throw new InvalidOperationException($"No resource {key}.");
+        // As the resource binding does: a colour for a brush property becomes a brush.
+        if (value is Avalonia.Media.Color colour && typeof(Avalonia.Media.IBrush).IsAssignableFrom(property.PropertyType))
+            value = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(colour);
+        if (!property.PropertyType.IsInstanceOfType(value))
+            throw new InvalidOperationException($"{key} is a {value.GetType().Name}, which {target.Name}.{property.Name} can't take.");
+        return new Setter(property, value);
     }
 
     /// <summary>Whether BaseButton has its theme, and how many class listeners, when <c>Parts.Attach</c> runs.</summary>
@@ -331,14 +369,26 @@ public class StyleCostProfile(ITestOutputHelper output)
         for (var run = 0; run < Runs; run++)
         {
             var owners = Enumerable.Range(0, Count).Select(_ => new Button()).ToArray();
-            var b = GC.GetAllocatedBytesForCurrentThread();
-            var t = Now();
-            foreach (var owner in owners) template.Build(owner);
-            clocks.Add((Now() - t) / 1000.0 / Count);
-            bytes = GC.GetAllocatedBytesForCurrentThread() - b;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            // As the profile's second table: no collection inside the timed loop.
+            if (!GC.TryStartNoGCRegion(NoGcBudget)) throw new InvalidOperationException("No no-GC region.");
+            try
+            {
+                var b = GC.GetAllocatedBytesForCurrentThread();
+                var t = Now();
+                foreach (var owner in owners) template.Build(owner);
+                clocks.Add((Now() - t) / 1000.0 / Count);
+                bytes = GC.GetAllocatedBytesForCurrentThread() - b;
+            }
+            finally
+            {
+                EndNoGcRegion();
+            }
         }
 
-        output.WriteLine($"Template Build alone: {Median(clocks):F1} {Unit}, {bytes / 1024.0 / Count:F1} KB per Button");
+        output.WriteLine($"Template Build alone, no collection: {Median(clocks):F1} {Unit}, {bytes / 1024.0 / Count:F1} KB per Button");
     }
 
     private static double Median(IEnumerable<double> values)

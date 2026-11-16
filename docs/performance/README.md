@@ -65,25 +65,28 @@ run. Each ablation switches one thing off for the test only, through the window'
 subclass, so the difference is that thing's cost. Measured 2026-11-16 on one Windows desktop, with two
 other agents building and testing on it; a run's quartiles spread by 20 to 60 kcycles without the
 GC, 70 to 300 with it, and the Button's median held within 3 % across runs (four with the GC, two
-without).
+without). Two reruns at review, under more load, put the Button at 1,198 and 1,322 kcycles without
+the GC (+2 % and +13 %, the floor up as much in the second) and at 2,124 and 2,073 with it; each
+row's share of the Button held. Rows marked † changed at review and are from the second rerun: read
+them as a share of its Button, 1,322.
 
 | A default Button, per element | kcycles, no GC | KB |
 |---|---|---|
 | TextBlock (the floor) | 297 | 9 |
 | **Button** (with the GC: 2,136 kcycles, about 600 µs, of which 206 µs GC pauses) | **1,170** | **174** |
-| Its template's `Build` alone, unstyled | 49 | 28 |
-| Its parts' six themes: all of them made empty | −530 | −95 |
+| Its template's `Build` alone, unstyled † | 45 | 28 |
+| Its parts' six themes without their 121 styles, their own setters kept † | −563 (43 %) | −94 (54 %) |
 | The 114 state styles a default Button doesn't match (of 121) | −370 | −78 |
 | The other six kinds' styles alone | −208 | −50 |
 | Those of other kinds, sizes and shapes | −269 | −60 |
-| Every `DynamicResource` setter made a plain value (each is a binding, made active or not) | −142 | −30 |
-| The spinner's and its container's themes | −103 | −18 |
-| The spinner's turning `Animation`, alone | −45 | −7 |
+| Every `DynamicResource` setter given its resource's value instead: the bindings alone, the look kept † | −104 (8 %) | −27 (15 %) |
+| The spinner's theme, and its container's five state styles | −103 | −18 |
+| The spinner's turning `Animation`, alone | −45, within the spread (−19 in the second rerun) | −7 |
 | The pseudoclasses' mirroring (`Parts.Attach` is 100 kcycles, the matched styles taking effect) | −239, with what the matched styles draw | −9 |
-| Mirroring before the parts are styled, in place of after | −30, within the spread | +0.5 |
+| Mirroring before the parts are styled, in place of after (the parts are then attached twice; the second pass, 8 kcycles, is counted) | −30, within the spread | +0.5 |
 
-**Where it goes.** About half of a Button's work and more than half its allocation is its parts'
-themes, and most of that is state styles it doesn't match: Avalonia instances every style of a
+**Where it goes.** Nearly half of a Button's work and more than half its allocation is its parts'
+themes' styles, and most of that is state styles it doesn't match: Avalonia instances every style of a
 `ControlTheme` on every element that uses it, at about 3 kcycles and 0.7 KB each (spike 2's
 finding). The allocation then costs again in the GC: in a page of 300, its pauses are a third of the
 time, and they fall in steps as the allocation crosses the GC's budget. The mirrored pseudoclasses
@@ -104,7 +107,8 @@ gap to the floor is the template's ten elements, their measure, and drawing the 
   the cascade.
 
 Smaller ones within the ADR were left: comma selectors for the styles that set the same values
-(5 fewer of 121), and the spinner's animation (4 %, near the spread), whose look lives in its theme.
+(5 fewer of 121), and the spinner's animation (2 to 4 %, within the spread), whose look lives in its
+theme.
 
 ## Breakage runs
 

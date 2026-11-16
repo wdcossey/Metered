@@ -19,8 +19,9 @@ Button and ButtonGroup, to settle the approach before the inventory:
 ## Next, before more controls
 
 1. **Cost: decide whether to reduce it** (#10). Profiled 2026-11-16 (`docs/performance/README.md`):
-   about 0.6 ms and 174 KB to open a Button headless, half of it the part themes' state styles, as
-   Avalonia instances every style of a `ControlTheme` on every element. The mirroring isn't the cost.
+   about 0.6 ms and 174 KB to open a Button headless, nearly half of it its parts' themes' styles,
+   most of that state styles it doesn't match (31 % of the work, 45 % of the allocation), as Avalonia
+   instances every style of a `ControlTheme` on every element. The mirroring itself is 9 %.
    No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
    allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
    a phone.
