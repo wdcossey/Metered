@@ -12,8 +12,12 @@
     <PackageReference Include="Avalonia.Desktop" />
     <!-- Underneath BaseTheme, for the Window, ScrollViewer and TextBlock it doesn't theme yet. -->
     <PackageReference Include="Avalonia.Themes.Simple" />
-    <!-- Uber Move is proprietary: Base Web's stack falls back, to Inter, as in the tests. -->
-    <PackageReference Include="Avalonia.Fonts.Inter" />
+  </ItemGroup>
+
+  <!-- Uber Move is proprietary: the OFL substitutes from fonts/ (docs/decisions/0003-font.md), as in the
+       tests, registered in Program.cs. -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

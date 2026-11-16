@@ -22,13 +22,19 @@ Button and ButtonGroup, to settle the approach before the inventory:
    the generated state styles are the suspects.
 2. **A theme builder.** Base Web's `createTheme` / `createDarkTheme`, and a subtree theme: spike 1
    says it must write every derived key, not only the foundation.
-3. **A font.** An OFL substitute for Uber Move, chosen by metrics against baseweb.design, which
-   serves Uber Move.
+3. **Ship the fonts** (#9). A package (the theme, or a `Metered.Fonts`) carrying Instrument Sans and
+   Figtree and the family mapping, licensed OFL-1.1 beside MIT. Today only the tests and the sample
+   embed them (ADR 0003).
 4. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
    exists (`samples/Metered.Sample.Desktop`, one page); still to come: a page per control, an
-   Android head, and a scripted real-window run.
+   Android head, and a scripted real-window run. The new fonts haven't been seen in a real window (#5).
 
-Done since the pilot (2026-11-16), borrowed from Cornflower and Avonic:
+Done since the pilot (2026-11-16):
+
+- [x] A font: Instrument Sans for UberMoveText, Figtree for UberMove, chosen by measurement against
+      baseweb.design (ADR 0003, `tools/reference/fonts.js`)
+
+Borrowed from Cornflower and Avonic (2026-11-16):
 
 - [x] CI: build, test, the Node tools' syntax, and both `--check` runs (`.github/workflows/ci.yml`)
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)

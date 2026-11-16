@@ -111,7 +111,9 @@ public class ButtonPartsTests
         Assert.Equal(button.Bounds.Width - 16 - 20, e.X, 3);
         var l = label.TranslatePoint(default, button)!.Value;
         var room = button.Bounds.Width - 16 - 16 - 20 - Oracle.Button.Enhancers.EndMarginLeft;
-        Assert.Equal(16 + (room - label.Bounds.Width) / 2, l.X, 1);
+        // Centred, as CSS centres it, to Avalonia's layout rounding: at scaling 1 a half-pixel
+        // offset (an odd room left by the label's width) lands on a whole pixel.
+        Assert.InRange(l.X, 16 + (room - label.Bounds.Width) / 2 - 0.5, 16 + (room - label.Bounds.Width) / 2 + 0.5);
     }
 
     [AvaloniaTheory]
