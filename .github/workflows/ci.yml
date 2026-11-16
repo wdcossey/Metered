@@ -59,9 +59,6 @@ jobs:
       - name: The breakage tool kills its strays, never itself (Linux)
         run: node tools/breakage/strays.test.js
 
-      - name: TEMPORARY prove the stray test can fail
-        run: node tools/breakage/prove-strays.js
-
       - name: Tokens and part themes are up to date
         run: node tools/tokens/gen.js --check
 
