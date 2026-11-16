@@ -55,7 +55,8 @@ replaces their tokens. Clearing `ThemeProvider.Theme` gives the subtree back the
 ## What doesn't change
 
 - **A Button's lengths.** Its part themes hold their lengths as numbers (ADR 0001), so a `sizing`
-  or `typography` override doesn't resize it. Its box-shadows do follow `sizing.scale0`.
+  or `typography` override doesn't resize it. Its box-shadows do follow `sizing.scale0`, and its
+  `ArtworkSize` (`sizing.scale500` to `scale800`) and tap band (`sizing.scale1200`) follow theirs.
 - **A foundation colour with an alpha** isn't a hex colour to Base Web: the two tokens it takes at
   an alpha (`borderTransparent`, `borderInverseTransparent`) fall back to the light theme's default,
   and in the dark theme Base Web gives no colour at all, so `CreateDarkTheme` throws.

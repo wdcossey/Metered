@@ -135,6 +135,47 @@ public class ThemeProviderTests
     }
 
     [AvaloniaFact]
+    public void The_theme_outlasts_the_elements_resources_being_replaced()
+    {
+        // As XAML does: the attribute first, then a <Border.Resources><ResourceDictionary> property element.
+        var (outside, inside, subtree, scene) = Open(s =>
+        {
+            ThemeProvider.SetTheme(s, Built("lightFoundation"));
+            s.Resources = new ResourceDictionary();
+        });
+        using (scene)
+        {
+            Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(inside));
+            Assert.Equal(Expected("light", "colors.buttonPrimaryFill"), Fill(outside));
+
+            subtree.Resources = new ResourceDictionary();
+            scene.Pump();
+            Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(inside));
+            Assert.Single(subtree.Resources.MergedDictionaries);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_buttons_artwork_size_follows_a_theme_given_after_it_is_attached()
+    {
+        // button/styled-components.js, getArtworkSize: a small button's artwork is the theme's sizing.scale600.
+        var small = Oracle.Themes["lightOverrides"].Changed.Single(t => t.Key == "sizing.scale600").Value.GetDouble();
+        var (outside, inside, subtree, scene) = Open(_ => { });
+        outside.Size = inside.Size = Metered.Controls.ButtonSize.Small;
+        using (scene)
+        {
+            scene.Pump();
+            var before = inside.ArtworkSize;
+            Assert.NotEqual(small, before);
+
+            ThemeProvider.SetTheme(subtree, Built("lightOverrides"));
+            scene.Pump();
+            Assert.Equal(small, inside.ArtworkSize);
+            Assert.Equal(before, outside.ArtworkSize);
+        }
+    }
+
+    [AvaloniaFact]
     public void App_wide_on_the_window()
     {
         var button = new Button { Content = "Button", Kind = Metered.Controls.ButtonKind.Secondary };

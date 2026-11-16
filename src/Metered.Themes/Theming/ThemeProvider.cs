@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace Metered.Themes;
 
@@ -80,8 +81,9 @@ public sealed class ThemeProvider
     {
         if (element.GetValue(ProvidedProperty) is { } old)
         {
-            element.Resources.MergedDictionaries.Remove(old);
+            element.ResourcesChanged -= KeepProvided;
             element.ClearValue(ProvidedProperty);
+            element.Resources.MergedDictionaries.Remove(old);
         }
 
         var theme = GetTheme(element);
@@ -94,5 +96,32 @@ public sealed class ThemeProvider
         var provided = CreateResources(theme, dark);
         element.Resources.MergedDictionaries.Add(provided);
         element.SetValue(ProvidedProperty, provided);
+        element.ResourcesChanged += KeepProvided;
+    }
+
+    /// <summary>
+    /// Gives the theme again when the element's <c>Resources</c> is replaced by a new dictionary, as XAML does
+    /// when a <c>&lt;Border.Resources&gt;&lt;ResourceDictionary&gt;</c> property element follows the attribute.
+    /// Avalonia raises <c>ResourcesChanged</c> for a replacement before the new dictionary is in place, so
+    /// the check runs again once the dispatcher is free.
+    /// </summary>
+    private static void KeepProvided(object? sender, ResourcesChangedEventArgs e)
+    {
+        if (sender is StyledElement element)
+        {
+            Restore(element);
+            Dispatcher.UIThread.Post(() => Restore(element));
+        }
+    }
+
+    /// <summary>A new copy, if the element's dictionary lost the theme: the one given before belongs to the old one.</summary>
+    private static void Restore(StyledElement element)
+    {
+        if (element.GetValue(ProvidedProperty) is { } provided && !element.Resources.MergedDictionaries.Contains(provided))
+        {
+            var again = CreateResources(GetTheme(element), GetDarkTheme(element));
+            element.SetValue(ProvidedProperty, again);
+            element.Resources.MergedDictionaries.Add(again);
+        }
     }
 }

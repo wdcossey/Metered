@@ -6,8 +6,9 @@ namespace Metered.Themes;
 // control's own StyledElement.Theme property, so `Theme.CreateTheme(...)` wouldn't compile there (ADR 0002).
 public partial class BaseTheme
 {
-    private static readonly Lazy<Theme> Light = new(() => CreateLightTheme());
-    private static readonly Lazy<Theme> Dark = new(() => CreateDarkTheme());
+    // PublicationOnly: a build that throws (the defaults loaded off the UI thread) isn't kept.
+    private static readonly Lazy<Theme> Light = new(() => CreateLightTheme(), LazyThreadSafetyMode.PublicationOnly);
+    private static readonly Lazy<Theme> Dark = new(() => CreateDarkTheme(), LazyThreadSafetyMode.PublicationOnly);
 
     /// <summary>Base Web's <c>LightTheme</c>: what <see cref="BaseTheme"/> gives in the light variant, as a <see cref="Theme"/>.</summary>
     public static Theme LightTheme => Light.Value;

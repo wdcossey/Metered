@@ -12,10 +12,12 @@ namespace Metered.Themes;
 /// </summary>
 internal static class ThemeDefaults
 {
-    private static readonly Uri BaseUri = new("avares://Metered.Themes/");
+    private static readonly Uri BaseUri = BaseTheme.BaseUri;
 
+    // PublicationOnly: a load that throws (off the UI thread, where a brush can't be made) isn't kept,
+    // so a later call on the UI thread loads again.
     private static readonly Lazy<(IReadOnlyDictionary<string, object> Light, IReadOnlyDictionary<string, object> Dark)> Loaded =
-        new(Load, LazyThreadSafetyMode.ExecutionAndPublication);
+        new(Load, LazyThreadSafetyMode.PublicationOnly);
 
     public static IReadOnlyDictionary<string, object> For(ThemeVariant variant) =>
         variant == ThemeVariant.Dark ? Loaded.Value.Dark : Loaded.Value.Light;
@@ -28,8 +30,6 @@ internal static class ThemeDefaults
         {
             var include = new ResourceInclude(BaseUri) { Source = new Uri(BaseUri, path) };
             var dictionary = (ResourceDictionary)include.Loaded;
-            Read(dictionary, light);
-            Read(dictionary, dark);
             foreach (var (variant, provider) in dictionary.ThemeDictionaries)
             {
                 var target = variant == ThemeVariant.Light ? light
@@ -37,6 +37,10 @@ internal static class ThemeDefaults
                     : throw new InvalidOperationException($"{path}: a theme dictionary for {variant}, which Base Web hasn't");
                 Read((ResourceDictionary)provider, target);
             }
+
+            // After the theme dictionaries: Avalonia finds a dictionary's own key before its theme dictionaries'.
+            Read(dictionary, light);
+            Read(dictionary, dark);
         }
 
         return (light, dark);

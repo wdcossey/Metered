@@ -74,17 +74,10 @@ public class ThemeBuilderTests
             Check(key, BoxShadows.Parse(want));
         }
 
+        // A leaf of a group Base Web left unchanged isn't in Changed, so it is the theme's own.
         foreach (var key in theme.Tokens.Keys.Where(k => !c.Colours.ContainsKey(k) && !c.BoxShadows.ContainsKey(k)))
         {
-            var group = key[..key.IndexOf('.')];
-            if (c.Unchanged.Contains(group))
-            {
-                Check(key, defaults[key]);
-            }
-            else
-            {
-                Check(key, changed.TryGetValue(key, out var v) ? v : defaults[key]);
-            }
+            Check(key, changed.TryGetValue(key, out var v) ? v : defaults[key]);
         }
 
         // Every leaf Base Web changed is a token here.
@@ -105,8 +98,11 @@ public class ThemeBuilderTests
     }
 
     [AvaloniaFact]
-    public void A_theme_has_every_token_of_the_generated_dictionaries_and_no_other()
+    public void The_derivation_adds_no_token_the_generated_dictionaries_lack()
     {
+        // The default themes are the dictionaries' tokens with the derivation's rules applied: a rule or a
+        // shadow keyed outside the dictionaries would add a key here. (Base Web's colours are each checked
+        // in Every_token_is_Base_Webs.)
         Assert.Equal(ThemeDefaults.For(ThemeVariant.Light).Keys.Order(), BaseTheme.LightTheme.Tokens.Keys.Order());
         Assert.Equal(ThemeDefaults.For(ThemeVariant.Dark).Keys.Order(), BaseTheme.DarkTheme.Tokens.Keys.Order());
         Assert.Equal(ThemeVariant.Light, BaseTheme.CreateTheme().Variant);
@@ -134,6 +130,16 @@ public class ThemeBuilderTests
         Assert.Equal(20.0, theme["sizing.scale600"]);
         // A key Base Web's theme hasn't is kept, as deepMerge keeps it.
         Assert.Equal(accent, theme["colors.myBrand"]);
+
+        // Any number for a length; any easing for a curve, as Base Web's is any CSS timing function.
+        var curve = new Avalonia.Animation.Easings.CubicEaseOut();
+        var other = BaseTheme.CreateTheme(new Dictionary<string, object>
+        {
+            ["sizing.scale600"] = (short)20,
+            ["animation.easeOutCurve"] = curve,
+        });
+        Assert.Equal(20.0, other["sizing.scale600"]);
+        Assert.Same(curve, other["animation.easeOutCurve"]);
 
         Assert.Throws<ArgumentException>(() => BaseTheme.CreateTheme(new Dictionary<string, object> { ["sizing.scale600"] = "20px" }));
         Assert.Throws<ArgumentException>(() => BaseTheme.CreateTheme(new Dictionary<string, object> { ["colors.accent"] = 1.0 }));

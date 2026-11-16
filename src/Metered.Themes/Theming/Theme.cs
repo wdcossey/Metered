@@ -191,7 +191,10 @@ public sealed class Theme
     private static double Length(ShadowLength length, Dictionary<string, object> tokens) =>
         length.Sizing is { } key ? (double)tokens[key] : length.Pixels;
 
-    /// <summary>An override as its token holds it: a brush's colour, a number as a double; else of the token's own type.</summary>
+    /// <summary>
+    /// An override as its token holds it: a brush's colour, a number as a double, any easing for a curve
+    /// (Base Web's is any CSS timing function); else of the token's own type.
+    /// </summary>
     private static object Normalise(string key, object value, IReadOnlyDictionary<string, object> defaults)
     {
         ArgumentNullException.ThrowIfNull(value, key);
@@ -207,9 +210,14 @@ public sealed class Theme
             return value;
         }
 
-        if (token is double && value is int or long or float or decimal)
+        if (token is double && value is sbyte or byte or short or ushort or int or uint or long or ulong or float or decimal)
         {
             return Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (token is Avalonia.Animation.Easings.Easing && value is Avalonia.Animation.Easings.Easing)
+        {
+            return value;
         }
 
         return token.GetType().IsInstanceOfType(value)

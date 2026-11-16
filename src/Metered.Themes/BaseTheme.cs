@@ -10,7 +10,7 @@ namespace Metered.Themes;
 /// </summary>
 public partial class BaseTheme : Styles
 {
-    private static readonly Uri BaseUri = new("avares://Metered.Themes/");
+    internal static readonly Uri BaseUri = new("avares://Metered.Themes/");
 
     public BaseTheme(IServiceProvider? _ = null)
     {

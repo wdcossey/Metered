@@ -103,8 +103,10 @@ Read in `node_modules/baseui/themes/` and `styles/theme-provider.js`:
 ## Consequences
 
 - A theme's lengths reach only what reads them by `DynamicResource`. The Button's part themes hold
-  their lengths as numbers (ADR 0001), so `sizing` or `typography` overrides don't resize a Button;
-  the box-shadows' `sizing.scale0` is the exception, derived as above.
+  their lengths as numbers (ADR 0001), so `sizing` or `typography` overrides don't resize a Button.
+  The exceptions: the box-shadows' `sizing.scale0`, derived as above, and what the Button reads in
+  code, its `ArtworkSize` (`sizing.scale500` to `scale800`) and its tap band (`sizing.scale1200`),
+  which it reads again when its resources change.
 - gen.js leaves out an outline Button's `::after` overlay when its colour is the string
   `transparent`. A built theme can't tell an override of `buttonOutlineHoverOverlay` or
   `buttonOutlineActiveOverlay` to `transparent` from any other fully transparent colour, so it keeps
