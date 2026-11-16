@@ -7,6 +7,11 @@
 This file states **only what exists**. Plans live in `docs/ROADMAP.md`; decisions in
 `docs/decisions/`; spike results in `docs/spikes/`.
 
+**How work runs: `docs/PROCESS.md`.** Issues are the task list (`self-drive`, `hands-on`, `blocked`;
+`P0` to `P3`); every change lands through a pull request from a worktree in `../Metered-wt/`; Claude
+merges its own once the gate in PROCESS §7 holds. Agents in a batch get `docs/agent-brief.md` and run on
+Opus. What always needs the developer first is PROCESS §2.
+
 ## Persona
 
 Principal engineer on an AvaloniaUI control library. You care about fidelity to the reference,
@@ -19,7 +24,7 @@ every commit.
 | Path | What it is |
 |---|---|
 | `Metered.sln` | The solution. Libraries `net8.0`, tests `net10.0`; `global.json` pins SDK 10; Avalonia 12.1.4, xunit v3 (`Directory.Packages.props`) |
-| `.github/workflows/ci.yml` | CI on push to `main` and on pull requests: `build-test` (Release build and tests) and `generated` (the Node tools' syntax, and both `--check` runs) |
+| `.github/` | `pull_request_template.md` (the sections PROCESS §5 relies on). `workflows/ci.yml`: CI on push to `main` and on pull requests: `build-test` (Release build and tests) and `generated` (the Node tools' syntax, and both `--check` runs) |
 | `Directory.Build.targets` | Auto-discovery: a project that sets `MeteredDiscoverXaml` gets `XamlManifest.Paths` of its `MeteredDiscoveredXaml` globs (from Cornflower) |
 | `package.json` | `baseui` 18.2.0, React 18.3.1, `styletron-react`, `playwright-core`: reference material for `tools/`, never shipped |
 | `src/Metered.Controls/` | `Overrides/`: `Override` and `OverrideCollection` (Base Web's `overrides`), and `Parts`, a control's hold on its named template parts: mirrors state pseudoclasses onto them and gives each its theme `{Component}.Styled{Part}` with the control's override merged over it as a copy (ADR 0001). `Controls/Button/`: `Button` (an Avalonia `Button`: Kind, Size, Shape, WidthType, MinHitArea, IsLoading, IsSelected, BackgroundSafe, StartEnhancer, EndEnhancer, ArtworkSize, Overrides; its tap band in `ArrangeCore`; `:loaded` for the transition), its enums, `ButtonLoadingSpinner` (the ring). `Controls/ButtonGroup/`: `ButtonGroup` (an `ItemsControl` of Buttons: Mode, Selected, Kind, Size, Shape, PaddingType, Wrap, Overrides, Click) |
@@ -29,7 +34,7 @@ every commit.
 | `samples/Metered.Sample.Desktop/` | The desktop sample (`net10.0`): one scrolling page of the pilot's controls in a 390 × 844 window, `SimpleTheme` under `BaseTheme`, Instrument Sans and Figtree from `fonts/` (mapped from Base Web's UberMoveText and UberMove), a Light/Dark switch, a subtree with its own built theme. `dotnet run --project samples/Metered.Sample.Desktop` |
 | `tests/Metered.Tests/` | Avalonia.Headless with Skia and xunit v3, Instrument Sans and Figtree as the fonts (Base Web's UberMoveText and UberMove, mapped in `Harness/TestApp`). `Harness/`: `Scene` (a 390 × 844 window with `BaseTheme`, real mouse, keys and frames), `Frames`, `Oracle` (the embedded `Reference/*.oracle.json`). `Controls/`: Button colours (308 cases), layout (40), parts, spinner (112), frames and gallery (`METERED_FRAMES`), ButtonGroup. `Overrides/`. `Discovery/` (the XAML manifest, on a fixture). `Repository/` (`LiteralColourGuard`, rule 5). `Performance/` (`StyleBudgetTests` over `StyleTrace` and `StyleCensus`, rule 6). `Theming/` (`ThemeBuilderTests`: every token of each `Reference/theme.oracle.json` case; `ThemeProviderTests`: subtree, variant, window-wide). `Typography/` (`FontSubstituteTests`). `Spikes/` (`METERED_BENCH` for the cost: `StyleCostSpike`, and `StyleCostProfile`, its profile by phase and ablation; run them alone with `--filter FullyQualifiedName~StyleCost`: the style trace refuses to run beside them) |
 | `tools/` | `tokens/gen.js`, `tokens/button.js`, `tokens/button-shadows.js` and `tokens/theme.js` (the generated files; `theme.js` reads the derivation by probing Base Web), `breakage/run.js` (breaks a behaviour in a fresh clone and checks a test goes red), `reference/` (Base Web's style functions as the oracle, the cases, `createTheme` as the oracle in `themes.js`, CSS conversion, the cascade measured on baseweb.design, and `fonts.js`, the font measurement, which writes `fonts.g.json`). See `tools/README.md` |
-| `docs/` | `ROADMAP.md`, `decisions/0001` (parts, states and overrides), `0002` (the theme builder), `0003` (the font), `theming.md`, `spikes/README.md`, `performance/README.md` (the style budget, breakage runs), `controls/Button/`, `controls/ButtonGroup/` |
+| `docs/` | `PROCESS.md` (how work runs), `agent-brief.md` (what each agent in a batch is told), `ROADMAP.md`, `decisions/0001` (parts, states and overrides), `0002` (the theme builder), `0003` (the font), `theming.md`, `spikes/README.md`, `performance/README.md` (the style budget, breakage runs), `controls/Button/`, `controls/ButtonGroup/` |
 
 ## Build
 
