@@ -18,8 +18,8 @@ namespace Metered.Tests.Performance;
 /// </summary>
 public class StyleCostBenchmark
 {
-    /// <summary>Names the file for the row; any other value (the spikes' <c>1</c>) leaves this alone.</summary>
-    internal const string Variable = "METERED_BENCH";
+    /// <summary>Names the file for the row; a value that isn't a path (the spikes' <c>1</c>) leaves this alone.</summary>
+    internal const string Variable = StyleTrace.BenchVariable;
 
     private const int Elements = 5000;
     private const int Buttons = 500;
@@ -53,13 +53,19 @@ public class StyleCostBenchmark
         return stopwatch.Elapsed.TotalMilliseconds;
     }
 
+    /// <summary>A file the row could go to, rather than a flag such as the spikes' <c>1</c>.</summary>
+    internal static bool LooksLikeAPath(string value) =>
+        value.Contains('/') || value.Contains('\\') || value.Contains('.');
+
     private static double Median(List<double> values) => values.Order().ElementAt(values.Count / 2);
 
     [AvaloniaFact]
     public void Attach_Time()
     {
-        if (Environment.GetEnvironmentVariable(Variable) is not { } file || !Path.IsPathFullyQualified(file))
+        if (Environment.GetEnvironmentVariable(Variable) is not { } file || !LooksLikeAPath(file))
             return;
+        if (!Path.IsPathFullyQualified(file))
+            throw new ArgumentException($"{Variable} must be an absolute file for the row; it is '{file}'.");
 
 #if DEBUG
         Assert.Fail("Run this in Release: a Debug timing in the table would mean nothing.");

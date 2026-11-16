@@ -133,6 +133,8 @@ public partial class SampleShell : UserControl
         Host.Child = page;
         PageTitle.Text = title;
         _opening = new Opening(page, title, started);
+        if (_top is null)
+            _opening.ShownOutOfWindow();
         AwaitFirstFrame();
     }
 
@@ -155,6 +157,9 @@ public partial class SampleShell : UserControl
         if (_opening is not { } opening || _top is not { } top)
             return;
 
+        // A page shown before its shell was in a window (a phone's start page) is timed as if shown now: the time it took
+        // to make, and from here to its first frame, not the platform's own start between.
+        opening.InWindow();
 #if DEBUG
         // Only now, in a window, so that a shell never shown has no listener; layout and render can't come before.
         opening.Measure();
@@ -266,11 +271,27 @@ public partial class SampleShell : UserControl
     /// <summary>A page being opened: what it is, what it's called, when it began, and in Debug its cost.</summary>
     private sealed class Opening(Control page, string title, long started) : IDisposable
     {
+        /// <summary>How long the page took to make, if it was shown before its shell was in a window; else null.</summary>
+        private long? _making;
+
         public Control Page { get; } = page;
 
         public string Title { get; } = title;
 
-        public long Started { get; } = started;
+        /// <summary>When the page began, as the ready line counts it.</summary>
+        public long Started { get; private set; } = started;
+
+        /// <summary>The page is shown while its shell is in no window: remembers how long it took to make.</summary>
+        public void ShownOutOfWindow() => _making = Stopwatch.GetTimestamp() - Started;
+
+        /// <summary>The shell is in a window: a page shown before is counted from now, plus the time it took to make.</summary>
+        public void InWindow()
+        {
+            if (_making is not { } making)
+                return;
+            Started = Stopwatch.GetTimestamp() - making;
+            _making = null;
+        }
 
 #if DEBUG
         /// <summary>Avalonia's layout and render times for this page; a process-wide listener, so disposed with it.</summary>

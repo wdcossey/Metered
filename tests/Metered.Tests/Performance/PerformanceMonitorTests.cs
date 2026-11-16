@@ -15,6 +15,17 @@ namespace Metered.Tests.Performance;
 /// </summary>
 public class PerformanceMonitorTests
 {
+    // A file names where the row goes; the spikes' flag leaves the benchmark alone; a relative file fails it.
+    [Theory]
+    [InlineData("1", false)]
+    [InlineData("row.md", true)]
+    [InlineData("/home/me/row.md", true)]
+    [InlineData(@"C:\rows\row", true)]
+    public void The_Benchmark_Takes_A_File_And_Leaves_A_Flag(string value, bool file)
+    {
+        Assert.Equal(file, StyleCostBenchmark.LooksLikeAPath(value));
+    }
+
     [Fact]
     public void The_Line_Has_Each_Number()
     {
@@ -117,6 +128,21 @@ public class PerformanceMonitorTests
         var line = monitor.Read("a page", page, TimeSpan.Zero);
 
         Assert.Matches("layout 300[0-9][0-9][.][0-9], render 500[0-9][0-9][.][0-9]$", line);
+    }
+
+    // Only the instruments it names: another of Avalonia's, if one were listened to, would not be counted as layout.
+    [AvaloniaFact]
+    public void An_Instrument_It_Doesnt_Name_Is_Left_Out()
+    {
+        using var monitor = new PerformanceMonitor();
+        var page = new Panel();
+        using var scene = new Scene(page);
+
+        monitor.Begin();
+        monitor.Record("avalonia.ui.input.time", 90000);
+        var line = monitor.Read("a page", page, TimeSpan.Zero);
+
+        Assert.DoesNotContain("9000", line, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]

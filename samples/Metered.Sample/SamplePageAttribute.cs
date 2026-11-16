@@ -15,9 +15,12 @@ public sealed class SamplePageAttribute(string title) : Attribute
 
     /// <summary>
     /// Where the page goes in the catalogue: the control's issue number, so parallel PRs don't have to coordinate (the
-    /// pilot's pages, which had none, take 1 to 3). A page that omits it sorts last rather than jumping to the top.
+    /// pilot's two pages, which had none, take 1 and 2). A page that omits it sorts last rather than jumping to the top.
     /// </summary>
     public int Order { get; set; } = int.MaxValue;
+
+    /// <summary>The order of a page that isn't a control's, such as the theme's: after every control's, before an unordered page.</summary>
+    public const int AfterTheControls = int.MaxValue - 1;
 }
 
 /// <summary>One page in the catalogue: its title, its type, and how to make a new one.</summary>
@@ -52,11 +55,6 @@ public static class SamplePageCatalog
 
         return pages.Select(found => new SamplePageEntry(found.Page.Title, found.Type, found.Create)).ToArray();
     }
-
-    /// <summary>The title <paramref name="type"/>'s <see cref="SamplePageAttribute"/> gives it.</summary>
-    public static string TitleOf(Type type) =>
-        type.GetCustomAttribute<SamplePageAttribute>()?.Title
-        ?? throw new InvalidOperationException($"{type.FullName} has no [SamplePage].");
 
     // Checked when the catalogue is built, so a page that can't be shown fails at start, not when it's opened.
     private static Func<Control> Maker(Type type)

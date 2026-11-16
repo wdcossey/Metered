@@ -201,6 +201,23 @@ public class PageTimingTests
         Assert.True(OpenMs(line) >= SlowMs - 10, line);
     }
 
+    // On a phone the start page is opened before Avalonia has made the view; the platform's start between isn't the page's.
+    [AvaloniaFact]
+    public void A_Page_Opened_Before_The_Shell_Is_In_A_Window_Leaves_Out_The_Wait()
+    {
+        const int WaitMs = 1000;
+        var lines = new List<string>();
+        var shell = ShellOf(lines);
+        shell.Open("slow page");
+        Thread.Sleep(WaitMs);
+
+        using var scene = new Scene(shell);
+        Draw();
+
+        var line = Assert.Single(Ready(lines));
+        Assert.InRange(OpenMs(line), SlowMs - 10, WaitMs - 1);
+    }
+
     // A Debug build writes what the page cost to open after its ready line, with the shell's time, so the two agree, and
     // shows it under the title, in a bar of one height in every build.
     [AvaloniaFact]

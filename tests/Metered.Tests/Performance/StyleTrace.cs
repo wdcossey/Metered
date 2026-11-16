@@ -18,7 +18,7 @@ internal static class StyleTrace
     private const string AttachingStyle = "Avalonia.AttachingStyle";
 
     /// <summary>Avalonia's switch for its diagnostics. It reads it once, so <see cref="TestApp"/> sets it as the assembly loads.</summary>
-    internal const string DiagnosticsSwitch = "Avalonia.Diagnostics.Diagnostic.IsEnabled";
+    internal const string DiagnosticsSwitch = Metered.Sample.Diagnostics.PerformanceMonitor.DiagnosticsSwitch;
 
     /// <summary>The cost spike's variable: set, the diagnostics stay off, as an app has them, and the trace refuses to run.</summary>
     internal const string BenchVariable = "METERED_BENCH";

@@ -9,7 +9,7 @@ namespace Metered.Sample.Pages;
 /// Base Web's <c>ThemeProvider</c>: Buttons under the app's theme, and the same in a subtree given its own, built by
 /// <c>createTheme</c> and <c>createDarkTheme</c> from three foundation colours (docs/theming.md).
 /// </summary>
-[SamplePage("Theme", Order = 3)]
+[SamplePage("Theme", Order = SamplePageAttribute.AfterTheControls)]
 public partial class ThemePage : UserControl
 {
     /// <summary>The subtree's light foundation: Base Web's <c>createTheme({ colors: { primaryA, primaryB, accent } })</c>.</summary>

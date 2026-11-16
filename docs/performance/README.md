@@ -151,11 +151,13 @@ METERED cost Button: 196 ms, 326 elements, 3 rules (3), layout 61.0, render 29.8
 (The Button page, the first opened in a headless Debug run, so its time has the JIT in it.)
 
 The time is the shell's own, from before the page is made to its first drawn frame, the same as its
-ready line's `open=`. *Elements* is the page's visual tree. *Rules* are the global rules the page is
+ready line's `open=`; for a page shown before the shell is in a window (a phone's start page), the time
+it took to make and then from the shell's joining the window, not the platform's start between. *Elements* is the page's visual tree. *Rules* are the global rules the page is
 checked against (the application's, and those of the page and its logical ancestors), with their
 alternatives in brackets: the three are the shell's own, its headings, its labels and the margin
 between buttons in a `WrapPanel`, which every element of every page pays; `SimpleTheme` and
-`BaseTheme` have none. *Layout* and *render* are Avalonia's own meter (`Avalonia.Diagnostic.Meter`),
+`BaseTheme` have none. *Layout* (measure and arrange) and *render* (the UI thread's, not the compositor's,
+which Avalonia meters apart) are Avalonia's own meter (`Avalonia.Diagnostic.Meter`),
 which each head turns on in Debug before Avalonia starts (`PerformanceMonitor.EnableDiagnostics`);
 without it the line says so rather than show zeros. A monitor hears every measurement in the
 process, so one lives only while its page opens. Release builds write only the ready line.

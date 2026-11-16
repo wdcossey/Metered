@@ -111,14 +111,26 @@ public class PreviewGallery
     private static void ShootAll(Window window, SampleShell shell, string folder, string variant)
     {
         shell.ShowIndex();
-        Shoot(window, Scroller(shell.Shown), folder, $"{variant}__list");
+        Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{ListName}");
         foreach (var page in shell.Catalogue)
         {
             shell.Open(page);
-            Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{page.Title.ToLowerInvariant()}");
+            Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{PictureName(page.Title)}");
         }
 
         shell.ShowIndex();
+    }
+
+    /// <summary>What the list's pictures are called.</summary>
+    private const string ListName = "list";
+
+    /// <summary>A page's pictures' name: its title in lower case, which must be a file's name and not the list's.</summary>
+    internal static string PictureName(string title)
+    {
+        var name = title.ToLowerInvariant();
+        if (name == ListName || name.Length == 0 || name.IndexOfAny([.. Path.GetInvalidFileNameChars(), '/', '\\']) >= 0)
+            throw new InvalidOperationException($"The page '{title}' can't name its pictures: update PreviewGallery.");
+        return name;
     }
 
     /// <summary>The scroller of the list or a page: the list is one, and a page holds one as its content.</summary>

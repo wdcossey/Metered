@@ -56,15 +56,23 @@ public sealed class PerformanceMonitor : IDisposable
     /// </summary>
     internal static int Listening => Volatile.Read(ref _listening);
 
-    /// <summary>A time from Avalonia's meter, in milliseconds: measure and arrange are layout.</summary>
+    /// <summary>
+    /// A time from Avalonia's meter, in milliseconds: measure and arrange are layout, and render is the UI thread's
+    /// render (not the compositor's own, which Avalonia meters apart). Any other instrument is left out.
+    /// </summary>
     public void Record(string instrument, double milliseconds)
     {
         lock (_gate)
         {
-            if (instrument == Render)
-                _render += milliseconds;
-            else
-                _layout += milliseconds;
+            switch (instrument)
+            {
+                case Render:
+                    _render += milliseconds;
+                    break;
+                case LayoutMeasure or LayoutArrange:
+                    _layout += milliseconds;
+                    break;
+            }
         }
     }
 

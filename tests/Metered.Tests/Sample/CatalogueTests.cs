@@ -93,13 +93,6 @@ public class CatalogueTests
         Assert.Throws<InvalidOperationException>(() => SamplePageCatalog.Discover([typeof(First), typeof(FirstInCapitals)]));
     }
 
-    [AvaloniaFact]
-    public void A_Page_Reads_Its_Title_From_Its_Attribute()
-    {
-        Assert.Equal("first", SamplePageCatalog.TitleOf(typeof(First)));
-        Assert.Throws<InvalidOperationException>(() => SamplePageCatalog.TitleOf(typeof(NotAPage)));
-    }
-
     // Base Web's names for its components, each control's page by its order, the theme last.
     [AvaloniaFact]
     public void The_Samples_Pages_Are_Each_Control_Then_The_Theme()
@@ -107,6 +100,36 @@ public class CatalogueTests
         Assert.Equal(
             [("Button", typeof(ButtonPage)), ("ButtonGroup", typeof(ButtonGroupPage)), ("Theme", typeof(ThemePage))],
             SampleShell.Pages.Select(page => (page.Title, page.Type)));
+    }
+
+    // A control's page takes its issue number, which is above the pilot's 1 and 2: the theme's page still closes the list.
+    [SamplePage("Slider", Order = 31)]
+    private sealed class ALaterControl : Border;
+
+    [AvaloniaFact]
+    public void A_Later_Controls_Page_Sorts_Before_The_Theme_And_After_The_Pilots()
+    {
+        var pages = SamplePageCatalog.Discover([typeof(ThemePage), typeof(ALaterControl), typeof(ButtonPage), typeof(NoOrder)]);
+
+        Assert.Equal(["Button", "Slider", "Theme", "no order"], pages.Select(page => page.Title));
+    }
+
+    // The preview names its pictures by the page's title, and the list's "list".
+    [AvaloniaFact]
+    public void Every_Page_Can_Name_Its_Pictures_And_None_Takes_The_Lists()
+    {
+        Assert.Equal(["button", "buttongroup", "theme"], SampleShell.Pages.Select(page => PreviewGallery.PictureName(page.Title)));
+        Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("List"));
+        Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("Date/Time"));
+    }
+
+    // The preview gives the sample's window the sample's default family, by name: the tests' collection must have the
+    // sample's name for that name to find the same font.
+    [Fact]
+    public void The_Tests_Fonts_Are_Under_The_Samples_Collection_Name()
+    {
+        Assert.Equal(SampleFonts.Collection, TestApp.FontCollection);
+        Assert.StartsWith(SampleFonts.Collection + "#", SampleFonts.DefaultFamilyName, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]
