@@ -176,15 +176,17 @@ public class StyleBudgetTests
             Assert.Contains(StyleTrace.BenchVariable, refused.Message, StringComparison.Ordinal);
         });
 
-    // It once put the switch back on whatever it had been (#19), and under METERED_BENCH it starts off.
-    [AvaloniaFact]
-    public void The_Refusal_Test_Puts_The_Diagnostics_Switch_Back_As_It_Was() =>
-        WithSwitch(StyleTrace.DiagnosticsSwitch, false, () =>
+    // It once put the switch back on whatever it had been (#19). It starts off as under METERED_BENCH, and on as in any other run.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_Refusal_Test_Puts_The_Diagnostics_Switch_Back_As_It_Was(bool before) =>
+        WithSwitch(StyleTrace.DiagnosticsSwitch, before, () =>
         {
             The_Trace_Refuses_To_Run_With_Avalonias_Diagnostics_Off();
 
             AppContext.TryGetSwitch(StyleTrace.DiagnosticsSwitch, out var after);
-            Assert.False(after, "The refusal test turned Avalonia's diagnostics switch on after finding it off.");
+            Assert.True(after == before, $"The refusal test found Avalonia's diagnostics switch {(before ? "on" : "off")} and left it {(after ? "on" : "off")}.");
         });
 
     /// <summary>
