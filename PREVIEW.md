@@ -14,7 +14,8 @@ theme's own pixels and can be drawn again on any OS:
 METERED_PREVIEW=/absolute/folder dotnet test tests/Metered.Tests --filter FullyQualifiedName~PreviewGallery
 ```
 
-The folder must be new or empty; copy its pictures over `docs/preview/`.
+Unset, it does nothing; set, it must name an absolute folder that is new or empty. Copy its pictures over
+`docs/preview/`.
 
 ## Button
 
@@ -28,7 +29,8 @@ takes taps in a 48 px band), the fill width, and the start and end enhancers. Da
 
 ## ButtonGroup and a subtree's theme
 
-ButtonGroup as a radio group, as a checkbox group of small pills, and wrapping. Under them, a subtree given its own
+The second screen ends the page, so its top repeats the end of the first. ButtonGroup as a radio group, as a
+checkbox group of small pills, and wrapping. Under them, a subtree given its own
 theme by `ThemeProvider`, built by `BaseTheme.CreateTheme` and `CreateDarkTheme` from three foundation colours
 ([`docs/theming.md`](docs/theming.md)).
 

@@ -6,7 +6,6 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
-using Avalonia.Themes.Simple;
 using Avalonia.Threading;
 using Metered.Sample.Desktop;
 using Metered.Themes;
@@ -19,8 +18,8 @@ namespace Metered.Tests.Sample;
 /// then dark (by the sample's own switch), one phone screen per picture, from the top of the page to its end.
 /// <c>PREVIEW.md</c> and <c>README.md</c> show them, committed under <c>docs/preview/</c>. Drawn headless with Skia,
 /// as the tests' frames are, so they are the theme's own pixels on any OS, at a render scaling of 2. By hand, as
-/// <c>METERED_FRAMES</c> is: it asserts nothing, and does nothing unless <c>METERED_PREVIEW</c> names an absolute,
-/// new or empty folder.
+/// <c>METERED_FRAMES</c> is: it asserts nothing and does nothing while <c>METERED_PREVIEW</c> is unset; set, it must
+/// name an absolute, new or empty folder, or the test fails.
 /// <code>
 /// METERED_PREVIEW=/absolute/folder dotnet test tests/Metered.Tests --filter FullyQualifiedName~PreviewGallery
 /// </code>
@@ -46,11 +45,11 @@ public class PreviewGallery
     private static readonly TimeSpan RealTimeSettle = TimeSpan.FromMilliseconds(600);
 
     /// <summary>
-    /// The sample's default family (<c>Program.BuildAvaloniaApp</c>'s <c>DefaultFamilyName</c>), for the text the
-    /// tokens don't give a family: its headings and labels. The tests keep the platform's default (TestApp), so the
-    /// window is given it, as the sample's whole app is.
+    /// The sample's default family (<see cref="Program.DefaultFamilyName"/>), for the text the tokens don't give a
+    /// family: its headings. The tests keep the platform's default (TestApp), so the window is given it, as the
+    /// sample's whole app is. The tests' font collection has the sample's name, so the name finds the same font.
     /// </summary>
-    private static readonly FontFamily SampleDefaultFamily = new($"{TestApp.FontCollection}#{TestApp.TextFamily}");
+    private static readonly FontFamily SampleDefaultFamily = new(Program.DefaultFamilyName);
 
     [AvaloniaFact]
     public void Save()
@@ -65,20 +64,26 @@ public class PreviewGallery
             throw new InvalidOperationException($"{Variable} must be a new or empty folder; '{folder}' isn't.");
         Directory.CreateDirectory(folder);
 
-        // App.axaml's themes, where it has them: the application's, so they are there as the window's XAML builds its
-        // controls (a control finds its theme once, as it joins the tree; given to the window afterwards, they'd
-        // never be found). Simple first, for the Window, ScrollViewer and TextBlock BaseTheme doesn't theme yet, then
-        // BaseTheme. Taken off again at the end: this body runs on the UI thread without yielding, so no other test
-        // sees them.
+        // App.axaml's own styles, loaded from it, where it has them: on the application, so they are there as the
+        // window's XAML builds its controls (a control finds its theme once, as it joins the tree; given to the window
+        // afterwards, they'd never be found). Taken off again at the end: this body runs on the UI thread without
+        // yielding, so no other test sees them.
         var app = Application.Current ?? throw new InvalidOperationException("No Avalonia application.");
-        IStyle[] themes = [new SimpleTheme(), new BaseTheme()];
+        var sample = new App();
+        sample.Initialize();
+        IStyle[] themes = [.. sample.Styles];
+        sample.Styles.Clear();
+        if (themes.Length == 0)
+            throw new InvalidOperationException("The sample's App.axaml has no styles: update PreviewGallery.");
         MainWindow? window = null;
         try
         {
             app.Styles.AddRange(themes);
-            window = new MainWindow { RequestedThemeVariant = ThemeVariant.Light, FontFamily = SampleDefaultFamily };
+            window = new MainWindow { RequestedThemeVariant = sample.RequestedThemeVariant, FontFamily = SampleDefaultFamily };
             window.SetRenderScaling(Scaling);
             window.Show();
+            if (window.ActualThemeVariant != ThemeVariant.Light)
+                throw new InvalidOperationException("The sample doesn't start light: update PreviewGallery.");
             Shoot(window, folder, "light");
 
             // Dark as a user gets it: the sample's own switch, whose handler also relabels it.
@@ -99,17 +104,21 @@ public class PreviewGallery
     }
 
     /// <summary>
-    /// Each screen of the page, from the top to the end, at rest, saved as <c>&lt;name&gt;__screen-&lt;n&gt;.png</c>.
+    /// Each screen of the page, a viewport apart from the top, the last ending the page, at rest, saved as
+    /// <c>&lt;name&gt;__screen-&lt;n&gt;.png</c>.
     /// </summary>
     private static void Shoot(Window window, string folder, string name)
     {
         var scroller = window.Content as ScrollViewer
             ?? throw new InvalidOperationException("The sample's window isn't a ScrollViewer: update PreviewGallery.");
 
-        Settle(window);
+        Draw(window).Dispose();
         var viewport = scroller.Viewport.Height;
+        if (viewport <= 0)
+            throw new InvalidOperationException($"The sample's page has no viewport ({scroller.Viewport}).");
         var end = Math.Max(0, scroller.Extent.Height - viewport);
-        var screens = (int)Math.Ceiling(scroller.Extent.Height / viewport);
+        // Within half a pixel of the end is the end, so layout rounding can't add a screen that repeats the last.
+        var screens = 1 + (int)Math.Ceiling(Math.Max(0, end - 0.5) / viewport);
         for (var n = 0; n < screens; n++)
         {
             scroller.Offset = new Vector(0, Math.Min(n * viewport, end));

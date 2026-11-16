@@ -4,8 +4,11 @@ using Avalonia.Media.Fonts;
 
 namespace Metered.Sample.Desktop;
 
-internal static class Program
+public static class Program
 {
+    /// <summary>The app's default family, for text the tokens give none (the headings): Instrument Sans.</summary>
+    public const string DefaultFamilyName = "fonts:Metered#Instrument Sans";
+
     [STAThread]
     public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
@@ -19,7 +22,7 @@ internal static class Program
                 new Uri("fonts:Metered", UriKind.Absolute), new Uri("avares://Metered.Sample.Desktop/Fonts", UriKind.Absolute))))
             .With(new FontManagerOptions
             {
-                DefaultFamilyName = "fonts:Metered#Instrument Sans",
+                DefaultFamilyName = DefaultFamilyName,
                 FontFamilyMappings = new Dictionary<string, FontFamily>
                 {
                     ["UberMoveText"] = new("fonts:Metered#Instrument Sans"),

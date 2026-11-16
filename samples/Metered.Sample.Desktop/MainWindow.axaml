@@ -28,7 +28,7 @@
     <StackPanel Margin="16,8,16,32">
       <DockPanel Margin="0,16,0,0">
         <b:Button x:Name="Variant" DockPanel.Dock="Right" Kind="Secondary" Size="Compact" Content="Dark" />
-        <TextBlock Classes="h" Margin="0" VerticalAlignment="Center" Text="Metered pilot" />
+        <TextBlock Classes="h" Margin="0" VerticalAlignment="Center" Text="Metered" />
       </DockPanel>
 
       <TextBlock Classes="h" Text="Kinds" />
