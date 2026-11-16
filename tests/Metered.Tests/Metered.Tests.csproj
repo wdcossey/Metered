@@ -29,6 +29,15 @@
     <EmbeddedResource Include="Reference/*.oracle.json" LogicalName="Metered.Tests.Reference.%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The manifest target (Directory.Build.targets), proved on fixtures of the tests' own:
+       nested folders, forward slashes, and that each path loads. -->
+  <PropertyGroup>
+    <MeteredDiscoverXaml>true</MeteredDiscoverXaml>
+  </PropertyGroup>
+  <ItemGroup>
+    <MeteredDiscoveredXaml Include="Discovery/Fixture/**/*.axaml" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>

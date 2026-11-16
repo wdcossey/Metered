@@ -14,9 +14,12 @@ public class BaseTheme : Styles
 
     public BaseTheme(IServiceProvider? _ = null)
     {
-        foreach (var path in XamlManifest.Paths.Order(StringComparer.Ordinal))
+        foreach (var path in OrderForMerge(XamlManifest.Paths))
         {
             Resources.MergedDictionaries.Add(new ResourceInclude(BaseUri) { Source = new Uri(BaseUri, path) });
         }
     }
+
+    /// <summary>The order the files are merged in: ordinal, so it is the same on every machine.</summary>
+    internal static IEnumerable<string> OrderForMerge(IEnumerable<string> paths) => paths.Order(StringComparer.Ordinal);
 }

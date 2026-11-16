@@ -11,7 +11,8 @@ namespace Metered.Tests;
 
 /// <summary>
 /// A shown window with <see cref="BaseTheme"/>, at a phone's view (390 × 844, Avonic's reference
-/// viewport) and render scaling 1, light unless dark is asked for. Closed on dispose.
+/// viewport) and render scaling 1, light unless dark is asked for. Closed on dispose. The themes are
+/// the window's, not the application's, so a scene changes no other; another list can be given.
 /// </summary>
 internal sealed class Scene : IDisposable
 {
@@ -20,7 +21,8 @@ internal sealed class Scene : IDisposable
 
     public Window Window { get; }
 
-    public Scene(Control? content = null, ThemeVariant? variant = null, double width = Width, double height = Height)
+    public Scene(Control? content = null, ThemeVariant? variant = null, double width = Width, double height = Height,
+        IEnumerable<IStyle>? themes = null)
     {
         Window = new Window
         {
@@ -28,7 +30,7 @@ internal sealed class Scene : IDisposable
             Height = height,
             RequestedThemeVariant = variant ?? ThemeVariant.Light,
         };
-        Window.Styles.Add(new BaseTheme());
+        Window.Styles.AddRange(themes ?? [new BaseTheme()]);
         try
         {
             Window.Content = content;
