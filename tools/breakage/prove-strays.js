@@ -7,22 +7,24 @@ const path = require('path');
 const source = fs.readFileSync(path.join(__dirname, 'strays.js'), 'utf8');
 const test = fs.readFileSync(path.join(__dirname, 'strays.test.js'), 'utf8');
 
+// The code before #18's fix, word for word.
+const pkill = [
+    '        try {',
+    "            execSync(`pkill -f -- '${where.replace(/'/g, \"'\\\\''\")}'`, { stdio: 'ignore' });",
+    '        } catch {',
+    '            // Nothing left to kill.',
+    '        }',
+    '        return;',
+].join('\n');
+
 const breaks = [
-    ['the bug in place: pkill -f through a shell', `    for (const pid of strays(where)) {
-        try {
-            process.kill(pid, 'SIGTERM');
-        } catch {
-            // It has gone already.
-        }
-    }`, `    try {
-        execSync(\`pkill -f -- '\${where.replace(/'/g, "'\\\\''")}'\`, { stdio: 'ignore' });
-    } catch {
-        // Nothing left to kill.
-    }`],
+    ['the bug in place: pkill -f through a shell', '        killPosix(where);\n        return;', pkill],
     ['spares nothing', '!spared.has(pid)', 'true'],
     ['spares only this process', 'const spared = ancestry();', 'const spared = new Set([process.pid]);'],
-    ['spares only this process and its parent', 'while (pid > 1 && !pids.has(pid)) {', 'while (pid > 1 && pids.size < 2 && !pids.has(pid)) {'],
-    ['the path as a pattern', 'literal(path.resolve(clone))', 'path.resolve(clone)'],
+    ['spares only this process and its parent', 'for (let pid = process.pid; pid > 0 && !pids.has(pid); pid = parents.get(pid) || 0) pids.add(pid);', 'pids.add(process.pid).add(process.ppid);'],
+    ['the path as a pattern', '.map(literal);', ';'],
+    ['the path unbounded', "(${paths.join('|')})(/| |$)", "(${paths.join('|')})"],
+    ['the real path left out', '[where, real(where)]', '[where]'],
     ['kills nothing', "process.kill(pid, 'SIGTERM');", 'process.kill(pid, 0);'],
 ];
 
