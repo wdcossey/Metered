@@ -5,12 +5,12 @@ A faithful reproduction of Uber's [Base design system](https://baseweb.design) (
 by Uber or the AvaloniaUI team.
 
 <p>
-<img src="docs/preview/light__screen-1.png" width="250" alt="Button's kinds, sizes, shapes and states, light">
-<img src="docs/preview/dark__screen-1.png" width="250" alt="Button's kinds, sizes, shapes and states, dark">
-<img src="docs/preview/light__screen-2.png" width="250" alt="ButtonGroup and a subtree's own theme, light">
+<img src="docs/preview/light__button-1.png" width="250" alt="The sample's Button page: kinds, sizes, shapes, states and enhancers, light">
+<img src="docs/preview/dark__button-1.png" width="250" alt="The sample's Button page, dark">
+<img src="docs/preview/light__buttongroup-1.png" width="250" alt="The sample's ButtonGroup page: radio, checkbox and wrapping, light">
 </p>
 
-The desktop sample, drawn headless. More in [PREVIEW.md](PREVIEW.md).
+The sample's pages, drawn headless. More in [PREVIEW.md](PREVIEW.md).
 
 > **Status: early, not yet published.** Two controls, Button and ButtonGroup, on the tokens, the
 > parts and states, Base Web's overrides API and its theme builder. The inventory of controls is
@@ -32,7 +32,7 @@ The desktop sample, drawn headless. More in [PREVIEW.md](PREVIEW.md).
 - **Fonts are substituted.** Uber Move is proprietary and isn't shipped. Base Web's two families map
   to Instrument Sans (UberMoveText) and Figtree (UberMove), OFL fonts chosen by measurement against
   baseweb.design ([ADR 0003](docs/decisions/0003-font.md)). The tests and the sample embed them and
-  map the families (`samples/Metered.Sample.Desktop/Program.cs`); the packages don't carry them yet.
+  map the families (`samples/Metered.Sample/SampleFonts.cs`); the packages don't carry them yet.
 
 ## Packages
 

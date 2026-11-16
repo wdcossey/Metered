@@ -110,6 +110,56 @@ Smaller ones within the ADR were left: comma selectors for the styles that set t
 (5 fewer of 121), and the spinner's animation (2 to 4 %, within the spread), whose look lives in its
 theme.
 
+## The trend
+
+Run by hand at each roll-up, on the same machine, and add a row: a CI machine's timings would mean
+nothing. `METERED_BENCH` names the file the row is appended to (any other value, such as the
+spikes' `1`, leaves the benchmark alone), and leaves Avalonia's diagnostics off, as an app has them:
+
+```sh
+METERED_BENCH=/absolute/path/row.md dotnet test tests/Metered.Tests -c Release --filter FullyQualifiedName~StyleCostBenchmark
+```
+
+`StyleCostBenchmark` (from Cornflower's) alternates with and without `BaseTheme`, 25 rounds after 4 to
+warm up, attaching 5,000 elements at a depth of 20; times are µs per element, the median. *Rules* and
+*Alternatives* are `BaseTheme`'s global rules. *Button* is a default Metered `Button`, 500 to a window,
+with `BaseTheme` (it has no look without it): what a control's own cost comes to, which the budget
+doesn't see. A row can go straight in the table.
+
+| When | Rules | Alternatives | `TextBlock` | `Border` | `Button` |
+|---|---|---|---|---|---|
+| 2026-11-16, the pilot and the sample (#7) | 0 | 0 | 19.2 to 19.7 (+0.5) | 2.9 to 3.2 (+0.3) | 545 |
+
+The first row is the pilot's end, with no global rule. Even so, a `TextBlock` or a `Border` costs
+0.3 to 0.5 µs more beside the theme, in both runs made for it (the second: 18.8 to 19.1 (+0.3),
+2.8 to 3.3 (+0.5), 554); not explained yet, and Cornflower's first row shows the same for its
+`Border`. A Button is about half a millisecond, as spike 2 found. Measured on one Windows desktop
+with two other agents building and testing on it, so the absolute times are higher than a quiet
+machine's.
+
+## In a Debug build
+
+The sample's shell (`SampleShell`) writes a line for each page it opens, of what it cost to its first
+drawn frame, so a control's page has no code for it: on standard output after the page's ready line,
+as `METERED cost <line>`, and under the page's title in the shell's bar, which has one height in
+every build, so a page's size doesn't change with it:
+
+```
+METERED cost Button: 196 ms, 326 elements, 3 rules (3), layout 61.0, render 29.8
+```
+
+(The Button page, the first opened in a headless Debug run, so its time has the JIT in it.)
+
+The time is the shell's own, from before the page is made to its first drawn frame, the same as its
+ready line's `open=`. *Elements* is the page's visual tree. *Rules* are the global rules the page is
+checked against (the application's, and those of the page and its logical ancestors), with their
+alternatives in brackets: the three are the shell's own, its headings, its labels and the margin
+between buttons in a `WrapPanel`, which every element of every page pays; `SimpleTheme` and
+`BaseTheme` have none. *Layout* and *render* are Avalonia's own meter (`Avalonia.Diagnostic.Meter`),
+which each head turns on in Debug before Avalonia starts (`PerformanceMonitor.EnableDiagnostics`);
+without it the line says so rather than show zeros. A monitor hears every measurement in the
+process, so one lives only while its page opens. Release builds write only the ready line.
+
 ## Breakage runs
 
 `tools/breakage/run.js` breaks each behaviour on its own, in a fresh clone, and checks that a test
@@ -131,9 +181,13 @@ list and the runner reported it not applied).
 
 ## From Cornflower
 
-- **`StyleCensus` lives in the tests**, not in a shared sample library, as Metered has none yet.
+- **`StyleCensus` lives in the sample** (`samples/Metered.Sample/Diagnostics/`), as in Cornflower, for
+  the Debug line; the tests reach it through a global using.
 - **No exemption for our own controls after a descendant combinator.** Cornflower lets
   `Pivot PivotItem > TextBlock` pass, as its controls are rare. Metered's `Button` shares its name
   with Avalonia's, so a rule can't be told apart by name, and no global rule is needed.
-- **Not carried over yet**: the timing benchmark and its trend table, and the sample's Debug line
-  (`PerformanceMonitor`). They come with the sample (`docs/ROADMAP.md`).
+- **The trend has a `Button` column** and no *Themed* one: Cornflower counts its themed controls
+  against its holes, which Metered doesn't track, and a Metered control's cost is its own, not
+  global.
+- **The ready line has no page transition to wait for**: Base Web has none, so a page takes the
+  list's place at once, and the line follows its first frame.
