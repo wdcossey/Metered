@@ -18,7 +18,8 @@ public static class Program
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    // Public and named so, for Avalonia's designer and tools that look for it.
+    // Public and named so, for tools that look for it: Avalonia's previewer, with this head as the host of the
+    // sample's XAML, which lives in Metered.Sample.
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
             .UsePlatformDetect()

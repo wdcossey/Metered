@@ -28,13 +28,17 @@ public partial class ThemePage : UserControl
         ["colors.accent"] = Color.Parse("#9F8AE0"),
     };
 
+    /// <summary>The subtree's themes, built once, so that opening the page again doesn't build them again.</summary>
+    private static readonly Lazy<(Theme Light, Theme Dark)> Built = new(() =>
+        (BaseTheme.CreateTheme(LightFoundation), BaseTheme.CreateDarkTheme(DarkFoundation)));
+
     public ThemePage()
     {
         InitializeComponent();
 
         // Every semantic and component colour follows the foundation.
-        ThemeProvider.SetTheme(Branded, BaseTheme.CreateTheme(LightFoundation));
-        ThemeProvider.SetDarkTheme(Branded, BaseTheme.CreateDarkTheme(DarkFoundation));
+        ThemeProvider.SetTheme(Branded, Built.Value.Light);
+        ThemeProvider.SetDarkTheme(Branded, Built.Value.Dark);
     }
 
     private void OnLoad(object? sender, RoutedEventArgs e) => ButtonPage.Load((Metered.Controls.Button)sender!);

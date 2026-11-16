@@ -47,6 +47,18 @@ public class ThemePageTests
         Assert.Equal(Hex(app["colors.buttonPrimaryFill"]), Fill(outside));
     }
 
+    // Built once: opening the page again doesn't build the themes again, inside the time the shell measures.
+    [AvaloniaFact]
+    public void The_Page_Builds_Its_Themes_Once()
+    {
+        var first = new ThemePage().FindControl<Border>("Branded")!;
+        var second = new ThemePage().FindControl<Border>("Branded")!;
+
+        Assert.NotNull(ThemeProvider.GetTheme(first));
+        Assert.Same(ThemeProvider.GetTheme(first), ThemeProvider.GetTheme(second));
+        Assert.Same(ThemeProvider.GetDarkTheme(first), ThemeProvider.GetDarkTheme(second));
+    }
+
     [AvaloniaFact]
     public void Every_Button_On_The_Page_Is_Metereds_Drawn_By_Its_Theme()
     {

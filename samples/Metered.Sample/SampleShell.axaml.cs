@@ -69,6 +69,7 @@ public partial class SampleShell : UserControl
             PageList.Children.Add(open);
         }
 
+        PageTitle.Text = IndexTitle;
         ActualThemeVariantChanged += (_, _) => LabelVariant();
         LabelVariant();
     }

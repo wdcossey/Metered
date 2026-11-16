@@ -40,7 +40,7 @@
         <b:Button x:Name="Variant" DockPanel.Dock="Right" VerticalAlignment="Center"
                   Kind="Secondary" Size="Compact" Content="Dark" Click="OnVariant" />
         <StackPanel VerticalAlignment="Center" Margin="8,0">
-          <TextBlock x:Name="PageTitle" Text="Metered" TextTrimming="CharacterEllipsis"
+          <TextBlock x:Name="PageTitle" TextTrimming="CharacterEllipsis"
                      FontSize="{DynamicResource typography.HeadingXSmall.fontSize}"
                      FontWeight="{DynamicResource typography.HeadingXSmall.fontWeight}"
                      Foreground="{DynamicResource colors.contentPrimary}" />

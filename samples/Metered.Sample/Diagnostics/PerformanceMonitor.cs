@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 
 namespace Metered.Sample.Diagnostics;
@@ -117,6 +118,9 @@ public sealed class PerformanceMonitor : IDisposable
         var (rules, alternatives) = Application.Current is { } app ? StyleCensus.Count(app.Styles) : (0, 0);
         for (var element = page; element is not null; element = element.Parent)
         {
+            // Reading Styles would give an element that has none an empty collection: measuring mustn't change the tree.
+            if (element is IStyleHost { IsStylesInitialized: false })
+                continue;
             var (own, ownAlternatives) = StyleCensus.Count(element.Styles);
             rules += own;
             alternatives += ownAlternatives;

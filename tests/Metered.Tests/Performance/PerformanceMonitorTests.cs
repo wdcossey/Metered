@@ -145,6 +145,20 @@ public class PerformanceMonitorTests
         Assert.DoesNotContain("9000", line, StringComparison.Ordinal);
     }
 
+    // Reading an element's Styles gives it a collection if it had none: the census only reads those it has.
+    [AvaloniaFact]
+    public void The_Census_Leaves_An_Element_With_No_Styles_Without_Any()
+    {
+        var page = new Panel();
+        var host = new Border { Child = page };
+        using var scene = new Scene(host);
+
+        PerformanceMonitor.Census(page);
+
+        Assert.False(((IStyleHost)page).IsStylesInitialized);
+        Assert.False(((IStyleHost)host).IsStylesInitialized);
+    }
+
     [AvaloniaFact]
     public void Times_Start_Again_With_Each_Page()
     {
