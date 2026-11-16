@@ -7,25 +7,25 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using Metered.Sample.Desktop;
-using Metered.Themes;
+using Metered.Sample;
 using Button = Metered.Controls.Button;
 
 namespace Metered.Tests.Sample;
 
 /// <summary>
-/// The pictures for <c>PREVIEW.md</c>: the desktop sample's own <see cref="MainWindow"/>, at its 390 × 844, light and
-/// then dark (by the sample's own switch), one phone screen per picture, from the top of the page to its end.
-/// <c>PREVIEW.md</c> and <c>README.md</c> show them, committed under <c>docs/preview/</c>. Drawn headless with Skia,
-/// as the tests' frames are, so they are the theme's own pixels on any OS, at a render scaling of 2. By hand, as
-/// <c>METERED_FRAMES</c> is: it asserts nothing and does nothing while <c>METERED_PREVIEW</c> is unset; set, it must
-/// name an absolute, new or empty folder, or the test fails.
+/// The pictures for <c>PREVIEW.md</c>: the sample's own <see cref="MainWindow"/>, at its 390 × 844, light and then dark
+/// (by the shell's own switch), its list and then each page of its catalogue, one phone screen per picture, from the top
+/// of the list or page to its end. <c>PREVIEW.md</c> and <c>README.md</c> show them, committed under
+/// <c>docs/preview/</c>. Drawn headless with Skia, as the tests' frames are, so they are the theme's own pixels on any
+/// OS, at a render scaling of 2. By hand, as <c>METERED_FRAMES</c> is: it asserts nothing and does nothing while
+/// <c>METERED_PREVIEW</c> is unset; set, it must name an absolute, new or empty folder, or the test fails.
 /// <code>
 /// METERED_PREVIEW=/absolute/folder dotnet test tests/Metered.Tests --filter FullyQualifiedName~PreviewGallery
 /// </code>
-/// Each picture is <c>&lt;variant&gt;__screen-&lt;n&gt;.png</c>, 780 × 1688: a screen each rather than one tall
-/// picture of the page, so they sit side by side in Markdown at a phone's proportions, light beside dark, and a reader
-/// sees each at the size a phone shows it.
+/// Each picture is <c>&lt;variant&gt;__&lt;page&gt;-&lt;n&gt;.png</c>, 780 × 1688, where the page is its catalogue title
+/// in lower case, or <c>list</c>: a screen each rather than one tall picture, so they sit side by side in Markdown at a
+/// phone's proportions, light beside dark, and a reader sees each at the size a phone shows it. The shell's Debug line
+/// under the title is turned off, as its times would change every picture on every run.
 /// </summary>
 public class PreviewGallery
 {
@@ -39,17 +39,17 @@ public class PreviewGallery
 
     /// <summary>
     /// Real time to let pass before each picture: past the longest transition in the theme, the Button's background
-    /// (200 ms, Base Web's <c>transition: background 200ms linear</c>), which the sample's Light/Dark switch starts.
+    /// (200 ms, Base Web's <c>transition: background 200ms linear</c>), which the shell's Light/Dark switch starts.
     /// A longer one needs this raised; <see cref="Shoot"/> refuses a picture that is still moving.
     /// </summary>
     private static readonly TimeSpan RealTimeSettle = TimeSpan.FromMilliseconds(600);
 
     /// <summary>
-    /// The sample's default family (<see cref="Program.DefaultFamilyName"/>), for the text the tokens don't give a
+    /// The sample's default family (<see cref="SampleFonts.DefaultFamilyName"/>), for the text the tokens don't give a
     /// family: its headings. The tests keep the platform's default (TestApp), so the window is given it, as the
     /// sample's whole app is. The tests' font collection has the sample's name, so the name finds the same font.
     /// </summary>
-    private static readonly FontFamily SampleDefaultFamily = new(Program.DefaultFamilyName);
+    private static readonly FontFamily SampleDefaultFamily = new(SampleFonts.DefaultFamilyName);
 
     [AvaloniaFact]
     public void Save()
@@ -59,7 +59,7 @@ public class PreviewGallery
         if (!Path.IsPathFullyQualified(folder))
             throw new ArgumentException($"{Variable} must be an absolute folder; it is '{folder}'.");
 
-        // A fresh folder, so a picture of a screen the page no longer has can't sit beside the new ones.
+        // A fresh folder, so a picture of a screen the sample no longer has can't sit beside the new ones.
         if (Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Any())
             throw new InvalidOperationException($"{Variable} must be a new or empty folder; '{folder}' isn't.");
         Directory.CreateDirectory(folder);
@@ -80,19 +80,23 @@ public class PreviewGallery
         {
             app.Styles.AddRange(themes);
             window = new MainWindow { RequestedThemeVariant = sample.RequestedThemeVariant, FontFamily = SampleDefaultFamily };
+            var shell = window.Content as SampleShell
+                ?? throw new InvalidOperationException("The sample's window doesn't hold its shell: update PreviewGallery.");
+            shell.ShowsCost = false;
+            shell.Report = _ => { };
             window.SetRenderScaling(Scaling);
             window.Show();
             if (window.ActualThemeVariant != ThemeVariant.Light)
                 throw new InvalidOperationException("The sample doesn't start light: update PreviewGallery.");
-            Shoot(window, folder, "light");
+            ShootAll(window, shell, folder, "light");
 
-            // Dark as a user gets it: the sample's own switch, whose handler also relabels it.
-            var variant = window.FindControl<Button>("Variant")
-                ?? throw new InvalidOperationException("The sample has no 'Variant' switch: update PreviewGallery.");
+            // Dark as a user gets it: the shell's own switch, whose handler also relabels it.
+            var variant = shell.FindControl<Button>("Variant")
+                ?? throw new InvalidOperationException("The shell has no 'Variant' switch: update PreviewGallery.");
             variant.RaiseEvent(new RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
             if (window.ActualThemeVariant != ThemeVariant.Dark)
-                throw new InvalidOperationException("The sample's switch didn't turn the window dark.");
-            Shoot(window, folder, "dark");
+                throw new InvalidOperationException("The shell's switch didn't turn the window dark.");
+            ShootAll(window, shell, folder, "dark");
         }
         finally
         {
@@ -103,19 +107,47 @@ public class PreviewGallery
         }
     }
 
-    /// <summary>
-    /// Each screen of the page, a viewport apart from the top, the last ending the page, at rest, saved as
-    /// <c>&lt;name&gt;__screen-&lt;n&gt;.png</c>.
-    /// </summary>
-    private static void Shoot(Window window, string folder, string name)
+    /// <summary>The list, then each page of the catalogue, opened as its button on the list opens it, then the list again.</summary>
+    private static void ShootAll(Window window, SampleShell shell, string folder, string variant)
     {
-        var scroller = window.Content as ScrollViewer
-            ?? throw new InvalidOperationException("The sample's window isn't a ScrollViewer: update PreviewGallery.");
+        shell.ShowIndex();
+        Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{ListName}");
+        foreach (var page in shell.Catalogue)
+        {
+            shell.Open(page);
+            Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{PictureName(page.Title)}");
+        }
 
+        shell.ShowIndex();
+    }
+
+    /// <summary>What the list's pictures are called.</summary>
+    private const string ListName = "list";
+
+    /// <summary>A page's pictures' name: its title in lower case, which must be a file's name and not the list's.</summary>
+    internal static string PictureName(string title)
+    {
+        var name = title.ToLowerInvariant();
+        if (name == ListName || name.Length == 0 || name.IndexOfAny([.. Path.GetInvalidFileNameChars(), '/', '\\']) >= 0)
+            throw new InvalidOperationException($"The page '{title}' can't name its pictures: update PreviewGallery.");
+        return name;
+    }
+
+    /// <summary>The scroller of the list or a page: the list is one, and a page holds one as its content.</summary>
+    private static ScrollViewer Scroller(Control? shown) =>
+        shown as ScrollViewer ?? (shown as UserControl)?.Content as ScrollViewer
+        ?? throw new InvalidOperationException($"{shown?.GetType().Name ?? "Nothing"} isn't a page that scrolls: update PreviewGallery.");
+
+    /// <summary>
+    /// Each screen of what <paramref name="scroller"/> holds, a viewport apart from the top, the last ending it, at rest,
+    /// saved as <c>&lt;name&gt;-&lt;n&gt;.png</c>.
+    /// </summary>
+    private static void Shoot(Window window, ScrollViewer scroller, string folder, string name)
+    {
         Draw(window).Dispose();
         var viewport = scroller.Viewport.Height;
         if (viewport <= 0)
-            throw new InvalidOperationException($"The sample's page has no viewport ({scroller.Viewport}).");
+            throw new InvalidOperationException($"The page has no viewport ({scroller.Viewport}).");
         var end = Math.Max(0, scroller.Extent.Height - viewport);
         // Within half a pixel of the end is the end, so layout rounding can't add a screen that repeats the last.
         var screens = 1 + (int)Math.Ceiling(Math.Max(0, end - 0.5) / viewport);
@@ -131,7 +163,7 @@ public class PreviewGallery
             if (!Frames.SameAs(frame, again))
                 throw new InvalidOperationException($"{name} screen {n + 1} is still moving after {RealTimeSettle.TotalMilliseconds} ms: raise RealTimeSettle.");
 
-            frame.Save(Path.Combine(folder, $"{name}__screen-{n + 1}.png"), PngBitmapEncoderOptions.Default);
+            frame.Save(Path.Combine(folder, $"{name}-{n + 1}.png"), PngBitmapEncoderOptions.Default);
         }
     }
 

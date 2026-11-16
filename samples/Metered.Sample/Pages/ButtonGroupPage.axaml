@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.ButtonGroupPage">
+  <!-- Base Web's ButtonGroup: a radio group, a checkbox group of small pills with its clicks, and wrapping. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Radio" />
+      <TextBlock Classes="label" Margin="0,0,0,6" Text="Arrow keys move the selection" />
+      <b:ButtonGroup x:Name="Radio" Mode="Radio" PaddingType="None">
+        <b:Button Content="Day" />
+        <b:Button Content="Week" />
+        <b:Button Content="Month" />
+      </b:ButtonGroup>
+
+      <TextBlock Classes="heading" Text="Checkbox" />
+      <b:ButtonGroup x:Name="Checks" Mode="Checkbox" PaddingType="None" Size="Small" Shape="Pill">
+        <b:Button Content="Wi-Fi" />
+        <b:Button Content="Parking" />
+        <b:Button Content="Pool" />
+        <b:Button Content="Gym" />
+      </b:ButtonGroup>
+      <TextBlock Classes="label" x:Name="Clicked" Text="Clicked: none" />
+
+      <TextBlock Classes="heading" Text="Wrap" />
+      <b:ButtonGroup x:Name="Wrapping" Mode="Checkbox" PaddingType="None" Wrap="True" Size="XSmall" Kind="Tertiary">
+        <b:Button Content="Breakfast" />
+        <b:Button Content="Lunch" />
+        <b:Button Content="Dinner" />
+        <b:Button Content="Snacks" />
+        <b:Button Content="Drinks" />
+        <b:Button Content="Dessert" />
+      </b:ButtonGroup>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

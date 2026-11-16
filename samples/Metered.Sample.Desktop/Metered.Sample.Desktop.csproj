@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The desktop sample: the pilot's controls in a phone-sized window, to see them by hand. -->
+  <!-- The desktop head: the sample in a phone-sized window, to see the controls by hand. It holds only
+       the entry point; the app, its window, its shell, its pages and its fonts are Metered.Sample's. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -10,18 +11,10 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
-    <!-- Underneath BaseTheme, for the Window, ScrollViewer and TextBlock it doesn't theme yet. -->
-    <PackageReference Include="Avalonia.Themes.Simple" />
-  </ItemGroup>
-
-  <!-- Uber Move is proprietary: the OFL substitutes from fonts/ (docs/decisions/0003-font.md), as in the
-       tests, registered in Program.cs. -->
-  <ItemGroup>
-    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Metered\Metered.csproj" />
+    <ProjectReference Include="..\Metered.Sample\Metered.Sample.csproj" />
   </ItemGroup>
 
 </Project>

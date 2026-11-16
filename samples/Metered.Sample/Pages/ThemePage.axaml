@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.ThemePage">
+  <!-- Base Web's ThemeProvider: the same Buttons under the app's theme, and in a subtree given its own. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="The app's theme" />
+      <WrapPanel x:Name="Plain">
+        <b:Button Content="Primary" />
+        <b:Button Kind="Secondary" Content="Secondary" />
+        <b:Button Kind="Outline" Content="Outline" />
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="A subtree's own" />
+      <TextBlock Classes="label" Margin="0,0,0,6" TextWrapping="Wrap"
+                 Text="createTheme and createDarkTheme from three foundation colours" />
+      <!-- Given its themes in code: ThemePage.axaml.cs. -->
+      <Border x:Name="Branded" Padding="12" Background="{DynamicResource colors.backgroundPrimary}">
+        <WrapPanel>
+          <b:Button x:Name="BrandedPrimary" Content="Primary" />
+          <b:Button Kind="Secondary" Content="Secondary" />
+          <b:Button Kind="Outline" Content="Outline" />
+          <b:Button x:Name="BrandedLoading" Content="Click to load" Click="OnLoad" />
+        </WrapPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,10 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Metered.Sample"
+        x:Class="Metered.Sample.MainWindow"
+        Title="Metered"
+        Width="390" Height="844" WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource colors.backgroundPrimary}">
+  <!-- 390 x 844: the tests' phone view. It can be resized, so that a larger screen's layout has somewhere to be seen. -->
+  <local:SampleShell x:Name="Shell" />
+</Window>

@@ -1,13 +1,14 @@
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 
-namespace Metered.Tests.Performance;
+namespace Metered.Sample.Diagnostics;
 
 /// <summary>
 /// Counts the global style rules. Avalonia checks every one against every element, and a comma makes a rule cost as much
-/// as that many rules. See docs/performance/README.md. From Cornflower's and Avonic's.
+/// as that many rules. See docs/performance/README.md. From Cornflower's and Avonic's. In the sample, as its Debug line
+/// (<see cref="PerformanceMonitor"/>) counts them; the tests' budget counts them with it too.
 /// </summary>
-internal static class StyleCensus
+public static class StyleCensus
 {
     /// <summary>The rules in <paramref name="root"/>, and the alternatives between their commas.</summary>
     public static (int Rules, int Alternatives) Count(IStyle root)

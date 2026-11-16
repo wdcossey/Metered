@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.ButtonPage">
+  <!-- Base Web's Button: its kinds, sizes, shapes, states and enhancers. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Kinds" />
+      <WrapPanel>
+        <b:Button Kind="Primary" Content="Primary" />
+        <b:Button Kind="Secondary" Content="Secondary" />
+        <b:Button Kind="Tertiary" Content="Tertiary" />
+        <b:Button Kind="DangerPrimary" Content="Danger" />
+        <b:Button Kind="DangerSecondary" Content="Danger 2" />
+        <b:Button Kind="DangerTertiary" Content="Danger 3" />
+        <b:Button Kind="Outline" Content="Outline" />
+        <b:Button x:Name="Disabled" Kind="Primary" IsEnabled="False" Content="Disabled" />
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <WrapPanel>
+        <b:Button Size="XSmall" Content="XSmall" />
+        <b:Button Size="Small" Content="Small" />
+        <b:Button Size="Medium" Content="Medium" />
+        <b:Button Size="Large" Content="Large" />
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="Shapes" />
+      <WrapPanel>
+        <b:Button Shape="Default" Content="Default" />
+        <b:Button Shape="Pill" Content="Pill" />
+        <b:Button Shape="Circle" Content="+" />
+        <b:Button Shape="Square" Content="+" />
+        <b:Button Shape="Round" Kind="Secondary" Content="+" />
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="States" />
+      <WrapPanel>
+        <b:Button x:Name="Loading" Content="Click to load" Click="OnLoad" />
+        <b:Button Kind="Secondary" IsSelected="True" Content="Selected" />
+        <b:Button Kind="Tertiary" MinHitArea="Tap" Size="XSmall" Content="Tap area" />
+      </WrapPanel>
+      <b:Button WidthType="Fill" Content="Fill width" />
+
+      <TextBlock Classes="heading" Text="Enhancers" />
+      <WrapPanel>
+        <b:Button Content="Start" StartEnhancer="←" />
+        <b:Button Kind="Secondary" Content="End" EndEnhancer="→" />
+        <b:Button Kind="Tertiary" Content="Both" StartEnhancer="★" EndEnhancer="→" />
+      </WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
