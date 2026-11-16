@@ -21,8 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Metered.Controls\Metered.Controls.csproj" />
     <ProjectReference Include="..\..\src\Metered.Themes\Metered.Themes.csproj" />
-    <!-- The desktop sample, so Sample/PreviewGallery.cs draws its own MainWindow. -->
-    <ProjectReference Include="..\..\samples\Metered.Sample.Desktop\Metered.Sample.Desktop.csproj" />
+    <!-- The sample, so Sample/ tests its shell and pages and PreviewGallery draws its own MainWindow. -->
+    <ProjectReference Include="..\..\samples\Metered.Sample\Metered.Sample.csproj" />
   </ItemGroup>
 
   <!-- The OFL substitutes for Uber Move, from fonts/ (docs/decisions/0003-font.md): one collection,
@@ -47,6 +47,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- The census is the sample's, for its Debug line (Diagnostics/PerformanceMonitor); the budget counts with it. -->
+    <Using Include="Metered.Sample.Diagnostics.StyleCensus" Alias="StyleCensus" />
   </ItemGroup>
 
 </Project>

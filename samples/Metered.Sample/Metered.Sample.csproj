@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The sample's app, its desktop window, its shell and its pages, shared by every head: today
+       Metered.Sample.Desktop; an Android head adds only its entry point (#8). A library on the
+       libraries' net8.0, so any head's framework can take it. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <!-- Underneath BaseTheme, for the Window, ScrollViewer and TextBlock it doesn't theme yet. -->
+    <PackageReference Include="Avalonia.Themes.Simple" />
+  </ItemGroup>
+
+  <!-- Uber Move is proprietary: the OFL substitutes from fonts/ (docs/decisions/0003-font.md), as in the
+       tests, embedded here for every head and registered by SampleFonts. -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Metered\Metered.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Metered.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.SampleShell"
+             Background="{DynamicResource colors.backgroundPrimary}">
+  <!--
+    The catalogue: a bar over a list of the pages marked [SamplePage], one per control, or one of them.
+    MainWindow holds it on desktop, and App shows it as a phone's whole view. The bar is the sample's
+    chrome, made of Metered's own Buttons: Back, the page's title, and the Light/Dark switch. Back is
+    also Avalonia's own back request (Alt+Left on desktop, the back button or gesture on a phone).
+    The bar has one height in every build, so a page's size doesn't change with the Debug line under
+    its title (docs/performance/README.md).
+  -->
+  <UserControl.Styles>
+    <!-- The pages' headings and labels, from Base Web's type ramp. -->
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontSize" Value="{DynamicResource typography.HeadingSmall.fontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource typography.HeadingSmall.fontWeight}" />
+      <Setter Property="Foreground" Value="{DynamicResource colors.contentPrimary}" />
+      <Setter Property="Margin" Value="0,24,0,8" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="{DynamicResource typography.LabelMedium.fontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource typography.LabelMedium.fontWeight}" />
+      <Setter Property="Foreground" Value="{DynamicResource colors.contentSecondary}" />
+      <Setter Property="Margin" Value="0,12,0,6" />
+    </Style>
+    <Style Selector="WrapPanel > b|Button">
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+    <Border x:Name="Bar" DockPanel.Dock="Top" Height="56" Padding="8,0,16,0"
+            BorderBrush="{DynamicResource colors.borderOpaque}" BorderThickness="0,0,0,1">
+      <DockPanel>
+        <b:Button x:Name="BackButton" DockPanel.Dock="Left" VerticalAlignment="Center" IsVisible="False"
+                  Kind="Tertiary" Size="Compact" StartEnhancer="←" Content="Back"
+                  AutomationProperties.Name="Back" Click="OnBack" />
+        <b:Button x:Name="Variant" DockPanel.Dock="Right" VerticalAlignment="Center"
+                  Kind="Secondary" Size="Compact" Content="Dark" Click="OnVariant" />
+        <StackPanel VerticalAlignment="Center" Margin="8,0">
+          <TextBlock x:Name="PageTitle" Text="Metered" TextTrimming="CharacterEllipsis"
+                     FontSize="{DynamicResource typography.HeadingXSmall.fontSize}"
+                     FontWeight="{DynamicResource typography.HeadingXSmall.fontWeight}"
+                     Foreground="{DynamicResource colors.contentPrimary}" />
+          <!-- What the page cost to open, in a Debug build (PerformanceMonitor); also on standard output. -->
+          <TextBlock x:Name="PerformanceLine" IsVisible="False" TextTrimming="CharacterEllipsis"
+                     FontSize="{DynamicResource typography.ParagraphXSmall.fontSize}"
+                     Foreground="{DynamicResource colors.contentTertiary}" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- The list, or the page shown in its place. -->
+    <Border x:Name="Host">
+      <ScrollViewer x:Name="Index" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="PageList" Margin="16" Spacing="8" />
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</UserControl>
