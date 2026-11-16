@@ -1,0 +1,7 @@
+# LF everywhere: the repository is worked on from Windows, macOS and Fedora,
+# and the generators' --check runs compare bytes.
+* text=auto eol=lf
+
+*.png binary
+*.ttf binary
+*.otf binary
