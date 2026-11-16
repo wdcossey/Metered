@@ -20,15 +20,19 @@ Button and ButtonGroup, to settle the approach before the inventory:
 
 1. **Cost.** Profile opening a Button (about 1 to 1.5 ms headless); the mirrored pseudoclasses and
    the generated state styles are the suspects.
-2. **A theme builder.** Base Web's `createTheme` / `createDarkTheme`, and a subtree theme: spike 1
-   says it must write every derived key, not only the foundation.
 3. **A font.** An OFL substitute for Uber Move, chosen by metrics against baseweb.design, which
    serves Uber Move.
 4. **The sample and the real-window run**, as Cornflower's and Avonic's. A first desktop sample
    exists (`samples/Metered.Sample.Desktop`, one page); still to come: a page per control, an
    Android head, and a scripted real-window run.
 
-Done since the pilot (2026-11-16), borrowed from Cornflower and Avonic:
+Done since the pilot (2026-11-16):
+
+- [x] A theme builder: `BaseTheme.CreateTheme` / `CreateDarkTheme` and `ThemeProvider` for a
+      subtree, every derived key written out, the derivation read from Base Web's own functions
+      (ADR 0002, `docs/theming.md`). 18.2.0's `createTheme` takes overrides only, not primitives
+
+Borrowed from Cornflower and Avonic (2026-11-16):
 
 - [x] CI: build, test, the Node tools' syntax, and both `--check` runs (`.github/workflows/ci.yml`)
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)

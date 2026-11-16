@@ -8,7 +8,7 @@ namespace Metered.Themes;
 /// name (<c>colors.buttonPrimaryFill</c>, <c>sizing.scale600</c>, <c>typography.LabelMedium.fontSize</c>),
 /// and the controls' themes. Add it after any other theme.
 /// </summary>
-public class BaseTheme : Styles
+public partial class BaseTheme : Styles
 {
     private static readonly Uri BaseUri = new("avares://Metered.Themes/");
 
