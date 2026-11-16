@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  AVALONIA_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Libraries target net8.0, but Avalonia 12's analyzers need a current Roslyn, and the tests
+      # run on net10.0; global.json pins the SDK.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Metered.sln
+
+      - name: Build
+        run: dotnet build Metered.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test Metered.sln --no-build --configuration Release --logger "trx" --results-directory TestResults
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: TestResults
+
+  # The generated files are what the generators write today: the tokens and part themes from the
+  # pinned baseui, and the oracle the tests read. Neither needs a browser (only
+  # tools/reference/precedence.js does, and it is run by hand).
+  generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Base Web reference (npm)
+        run: npm ci
+
+      - name: Check the Node tools' syntax
+        run: for f in $(git ls-files 'tools/*.js'); do node --check "$f"; done
+
+      - name: Tokens and part themes are up to date
+        run: node tools/tokens/gen.js --check
+
+      - name: Oracle is up to date
+        run: node tools/reference/cases.js --check
