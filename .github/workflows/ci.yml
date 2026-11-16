@@ -56,6 +56,9 @@ jobs:
       - name: Check the Node tools' syntax
         run: for f in $(git ls-files 'tools/*.js'); do node --check "$f"; done
 
+      - name: The breakage tool kills its strays, never itself (Linux)
+        run: node tools/breakage/strays.test.js
+
       - name: Tokens and part themes are up to date
         run: node tools/tokens/gen.js --check
 
