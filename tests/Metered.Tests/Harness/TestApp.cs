@@ -20,7 +20,10 @@ public class TestApp : Application
 
     // Uber Move is proprietary. Base Web's two families map to the substitutes chosen by measurement
     // against baseweb.design (docs/decisions/0003-font.md): UberMoveText, the primary family, to
-    // Instrument Sans; UberMove, the secondary (display) family, to Figtree.
+    // Instrument Sans; UberMove, the secondary (display) family, to Figtree. The default family stays
+    // the platform's, unlike the sample's: a family Avalonia can't find falls back to the default, so a
+    // default of Instrument Sans would hide a missing UberMoveText mapping (every text here takes a
+    // family from the tokens; FontSubstituteTests checks the default isn't a substitute).
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<TestApp>()
             .UseSkia()
@@ -29,7 +32,6 @@ public class TestApp : Application
                 new Uri(FontCollection, UriKind.Absolute), new Uri("avares://Metered.Tests/Fonts", UriKind.Absolute))))
             .With(new FontManagerOptions
             {
-                DefaultFamilyName = $"{FontCollection}#{TextFamily}",
                 FontFamilyMappings = new Dictionary<string, FontFamily>
                 {
                     ["UberMoveText"] = new($"{FontCollection}#{TextFamily}"),

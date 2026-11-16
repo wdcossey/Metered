@@ -9,8 +9,9 @@ namespace Metered.Tests.Typography;
 
 /// <summary>
 /// Base Web's families draw in the substitutes chosen for Uber Move (docs/decisions/0003-font.md): each
-/// generated typography token's family, at its own weight, resolves to the embedded face of that
-/// weight, so no text falls back to another font or to a synthesised weight.
+/// ramp token's family, at its own weight, resolves to the embedded face of that weight, so no text
+/// falls back to another font or to a synthesised weight. UberMoveMono, the Mono styles' family, has
+/// no substitute (the ADR).
 /// </summary>
 public class FontSubstituteTests
 {
@@ -50,11 +51,25 @@ public class FontSubstituteTests
         Assert.Equal(FontSimulations.None, face.FontSimulations);
     }
 
+    // A family Avalonia can't find falls back to the default; were that a substitute, the ramp test
+    // couldn't tell a mapped family from a missing mapping (TestApp leaves the default to the platform).
     [AvaloniaFact]
-    public void A_Buttons_label_draws_in_the_text_substitute_at_500()
+    public void A_family_with_no_mapping_does_not_draw_in_a_substitute()
+    {
+        using var scene = new Scene();
+        Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface("Metered-NoSuchFamily"), out var face));
+        Assert.DoesNotContain(Family(face), new[] { TestApp.TextFamily, TestApp.DisplayFamily });
+    }
+
+    // A medium Button's label is LabelMedium (baseui/button/styled-components.js, getFontStyles by
+    // size): UberMoveText at 500 (baseui/themes/shared/typography.js), as the generated token has it.
+    [AvaloniaFact]
+    public void A_Buttons_label_draws_in_the_text_substitute_at_LabelMediums_weight()
     {
         var button = new Button { Content = "Button" };
         using var scene = new Scene(new StackPanel { Children = { button } });
+        var weight = (FontWeight)scene.Window.FindResource("typography.LabelMedium.fontWeight")!;
+        Assert.Equal(Primary, ((FontFamily)scene.Window.FindResource("typography.LabelMedium.fontFamily")!).FamilyNames[0]);
         var label = button.GetVisualDescendants().OfType<TextBlock>().Single();
 
         var runs = label.TextLayout.TextLines.SelectMany(l => l.TextRuns).OfType<ShapedTextRun>().ToList();
@@ -62,7 +77,8 @@ public class FontSubstituteTests
         Assert.All(runs, run =>
         {
             Assert.Equal(TestApp.TextFamily, Family(run.GlyphRun.GlyphTypeface));
-            Assert.Equal(FontWeight.Medium, run.GlyphRun.GlyphTypeface.Weight);
+            Assert.Equal(weight, run.GlyphRun.GlyphTypeface.Weight);
+            Assert.Equal(FontSimulations.None, run.GlyphRun.GlyphTypeface.FontSimulations);
         });
     }
 }

@@ -43,11 +43,11 @@ const WEIGHTS = [400, 500, 600, 700];
 
 // The reference faces. Base Web's ramp asks UberMoveText at 400 ('normal') and 500, and UberMove at
 // 700 (shared/typography.js; move-theme/typography.js changes only the families). baseweb.design
-// registers UberMove's Bold file at 600, so 700 draws it.
+// registers UberMove's Bold file at 600, so 700 draws it (face: the weight of the rule it matches).
 const REFERENCE = [
   { role: 'text400', family: 'UberMoveText', weight: 400, ramp: true },
   { role: 'text500', family: 'UberMoveText', weight: 500, ramp: true },
-  { role: 'display700', family: 'UberMove', weight: 700, ramp: true },
+  { role: 'display700', family: 'UberMove', weight: 700, face: 600, ramp: true },
   // Not in the ramp; measured to describe the two cuts and the weight mapping.
   { role: 'text600', family: 'UberMoveText', weight: 600 },
   { role: 'display600', family: 'UberMove', weight: 600 },
@@ -254,31 +254,28 @@ async function avaloniaInter() {
   const b = fs.existsSync(dll)
     ? fs.readFileSync(dll)
     : unzip(await get(`https://api.nuget.org/v3-flatcontainer/avalonia.fonts.inter/${version}/avalonia.fonts.inter.${version}.nupkg`), 'lib/net8.0/Avalonia.Fonts.Inter.dll');
-  const first = b.indexOf(Buffer.from('/Assets/'));
   // The index: its size, version 2, the count, then (7-bit length, path, offset, size) per file.
-  // The first path is the first '/Assets/' in the assembly.
-  for (const start of [first - 13]) {
-    if (b.readInt32LE(start + 4) !== 2) continue;
-    const count = b.readInt32LE(start + 8);
-    if (count < 1 || count > 64) continue;
-    const dataStart = start + 4 + b.readInt32LE(start);
-    let p = start + 12;
-    const files = {};
-    for (let i = 0; i < count; i++) {
-      const len = b[p++];
-      const name = b.toString('utf8', p, p + len); p += len;
-      const offset = b.readInt32LE(p), size = b.readInt32LE(p + 4); p += 8;
-      files[name] = b.subarray(dataStart + offset, dataStart + offset + size);
-    }
-    const out = {};
-    for (const w of WEIGHTS) {
-      const f = files[`/Assets/Inter-${STYLE_NAMES[w]}.ttf`];
-      if (!f) throw new Error(`Inter-${STYLE_NAMES[w]}.ttf not in Avalonia.Fonts.Inter ${version}`);
-      out[w] = { bytes: f, url: `nuget:avalonia.fonts.inter/${version}/Assets/Inter-${STYLE_NAMES[w]}.ttf` };
-    }
-    return { files: out, licence: { source: `Avalonia.Fonts.Inter ${version}, the font's own name table` } };
+  // The first path is the first '/Assets/' in the assembly, after the 13 bytes of size, version,
+  // count and its one-byte length.
+  const start = b.indexOf(Buffer.from('/Assets/')) - 13;
+  const count = start >= 0 && b.readInt32LE(start + 4) === 2 ? b.readInt32LE(start + 8) : 0;
+  if (count < 1 || count > 64) throw new Error(`no Avalonia resource index in Avalonia.Fonts.Inter ${version}`);
+  const dataStart = start + 4 + b.readInt32LE(start);
+  let p = start + 12;
+  const files = {};
+  for (let i = 0; i < count; i++) {
+    const len = b[p++];
+    const name = b.toString('utf8', p, p + len); p += len;
+    const offset = b.readInt32LE(p), size = b.readInt32LE(p + 4); p += 8;
+    files[name] = b.subarray(dataStart + offset, dataStart + offset + size);
   }
-  throw new Error(`no Avalonia resource index in Avalonia.Fonts.Inter ${version}`);
+  const out = {};
+  for (const w of WEIGHTS) {
+    const f = files[`/Assets/Inter-${STYLE_NAMES[w]}.ttf`];
+    if (!f) throw new Error(`Inter-${STYLE_NAMES[w]}.ttf not in Avalonia.Fonts.Inter ${version}`);
+    out[w] = { bytes: f, url: `nuget:avalonia.fonts.inter/${version}/Assets/Inter-${STYLE_NAMES[w]}.ttf` };
+  }
+  return { files: out, licence: { source: `Avalonia.Fonts.Inter ${version}, the font's own name table` } };
 }
 
 async function get(url, as = 'buffer') {
@@ -385,6 +382,7 @@ function measureInPage({ family, weight, strings, ramp, labels = [], labelSizes 
       for (let x = 0; x < canvas.width && !row; x++) row = data[(y * canvas.width + x) * 4 + 3] >= 128;
       if (row) { if (top < 0) top = y; bottom = y; }
     }
+    if (top < 0) throw new Error(`no ink for "${t}" in ${family} ${weight}`);
     return { ascent: (BASE - top) / EM, descent: (bottom + 1 - BASE) / EM };
   };
   const glyphs = {
@@ -507,13 +505,22 @@ function compareVertical(c, cm, r, rampRefs) {
     for (let attempt = 1; ; attempt++) {
       try {
         await page.goto(PAGE, { waitUntil: 'networkidle', timeout: 60000 });
-        faces = await page.evaluate(async refs => {
+        // load() gives the faces CSS matches for each family and weight (and rejects if one fails):
+        // each must be loaded and registered at that weight (or `face`), so a weight the page no
+        // longer registers can't pass on the nearest one.
+        let matched;
+        ({ faces, matched } = await page.evaluate(async refs => {
           await document.fonts.ready;
-          for (const r of refs) await document.fonts.load(`${r.weight} 20px ${r.family}`, 'Button');
-          return [...document.fonts].filter(f => /^"?UberMove/.test(f.family))
+          const matched = [];
+          for (const r of refs) {
+            const list = await document.fonts.load(`${r.weight} 20px ${r.family}`, 'Button');
+            matched.push({ ...r, faces: list.map(f => ({ weight: f.weight, status: f.status })) });
+          }
+          const faces = [...document.fonts].filter(f => /^"?UberMove/.test(f.family))
             .map(f => ({ family: f.family.replace(/"/g, ''), weight: f.weight, status: f.status }));
-        }, REFERENCE);
-        const missing = REFERENCE.filter(r => !faces.some(f => f.family === r.family && f.status === 'loaded'));
+          return { faces, matched };
+        }, REFERENCE));
+        const missing = matched.filter(r => !r.faces.length || r.faces.some(f => f.status !== 'loaded' || Number(f.weight) !== (r.face || r.weight)));
         if (missing.length) throw new Error(`Uber Move not loaded: ${missing.map(m => `${m.family} ${m.weight}`).join(', ')}`);
         break;
       } catch (e) {
@@ -549,7 +556,11 @@ function compareVertical(c, cm, r, rampRefs) {
       const viaSerif = await page.evaluate(measureInPage, { family: `${css}, serif`, weight: r.weight, strings: ALL, ramp: [] });
       const fallbackFree = ALL.every(s => viaMono.widths[s] === m.widths[s] && viaSerif.widths[s] === m.widths[s]);
       reference[r.role] = { ...r, ...m, platformFonts: used, fallbackFree };
-      if (!fallbackFree || used.length !== 1 || !used[0].isCustomFont) throw new Error(`${r.family} ${r.weight} did not draw every glyph: ${JSON.stringify(used)}`);
+      // The one platform font is a web font of this family (UberMoveText-Medium, UberMove-Bold), not
+      // the other cut's.
+      if (!fallbackFree || used.length !== 1 || !used[0].isCustomFont || !used[0].postScriptName.startsWith(`${r.family}-`)) {
+        throw new Error(`${r.family} ${r.weight} did not draw every glyph in its own face: ${JSON.stringify(used)}`);
+      }
     }
 
     // The candidates, each face loaded from its bytes into the same page.
@@ -690,7 +701,9 @@ function report({ browser, faces, fontFaceRules, reference, results, local }) {
   for (let i = 0; i < 8; i++) p(`| ${i + 1} | ${byText[i].name}: ${(textScore(byText[i]) * 100).toFixed(2)}% | ${byDisplay[i].name}: ${(displayScore(byDisplay[i]) * 100).toFixed(2)}% |`);
   const pair = mean([textScore(byText[0]), textScore(byText[0]), displayScore(byDisplay[0])]);
   p(`\nThe best pair, ${byText[0].name} with ${byDisplay[0].name}, scores ${(pair * 100).toFixed(2)}% on the three ramp faces, against ${(results[0].widthScore * 100).toFixed(2)}% for the best single family, ${results[0].name}.`);
-  const shown = [...new Set([...results.slice(0, 6), ...byText.slice(0, 4), ...byDisplay.slice(0, 4), results.find(c => c.source === 'avalonia' || c.id === 'inter-avalonia')])];
+  const incumbent = results.find(c => c.id === 'inter-avalonia');
+  if (!incumbent) throw new Error('the incumbent, inter-avalonia, was not measured');
+  const shown = [...new Set([...results.slice(0, 6), ...byText.slice(0, 4), ...byDisplay.slice(0, 4), incumbent])];
 
   p(`\n## By kind of string (signed width error)\n`);
   p('| Candidate | Face | Labels | Sentences | Digits | Capitals | Lowercase | Average character |');
