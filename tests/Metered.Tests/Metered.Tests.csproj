@@ -21,14 +21,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Metered.Controls\Metered.Controls.csproj" />
     <ProjectReference Include="..\..\src\Metered.Themes\Metered.Themes.csproj" />
+    <!-- The OFL substitutes for Uber Move (docs/decisions/0003-font.md), registered in Harness/TestApp.cs. -->
+    <ProjectReference Include="..\..\src\Metered.Fonts\Metered.Fonts.csproj" />
     <!-- The sample, so Sample/ tests its shell and pages and PreviewGallery draws its own MainWindow. -->
     <ProjectReference Include="..\..\samples\Metered.Sample\Metered.Sample.csproj" />
-  </ItemGroup>
-
-  <!-- The OFL substitutes for Uber Move, from fonts/ (docs/decisions/0003-font.md): one collection,
-       avares://Metered.Tests/Fonts, registered in Harness/TestApp.cs. -->
-  <ItemGroup>
-    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- What Base Web's own style functions give, written by tools/reference/cases.js. -->

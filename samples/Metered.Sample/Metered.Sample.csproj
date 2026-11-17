@@ -13,14 +13,11 @@
     <PackageReference Include="Avalonia.Themes.Simple" />
   </ItemGroup>
 
-  <!-- Uber Move is proprietary: the OFL substitutes from fonts/ (docs/decisions/0003-font.md), as in the
-       tests, embedded here for every head and registered by SampleFonts. -->
-  <ItemGroup>
-    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
-  </ItemGroup>
-
+  <!-- Uber Move is proprietary: Metered.Fonts carries the OFL substitutes (docs/decisions/0003-font.md), for every
+       head, registered by SampleFonts. -->
   <ItemGroup>
     <ProjectReference Include="..\..\src\Metered\Metered.csproj" />
+    <ProjectReference Include="..\..\src\Metered.Fonts\Metered.Fonts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

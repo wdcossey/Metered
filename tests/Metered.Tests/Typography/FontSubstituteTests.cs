@@ -25,7 +25,7 @@ public class FontSubstituteTests
 
     // A static Medium or SemiBold face names its family "Instrument Sans Medium" (name ID 1) and
     // the whole family only as its typographic family (ID 16), which Regular and Bold don't carry.
-    private static string Family(GlyphTypeface face) =>
+    internal static string Family(GlyphTypeface face) =>
         string.IsNullOrEmpty(face.TypographicFamilyName) ? face.FamilyName : face.TypographicFamilyName;
 
     // Base Web's ramp (baseui/themes/shared/typography.js); the named styles are aliases of these.

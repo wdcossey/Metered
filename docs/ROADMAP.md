@@ -25,10 +25,7 @@ Button and ButtonGroup, to settle the approach before the inventory:
    No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
    allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
    a phone.
-2. **Ship the fonts** (#9). A package (the theme, or a `Metered.Fonts`) carrying Instrument Sans and
-   Figtree and the family mapping, licensed OFL-1.1 beside MIT. Today only the tests and the sample
-   embed them (ADR 0003).
-3. **The sample and the real-window run**, as Cornflower's and Avonic's. The sample is a library
+2. **The sample and the real-window run**, as Cornflower's and Avonic's. The sample is a library
    with a page per control, shown by a desktop head (`samples/Metered.Sample`, #7) and an Android
    head built in CI (#8); still to come: the first device run on the Pixel (`tools/android/run.ps1`,
    hands-on), which also gives #10 its phone's number, and a scripted real-window run. The
@@ -42,6 +39,8 @@ Done since the pilot (2026-11-16):
 - [x] The cost, profiled by phase and ablation (`Spikes/StyleCostProfile`, spike 2)
 - [x] A font: Instrument Sans for UberMoveText, Figtree for UberMove, chosen by measurement against
       baseweb.design (ADR 0003, `tools/reference/fonts.js`)
+- [x] The fonts shipped (#9): `Metered.Fonts`, a package of its own after Avalonia.Fonts.Inter,
+      with `WithMeteredFonts()` for the mapping; the tests and the sample use it. Not published
 - [x] The sample as a library (#7, from Cornflower's): a shell that lists a page per control and
       times each to its first frame, `CatalogueTests` and a test per page, `PerformanceMonitor` (the
       Debug line) and the timing benchmark with its trend table (`docs/performance/README.md`)
@@ -68,7 +67,7 @@ unless Avonic is named.
 | What | Where it is there | Take it when |
 |---|---|---|
 | **A test clock and a manual render timer**: `TestClock` (time moves only when the test says, each callback run at its own time), `ManualRenderTimer` (a frame only on a forced tick), and the harness's own tests | `tests/Cornflower.Tests/TestClock.cs`, `ManualRenderTimer.cs`, `Harness/`; the clock it replaces, `CornflowerClock`, is in `src/Cornflower.Controls` | The first control whose motion must match Base Web frame by frame. Avalonia 12's animation clock is internal, so `Transitions` and `Animation` run on real time and are tested at their end value (Cornflower's ADR 0003); the spinner's ring is the first candidate |
-| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 3. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
+| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 2. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
 
 ## Inventory
 
