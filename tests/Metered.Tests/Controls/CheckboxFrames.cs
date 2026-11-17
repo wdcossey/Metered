@@ -10,92 +10,95 @@ using Metered.Controls;
 namespace Metered.Tests.Controls;
 
 /// <summary>
-/// Drawn pixels of what CheckboxMark draws itself: Base Web's tick, an SVG background image
-/// contained in the box inside its 3 px border; the 3 px outline keyboard focus gives a checked box;
-/// the toggle's knob, at the track's start or moved by its width. And, when METERED_FRAMES names a
-/// folder, a gallery of Base Web's checkbox scenarios, light and dark, saved there for docs/controls/Checkbox.
+/// Drawn pixels of what CheckboxMark draws: Base Web's tick, its SVG background image at its own 17 px over the whole
+/// box, under a transparent border; an unchecked box's 2 px border round nothing; the 2 px focus outline 2 px out; the
+/// hover tints of the container and the mark, one over the other. And, when METERED_FRAMES names a folder, a gallery of
+/// Base Web's checkbox-v2 scenarios, light and dark, saved there for docs/controls/Checkbox.
 /// </summary>
 public class CheckboxFrames
 {
-    // A box at (20, 20): its Checkmark, with its 2 px margin, is the 20 × 20 square at (22, 22) (the oracle's sizes).
+    // A checkbox at (20, 20): its 33 px CheckmarkContainer there, the 17 px Checkmark centred in it at (28, 28) (the
+    // oracle's sizes).
     private static Scene Show(Checkbox box) => new(new StackPanel { Margin = new Thickness(20), Children = { box } });
 
-    // The colours are the oracle's, light, at rest unless said; the positions follow from its sizes.
-    private static CheckmarkCase Mark(bool isChecked, string state = "rest") =>
-        CheckboxOracle.Value.Checkmark.Single(c => c is { Theme: "Light", Indeterminate: false, Error: false, Disabled: false } && c.Checked == isChecked && c.State == state);
-
-    private static ToggleCase Knob(bool isChecked) =>
-        CheckboxOracle.Value.Toggle.Single(c => c is { Theme: "Light", Error: false, Disabled: false, State: "rest" } && c.Checked == isChecked);
+    // The colours are the oracle's, light; the positions follow from its sizes.
+    private static CheckboxColourCase Case(bool isChecked, string state = "rest") =>
+        CheckboxOracle.Value.Colours.Single(c => c is { Theme: "Light", Indeterminate: false, Error: false, Disabled: false } && c.Checked == isChecked && c.State == state);
 
     /// <summary>The window's own background, under everything: not Base Web's.</summary>
     private static readonly Color Page = Colors.White;
 
     [AvaloniaFact]
-    public void The_tick_is_drawn_inside_the_border_contained_and_centred()
+    public void The_tick_is_drawn_at_its_own_size_over_the_box()
     {
-        // Light: tickFillSelected #000000 under a transparent border; the tick tickMarkFill #FFFFFF.
-        // The 17 × 13 SVG contained in the 14 × 14 box inside the border: 14 × 10.71 at (25, 26.65).
+        // Light: contentPrimary #000000 under a transparent border; the tick contentInversePrimary #FFFFFF, its 24 px
+        // viewBox drawn at 17 px from (28, 28), so a viewBox unit is 17/24 px.
         using var scene = Show(new Checkbox { IsChecked = true });
         var frame = scene.Capture();
-        var fill = Color.Parse(Mark(true).Background);
-        var tick = Color.Parse(Mark(true).Tick!);
+        var fill = Color.Parse(Case(true).Background);
+        var tick = Color.Parse(Case(true).Tick!);
 
-        Assert.Equal(fill, Frames.PixelAt(frame, 22, 22)); // the fill reaches under the border
-        Assert.Equal(tick, Frames.PixelAt(frame, 30, 35)); // the tick's foot: (6.5, 10.5) in the SVG
-        Assert.Equal(tick, Frames.PixelAt(frame, 36, 29)); // its long stroke: (13.5, 3) in the SVG
-        Assert.Equal(fill, Frames.PixelAt(frame, 34, 35)); // under the long stroke: (11, 10) in the SVG
-        Assert.Equal(fill, Frames.PixelAt(frame, 30, 27)); // above the foot: (6, 0.5) in the SVG
-        Assert.Equal(fill, Frames.PixelAt(frame, 39, 28)); // past the tip at (16.1, 3.1): the glyph is contained, not covering
+        Assert.Equal(fill, Frames.PixelAt(frame, 28, 36)); // the fill reaches under the border
+        Assert.Equal(tick, Frames.PixelAt(frame, 37, 36)); // the long stroke: (13.4, 12.0) in the viewBox
+        Assert.Equal(tick, Frames.PixelAt(frame, 33, 37)); // the short stroke: (7.8, 13.4)
+        Assert.Equal(fill, Frames.PixelAt(frame, 31, 31)); // above the short stroke: (4.9, 4.9)
+        Assert.Equal(fill, Frames.PixelAt(frame, 40, 30)); // above the long stroke: (17.6, 3.5)
+        Assert.Equal(fill, Frames.PixelAt(frame, 37, 41)); // under the long stroke: (13.4, 18.4)
     }
 
     [AvaloniaFact]
-    public void An_unchecked_box_is_its_border_round_its_fill()
+    public void An_unchecked_box_is_its_border_round_nothing()
     {
-        // Light: tickBorder #5E5E5E, 3 px, around tickFill #FFFFFF.
+        // Light: contentTertiary #5E5E5E, 2 px; transparent inside, so the page shows.
         using var scene = Show(new Checkbox());
         var frame = scene.Capture();
-        var border = Color.Parse(Mark(false).Border);
-        var fill = Color.Parse(Mark(false).Background);
+        var border = Color.Parse(Case(false).Border);
 
-        Assert.Equal(border, Frames.PixelAt(frame, 22, 32));
-        Assert.Equal(border, Frames.PixelAt(frame, 24, 32));
-        Assert.Equal(fill, Frames.PixelAt(frame, 25, 32));
-        Assert.Equal(fill, Frames.PixelAt(frame, 32, 32));
+        Assert.Equal(Page, Frames.PixelAt(frame, 27, 36));
+        Assert.Equal(border, Frames.PixelAt(frame, 28, 36));
+        Assert.Equal(border, Frames.PixelAt(frame, 29, 36));
+        Assert.Equal(Page, Frames.PixelAt(frame, 30, 36));
+        Assert.Equal(Page, Frames.PixelAt(frame, 36, 36));
     }
 
     [AvaloniaFact]
-    public void Keyboard_focus_on_a_checked_box_is_a_3_px_outline_outside_it()
+    public void Keyboard_focus_is_a_2_px_outline_2_px_outside_the_box()
     {
-        // Light: outline: 3px solid borderAccent #276EF1, square, on the box's outer edge.
+        // Light: outline: 2px solid brandBorderAccessible, outline-offset 2px: the box's edge at 28, the gap 26 to 28,
+        // the line 24 to 26.
         var box = new Checkbox { IsChecked = true };
         using var scene = Show(box);
-        box.Focus(NavigationMethod.Tab);
+        scene.Key(Key.Tab);
         var frame = scene.Capture();
-        var ring = Color.Parse(Mark(true, "focusVisible").Outline!);
-        Assert.Equal(3, Mark(true, "focusVisible").OutlineWidth);
+        var c = Case(true, "focusVisible");
+        var ring = Color.Parse(c.Outline!.Colour);
+        Assert.Equal((2, 2), (c.Outline.Thickness, c.Outline.Offset));
 
-        Assert.NotEqual(ring, Frames.PixelAt(frame, 18, 32));
-        Assert.Equal(ring, Frames.PixelAt(frame, 19, 32));
-        Assert.Equal(ring, Frames.PixelAt(frame, 21, 32));
-        Assert.Equal(Color.Parse(Mark(true, "focusVisible").Background), Frames.PixelAt(frame, 22, 32));
-        Assert.Equal(ring, Frames.PixelAt(frame, 19, 19)); // a square corner
-        Assert.Equal(ring, Frames.PixelAt(frame, 32, 43));
+        Assert.Equal(Page, Frames.PixelAt(frame, 23, 36));
+        Assert.Equal(ring, Frames.PixelAt(frame, 24, 36));
+        Assert.Equal(ring, Frames.PixelAt(frame, 25, 36));
+        Assert.Equal(Page, Frames.PixelAt(frame, 26, 36));
+        Assert.Equal(Page, Frames.PixelAt(frame, 27, 36));
+        Assert.Equal(Color.Parse(c.Background), Frames.PixelAt(frame, 28, 36));
+        Assert.Equal(ring, Frames.PixelAt(frame, 36, 24)); // above
+        Assert.Equal(ring, Frames.PixelAt(frame, 36, 47)); // below: the box ends at 45, the line 47 to 49
     }
 
-    [AvaloniaTheory]
-    [InlineData(false, 36, 56)]
-    [InlineData(true, 56, 36)]
-    public void The_knob_sits_at_the_tracks_start_or_one_width_along(bool isChecked, int knobX, int trackX)
+    [AvaloniaFact]
+    public void A_mouse_over_the_container_tints_it_and_the_mark_over_it()
     {
-        // No label: the 40 × 14 track at (26, 26) after its 6 px margins, the 20 px knob centred across it.
-        using var scene = Show(new Checkbox { CheckmarkType = CheckboxStyleType.Toggle, IsChecked = isChecked });
+        // Light: hoverOverlayAlpha on the container (CSS's :hover) and on the unchecked mark ($isHovered), one over the
+        // other inside the mark.
+        var box = new Checkbox();
+        using var scene = Show(box);
+        Settle(box);
+        scene.Hover((Visual)box.Part(Checkbox.CheckmarkContainerPart)!);
         var frame = scene.Capture();
-        var knob = Color.Parse(Knob(isChecked).Background);
+        var c = Case(false, "hover");
+        var container = Blend(Color.Parse(c.Container), Page);
 
-        Assert.Equal(knob, Frames.PixelAt(frame, knobX, 33));
-        Assert.Equal(knob, Frames.PixelAt(frame, knobX, 24)); // above the track
-        Assert.Equal(Color.Parse(Knob(isChecked).Track), Frames.PixelAt(frame, trackX, 33));
-        Assert.Equal(Page, Frames.PixelAt(frame, trackX, 24)); // beside the knob, above the track
+        Assert.Equal(container, Frames.PixelAt(frame, 22, 36), Near);
+        Assert.Equal(Blend(Color.Parse(c.Background), container), Frames.PixelAt(frame, 36, 36), Near);
     }
 
     [AvaloniaTheory]
@@ -106,8 +109,8 @@ public class CheckboxFrames
         var folder = Environment.GetEnvironmentVariable(ButtonFrames.Variable);
         if (string.IsNullOrEmpty(folder)) return;
 
-        // checkbox-states.scenario.tsx.
-        var states = new StackPanel { Width = 260, Margin = new Thickness(12) };
+        // checkbox-v2-states.scenario.tsx: a column 8 apart.
+        var states = new StackPanel { Width = 300, Spacing = 8, Margin = new Thickness(12) };
         foreach (var (label, check, indeterminate, disabled, error) in new[]
         {
             ("Checkbox", false, false, false, false), ("Checkbox checked", true, false, false, false),
@@ -120,60 +123,67 @@ public class CheckboxFrames
             states.Children.Add(new Checkbox { Content = label, IsChecked = check, IsIndeterminate = indeterminate, IsEnabled = !disabled, Error = error });
         }
 
-        var hover = new Checkbox { Content = "hover", IsChecked = true };
+        var hover = new Checkbox { Content = "hover" };
         var press = new Checkbox { Content = "press" };
         var focus = new Checkbox { Content = "keyboard focus", IsChecked = true };
         states.Children.Add(hover);
         states.Children.Add(press);
         states.Children.Add(focus);
 
-        // checkbox-toggle.scenario.tsx: a 200 px column, 12 px apart.
-        var toggles = new StackPanel { Width = 200, Spacing = 12, Margin = new Thickness(12) };
-        foreach (var (label, check, disabled, error) in new[]
-        {
-            ("default unchecked", false, false, false), ("default checked", true, false, false),
-            ("disabled unchecked", false, true, false), ("disabled checked", true, true, false),
-            ("error unchecked", false, false, true), ("error checked", true, false, true),
-            ("long label that should wrap to multiple lines to test how the toggle aligns with the text", true, false, false),
-        })
-        {
-            toggles.Children.Add(new Checkbox { Content = label, CheckmarkType = CheckboxStyleType.Toggle, IsChecked = check, IsEnabled = !disabled, Error = error });
-        }
-
-        var toggleFocus = new Checkbox { Content = "keyboard focus", CheckmarkType = CheckboxStyleType.Toggle };
-        toggles.Children.Add(toggleFocus);
-
-        // checkbox-placement.scenario.tsx.
-        var placements = new StackPanel { Width = 380, Margin = new Thickness(12) };
-        placements.Children.Add(new Checkbox { Content = "Label on the top", LabelPlacement = LabelPlacement.Top });
-        placements.Children.Add(new StackPanel
+        // checkbox-v2-placement.scenario.tsx, and checkbox-v2.scenario.tsx's long label in a 200 px box.
+        var others = new StackPanel { Width = 380, Spacing = 16, Margin = new Thickness(12) };
+        others.Children.Add(new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(12, 8, 0, 8),
             Children =
             {
-                new Checkbox { Content = "Label on the left", LabelPlacement = LabelPlacement.Left },
-                new Checkbox { Content = "Label on the right", LabelPlacement = LabelPlacement.Right },
+                new Checkbox { Content = "Label on the left", LabelPlacement = CheckboxLabelPlacement.Left },
+                new Checkbox { Content = "Label on the right", LabelPlacement = CheckboxLabelPlacement.Right },
             },
         });
-        placements.Children.Add(new Checkbox { Content = "Label on the bottom", LabelPlacement = LabelPlacement.Bottom });
+        others.Children.Add(new Checkbox { Content = "click me" });
+        others.Children.Add(new Border
+        {
+            Width = 200,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new Checkbox { Content = "This is a long text. This is a long text. This is a long text. This is a long text. This is a long text." },
+        });
 
-        var page = new StackPanel { Orientation = Orientation.Horizontal, Children = { states, toggles, placements } };
+        var page = new StackPanel { Orientation = Orientation.Horizontal, Children = { states, others } };
         var variant = theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
-        using var scene = new Scene(new Border { Background = Brushes.Transparent, Child = page }, variant, width: 920, height: 520);
+        using var scene = new Scene(new Border { Background = Brushes.Transparent, Child = page }, variant, width: 720, height: 560);
         scene.Window.Background = variant == ThemeVariant.Dark ? Brushes.Black : Brushes.White;
-        // One pointer and one focus a frame: the box's focus and a hover, then the toggle's focus and a press.
+        Settle(hover);
+        Settle(press);
+        // One pointer a frame: a hover, then a press; keyboard focus in both.
         focus.Focus(NavigationMethod.Tab);
-        scene.Hover(hover.Part(Checkbox.CheckmarkPart) as Visual ?? hover);
+        scene.Hover((Visual)hover.Part(Checkbox.CheckmarkContainerPart)!);
         var hoverFrame = scene.Capture();
-        // A press takes focus, so it comes first.
-        scene.Press(press.Part(Checkbox.CheckmarkPart) as Visual ?? press);
-        toggleFocus.Focus(NavigationMethod.Tab);
+        // A press takes focus, so the focus comes back after it.
+        scene.Press((Visual)press.Part(Checkbox.CheckmarkContainerPart)!);
+        focus.Focus(NavigationMethod.Tab);
         var frame = scene.Capture();
 
         Directory.CreateDirectory(folder);
         hoverFrame.Save(Path.Combine(folder, $"checkbox-gallery-{theme.ToLowerInvariant()}-hover.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
         frame.Save(Path.Combine(folder, $"checkbox-gallery-{theme.ToLowerInvariant()}.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
+
+    /// <summary>
+    /// No transition on the mark, so a frame shows where its colours end: the headless clock doesn't run, and a frame
+    /// taken just after a hover would catch the fill on its way.
+    /// </summary>
+    private static void Settle(Checkbox box) => ((CheckboxMark)box.Part(Checkbox.CheckmarkPart)!).Transitions = null;
+
+    /// <summary>A colour over another, as source-over draws it.</summary>
+    private static Color Blend(Color over, Color under)
+    {
+        var a = over.A / 255.0;
+        byte Mix(byte o, byte u) => (byte)Math.Round(o * a + u * (1 - a));
+        return Color.FromRgb(Mix(over.R, under.R), Mix(over.G, under.G), Mix(over.B, under.B));
+    }
+
+    /// <summary>Within one step of each channel: blending rounds.</summary>
+    private static readonly IEqualityComparer<Color> Near = EqualityComparer<Color>.Create(
+        (x, y) => Math.Abs(x.A - y.A) <= 1 && Math.Abs(x.R - y.R) <= 1 && Math.Abs(x.G - y.G) <= 1 && Math.Abs(x.B - y.B) <= 1);
 }

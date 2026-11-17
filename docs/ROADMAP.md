@@ -75,7 +75,9 @@ By the research's grouping (`R:\source\baseui-research\README.md` §5): first th
 theme Avalonia's (checkbox, radio, switch, input, textarea, slider, progress bar, spinner, tabs,
 tooltip, popover, menu, select), then the small new ones, then the overlays and navigation.
 
-- [x] Checkbox (#34): Base Web's v1, the one baseweb.design shows, with its toggle style and four label placements (`docs/controls/Checkbox/`)
+- [x] Checkbox (#34, #42): Base Web's checkbox-v2, the one its v1 page says replaces it; parts, overrides, the two
+      label placements, indeterminate, error, the touch padding; its toggle style went to Switch (#43)
+      (`docs/controls/Checkbox/`)
 - [x] Radio and RadioGroup (#35): Base Web's radio-v2, the one its documentation recommends for new work; parts,
       overrides, label placement, align, description, error, the group's tab stop and arrow keys, the touch padding
       (`docs/controls/Radio/`)

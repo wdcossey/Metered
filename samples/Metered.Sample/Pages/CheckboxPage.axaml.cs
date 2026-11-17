@@ -3,8 +3,8 @@ using Avalonia.Controls;
 namespace Metered.Sample.Pages;
 
 /// <summary>
-/// Base Web's Checkbox: its states, a parent that is indeterminate while some of its children are checked
-/// (Base Web's checkbox-indeterminate scenario), the toggle, and the four label placements.
+/// Base Web's checkbox-v2: its states, a parent that is indeterminate while some of its children are checked
+/// (Base Web's indeterminate example), the two label placements, and a label of several lines.
 /// </summary>
 [SamplePage("Checkbox", Order = 34)]
 public partial class CheckboxPage : UserControl

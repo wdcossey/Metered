@@ -1,18 +1,14 @@
 <!--
-  Base Web's Checkbox (baseui 18.2.0, checkbox/checkbox.tsx: the v1 checkbox, with its toggle style),
-  as a template of named parts. Each part's look is its own theme, Checkbox.Styled<Part>
-  (Checkbox.Parts.g.axaml), which the checkbox's Overrides merge over: this file holds only the
-  structure. Base Web renders the checkmark or the toggle, never both: two templates.
+  Base Web's checkbox-v2 Checkbox (baseui 18.2.0, checkbox-v2/checkbox.js), as a template of named parts. Each
+  part's look is its own theme, Checkbox.Styled<Part> (Checkbox.Parts.g.axaml), which the checkbox's Overrides
+  merge over: this file holds only the structure.
 
-  Root                  (the flex line; the label goes first for the top and left placements)
-    Checkmark           (checkmarkType default)
-    Label               (only with content)
-
-  Root
-    ToggleTrack         (checkmarkType toggle)
-      Toggle
-    Label
-  Base Web's Input, the hidden native input, is the Checkbox itself here: it takes focus and keys.
+  Root                       (radio-v2's root panel: a row, the label first for the left placement)
+    CheckmarkContainer       (the backplate)
+      Checkmark              (the box, its tick or dash, its focus outline)
+    Label                    (only with content: Base Web renders it only with children)
+      the content
+  Base Web's Input part, the hidden input, is the Checkbox itself: it takes focus and keys.
   The label is drawn as given: Base Web's children are text, with no access key.
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
@@ -20,38 +16,29 @@
                     xmlns:b="https://github.com/wdcossey/Metered">
 
   <ControlTheme x:Key="{x:Type b:Checkbox}" TargetType="b:Checkbox">
+    <!-- display: inline-flex: the checkbox hugs its content. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
-    <!-- Rings and shadows are drawn outside the marks: overflow visible. -->
+    <!-- The focus outline is drawn outside the mark: overflow visible. -->
     <Setter Property="ClipToBounds" Value="False" />
     <Setter Property="Template">
       <ControlTemplate>
-        <b:LabelPlacementPanel Name="Root" Theme="{DynamicResource Checkbox.StyledRoot}">
-          <b:CheckboxMark Name="Checkmark" Theme="{DynamicResource Checkbox.StyledCheckmark}" />
+        <b:RadioRootPanel Name="Root" Theme="{DynamicResource Checkbox.StyledRoot}">
+          <Border Name="CheckmarkContainer" Theme="{DynamicResource Checkbox.StyledCheckmarkContainer}">
+            <b:CheckboxMark Name="Checkmark" Theme="{DynamicResource Checkbox.StyledCheckmark}" />
+          </Border>
+          <!-- Shown only for content that is something (Metered.Controls.Checkbox). -->
           <ContentPresenter Name="Label"
                             Theme="{DynamicResource Checkbox.StyledLabel}"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}" />
-        </b:LabelPlacementPanel>
+        </b:RadioRootPanel>
       </ControlTemplate>
     </Setter>
-    <Style Selector="^:toggle">
-      <Setter Property="Template">
-        <ControlTemplate>
-          <b:LabelPlacementPanel Name="Root" Theme="{DynamicResource Checkbox.StyledRoot}">
-            <Border Name="ToggleTrack" Theme="{DynamicResource Checkbox.StyledToggleTrack}">
-              <b:CheckboxMark Name="Toggle" Theme="{DynamicResource Checkbox.StyledToggle}" />
-            </Border>
-            <ContentPresenter Name="Label"
-                              Theme="{DynamicResource Checkbox.StyledLabel}"
-                              Content="{TemplateBinding Content}"
-                              ContentTemplate="{TemplateBinding ContentTemplate}" />
-          </b:LabelPlacementPanel>
-        </ControlTemplate>
-      </Setter>
-    </Style>
   </ControlTheme>
 
 </ResourceDictionary>

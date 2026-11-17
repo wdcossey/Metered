@@ -2,7 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:b="https://github.com/wdcossey/Metered"
              x:Class="Metered.Sample.Pages.CheckboxPage">
-  <!-- Base Web's Checkbox (the v1 baseweb.design shows): its states, an indeterminate parent, the toggle and the label placements. -->
+  <!-- Base Web's checkbox-v2, after its docs page's examples: its states, an indeterminate parent, the two label
+       placements and a label of several lines. -->
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16,0,16,32">
       <TextBlock Classes="heading" Text="States" />
@@ -15,26 +16,20 @@
 
       <TextBlock Classes="heading" Text="Indeterminate" />
       <b:Checkbox x:Name="AllToppings" Content="All toppings" />
-      <StackPanel Margin="12">
+      <StackPanel Margin="10,0,0,0">
         <b:Checkbox x:Name="Cheese" Content="Cheese" IsChecked="True" />
         <b:Checkbox x:Name="Olives" Content="Olives" />
       </StackPanel>
 
-      <TextBlock Classes="heading" Text="Toggle" />
-      <StackPanel Spacing="12">
-        <b:Checkbox x:Name="Toggle" CheckmarkType="Toggle" Content="Notifications" />
-        <b:Checkbox CheckmarkType="Toggle" Content="Location" IsChecked="True" />
-        <b:Checkbox CheckmarkType="Toggle" Content="Error" Error="True" IsChecked="True" />
-        <b:Checkbox CheckmarkType="Toggle" Content="Disabled" IsEnabled="False" IsChecked="True" />
+      <TextBlock Classes="heading" Text="Label placement" />
+      <StackPanel Orientation="Horizontal">
+        <b:Checkbox Content="Label on the left" LabelPlacement="Left" />
+        <b:Checkbox Content="Label on the right" LabelPlacement="Right" />
       </StackPanel>
 
-      <TextBlock Classes="heading" Text="Label placement" />
-      <b:Checkbox Content="Label on the top" LabelPlacement="Top" />
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8">
-        <b:Checkbox Content="Left" LabelPlacement="Left" />
-        <b:Checkbox Content="Right" LabelPlacement="Right" />
-      </StackPanel>
-      <b:Checkbox Content="Label on the bottom" LabelPlacement="Bottom" />
+      <TextBlock Classes="heading" Text="Multiple lines" />
+      <b:Checkbox IsChecked="True"
+                  Content="Sign up for the newsletter: the week's new features, the changes on their way and the stories from those who use them, in one email each Friday." />
     </StackPanel>
   </ScrollViewer>
 </UserControl>
