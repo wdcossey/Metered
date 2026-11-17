@@ -33,7 +33,7 @@ Switch. Metered's `Checkbox` is v1.
 | `labelPlacement` | `LabelPlacement` (`LabelPlacement?`): unset, right, or left for the toggle (`ActualLabelPlacement`) |
 | `error` | `Error` |
 | `disabled` | `IsEnabled` |
-| `children` | `Content`, the label; none, and there's no Label part |
+| `children` | `Content`, the label (text or a control); none, and there's no Label part |
 | `onChange` | `IsCheckedChanged`, `Click`, `Command` |
 | `overrides` | `Overrides`: `Root`, `Checkmark`, `Label`, `ToggleTrack`, `Toggle` |
 | `title` | `ToolTip.Tip` |
@@ -46,7 +46,7 @@ box that also draws Base Web's background-image glyph and CSS's outline), `Toggl
 toggle, never both, there are two templates, the toggle's chosen by `:toggle`. `:active` is a mouse's
 press only, as Base Web's `isActive` is (`onMouseDown`, cleared by `onMouseUp` and `onMouseLeave`):
 not Space, not a finger. `CheckboxAutomationPeer` reports an indeterminate box as mixed, as Base Web's
-input's `indeterminate` does. `LabelPlacementPanel` and `LabelPlacement` are for any control with
+input's `indeterminate` does, and its toggle is a click (`Click` and `Command` run). `LabelPlacementPanel` and `LabelPlacement` are for any control with
 Base Web's label placements (Radio's v1 has the same four).
 
 ## How the themes are made
@@ -70,8 +70,9 @@ same functions on the light theme.
   wrapping beside the mark in Base Web's 200 px toggle scenario.
 - `CheckboxPartsTests`: click, Space but not Enter, the indeterminate scenario, the whole row taking
   the tap, disabled, touch not hovering, a mouse's press alone being active and leaving ending it,
-  mouse focus without the ring, mirrored states, no label, the type switch, automation's mixed
-  state, a label drawn as given, overrides and the transitions waiting for load.
+  mouse focus without the ring, mirrored states, no label, a control as the label, the type switch
+  and its new template appearing in place, disabling ending hover and press, automation's mixed
+  state and click, a label drawn as given, overrides and the transitions waiting for load.
 - `CheckboxFrames`: the tick's pixels contained inside the border, the border, the 3 px focus
   outline, and the knob at either end, in the oracle's colours.
 - `Sample/CheckboxPageTests`: the sample's page.

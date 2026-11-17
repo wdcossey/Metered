@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -5,10 +6,13 @@ using Avalonia.Automation.Provider;
 namespace Metered.Controls;
 
 /// <summary>
-/// The Checkbox's automation peer: a box drawn indeterminate is reported so (mixed), as Base Web sets
-/// its input's <c>indeterminate</c> for assistive technology, whatever <c>IsChecked</c> is.
+/// The Checkbox's automation peer: a check box whose toggle state is On, Off, or Indeterminate (mixed)
+/// while it is drawn indeterminate, as Base Web sets its input's <c>indeterminate</c> for assistive
+/// technology, whatever <c>IsChecked</c> is. It is the only source of the state's change events, so
+/// none says Off or On while the box reads as mixed. A toggle through it is a click: <c>Click</c> and
+/// <c>Command</c> run, as Avalonia's own toggle button peer does.
 /// </summary>
-public class CheckboxAutomationPeer : ToggleButtonAutomationPeer, IToggleProvider
+public class CheckboxAutomationPeer : ContentControlAutomationPeer, IToggleProvider
 {
     private ToggleState _state;
 
@@ -16,21 +20,24 @@ public class CheckboxAutomationPeer : ToggleButtonAutomationPeer, IToggleProvide
         : base(owner)
     {
         _state = Of(owner);
+        owner.PropertyChanged += OnOwnerPropertyChanged;
     }
 
     private new Checkbox Owner => (Checkbox)base.Owner;
 
-    ToggleState IToggleProvider.ToggleState => Of(Owner);
+    public ToggleState ToggleState => Of(Owner);
 
-    void IToggleProvider.Toggle()
+    public void Toggle()
     {
         if (!IsEnabled()) throw new ElementNotEnabledException();
-        Owner.ToggleFromAutomation();
+        Owner.ClickFromAutomation();
     }
 
-    /// <summary>Says a change of state the base peer, which reads only <c>IsChecked</c>, doesn't see.</summary>
-    internal void StateChanged()
+    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.CheckBox;
+
+    private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        if (e.Property != Checkbox.IsCheckedProperty && e.Property != Checkbox.IsIndeterminateProperty) return;
         var state = Of(Owner);
         if (state == _state) return;
         RaisePropertyChangedEvent(TogglePatternIdentifiers.ToggleStateProperty, _state, state);

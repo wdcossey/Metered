@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace Metered.Controls;
 
@@ -87,6 +88,17 @@ public class CheckboxMark : Control
         return new Rect(inner.Center.X - drawn.Width / 2, inner.Center.Y - drawn.Height / 2, drawn.Width, drawn.Height);
     }
 
+    // The pens, made once for each brush and width rather than on every frame.
+    private IPen? _borderPen;
+    private IPen? _outlinePen;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty) _borderPen = null;
+        else if (change.Property == OutlineBrushProperty || change.Property == OutlineThicknessProperty) _outlinePen = null;
+    }
+
     public override void Render(DrawingContext context)
     {
         var box = new Rect(Bounds.Size);
@@ -98,7 +110,7 @@ public class CheckboxMark : Control
             // The border's stroke runs along the middle of its width, inside the box.
             var mid = width / 2;
             static double Shrink(double radius, double by) => Math.Max(0, radius - by);
-            context.DrawRectangle(null, new Pen(border, width),
+            context.DrawRectangle(null, _borderPen ??= new ImmutablePen(border.ToImmutable(), width),
                 new RoundedRect(box.Deflate(mid), Shrink(r.TopLeft, mid), Shrink(r.TopRight, mid), Shrink(r.BottomRight, mid), Shrink(r.BottomLeft, mid)));
         }
 
@@ -123,7 +135,7 @@ public class CheckboxMark : Control
             static double Grow(double radius, double by) => radius > 0 ? radius + by : 0;
             var ring = new RoundedRect(new Rect(Bounds.Size).Inflate(half),
                 Grow(r.TopLeft, half), Grow(r.TopRight, half), Grow(r.BottomRight, half), Grow(r.BottomLeft, half));
-            var pen = new Pen(brush, OutlineThickness, lineJoin: PenLineJoin.Miter);
+            var pen = _outlinePen ??= new ImmutablePen(brush.ToImmutable(), OutlineThickness, lineJoin: PenLineJoin.Miter);
             context.DrawRectangle(null, pen, ring);
         }
     }

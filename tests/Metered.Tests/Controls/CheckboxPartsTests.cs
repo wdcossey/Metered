@@ -288,12 +288,64 @@ public class CheckboxPartsTests
         using var scene = Show(box);
         var toggle = (IToggleProvider)ControlAutomationPeer.CreatePeerForElement(box);
 
+        var peer = ControlAutomationPeer.CreatePeerForElement(box);
+        var said = new List<object?>();
+        peer.PropertyChanged += (_, e) => { if (e.Property == TogglePatternIdentifiers.ToggleStateProperty) said.Add(e.NewValue); };
+        var clicks = 0;
+        box.Click += (_, _) => clicks++;
+
+        Assert.Equal(AutomationControlType.CheckBox, peer.GetAutomationControlType());
         Assert.Equal(ToggleState.Indeterminate, toggle.ToggleState);
+        // A click while indeterminate: checked, still drawn indeterminate, so nothing changes for automation.
+        scene.Click(box);
+        Assert.Empty(said);
         box.IsIndeterminate = false;
-        Assert.Equal(ToggleState.Off, toggle.ToggleState);
-        toggle.Toggle();
-        Assert.True(box.IsChecked);
         Assert.Equal(ToggleState.On, toggle.ToggleState);
+        // A toggle through automation is a click, said once.
+        toggle.Toggle();
+        Assert.False(box.IsChecked);
+        Assert.Equal(ToggleState.Off, toggle.ToggleState);
+        Assert.Equal(2, clicks);
+        Assert.Equal([ToggleState.On, ToggleState.Off], said);
+    }
+
+    [AvaloniaFact]
+    public void A_control_can_be_the_label()
+    {
+        var text = new TextBlock { Text = "A control" };
+        var box = new Checkbox { Content = text };
+        using var scene = Show(box);
+
+        Assert.Same(P(box, Checkbox.LabelPart), text.GetVisualParent());
+        Assert.True(P(box, Checkbox.LabelPart).IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void Disabling_it_ends_its_hover_and_press()
+    {
+        var box = new Checkbox { Content = "Label" };
+        using var scene = Show(box);
+        scene.Press(box);
+        Assert.Contains(":hover", Checkmark(box).Classes);
+
+        box.IsEnabled = false;
+        scene.Pump();
+        Assert.DoesNotContain(":hover", Checkmark(box).Classes);
+        Assert.DoesNotContain(":active", Checkmark(box).Classes);
+    }
+
+    // A new template is a first paint: its parts take their state without a transition.
+    [AvaloniaFact]
+    public void A_new_template_appears_in_place()
+    {
+        var box = new Checkbox { Content = "Label", IsChecked = true };
+        using var scene = Show(box);
+
+        box.CheckmarkType = CheckboxStyleType.Toggle;
+        scene.Pump();
+        var knob = (CheckboxMark)P(box, Checkbox.TogglePart);
+        Assert.Equal(CheckboxOracle.Value.Sizes.Toggle.Width, knob.RenderTransform!.Value.M31, 3);
+        Assert.Equal(ButtonColourTests.Colour(knob.GetBaseValue(CheckboxMark.BackgroundProperty).GetValueOrDefault()), ButtonColourTests.Colour(knob.Background));
     }
 
     // Base Web renders children as given: an underscore is drawn, not taken as an access key.
