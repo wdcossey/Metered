@@ -136,6 +136,8 @@ for (const size of SIZES) {
 }
 
 const files = {
+  // Base Web's v1 Checkbox, with its toggle style (checkbox.js).
+  'checkbox.oracle.json': require('./checkbox').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

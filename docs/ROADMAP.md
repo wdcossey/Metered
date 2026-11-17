@@ -74,3 +74,5 @@ unless Avonic is named.
 By the research's grouping (`R:\source\baseui-research\README.md` §5): first the controls that
 theme Avalonia's (checkbox, radio, switch, input, textarea, slider, progress bar, spinner, tabs,
 tooltip, popover, menu, select), then the small new ones, then the overlays and navigation.
+
+- [x] Checkbox (#34): Base Web's v1, the one baseweb.design shows, with its toggle style and four label placements (`docs/controls/Checkbox/`)
