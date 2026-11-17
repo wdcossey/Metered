@@ -3,3 +3,5 @@
 11-17 09:30:12.441  4410  4410 E AndroidRuntime: Process: com.example.weather, PID: 4410
 11-17 09:30:12.441  4410  4410 E AndroidRuntime: java.lang.IllegalStateException: not ours
 11-17 09:30:12.502  1933  2011 E ActivityManager: Process io.github.wdcossey.metered.sample.helper has died, not a crash of the sample
+11-17 09:30:13.020  5120  5120 E DOTNET  : UNHANDLED EXCEPTION:
+11-17 09:30:13.020  5120  5120 E DOTNET  : System.InvalidOperationException: another .NET app, not ours

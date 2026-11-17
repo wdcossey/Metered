@@ -30,7 +30,8 @@ internal static class RepositoryFiles
         }
     }
 
-    private static string FindRoot()
+    /// <summary>The repository's root: the folder above the tests' binaries that holds <c>Metered.sln</c>.</summary>
+    internal static string FindRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "Metered.sln")))

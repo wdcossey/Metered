@@ -86,6 +86,18 @@ function Get-PageFolder([string]$title) {
     if ($name) { $name } else { 'page' }
 }
 
+# A folder for each title, in order, none twice: a title whose name is taken (the same title again, or one that differs
+# only in case or marks) gets -2, -3 and so on, so no page's files overwrite another's.
+function Get-PageFolders([string[]]$titles) {
+    $taken = [Collections.Generic.HashSet[string]]::new()
+    foreach ($title in $titles) {
+        $base = Get-PageFolder $title
+        $name = $base
+        for ($n = 2; -not $taken.Add($name); $n++) { $name = "$base-$n" }
+        $name
+    }
+}
+
 # The facts of one ready line, from its marker on:
 #   METERED ready open=<ms>ms scaling=<s> view=<w>x<h> raw=<w>x<h> safe=<l>,<t>,<r>,<b> page=<w>x<h> title=<title>
 # The title is last, as it can have spaces. Throws on a line that names no page.
@@ -117,13 +129,15 @@ function Read-Opens([string]$log) {
 
 # The app's crash in a log, if there is one, with the lines that say why: Java's report (FATAL EXCEPTION, then
 # "Process: <package>, PID: ..."), or .NET's own, when the runtime aborts on an unhandled exception before Java
-# reports it (UNHANDLED EXCEPTION). Another app's crash isn't the sample's.
-function Find-CrashIn([string]$log) {
+# reports it (UNHANDLED EXCEPTION). Another app's crash isn't the sample's: Java's names its package, and .NET's is
+# the sample's only from <processId>, the app's process, in logcat's pid column; with no process known, only Java's.
+function Find-CrashIn([string]$log, [string]$processId) {
     $lines = @($log -split "`r?`n")
     $process = "Process: $([regex]::Escape($Package)),"
+    $ours = if ($processId) { "^\S+\s+\S+\s+$([regex]::Escape($processId))\s+\d+\s+[A-Z]\s" }
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $java = $lines[$i] -match 'FATAL EXCEPTION' -and $i + 1 -lt $lines.Count -and $lines[$i + 1] -match $process
-        $dotnet = $lines[$i] -match 'UNHANDLED EXCEPTION'
+        $dotnet = $ours -and $lines[$i] -match 'UNHANDLED EXCEPTION' -and $lines[$i] -match $ours
         if ($java -or $dotnet) { return ($lines[$i..([Math]::Min($i + 8, $lines.Count - 1))] -join "`n").TrimEnd() }
     }
     return $null
@@ -152,13 +166,15 @@ function New-PageRun([Collections.IDictionary]$run, $am, $totalTime, [object[]]$
     $page
 }
 
-# What `am start` said: whether it started (or delivered to) the activity, and with -W, the start Android timed.
-# am can exit 0 when it can't start the activity; it says so in its output.
+# What `am start` said: whether it started (or delivered to) the activity, and with -W, its Status and the start
+# Android timed. am can exit 0 when it can't start the activity; it says so in its output. Only -W writes a Status, so
+# a start that has to be timed needs Status ok as well as Ok.
 function ConvertFrom-AmStart([string]$output) {
-    $failed = $output -match '(?m)^Error' -or $output -match '(?m)^Status:\s*(?!ok\b)\S+'
+    $status = if ($output -match '(?m)^Status:\s*(\S+)') { $Matches[1] } else { $null }
+    $failed = $output -match '(?m)^Error' -or ($status -and $status -ne 'ok')
     $totalTime = if ($output -match 'TotalTime:\s*(\d+)') { [int]$Matches[1] } else { $null }
     $launchState = if ($output -match 'LaunchState:\s*(\w+)') { $Matches[1] } else { $null }
-    [pscustomobject]@{ Ok = -not $failed; TotalTimeMs = $totalTime; LaunchState = $launchState }
+    [pscustomobject]@{ Ok = -not $failed; Status = $status; TotalTimeMs = $totalTime; LaunchState = $launchState }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -192,6 +208,7 @@ function Invoke-SelfTest {
     Check 'a page''s folder' (Get-PageFolder 'ButtonGroup') 'buttongroup'
     Check 'a title with spaces and marks makes one folder name' (Get-PageFolder ' Slow page / 2 ') 'slow-page-2'
     Check 'a title with no letter still makes a folder' (Get-PageFolder '***') 'page'
+    Check 'no two pages share a folder' @(Get-PageFolders @('Button', 'button', 'Theme', 'BUTTON!')) @('button', 'button-2', 'theme', 'button-3')
 
     Write-Host '-- A cold start, Release: one ready line among the phone''s own'
     $opens = Read-Opens (Fixture 'logcat-release.txt')
@@ -246,20 +263,23 @@ function Invoke-SelfTest {
         '11-17 09:14:02.118  9311  9311 E AndroidRuntime: 	at Metered.Sample.SampleShell.Open(String title)',
         '11-17 09:14:02.118  9311  9311 E AndroidRuntime: 	at Metered.Sample.App.PhoneView(IReadOnlyList`1 pages, String startPage)'
     )) -join "`n")
-    Check '.NET''s own report' ((Find-CrashIn (Fixture 'crash-dotnet.txt')) -split "`n" | Select-Object -First 2) @(
+    Check '.NET''s own report, from the app''s process' ((Find-CrashIn (Fixture 'crash-dotnet.txt') '10022') -split "`n" | Select-Object -First 2) @(
         '11-17 09:20:44.902 10022 10022 E DOTNET  : UNHANDLED EXCEPTION:',
         '11-17 09:20:44.902 10022 10022 E DOTNET  : System.ArgumentException: The sample has no page titled ''nowhere''. Its pages are: ''Button'', ''ButtonGroup'', ''Theme''. (Parameter ''title'')')
-    Check 'another app''s crash is not the sample''s' (Find-CrashIn (Fixture 'crash-other-app.txt')) $null
+    Check '.NET''s report from another process is not the sample''s' (Find-CrashIn (Fixture 'crash-dotnet.txt') '1002') $null
+    Check '.NET''s report with no process known is not the sample''s' (Find-CrashIn (Fixture 'crash-dotnet.txt')) $null
+    Check 'another app''s crash, Java''s or .NET''s, is not the sample''s' (Find-CrashIn (Fixture 'crash-other-app.txt') '9311') $null
+    Check 'Java''s report needs no process' ((Find-CrashIn (Fixture 'crash-java.txt') '1') -split "`n" | Select-Object -First 1) '11-17 09:14:02.118  9311  9311 E AndroidRuntime: FATAL EXCEPTION: main'
 
     Write-Host '-- am start'
     $am = ConvertFrom-AmStart (Fixture 'am-start-cold.txt')
-    Check 'a cold start: ok, COLD, its TotalTime' @($am.Ok, $am.LaunchState, $am.TotalTimeMs) @($true, 'COLD', 1093)
+    Check 'a cold start: ok, its Status, COLD, its TotalTime' @($am.Ok, $am.Status, $am.LaunchState, $am.TotalTimeMs) @($true, 'ok', 'COLD', 1093)
     $am = ConvertFrom-AmStart (Fixture 'am-start-delivered.txt')
-    Check 'an intent delivered to the running activity is ok, untimed' @($am.Ok, $am.LaunchState, $am.TotalTimeMs) @($true, $null, $null)
+    Check 'an intent delivered to the running activity is ok, with no Status, untimed' @($am.Ok, $am.Status, $am.LaunchState, $am.TotalTimeMs) @($true, $null, $null, $null)
     $am = ConvertFrom-AmStart (Fixture 'am-start-error.txt')
     Check 'an activity am can''t start is a failure, though am exits 0' $am.Ok $false
     $am = ConvertFrom-AmStart (Fixture 'am-start-timeout.txt')
-    Check 'a status other than ok is a failure' $am.Ok $false
+    Check 'a status other than ok is a failure' @($am.Ok, $am.Status) @($false, 'timeout')
 
     Write-Host ''
     if ($failures.Count) {
@@ -326,31 +346,65 @@ function Write-Utf8([string]$path, [string]$text) {
     Set-Content -LiteralPath $path -Value $text -Encoding utf8NoBOM -NoNewline
 }
 
-# The app's crash since the log was cleared, if any. Only errors, from the main and crash buffers, so that a poll
-# doesn't read the whole log. ('*:E' is left unquoted for the phone's shell, where it matches no file.)
-function Find-Crash { Find-CrashIn (Adb logcat -d -b main -b crash '*:E') }
+# What a poll reads since the log was cleared, in one dump: the app's lines (DOTNET at Info and up) and every error,
+# from the main and crash buffers. ('*:E' is left unquoted for the phone's shell, where it matches no file.)
+function Read-Log { Adb logcat -d -b main -b crash DOTNET:I '*:E' }
 
-# Waits until the app has written <count> ready lines since the log was cleared, the last for <title>, and in a
-# Debug build its cost line too; stops at once on a crash. Returns every open so far.
-function Wait-Opens([int]$count, [string]$title) {
+# The app's process id, while it runs; null once it has stopped.
+function Get-AppProcess {
+    try { $id = (Adb shell pidof $Package).Trim() } catch { return $null }
+    if ($id -match '^\d+$') { $id } else { $null }
+}
+
+# Waits for the one open since the log was cleared: its ready line, for <title>, and in a Debug build its cost line
+# too; stops at once on a crash. The log is cleared before each open, so a long run can't lose an earlier open's lines
+# from logcat's ring buffer, and each wait reads only its own. Returns the open.
+function Wait-Open([string]$title, [string]$processId) {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
-        $opens = Read-Opens (Adb logcat -d -s DOTNET:I)
-        if (Test-Opened $opens $count $title ($Configuration -eq 'Debug')) { return $opens }
-        $crash = Find-Crash
+        $log = Read-Log
+        $opens = Read-Opens $log
+        if (Test-Opened $opens 1 $title ($Configuration -eq 'Debug')) { return $opens[0] }
+        $crash = Find-CrashIn $log $processId
         if ($crash) { throw "The app stopped before its ready line:`n$crash" }
         if ((Get-Date) -gt $deadline) {
-            throw "No '$ReadyMarker' line$(if ($Configuration -eq 'Debug') { " and '$CostMarker' line" }) for open $count of '$title' within $TimeoutSeconds s."
+            throw "No '$ReadyMarker' line$(if ($Configuration -eq 'Debug') { " and '$CostMarker' line" }) for '$title' within $TimeoutSeconds s."
         }
         Start-Sleep -Milliseconds 500
     }
+}
+
+# Awake and unlocked, before each page: a long run can outlast the screen's timeout. A secure lock needs a hand; wait
+# for it.
+function Wait-Awake {
+    Adb shell input keyevent KEYCODE_WAKEUP | Out-Null
+    Adb shell wm dismiss-keyguard | Out-Null
+    $deadline = (Get-Date).AddSeconds($UnlockTimeoutSeconds)
+    $asked = $false
+    while ((Adb shell dumpsys window) -match 'isKeyguardShowing=true') {
+        if ((Get-Date) -gt $deadline) { throw "The phone is still locked after $UnlockTimeoutSeconds s." }
+        if (-not $asked) { Write-Host "   Unlock the phone; waiting up to $UnlockTimeoutSeconds s."; $asked = $true }
+        Start-Sleep -Seconds 1
+    }
+    # A screen still waking from doze can bring the last task back on its own, under the launch.
+    while ((Adb shell dumpsys power) -notmatch 'mWakefulness=Awake') {
+        if ((Get-Date) -gt $deadline) { throw "The screen is still not awake after $UnlockTimeoutSeconds s." }
+        Start-Sleep -Seconds 1
+    }
+}
+
+# The page's log so far: one whole dump per open, as the log is cleared before each.
+$PageLog = [Collections.Generic.List[string]]::new()
+function Save-PageLog {
+    $PageLog.Add((Adb logcat -d))
+    Write-Utf8 (Join-Path $PageOut 'logcat.txt') ($PageLog -join "`n")
 }
 
 # Any failure from here on keeps the phone's log next to the page's run, if its folder exists yet.
 $PageOut = $null
 trap {
     if ($PageOut -and (Test-Path $PageOut)) {
-        try { Write-Utf8 (Join-Path $PageOut 'logcat.txt') (Adb logcat -d) } catch { }
+        try { Save-PageLog } catch { }
         Write-Host "   Log kept in $(Join-Path $PageOut 'logcat.txt')"
     }
     break
@@ -391,27 +445,18 @@ if (-not $apk) { throw "No $Package-Signed.apk under $bin. Build first, or drop 
 Step "Installing $($apk.Name)"
 Adb install -r $apk.FullName | Out-Null
 
-# 4. Awake and unlocked. A secure lock needs a hand; wait for it.
-Adb shell input keyevent KEYCODE_WAKEUP | Out-Null
-Adb shell wm dismiss-keyguard | Out-Null
-$deadline = (Get-Date).AddSeconds($UnlockTimeoutSeconds)
-$asked = $false
-while ((Adb shell dumpsys window) -match 'isKeyguardShowing=true') {
-    if ((Get-Date) -gt $deadline) { throw "The phone is still locked after $UnlockTimeoutSeconds s." }
-    if (-not $asked) { Write-Host "   Unlock the phone; waiting up to $UnlockTimeoutSeconds s."; $asked = $true }
-    Start-Sleep -Seconds 1
-}
-# A screen still waking from doze can bring the last task back on its own, under the launch.
-while ((Adb shell dumpsys power) -notmatch 'mWakefulness=Awake') {
-    if ((Get-Date) -gt $deadline) { throw "The screen is still not awake after $UnlockTimeoutSeconds s." }
-    Start-Sleep -Seconds 1
-}
-
 $runs = [Collections.Generic.List[object]]::new()
-foreach ($title in $Pages) {
-    $PageOut = Join-Path $Out (Get-PageFolder $title)
+$folders = @(Get-PageFolders $Pages)
+for ($p = 0; $p -lt $Pages.Count; $p++) {
+    $title = $Pages[$p]
+    $PageOut = Join-Path $Out $folders[$p]
     New-Item -ItemType Directory -Force -Path $PageOut | Out-Null
+    $PageLog.Clear()
+    $opens = [Collections.Generic.List[object]]::new()
     $extra = @('--es', $PageExtra, (ConvertTo-ShellWord $title))
+
+    # 4. Awake and unlocked.
+    Wait-Awake
 
     # 5. Start it cold at the page, from the home screen, and let Android time it. -S stops the app first; going home
     #    first means no task of the app's is on top for the system to resume instead.
@@ -424,15 +469,16 @@ foreach ($title in $Pages) {
     # to be reported with the app's own message, which is in its crash report, not in am's output.
     try { $start = Adb shell am start -W -S -n $Activity @extra } catch { $start = "Error: $($_.Exception.Message)" }
     $am = ConvertFrom-AmStart $start
-    if (-not $am.Ok -or $start -notmatch 'Status:\s*ok') {
-        # The crash report can come a moment after am gives up.
+    if (-not $am.Ok -or $am.Status -ne 'ok') {
+        # The crash report can come a moment after am gives up. The process may be gone, and with it .NET's report.
         for ($try = 0; $try -lt 6; $try++) {
-            $crash = Find-Crash
+            $crash = Find-CrashIn (Read-Log) (Get-AppProcess)
             if ($crash) { throw "The app stopped at start:`n$crash" }
             Start-Sleep -Milliseconds 500
         }
         throw "am start failed:`n$start"
     }
+    $processId = Get-AppProcess
     $totalTime = $am.TotalTimeMs
     if ($am.LaunchState -ne 'COLD' -or -not $totalTime) {
         # Not a cold start Android timed (the activity was already on top, say): no time to record.
@@ -442,9 +488,10 @@ foreach ($title in $Pages) {
 
     # 6. Wait for the page to say it has drawn: the shell writes its ready line once the frame after the page's first
     #    is laid out, so a frame taken after it is the page at rest.
-    $opens = Wait-Opens 1 $title
-    Step "Ready: $($opens[0].Ready)"
-    if ($opens[0].Cost) { Step "Cost: $($opens[0].Cost)" }
+    $open = Wait-Open $title $processId
+    $opens.Add($open)
+    Step "Ready: $($open.Ready)"
+    if ($open.Cost) { Step "Cost: $($open.Cost)" }
 
     # 7. The frame, straight from screencap: PowerShell 7.4 redirects a native command's output to a file byte for
     #    byte. exec-out, not shell, so that no terminal on the phone's side turns its line feeds into CR LF. exec-out
@@ -465,19 +512,19 @@ foreach ($title in $Pages) {
     # 8. Warm opens: Back to the list, as a user goes, then the page again through an intent to the running activity
     #    (single-top: MainActivity.OnNewIntent opens it in the shell). Not timed by Android; the shell times each.
     for ($i = 1; $i -le $Reopen; $i++) {
+        Save-PageLog
         Adb shell input keyevent KEYCODE_BACK | Out-Null
         Start-Sleep -Milliseconds $SettleMilliseconds
+        Adb logcat -c | Out-Null
         try { $again = Adb shell am start -n $Activity @extra } catch { $again = "Error: $($_.Exception.Message)" }
         if (-not (ConvertFrom-AmStart $again).Ok) { throw "am start failed on reopen $i of '$title':`n$again" }
-        $opens = Wait-Opens ($i + 1) $title
-        Step "Reopen $($i): $($opens[$i].Ready)"
-        if ($opens[$i].Cost) { Step "Cost: $($opens[$i].Cost)" }
+        $open = Wait-Open $title $processId
+        $opens.Add($open)
+        Step "Reopen $($i): $($open.Ready)"
+        if ($open.Cost) { Step "Cost: $($open.Cost)" }
     }
+    Save-PageLog
 
-    $log = Adb logcat -d
-    Write-Utf8 (Join-Path $PageOut 'logcat.txt') $log
-    # Read-Opens returns its array as one object: assigned as it is, never wrapped in @(), which would nest it.
-    $opens = Read-Opens $log
     $facts = [ordered]@{
         when          = (Get-Date).ToString('o')
         model         = $model
@@ -489,7 +536,7 @@ foreach ($title in $Pages) {
         apk           = $apk.Name
         apkBytes      = $apk.Length
     }
-    $run = New-PageRun $facts $am $totalTime $opens
+    $run = New-PageRun $facts $am $totalTime $opens.ToArray()
     Write-Utf8 (Join-Path $PageOut 'run.json') ($run | ConvertTo-Json -Depth 4)
     $runs.Add($run)
     Step "'$title': start $($am.LaunchState), $totalTime ms (am start -W TotalTime); opened in $(($opens | ForEach-Object OpenMs) -join ', ') ms (the shell's time, cold then warm)"

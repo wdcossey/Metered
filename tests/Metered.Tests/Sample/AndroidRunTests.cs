@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using Avalonia.Headless.XUnit;
 using Metered.Sample;
 using Metered.Sample.Diagnostics;
+using Metered.Tests.Repository;
 
 using static Metered.Tests.Sample.ShellFrames;
 
@@ -17,7 +18,7 @@ namespace Metered.Tests.Sample;
 /// </summary>
 public class AndroidRunTests
 {
-    private static readonly string Root = FindRoot();
+    private static readonly string Root = RepositoryFiles.FindRoot();
 
     private static readonly string Script = File.ReadAllText(Path.Combine(Root, "tools", "android", "run.ps1"));
 
@@ -103,13 +104,4 @@ public class AndroidRunTests
     /// <summary>The single-quoted string run.ps1 sets <c>$<paramref name="name"/></c> to.</summary>
     private static string ScriptString(string name) =>
         Regex.Match(ScriptLine(name), $"^\\${name} = '([^']*)'$").Groups[1].Value;
-
-    private static string FindRoot()
-    {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-            if (File.Exists(Path.Combine(dir.FullName, "Metered.sln")))
-                return dir.FullName;
-
-        throw new InvalidOperationException("Metered.sln not found above " + AppContext.BaseDirectory);
-    }
 }

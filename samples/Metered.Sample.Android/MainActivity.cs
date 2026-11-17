@@ -36,12 +36,19 @@ public class MainActivity : AvaloniaMainActivity
     /// An intent for the running app: the page its extra names is opened in the shell, as its button on the list opens
     /// it, and writes its ready line (and in Debug its cost line). <c>run.ps1 -Reopen</c> opens a page warm this way,
     /// after Back to the list. With no extra, as from the launcher, nothing changes. A title the catalogue doesn't have
-    /// stops the app, as it does at start, with the titles it has.
+    /// stops the app, as it does at start, with the titles it has; so does a view that isn't the shell, rather than
+    /// leave run.ps1 to wait for a line that won't come. The intent becomes the activity's own, so that if Android
+    /// makes the activity again, <see cref="OnCreate"/> opens the page last asked for.
     /// </summary>
     protected override void OnNewIntent(Intent? intent)
     {
         base.OnNewIntent(intent);
-        if (intent?.GetStringExtra(App.PageExtra) is { } title && Content is SampleShell shell)
-            Dispatcher.UIThread.Post(() => shell.Open(title));
+        if (intent?.GetStringExtra(App.PageExtra) is not { } title)
+            return;
+
+        Intent = intent;
+        var shell = Content as SampleShell
+            ?? throw new InvalidOperationException($"The activity's view is {Content?.GetType().FullName ?? "null"}, not the sample's shell, so it can't open '{title}'.");
+        Dispatcher.UIThread.Post(() => shell.Open(title));
     }
 }
