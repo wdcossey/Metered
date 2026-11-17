@@ -38,7 +38,7 @@ The sample's pages, drawn headless. More in [PREVIEW.md](PREVIEW.md).
 
 | Package | Contents |
 |---|---|
-| `Metered` | The controls and the themes: the one most apps want, with `Metered.Fonts` |
+| `Metered` | The controls and the themes, the one most apps want. Not the fonts: add `Metered.Fonts` beside it |
 | `Metered.Controls` | The controls and the overrides API, no visual opinion |
 | `Metered.Themes` | Base Web's light and dark themes: `BaseTheme`, and the theme builder and `ThemeProvider` |
 | `Metered.Fonts` | The fonts, apart, so an app with its own carries none: Instrument Sans and Figtree (OFL-1.1) and `WithMeteredFonts()` |
@@ -54,11 +54,11 @@ Targets .NET 8, Avalonia 12.
 ```csharp
 AppBuilder.Configure<App>()
     .UsePlatformDetect()
-    .WithMeteredFonts(); // Metered.Fonts: UberMoveText and UberMove drawn in Instrument Sans and Figtree
+    .WithMeteredFonts(); // from the Metered.Fonts package: UberMoveText and UberMove drawn in Instrument Sans and Figtree
 ```
 
-An app with font options of its own passes them, `WithMeteredFonts(new FontManagerOptions { ... })`, rather than
-to `With`: Avalonia keeps only the last `FontManagerOptions`, which would drop the mapping.
+An app with font options of its own passes them, `WithMeteredFonts(new FontManagerOptions { ... })`, and not to
+`With` as well: Avalonia keeps only the last `FontManagerOptions` an app gives it, so one of the two would be dropped.
 
 ## Building
 

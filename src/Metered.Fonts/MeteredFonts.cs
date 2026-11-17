@@ -24,9 +24,11 @@ public static class MeteredFonts
     internal const string UberMove = "UberMove";
 
     /// <summary>
-    /// <paramref name="options"/> with Base Web's two families mapped to the package's fonts: a copy, its default family,
-    /// fallbacks and other mappings kept, and its own mapping of either name winning over the package's. With no options,
-    /// the two mappings alone, and the platform's default family.
+    /// <paramref name="options"/> with Base Web's two families mapped to the package's fonts, as new options, the app's
+    /// left as they were: its default family and its fallbacks (the same list) kept, and its mappings copied with the
+    /// two added, its own mapping of either name winning over the package's. The copy matches names whatever their
+    /// case, last one winning, as Avalonia's <see cref="FontManager"/> does with the mappings it is given. With no
+    /// options, the two mappings alone, and the platform's default family.
     /// </summary>
     internal static FontManagerOptions WithMappings(FontManagerOptions? options)
     {
