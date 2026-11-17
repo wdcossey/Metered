@@ -79,3 +79,5 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
 - [x] Radio and RadioGroup (#35): Base Web's radio-v2, the one its documentation recommends for new work; parts,
       overrides, label placement, align, description, error, the group's tab stop and arrow keys, the touch padding
       (`docs/controls/Radio/`)
+- [x] Switch (#43): Base Web's `baseui/switch`, its v2 toggle; parts, overrides, the two sizes and label placements,
+      the checkmark, Enter on its release, the touch padding (`docs/controls/Switch/`)
