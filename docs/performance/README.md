@@ -161,6 +161,9 @@ which Avalonia meters apart) are Avalonia's own meter (`Avalonia.Diagnostic.Mete
 which each head turns on in Debug before Avalonia starts (`PerformanceMonitor.EnableDiagnostics`);
 without it the line says so rather than show zeros. A monitor hears every measurement in the
 process, so one lives only while its page opens. Release builds write only the ready line.
+On a phone, `tools/android/run.ps1 -Configuration Debug -Page <title> -Reopen <n>` reads the line
+from logcat for the cold start and for each warm reopen from the list
+([`tools/android/README.md`](../../tools/android/README.md)).
 
 ## Breakage runs
 
