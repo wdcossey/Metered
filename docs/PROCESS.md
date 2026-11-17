@@ -80,10 +80,25 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
 
 ## 4. Self-review (the gate before a PR is ready)
 
-1. **Review, pass 1:** the `code-review` skill at high effort on the branch, uncapped:
-   `high origin/main...<branch> --max-findings all`, run by an Opus agent. Fix each finding or waive it
+1. **Review, pass 1:** the `code-review` skill on the branch, at the level in the table below, uncapped:
+   `<level> origin/main...<branch> --max-findings all`, run by an Opus agent. Fix each finding or waive it
    with a reason. **A finding can be wrong:** check it against the code and Base Web before acting.
-2. **Review, pass 2:** the same on the fixed branch. Docs-only and chore PRs get one pass.
+2. **Review, pass 2:** the same command on the fixed branch, at `medium`. Docs-only and chore PRs get one pass.
+
+   **Review levels** (on trial since 17 Nov 2026, #51; from the shared ways-of-working). The passes cost more
+   tokens than any other step, so the level follows what the pass checks. Pass 2 still reviews the whole branch,
+   but its main job is to check pass 1's fixes, and pass 1 has already been over the rest in depth.
+
+   | Pass | Level |
+   |---|---|
+   | Pass 1, a control's look or behaviour against Base Web (a new or changed control, a generator, the oracle) | `high`, always |
+   | Pass 1, other behaviour changes | `high`; `medium` for a small bug fix (one area, a few lines) |
+   | Pass 2 | `medium` |
+   | The one pass for docs-only and chore PRs | `medium` |
+
+   Always write the level in the command. Left out, it reuses whatever level was typed last. Never use `max` or
+   `ultra` unless the developer asks. The PR records each pass's level and its token count, from the review's
+   usage line; if you can't see it, write "not measured", never a guess.
 3. **Prove the tests can fail.** For each new test, break the behaviour it covers (on committed work, so a
    restore is safe), run it, see it go red, restore. `tools/breakage/run.js` does this in a fresh clone.
    A test for a bug must fail with the bug in place. Report the numbers.
@@ -94,7 +109,8 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
 ## 5. The PR
 
 - From the template, with `Closes #<issue>` under **What and why**.
-- **Review:** what each pass found, fixed and waived, with reasons; the breakage numbers.
+- **Review:** each pass's level and tokens, and what it found, fixed and waived, with reasons; the breakage
+  numbers.
 - **Screenshots:** pushed to the `pr-assets` branch (`pr/<issue>/<name>.png`), linked pinned to its commit:
   `https://github.com/wdcossey/Metered/blob/<sha>/pr/<issue>/<name>.png?raw=true`. It is an orphan branch
   that is never merged and holds only those pictures. If `origin/pr-assets` doesn't exist yet, make it in a
