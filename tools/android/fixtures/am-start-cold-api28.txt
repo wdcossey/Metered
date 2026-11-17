@@ -1,0 +1,8 @@
+Stopping: io.github.wdcossey.metered.sample
+Starting: Intent { cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras) }
+Status: ok
+Activity: io.github.wdcossey.metered.sample/metered.sample.MainActivity
+ThisTime: 987
+TotalTime: 987
+WaitTime: 995
+Complete

@@ -1,0 +1,11 @@
+--------- beginning of main
+11-17 09:05:40.018  9102  9102 I DOTNET  : METERED ready open=1265ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button
+11-17 09:05:40.019  9102  9102 I DOTNET  : METERED cost Button: 1265 ms, 332 elements, 3 rules (3), layout 302.5, render 88.1
+11-17 09:05:41.702  1933  2011 I WindowManager: Back key pressed on Window{4c1f2a u0 io.github.wdcossey.metered.sample/metered.sample.MainActivity}
+11-17 09:05:42.731  1933  2897 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x4 cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=3
+11-17 09:05:42.902  9102  9102 I DOTNET  : METERED ready open=148ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button
+11-17 09:05:42.902  9102  9102 I DOTNET  : METERED cost Button: 148 ms, 332 elements, 3 rules (3), layout 41.7, render 12.9
+11-17 09:05:43.931  1933  2011 I WindowManager: Back key pressed on Window{4c1f2a u0 io.github.wdcossey.metered.sample/metered.sample.MainActivity}
+11-17 09:05:44.960  1933  2897 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x4 cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=3
+11-17 09:05:45.118  9102  9102 I DOTNET  : METERED ready open=131ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button
+11-17 09:05:45.119  9102  9102 I DOTNET  : METERED cost Button: 131 ms, 332 elements, 3 rules (3), layout 38.2, render 11.4

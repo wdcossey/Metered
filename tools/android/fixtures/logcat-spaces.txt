@@ -1,0 +1,4 @@
+11-17 09:07:00.100  9200  9200 I DOTNET  : METERED cost Leftover: 9 ms, 1 elements, 3 rules (3), layout 0.1, render 0.1
+11-17 09:07:00.101  9200  9200 I DOTNET  : METERED readyish: not a ready line, nor METERED costly one
+11-17 09:07:00.412  9200  9200 I DOTNET  : METERED ready open=75ms scaling=1 view=390x844 raw=390x844 safe=0,0,0,0 page=390x788 title=slow page
+11-17 09:07:00.413  9200  9200 I DOTNET  : METERED cost slow page: 75 ms, 4 elements, 3 rules (3), layout 1.0, render 0.5

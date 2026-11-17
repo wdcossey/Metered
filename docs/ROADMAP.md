@@ -29,9 +29,10 @@ Button and ButtonGroup, to settle the approach before the inventory:
    Figtree and the family mapping, licensed OFL-1.1 beside MIT. Today only the tests and the sample
    embed them (ADR 0003).
 3. **The sample and the real-window run**, as Cornflower's and Avonic's. The sample is a library
-   with a page per control, shown by a desktop head (`samples/Metered.Sample`, #7); still to come:
-   an Android head (#8) and a scripted real-window run. The sample's shell, its subtree theme and
-   the new fonts haven't been seen in a real window (#5).
+   with a page per control, shown by a desktop head (`samples/Metered.Sample`, #7) and an Android
+   head built in CI (#8); still to come: the first device run on the Pixel (`tools/android/run.ps1`,
+   hands-on), which also gives #10 its phone's number, and a scripted real-window run. The
+   sample's shell, its subtree theme and the new fonts haven't been seen in a real window (#5).
 
 Done since the pilot (2026-11-16):
 
@@ -48,6 +49,9 @@ Done since the pilot (2026-11-16):
 Borrowed from Cornflower and Avonic (2026-11-16):
 
 - [x] CI: build, test, the Node tools' syntax, and both `--check` runs (`.github/workflows/ci.yml`)
+- [x] An Android head and its CI job (#8): `samples/Metered.Sample.Android`, the `android` job, and
+      `tools/android/run.ps1`, the device run, whose self-test reads fixtures with no phone. Not yet
+      run on a phone
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)
 - [x] The style budget for global rules (`tests/Metered.Tests/Performance/`,
       `docs/performance/README.md`). It doesn't replace item 1: a control's own cost isn't global.
@@ -64,7 +68,6 @@ unless Avonic is named.
 | What | Where it is there | Take it when |
 |---|---|---|
 | **A test clock and a manual render timer**: `TestClock` (time moves only when the test says, each callback run at its own time), `ManualRenderTimer` (a frame only on a forced tick), and the harness's own tests | `tests/Cornflower.Tests/TestClock.cs`, `ManualRenderTimer.cs`, `Harness/`; the clock it replaces, `CornflowerClock`, is in `src/Cornflower.Controls` | The first control whose motion must match Base Web frame by frame. Avalonia 12's animation clock is internal, so `Transitions` and `Animation` run on real time and are tested at their end value (Cornflower's ADR 0003); the spinner's ring is the first candidate |
-| **An Android head, its CI job and the device run** | `samples/Cornflower.Sample.Android`, the `android` job in `.github/workflows/ci.yml`, `tools/android/run.ps1` | With item 3. The job builds the head so it can't break unnoticed; the run puts it on the phone over ADB |
 | **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 3. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
 
 ## Inventory

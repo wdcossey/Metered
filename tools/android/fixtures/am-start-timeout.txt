@@ -1,0 +1,7 @@
+Stopping: io.github.wdcossey.metered.sample
+Starting: Intent { cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras) }
+Status: timeout
+LaunchState: UNKNOWN (0)
+Activity: io.github.wdcossey.metered.sample/metered.sample.MainActivity
+WaitTime: 10003
+Complete
