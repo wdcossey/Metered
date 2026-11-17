@@ -77,7 +77,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 31 in all.
+  each behaviour of the group above: 32 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 21 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.
