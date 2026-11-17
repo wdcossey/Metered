@@ -49,8 +49,14 @@ public class RadioGroup : ItemsControl
 
     private readonly Parts _parts;
 
-    /// <summary>The radios the group has taken, so that each is given back when it leaves, however it leaves.</summary>
-    private readonly HashSet<Radio> _members = [];
+    /// <summary>
+    /// The radios the group has taken, so that each is given back when it leaves, however it leaves, with what it had
+    /// of its own: whether it was checked (Base Web's own <c>checked</c>, which the group's value stands in for) and
+    /// its tab stop.
+    /// </summary>
+    private readonly Dictionary<Radio, Own> _members = [];
+
+    private readonly record struct Own(bool? IsChecked, bool HasTabStop, bool IsTabStop);
 
     static RadioGroup()
     {
@@ -97,7 +103,7 @@ public class RadioGroup : ItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is not Radio radio) return;
-        if (_members.Add(radio))
+        if (_members.TryAdd(radio, new Own(radio.IsChecked, radio.IsSet(IsTabStopProperty), radio.IsTabStop)))
         {
             radio.IsCheckedChanged += OnRadioCheckedChanged;
             radio.Group = this;
@@ -126,7 +132,7 @@ public class RadioGroup : ItemsControl
         if (p == AlignProperty || p == LabelPlacementProperty || p == ErrorProperty)
         {
             UpdateStates();
-            foreach (var radio in _members) radio.UpdateContext();
+            foreach (var radio in _members.Keys) radio.UpdateContext();
         }
 
         if (p == OverridesProperty) _parts.SetOverrides(Overrides);
@@ -136,7 +142,7 @@ public class RadioGroup : ItemsControl
     protected override void ContainerIndexChangedOverride(Control container, int oldIndex, int newIndex)
     {
         base.ContainerIndexChangedOverride(container, oldIndex, newIndex);
-        if (container is Radio radio && _members.Contains(radio)) Apply(radio, newIndex);
+        if (container is Radio radio && _members.ContainsKey(radio)) Apply(radio, newIndex);
     }
 
     /// <summary>A radio's value changed: whether it is checked, and a tab stop, again.</summary>
@@ -148,25 +154,30 @@ public class RadioGroup : ItemsControl
 
     private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // A radio that is its own container isn't cleared by ItemsControl when it leaves, nor on a reset (Clear), which
-        // lists no old items: give back every radio no longer in the group.
-        foreach (var gone in _members.Where(radio => !Items.Contains(radio)).ToList()) Release(gone);
+        // A radio that is its own container isn't cleared by ItemsControl when it leaves; nor on a reset (Clear), which
+        // lists no old items, so then every radio no longer in the group is given back.
+        var gone = e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset
+            ? _members.Keys.Where(radio => !Items.Contains(radio)).ToList()
+            : e.OldItems?.OfType<Radio>().Where(radio => !Items.Contains(radio)).ToList() ?? [];
+        foreach (var radio in gone) Release(radio);
     }
 
     /// <summary>Gives a radio that leaves the group its own values back.</summary>
     private void Release(Radio radio)
     {
-        if (!_members.Remove(radio)) return;
+        if (!_members.Remove(radio, out var own)) return;
         radio.IsCheckedChanged -= OnRadioCheckedChanged;
         radio.Group = null;
-        radio.ClearValue(IsTabStopProperty);
+        radio.SetCurrentValue(ToggleButton.IsCheckedProperty, own.IsChecked);
+        if (own.HasTabStop) radio.IsTabStop = own.IsTabStop;
+        else radio.ClearValue(IsTabStopProperty);
     }
 
     private void ApplyAll()
     {
         foreach (var container in GetRealizedContainers())
         {
-            if (container is Radio radio && _members.Contains(radio)) Apply(radio, IndexFromContainer(radio));
+            if (container is Radio radio && _members.ContainsKey(radio)) Apply(radio, IndexFromContainer(radio));
         }
     }
 
@@ -194,16 +205,17 @@ public class RadioGroup : ItemsControl
         // A shortcut with an arrow (Alt+Left is a back gesture) isn't the radios' to take.
         if ((e.KeyModifiers & (KeyModifiers.Alt | KeyModifiers.Control | KeyModifiers.Meta)) != 0) return;
         // Only from a radio of this group itself, not a control in a radio's label.
-        if (e.Source is not Radio from || !_members.Contains(from)) return;
+        if (e.Source is not Radio from || !_members.ContainsKey(from)) return;
         var index = IndexFromContainer(from);
         var count = ItemCount;
         if (index < 0 || count == 0) return;
+        // A browser's radios take the arrow, even with no other to move to: it doesn't scroll the page.
+        e.Handled = true;
 
         for (var i = 1; i < count; i++)
         {
             var next = ContainerFromIndex(((index + step * i) % count + count) % count);
             if (next is not Radio radio || !radio.IsEffectivelyEnabled || !radio.IsEffectivelyVisible) continue;
-            e.Handled = true;
             SetCurrentValue(ValueProperty, radio.Value);
             radio.Focus(NavigationMethod.Directional);
             return;

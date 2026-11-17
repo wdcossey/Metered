@@ -240,6 +240,51 @@ public class RadioGroupTests
         Assert.Null(group.Value);
     }
 
+    // What the group stood in for comes back: the radio's own checked (Base Web's own prop) and its own tab stop.
+    [AvaloniaFact]
+    public void A_radio_leaving_has_its_own_checked_and_tab_stop_back()
+    {
+        var radio = new Radio { Value = "1", Content = "One", IsChecked = false, IsTabStop = false };
+        var group = new RadioGroup { Value = "1", Items = { radio } };
+        using var scene = new Scene(group);
+        Assert.True(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+
+        group.Items.Remove(radio);
+        scene.Pump();
+        Assert.False(radio.IsChecked);
+        Assert.False(radio.IsTabStop);
+    }
+
+    // The flex-end alignment is the group's row's: a radio on its own with those props stays at the top of its slot.
+    [AvaloniaFact]
+    public void Only_a_groups_radios_sit_at_the_bottom_of_their_line()
+    {
+        var alone = new Radio { Content = "Alone", Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Top };
+        var (group, radios) = Group(null, ["One"]);
+        group.Align = RadioAlign.Horizontal;
+        group.LabelPlacement = RadioLabelPlacement.Top;
+        using var scene = new Scene(new StackPanel { Children = { alone, group } });
+        Assert.Equal(Avalonia.Layout.VerticalAlignment.Top, alone.VerticalAlignment);
+        Assert.Equal(Avalonia.Layout.VerticalAlignment.Bottom, radios[0].VerticalAlignment);
+    }
+
+    // A browser's radios take the arrow even with no other radio to go to: the page doesn't scroll.
+    [AvaloniaFact]
+    public void An_arrow_with_nowhere_to_go_is_still_the_groups()
+    {
+        var (group, radios) = Group("1", ["1", "2"]);
+        radios[1].IsEnabled = false;
+        var reached = 0;
+        var outer = new StackPanel { Children = { group } };
+        outer.KeyDown += (_, _) => reached++;
+        using var scene = new Scene(outer);
+        scene.Key(Key.Tab);
+        scene.Key(Key.Down);
+        Assert.Equal("1", group.Value);
+        Assert.Equal(0, reached);
+    }
+
     [AvaloniaFact]
     public void A_radio_whose_value_comes_later_is_checked_by_it()
     {

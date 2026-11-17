@@ -13,7 +13,7 @@
         <b:Radio Value="2" Content="Second" Description="This is a radio description, it gives a little more context about what this is." />
         <b:Radio Value="3" Content="Third" />
       </b:RadioGroup>
-      <TextBlock Classes="label" x:Name="Selected" Text="Selected: 2" />
+      <TextBlock Classes="label" x:Name="Selected" />
 
       <TextBlock Classes="heading" Text="Horizontal" />
       <b:RadioGroup x:Name="Horizontal" Align="Horizontal" Value="1">

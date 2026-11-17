@@ -75,12 +75,12 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   pressed, finger pressed, keyboard focus, and disabled; light and dark): every part's colour, the inner disc's size,
   the overlay and the outline against Base Web's style functions. The states are real input.
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
-  puts them; and the three-line clamp.
+  puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above.
+  each behaviour of the group above: 31 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
-  description only when given, the transition, overrides, and the drawn dot, outline and overlay.
-- `Sample/RadioPageTests`: the sample's page.
+  description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 21 in all.
+- `Sample/RadioPageTests`: the sample's page, 4.
 
 The part themes are generated (`tools/tokens/radio.js`): radio-v2's style functions evaluated on Base Web's theme
 with each colour replaced by its own name, so every colour is a token by name and every length is read, for every
@@ -100,12 +100,16 @@ oracle (`tools/reference/radio.js`) evaluates the same functions on the real lig
    its markup for the top and left placements; here the panel's `LabelFirst` lays it out first. The label wrapper's
    top padding is a margin (a `StackPanel` has no padding, and draws nothing).
 6. **The group's direction, wrap and gaps are its items panel's** (`RadioGroup.axaml`), as ButtonGroup's are, so an
-   override of `RadioGroupRoot` doesn't change them. Its `alignItems: flex-end` (horizontal, label on top) is the
-   radio's own bottom alignment, so a radio on its own with those props sits at the bottom of its slot too.
+   override of `RadioGroupRoot` doesn't change them. Its `alignItems: flex-end` (horizontal, label on top) is each
+   radio's bottom alignment while it is in a group (`:in-group`).
 7. **A vertical group doesn't wrap**: a CSS column wraps only in a box of fixed height, which a group isn't given.
 8. **The backplate's hover is its rectangle**; a browser's follows its rounded corners.
 9. **`containsInteractiveElement`**: Avalonia's controls take their own press, so a control in a label never checks
    the radio; Base Web's does unless the prop is set.
 10. **Marks are drawn by `RadioMark`**: the overlay (Base Web's `inset 999px 999px 0px` shadow) and the outline (CSS's
     `outline` and `outline-offset`), which a `Border`'s box-shadows can't take as tokens.
-11. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+11. **The not-allowed cursor isn't shown.** Avalonia doesn't hit-test a disabled control (measured: the hit is the
+    window's presenter), so the cursor is its parent's. The theme still sets Base Web's (`Cursor` No), as Button's does.
+12. **A group's items are `Radio`s.** Data through `ItemsSource` with a template isn't a radio of the group yet, as
+    ButtonGroup's items are its `Button`s.
+13. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).

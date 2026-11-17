@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace Metered.Controls;
 
@@ -49,6 +50,9 @@ public class RadioMark : Decorator
         AffectsMeasure<RadioMark>(BorderThicknessProperty);
     }
 
+    private ImmutablePen? _borderPen;
+    private ImmutablePen? _outlinePen;
+
     /// <summary>The fill, under the border as CSS's is.</summary>
     public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
@@ -73,6 +77,13 @@ public class RadioMark : Decorator
     /// <summary>The gap between the box and its outline.</summary>
     public double OutlineOffset { get => GetValue(OutlineOffsetProperty); set => SetValue(OutlineOffsetProperty, value); }
 
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == BorderBrushProperty || change.Property == BorderThicknessProperty) _borderPen = null;
+        else if (change.Property == OutlineBrushProperty || change.Property == OutlineThicknessProperty) _outlinePen = null;
+    }
+
     protected override Size MeasureOverride(Size availableSize) =>
         LayoutHelper.MeasureChild(Child, availableSize, Padding, BorderThickness);
 
@@ -92,13 +103,22 @@ public class RadioMark : Decorator
 
         if (Background is { } background) context.DrawRectangle(background, null, new RoundedRect(box, outer));
 
-        if (BorderBrush is { } border && b != default && b.IsUniform)
+        if (BorderBrush is { } border && b != default)
         {
-            // A uniform border: a line along the middle of the border's width.
-            var half = b.Left / 2;
-            var r = new CornerRadius(Math.Max(0, outer.TopLeft - half), Math.Max(0, outer.TopRight - half),
-                Math.Max(0, outer.BottomRight - half), Math.Max(0, outer.BottomLeft - half));
-            context.DrawRectangle(null, new Pen(border, b.Left), new RoundedRect(box.Deflate(half), r));
+            if (b.IsUniform)
+            {
+                // A uniform border: a line along the middle of the border's width.
+                var half = b.Left / 2;
+                var r = new CornerRadius(Math.Max(0, outer.TopLeft - half), Math.Max(0, outer.TopRight - half),
+                    Math.Max(0, outer.BottomRight - half), Math.Max(0, outer.BottomLeft - half));
+                _borderPen ??= new ImmutablePen(border.ToImmutable(), b.Left);
+                context.DrawRectangle(null, _borderPen, new RoundedRect(box.Deflate(half), r));
+            }
+            else
+            {
+                // Sides of different widths: the box less its padding box.
+                context.DrawGeometry(border, null, new CombinedGeometry(GeometryCombineMode.Exclude, Box(box, outer), Box(inside, inner)));
+            }
         }
 
         if (Overlay is { } overlay && inside.Width > 0 && inside.Height > 0)
@@ -111,8 +131,33 @@ public class RadioMark : Decorator
             // The line's centre: past the offset and half the line's width, its corners grown as much.
             var grow = OutlineOffset + OutlineThickness / 2;
             var radii = new CornerRadius(outer.TopLeft + grow, outer.TopRight + grow, outer.BottomRight + grow, outer.BottomLeft + grow);
-            context.DrawRectangle(null, new Pen(brush, OutlineThickness), new RoundedRect(box.Inflate(grow), radii));
+            _outlinePen ??= new ImmutablePen(brush.ToImmutable(), OutlineThickness);
+            context.DrawRectangle(null, _outlinePen, new RoundedRect(box.Inflate(grow), radii));
         }
+    }
+
+    /// <summary>A box with rounded corners, as a geometry.</summary>
+    private static StreamGeometry Box(Rect r, CornerRadius c)
+    {
+        var geometry = new StreamGeometry();
+        using var g = geometry.Open();
+        void Corner(Point to, double radius)
+        {
+            if (radius > 0) g.ArcTo(to, new Size(radius, radius), 0, false, SweepDirection.Clockwise);
+            else g.LineTo(to);
+        }
+
+        g.BeginFigure(new Point(r.Left + c.TopLeft, r.Top), true);
+        g.LineTo(new Point(r.Right - c.TopRight, r.Top));
+        Corner(new Point(r.Right, r.Top + c.TopRight), c.TopRight);
+        g.LineTo(new Point(r.Right, r.Bottom - c.BottomRight));
+        Corner(new Point(r.Right - c.BottomRight, r.Bottom), c.BottomRight);
+        g.LineTo(new Point(r.Left + c.BottomLeft, r.Bottom));
+        Corner(new Point(r.Left, r.Bottom - c.BottomLeft), c.BottomLeft);
+        g.LineTo(new Point(r.Left, r.Top + c.TopLeft));
+        Corner(new Point(r.Left + c.TopLeft, r.Top), c.TopLeft);
+        g.EndFigure(true);
+        return geometry;
     }
 
     /// <summary>A radius no larger than half the box, as CSS draws a larger one.</summary>

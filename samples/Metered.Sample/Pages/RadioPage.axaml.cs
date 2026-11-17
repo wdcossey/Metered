@@ -13,9 +13,12 @@ public partial class RadioPage : UserControl
     public RadioPage()
     {
         InitializeComponent();
+        Say();
         Basic.PropertyChanged += (_, e) =>
         {
-            if (e.Property == RadioGroup.ValueProperty) Selected.Text = $"Selected: {Basic.Value}";
+            if (e.Property == RadioGroup.ValueProperty) Say();
         };
     }
+
+    private void Say() => Selected.Text = $"Selected: {Basic.Value}";
 }

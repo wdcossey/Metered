@@ -154,6 +154,20 @@ public class RadioTests
         Assert.Equal(0, ((RadioMark)radio.Part(Radio.RadioMarkOuterPart)!).OutlineThickness);
     }
 
+    // A press captures the mouse; moved off the radio, it no longer hovers it (Base Web's mouseleave).
+    [AvaloniaFact]
+    public void A_pressed_mouse_moved_off_the_radio_stops_hovering_it()
+    {
+        var radio = new Radio { Content = "Label" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { radio } });
+        scene.Press(radio);
+        Assert.Contains(":is-hovered", radio.Classes);
+        scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
+        scene.Pump();
+        Assert.DoesNotContain(":is-hovered", radio.Classes);
+        Assert.DoesNotContain(":hover", radio.Part(Radio.RadioBackplatePart)!.Classes);
+    }
+
     // CSS's :active is the primary button's; Base Web's $isActive is onMouseDown's, any button.
     [AvaloniaFact]
     public void A_right_press_is_the_radios_but_not_the_backplates()
@@ -168,6 +182,14 @@ public class RadioTests
         Assert.Contains(":is-active", radio.Classes);
         Assert.DoesNotContain(":active", backplate.Classes);
         scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", radio.Classes);
+
+        // A right press isn't captured: released off the radio, the radio never sees it, so leaving ends it.
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Pump();
+        scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
+        scene.Window.MouseUp(new Point(Scene.Width - 1, Scene.Height - 1), MouseButton.Right);
         scene.Pump();
         Assert.DoesNotContain(":is-active", radio.Classes);
     }
@@ -299,19 +321,37 @@ public class RadioTests
 
         Assert.Equal(Color.Parse(focus.InnerBackground), At(0));     // the dot
         Assert.Equal(Color.Parse(focus.OuterBackground), At(5));     // the disc round it
-        Assert.Equal(Colors.White, At(9));                           // the outline's gap: the page
+        var page = Frames.PixelAt(frame, (int)Scene.Width - 2, (int)Scene.Height - 2);
+        Assert.Equal(page, At(9));                                   // the outline's gap: the page, as far from any control
         Assert.Equal(Color.Parse(focus.Outline!.Colour), At(11));    // the outline
 
-        // An unchecked radio under the mouse: its inner disc, white, under the hover overlay.
+        // An unchecked radio under the mouse: its inner disc under the hover overlay, blended as the overlay's alpha says.
         var hover = RadioOracle.Data.Colours.First(c => c.Theme == "Light" && !c.Checked && !c.Error && !c.Disabled && c.State == "hoverLabel");
         scene.Hover((Visual)radios[1].Part(Radio.LabelPart)!);
         frame = scene.Capture();
         var inner = (Visual)radios[1].Part(Radio.RadioMarkInnerPart)!;
         var c = inner.TranslatePoint(new Point(inner.Bounds.Width / 2, inner.Bounds.Height / 2), scene.Window)!.Value;
         var overlay = Color.Parse(hover.InnerOverlay!);
-        var expected = (byte)Math.Round(255 * (1 - overlay.A / 255.0));
+        var under = Color.Parse(hover.InnerBackground);
+        var a = overlay.A / 255.0;
+        int Blend(byte top, byte bottom) => (int)Math.Round(top * a + bottom * (1 - a));
         var pixel = Frames.PixelAt(frame, (int)c.X, (int)c.Y);
-        Assert.InRange(pixel.R, expected - 1, expected + 1);
-        Assert.Equal(pixel.R, pixel.B);
+        Assert.InRange(pixel.R, Blend(overlay.R, under.R) - 1, Blend(overlay.R, under.R) + 1);
+        Assert.InRange(pixel.G, Blend(overlay.G, under.G) - 1, Blend(overlay.G, under.G) + 1);
+        Assert.InRange(pixel.B, Blend(overlay.B, under.B) - 1, Blend(overlay.B, under.B) + 1);
+        Assert.NotEqual(under, pixel);
+    }
+
+    // A border whose sides differ is drawn, not left out: the box less its padding box.
+    [AvaloniaFact]
+    public void A_mark_draws_a_border_whose_sides_differ()
+    {
+        var mark = new RadioMark { Width = 40, Height = 20, Background = Brushes.White, BorderBrush = Red, BorderThickness = new Thickness(6, 0, 6, 0) };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { mark } });
+        var frame = scene.Capture();
+        var at = mark.TranslatePoint(default, scene.Window)!.Value;
+        Assert.Equal(Colors.Red, Frames.PixelAt(frame, (int)at.X + 2, (int)at.Y + 10));
+        Assert.Equal(Colors.Red, Frames.PixelAt(frame, (int)at.X + 37, (int)at.Y + 10));
+        Assert.Equal(Colors.White, Frames.PixelAt(frame, (int)at.X + 20, (int)at.Y + 10));
     }
 }

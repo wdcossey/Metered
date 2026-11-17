@@ -53,8 +53,8 @@
     </Setter>
 
     <!-- A group's row with the labels on top aligns its radios at the end of the line (RadioGroupRoot's alignItems
-         flex-end), so the marks line up under labels of different heights. -->
-    <Style Selector="^:align-horizontal:label-placement-top">
+         flex-end), so the marks line up under labels of different heights. A radio on its own isn't in a line. -->
+    <Style Selector="^:in-group:align-horizontal:label-placement-top">
       <Setter Property="VerticalAlignment" Value="Bottom" />
     </Style>
   </ControlTheme>

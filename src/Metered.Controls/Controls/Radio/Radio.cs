@@ -24,7 +24,7 @@ namespace Metered.Controls;
 /// (Base Web's <c>@media (pointer: coarse)</c>: a phone's touch screen). <c>:disabled</c> is Avalonia's own.
 /// The <c>RadioBackplate</c> part alone also takes CSS's <c>:hover</c> (a mouse over the backplate) and
 /// <c>:active</c> (the primary button or a finger pressed on it), which Base Web styles on that element.
-/// <c>:loaded</c> is set once the radio is loaded, so the mark's transition doesn't run on its first appearance, as
+/// <c>:in-group</c> is set while a <see cref="RadioGroup"/> holds the radio. <c>:loaded</c> is set once the radio is loaded, so the mark's transition doesn't run on its first appearance, as
 /// CSS's doesn't.</para>
 /// <para>Base Web's <c>Input</c> part, the hidden <c>input</c>, is the radio itself.</para>
 /// </remarks>
@@ -35,7 +35,7 @@ namespace Metered.Controls;
 [TemplatePart(LabelWrapperPart, typeof(StyledElement))]
 [TemplatePart(LabelPart, typeof(StyledElement))]
 [TemplatePart(DescriptionPart, typeof(StyledElement))]
-[PseudoClasses(":loaded", ":error", ":is-hovered", ":is-active", ":focus-visible", ":pointer-coarse",
+[PseudoClasses(":loaded", ":in-group", ":error", ":is-hovered", ":is-active", ":focus-visible", ":pointer-coarse",
     ":align-vertical", ":align-horizontal",
     ":label-placement-top", ":label-placement-right", ":label-placement-bottom", ":label-placement-left")]
 public class Radio : RadioButton
@@ -126,6 +126,7 @@ public class Radio : RadioButton
         set
         {
             _group = value;
+            PseudoClasses.Set(":in-group", value is not null);
             UpdateContext();
         }
     }
@@ -219,6 +220,8 @@ public class Radio : RadioButton
     {
         base.OnPointerExited(e);
         SetMouseOver(false);
+        // A press the radio didn't capture (any but the primary button) ends out of its sight: end it on leaving.
+        if (e.Pointer.Captured != this) SetPressed(false);
         SetBackplate(false, _backplateActive);
     }
 
@@ -260,8 +263,9 @@ public class Radio : RadioButton
 
     private void TrackMouse(PointerEventArgs e)
     {
-        // A disabled radio can still see a pointer it captured before: it doesn't hover.
-        var mouse = e.Pointer.Type == PointerType.Mouse && IsEffectivelyEnabled;
+        // Only a mouse over the radio: a radio that captured the pointer on a press sees it move outside too, and a
+        // disabled one can still see a pointer it captured before.
+        var mouse = e.Pointer.Type == PointerType.Mouse && IsEffectivelyEnabled && new Rect(Bounds.Size).Contains(e.GetPosition(this));
         SetMouseOver(mouse);
         SetBackplate(mouse && OverBackplate(e), _backplateActive);
     }
