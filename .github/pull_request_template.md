@@ -12,7 +12,8 @@ Closes #
 
 ## Review
 
-- Pass 1: _n_ found, _n_ fixed, _n_ waived · Pass 2: _n_ found, _n_ fixed, _n_ waived
+- Pass 1 (_level_, _n_k tokens or "not measured"): _n_ found, _n_ fixed, _n_ waived
+- Pass 2 (_level_, _n_k tokens or "not measured"): _n_ found, _n_ fixed, _n_ waived (none for docs-only and chore PRs)
 - Waived, and why:
 - Tests proven to fail: _n_ of _n_
 

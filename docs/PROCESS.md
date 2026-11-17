@@ -83,7 +83,8 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
 1. **Review, pass 1:** the `code-review` skill on the branch, at the level in the table below, uncapped:
    `<level> origin/main...<branch> --max-findings all`, run by an Opus agent. Fix each finding or waive it
    with a reason. **A finding can be wrong:** check it against the code and Base Web before acting.
-2. **Review, pass 2:** the same command on the fixed branch, at `medium`. Docs-only and chore PRs get one pass.
+2. **Review, pass 2:** the command again on the fixed branch, with `medium` as its level. Docs-only and chore PRs
+   get one pass.
 
    **Review levels** (on trial since 17 Nov 2026, #51; from the shared ways-of-working). The passes cost more
    tokens than any other step, so the level follows what the pass checks. Pass 2 still reviews the whole branch,
@@ -96,9 +97,15 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
    | Pass 2 | `medium` |
    | The one pass for docs-only and chore PRs | `medium` |
 
-   Always write the level in the command. Left out, it reuses whatever level was typed last. Never use `max` or
+   Always write the level in the command. It is the review's own setting, so it never follows the session's effort,
+   and left out it reuses whatever level was typed last. Never use `max` or
    `ultra` unless the developer asks. The PR records each pass's level and its token count, from the review's
    usage line; if you can't see it, write "not measured", never a guess.
+
+   **The trial (#51):** these levels run for three working sessions that merge PRs, each ticked off in #51 with its
+   PRs, levels, tokens and anything a lower level missed. Once during the trial, a pass 2 runs at both `medium` and
+   `high` on the same head, with what each found. Then the developer decides: keep, go back to `high`, or lower them
+   further. In a batch the coordinator does this; agents only record their levels and tokens.
 3. **Prove the tests can fail.** For each new test, break the behaviour it covers (on committed work, so a
    restore is safe), run it, see it go red, restore. `tools/breakage/run.js` does this in a fresh clone.
    A test for a bug must fail with the bug in place. Report the numbers.

@@ -74,9 +74,15 @@ You're building one Metered issue while one or two other agents build others. Re
 ## Review and PR
 
 - PROCESS §4 in full: two `code-review` passes (one for a docs-only or chore PR), proof the tests can fail, a
-  clean run, screenshots. Set each pass's level from PROCESS §4's table and write it in the command, with your
-  branch's name: `high origin/main...<branch> --max-findings all` for pass 1 on a control, and `medium` for pass 2.
-  Record each pass's level and tokens in the PR.
+  clean run, screenshots.
+- **Write the review level in the command,** with your branch's name:
+  `<level> origin/main...<branch> --max-findings all`. The levels come from PROCESS §4's table:
+  - `high` for pass 1 on a control, a generator or the oracle;
+  - `high` for pass 1 on other behaviour, or `medium` for a small bug fix;
+  - `medium` for pass 2, and for the one pass on a docs-only or chore PR.
+
+  Record each pass's level and token count in the PR, or "not measured" if you can't see it. Never guess. The
+  review-level trial is the coordinator's: don't run extra passes for it.
 - **Preview pictures:** `PreviewGallery` draws every page. Point `METERED_PREVIEW` at a new folder in your temp
   folder, not at `docs/preview/`, and copy only your own page's `{light,dark}__<page>-*.png` into `docs/preview/`.
   Write your page's section of `PREVIEW.md`, in page order. Don't commit the `*__list-*.png` pictures or any other
@@ -88,5 +94,6 @@ You're building one Metered issue while one or two other agents build others. Re
 
 ## Report back
 
-Short: the PR link, the head commit, CI's result, the test count, the breakage numbers, each review pass's level, counts and tokens,
-tokens used if visible, **For you to decide**, **Hands-on follow-ups** and **Proposed for shared files**.
+Short: the PR link, the head commit, CI's result, the test count, the breakage numbers, each review pass's level,
+findings and tokens ("not measured" if not visible), **For you to decide**, **Hands-on follow-ups** and
+**Proposed for shared files**.
