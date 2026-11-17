@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 
 namespace Metered.Sample.Pages;
 
@@ -14,10 +13,7 @@ public partial class SwitchPage : UserControl
     {
         InitializeComponent();
         Say();
-        Basic.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == ToggleButton.IsCheckedProperty) Say();
-        };
+        Basic.IsCheckedChanged += (_, _) => Say();
     }
 
     private void Say() => State.Text = Basic.IsChecked == true ? "On" : "Off";

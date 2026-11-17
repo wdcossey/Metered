@@ -54,6 +54,12 @@ public class Switch : ToggleButton
     private bool _pointerPressed;
     private bool _keyPressed;
 
+    static Switch()
+    {
+        // Base Web's switch is on or off: no third state, whatever an app sets.
+        IsThreeStateProperty.OverrideMetadata<Switch>(new StyledPropertyMetadata<bool>(false, coerce: (_, _) => false));
+    }
+
     public Switch()
     {
         _parts = new Parts(this, "Switch", [RootPart, ToggleTrackPart, TogglePart, LabelPart]);
@@ -218,7 +224,10 @@ public class Switch : ToggleButton
         else LeaveMouse();
     }
 
-    /// <summary>Base Web's onMouseLeave: the hover ends, and so does a press.</summary>
+    /// <summary>
+    /// Base Web's onMouseLeave: the hover ends, and so does a press. A mouse press always follows a hover here: Avalonia
+    /// raises PointerEntered again when a switch under the mouse is enabled.
+    /// </summary>
     private void LeaveMouse()
     {
         if (!_mouseOver) return;

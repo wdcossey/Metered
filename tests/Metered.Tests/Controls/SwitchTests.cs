@@ -136,6 +136,19 @@ public class SwitchTests
         Assert.DoesNotContain(":is-active", sw.Classes);
     }
 
+    // Base Web's switch is on or off: an app's IsThreeState doesn't give it a third state.
+    [AvaloniaFact]
+    public void It_has_no_third_state()
+    {
+        var (sw, scene) = Make(new Switch { Content = "Label", IsThreeState = true });
+        using var _ = scene;
+        Assert.False(sw.IsThreeState);
+        scene.Click(sw);
+        Assert.True(sw.IsChecked);
+        scene.Click(sw);
+        Assert.False(sw.IsChecked);
+    }
+
     // A right press is Base Web's onMouseDown too, and ends when it is let go.
     [AvaloniaFact]
     public void Any_buttons_press_is_active_until_released()
@@ -216,12 +229,36 @@ public class SwitchTests
         Assert.True(((Visual)labelled.Part(Switch.LabelPart)!).IsVisible);
     }
 
-    // A disabled switch takes no pointer, so it can't see the mouse leave: its hover and press end when it is disabled.
+    // A disabled switch takes no pointer and no key, so it can't see the mouse leave or the key go up: its hover and
+    // press end when it is disabled.
     [AvaloniaFact]
     public void Disabling_it_ends_its_hover_and_press()
     {
         var (sw, scene) = Make(new Switch { Content = "Label" });
         using var _ = scene;
+        // A hover alone, the mouse left where it is.
+        scene.Hover(sw);
+        Assert.Contains(":is-hovered", sw.Classes);
+        sw.IsEnabled = false;
+        scene.Pump();
+        Assert.DoesNotContain(":is-hovered", sw.Classes);
+        Assert.DoesNotContain(":is-hovered", sw.Part(Switch.ToggleTrackPart)!.Classes);
+        sw.IsEnabled = true;
+        scene.Pump();
+
+        // A held key.
+        scene.Key(Key.Tab);
+        scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        scene.Pump();
+        Assert.Contains(":is-active", sw.Classes);
+        sw.IsEnabled = false;
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", sw.Classes);
+        scene.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        sw.IsEnabled = true;
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", sw.Classes);
+
         scene.Press(sw);
         Assert.Contains(":is-hovered", sw.Classes);
         Assert.Contains(":is-active", sw.Classes);

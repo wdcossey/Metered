@@ -12,7 +12,7 @@ const css = require('../reference/css');
 const { THEMES, evaluate } = require('../reference/oracle');
 const sw = require('baseui/switch/styled-components');
 const { SIZE, LABEL_PLACEMENT } = require('baseui/switch/constants');
-const { theme, NAMED, colour, px, cursor, check, font, TEXT, RADII } = require('./radio');
+const { theme, NAMED, colour, px, cursor, check, font, TEXT, RADII, half } = require('./radio');
 
 const L = THEMES.Light;
 
@@ -141,7 +141,7 @@ const PARTS = [
     convert(s) {
       check(s, 'Toggle', ['backgroundColor', ...RADII, 'boxShadow', 'outline', 'height', 'width', 'transform', 'transition',
         'backgroundImage', 'backgroundRepeat', 'backgroundPosition']);
-      for (const k of RADII) if (s[k] !== '50%') throw new Error(`Toggle ${k} ${s[k]}`);
+      half(s, 'Toggle');
       if (s.outline !== 'none') throw new Error(`Toggle outline ${s.outline}`);
       if (s.width !== s.height) throw new Error('Toggle isn\'t square');
       const over = overlay(s.boxShadow, 'Toggle');
@@ -194,13 +194,16 @@ function transition() {
     </Style>`;
 }
 
-/** Base Web passes $isActive to every part, but none reads it: a press changes no style. */
+/** Base Web passes $isActive to every part, but none reads it: in no combination of the states does a press change a style. */
 function activeChangesNothing() {
+  const combos = [{}];
+  for (const a of AXES) combos.splice(0, combos.length, ...combos.flatMap((c) => a.values.map((v) => ({ ...c, [a.name]: v }))));
   for (const p of PARTS) {
-    for (const checked of [false, true]) {
-      const a = JSON.stringify(declarations(p.styled, NAMED, { checked }));
-      const b = JSON.stringify(declarations(p.styled, NAMED, { checked, isActive: true }));
-      if (a !== b) throw new Error(`${p.part} reads $isActive: add it to the states`);
+    for (const c of combos) {
+      const at = JSON.stringify(declarations(p.styled, NAMED, c));
+      if (at !== JSON.stringify(declarations(p.styled, NAMED, { ...c, isActive: true }))) {
+        throw new Error(`${p.part} reads $isActive in ${JSON.stringify(c)}: add it to the states`);
+      }
     }
   }
 }
@@ -239,4 +242,4 @@ ${themes.join('\n')}
 `;
 }
 
-module.exports = { file, AXES, PARTS, declarations, props, overlay, icon };
+module.exports = { file };
