@@ -1,0 +1,63 @@
+<!--
+  Base Web's radio-v2 Radio (baseui 18.2.0, radio-v2/radio.js), as a template of named parts. Each part's look is
+  its own theme, Radio.Styled<Part> (Radio.Parts.g.axaml), which the radio's Overrides merge over: this file holds
+  only the structure.
+
+  Root                       (a row or a column; the label wrapper first for the top and left placements)
+    RadioBackplate
+      RadioMarkOuter
+        RadioMarkInner
+    LabelWrapper             (only with content: Base Web renders it only with children)
+      Label
+        the content
+      Description            (only with a description)
+  Base Web's Input part, the hidden input, is the radio itself.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Radio}" TargetType="b:Radio">
+    <!-- display: inline-flex: the radio hugs its content, at the start of a group's line (its alignItems flex-start). -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- The focus outline is drawn outside the mark: overflow visible. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:RadioRootPanel Name="Root" Theme="{DynamicResource Radio.StyledRoot}">
+          <Border Name="RadioBackplate" Theme="{DynamicResource Radio.StyledRadioBackplate}">
+            <b:RadioMark Name="RadioMarkOuter" Theme="{DynamicResource Radio.StyledRadioMarkOuter}">
+              <b:RadioMark Name="RadioMarkInner" Theme="{DynamicResource Radio.StyledRadioMarkInner}" />
+            </b:RadioMark>
+          </Border>
+          <StackPanel Name="LabelWrapper"
+                      Theme="{DynamicResource Radio.StyledLabelWrapper}"
+                      IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Border Name="Label" Theme="{DynamicResource Radio.StyledLabel}">
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                RecognizesAccessKey="True" />
+            </Border>
+            <TextBlock Name="Description"
+                       Theme="{DynamicResource Radio.StyledDescription}"
+                       Text="{TemplateBinding Description}"
+                       IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+        </b:RadioRootPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- A group's row with the labels on top aligns its radios at the end of the line (RadioGroupRoot's alignItems
+         flex-end), so the marks line up under labels of different heights. -->
+    <Style Selector="^:align-horizontal:label-placement-top">
+      <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

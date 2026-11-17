@@ -1,0 +1,41 @@
+<!--
+  Base Web's radio-v2 RadioGroup (baseui 18.2.0, radio-v2/radiogroup.js): its one part, RadioGroupRoot, around the
+  radios. Base Web's RadioGroupRoot is a flex box that wraps: a column for the vertical align, a row for the
+  horizontal, a column gap of sizing.scale600 and a row gap of scale300. Here the gaps and the direction are the
+  items panel's: a column, or a row that wraps onto more lines.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:RadioGroup}" TargetType="b:RadioGroup">
+    <Setter Property="ClipToBounds" Value="False" />
+    <!-- flexDirection column: rowGap between the radios. A column wraps only in a box of a fixed height, which a
+         group isn't given, so it is a stack. -->
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Vertical" Spacing="{DynamicResource sizing.scale300}" />
+      </ItemsPanelTemplate>
+    </Setter>
+    <!-- Overflow visible, as a flex box's: the radios' focus outlines aren't clipped. -->
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="RadioGroupRoot" Theme="{DynamicResource RadioGroup.StyledRadioGroupRoot}">
+          <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" ClipToBounds="False" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- flexDirection row, flexWrap wrap: columnGap between the radios, rowGap between the lines. -->
+    <Style Selector="^:align-horizontal">
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <WrapPanel Orientation="Horizontal"
+                     ItemSpacing="{DynamicResource sizing.scale600}"
+                     LineSpacing="{DynamicResource sizing.scale300}" />
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>
