@@ -1,0 +1,3 @@
+Starting: Intent { cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras) }
+Error type 3
+Error: Activity class {io.github.wdcossey.metered.sample/metered.sample.MainActivity} does not exist.

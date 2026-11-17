@@ -1,0 +1,5 @@
+--------- beginning of main
+11-17 09:20:44.875 10022 10022 E OpenGLRenderer: Unable to match the desired swap behavior.
+11-17 09:20:44.902 10022 10022 E DOTNET  : UNHANDLED EXCEPTION:
+11-17 09:20:44.902 10022 10022 E DOTNET  : System.ArgumentException: The sample has no page titled 'nowhere'. Its pages are: 'Button', 'ButtonGroup', 'Theme'. (Parameter 'title')
+11-17 09:20:44.902 10022 10022 E DOTNET  :    at Metered.Sample.SampleShell.Open(String title)

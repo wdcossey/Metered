@@ -1,0 +1,7 @@
+--------- beginning of main
+11-17 09:02:11.304  1933  2897 I ActivityTaskManager: START u0 {flg=0x10000000 xflg=0x5 cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras)} with LAUNCH_MULTIPLE from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+11-17 09:02:11.371  8840  8840 D DOTNET  : AndroidCryptoNative_InitLibraryOnLoad: jint AndroidCryptoNative_InitLibraryOnLoad(JavaVM *, void *) in /__w/1/s/src/runtime/src/native/libs/System.Security.Cryptography.Native.Android/pal_jni.c
+11-17 09:02:11.371  8840  8840 D DOTNET  : GetOptionalClassGRef: optional class com/android/org/conscrypt/OpenSSLEngineImpl was not found
+11-17 09:02:12.210  1933  1987 I ActivityTaskManager: Displayed io.github.wdcossey.metered.sample/metered.sample.MainActivity for user 0: +906ms
+11-17 09:02:12.224  8840  8840 I DOTNET  : METERED ready open=412ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button
+11-17 09:02:12.580  1933  2011 I WindowManager: Changing focus from null to Window{4c1f2a u0 io.github.wdcossey.metered.sample/metered.sample.MainActivity}

@@ -1,0 +1,6 @@
+--------- beginning of crash
+11-17 09:14:02.118  9311  9311 E AndroidRuntime: FATAL EXCEPTION: main
+11-17 09:14:02.118  9311  9311 E AndroidRuntime: Process: io.github.wdcossey.metered.sample, PID: 9311
+11-17 09:14:02.118  9311  9311 E AndroidRuntime: android.runtime.JavaProxyThrowable: [System.ArgumentException]: The sample has no page titled 'nowhere'. Its pages are: 'Button', 'ButtonGroup', 'Theme'. (Parameter 'title')
+11-17 09:14:02.118  9311  9311 E AndroidRuntime: 	at Metered.Sample.SampleShell.Open(String title)
+11-17 09:14:02.118  9311  9311 E AndroidRuntime: 	at Metered.Sample.App.PhoneView(IReadOnlyList`1 pages, String startPage)
