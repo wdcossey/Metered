@@ -75,8 +75,8 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   lengths and type, and where layout puts the track, the knob and the label; and a long label that wraps (33 in all).
 - `Controls/SwitchTests`: toggling by click, Space and Enter (Base Web's browser test), the parts' state, hover and
   press by mouse and finger, keyboard focus, the label only with content, no third state, hover and press ending on
-  disabling and on leaving the window, the coarse pointer, the transition, overrides, and the drawn checkmark, outline
-  and overlay: 22 in all.
+  disabling and on leaving the window, the coarse pointer, the transition, overrides, and the drawn checkmark (and its
+  clip to the knob's circle), outline and overlay: 23 in all.
 - `Sample/SwitchPageTests`: the sample's page, 3.
 
 The part themes are generated (`tools/tokens/switch.js`): the switch's style functions evaluated on Base Web's theme

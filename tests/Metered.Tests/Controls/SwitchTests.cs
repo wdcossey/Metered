@@ -388,6 +388,30 @@ public class SwitchTests
         Assert.Equal(0.5, ((Visual)sw.Part(part)!).Opacity);
     }
 
+    // CSS clips a background image to the box's rounded corners: a checkmark an override makes larger than the knob
+    // stops at its circle.
+    [AvaloniaFact]
+    public void The_checkmark_is_clipped_to_the_knobs_circle()
+    {
+        var style = new ControlTheme(typeof(SwitchToggle));
+        style.Setters.Add(new Setter(SwitchToggle.IconSizeProperty, 48.0));
+        style.Setters.Add(new Setter(SwitchToggle.IconBrushProperty, Red));
+        var (sw, scene) = Make(new Switch { IsChecked = true, ShowIcon = true, Overrides = [new Override { Part = Switch.TogglePart, Style = style }] });
+        using var _ = scene;
+        var frame = scene.Capture();
+        var toggle = (Visual)sw.Part(Switch.TogglePart)!;
+        Color At(double x, double y)
+        {
+            var p = toggle.TranslatePoint(new Point(x, y), scene.Window)!.Value;
+            return Frames.PixelAt(frame, (int)Math.Floor(p.X), (int)Math.Floor(p.Y));
+        }
+
+        // Twice the view box, from 12 before the knob: (8.5, 17.7) of the stroke is at (5, 23.4), inside the knob's box
+        // but outside its circle; (8.5, 16) at (5, 20), inside both.
+        Assert.Equal(Colors.Red, At(5, 20));
+        Assert.NotEqual(Colors.Red, At(5, 23.4));
+    }
+
     // The pixels Avalonia draws for what a border can't: the checkmark, the track's outline beyond its gap, the overlay.
     [AvaloniaFact]
     public void The_knob_draws_the_checkmark_and_the_track_its_outline()
