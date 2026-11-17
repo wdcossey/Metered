@@ -210,12 +210,15 @@ public class RadioGroupTests
     // Base Web's group context (groupContext?.align ?? alignProp): the group's align, label placement and error are
     // drawn in place of the radio's own, which the radio keeps, and draws again when it leaves.
     [AvaloniaTheory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void The_group_draws_its_context_and_the_radio_keeps_its_own(bool clear)
+    [InlineData("remove")]
+    [InlineData("clear")]
+    [InlineData("source")]
+    public void The_group_draws_its_context_and_the_radio_keeps_its_own(string leave)
     {
         var radio = new Radio { Value = "1", Content = "One", Align = RadioAlign.Vertical, LabelPlacement = RadioLabelPlacement.Right, Error = true };
-        var group = new RadioGroup { Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Left, Error = false, Items = { radio } };
+        var group = new RadioGroup { Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Left, Error = false };
+        if (leave == "source") group.ItemsSource = new[] { radio };
+        else group.Items.Add(radio);
         using var scene = new Scene(group);
         var outer = radio.Part(Radio.RadioMarkOuterPart)!;
         Assert.Contains(":align-horizontal", outer.Classes);
@@ -227,9 +230,10 @@ public class RadioGroupTests
         Assert.Contains(":label-placement-bottom", outer.Classes);
         Assert.Equal(RadioLabelPlacement.Right, radio.LabelPlacement);
 
-        // Removed, or the whole group cleared (a reset, which names no old items).
-        if (clear) group.Items.Clear();
-        else group.Items.Remove(radio);
+        // Removed, the whole group cleared, or its source replaced: a reset, which names no old items.
+        if (leave == "remove") group.Items.Remove(radio);
+        else if (leave == "clear") group.Items.Clear();
+        else group.ItemsSource = Array.Empty<Radio>();
         scene.Pump();
         Assert.Contains(":align-vertical", outer.Classes);
         Assert.Contains(":label-placement-right", outer.Classes);

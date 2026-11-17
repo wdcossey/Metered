@@ -185,7 +185,7 @@ public class RadioTests
         scene.Pump();
         Assert.DoesNotContain(":is-active", radio.Classes);
 
-        // A right press isn't captured: released off the radio, the radio never sees it, so leaving ends it.
+        // Released off the radio, the press still ends: Avalonia captures a right press too.
         scene.Window.MouseDown(at, MouseButton.Right);
         scene.Pump();
         scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
@@ -220,6 +220,16 @@ public class RadioTests
         scene.Pump();
         Assert.DoesNotContain(":is-active", radio.Classes);
         Assert.DoesNotContain(":active", backplate.Classes);
+
+        // Still holding the press it captured, the disabled radio sees the mouse move over it: no hover comes back.
+        scene.Window.MouseMove(scene.CentreOf((Visual)backplate) + new Point(1, 1));
+        scene.Window.MouseUp(scene.CentreOf((Visual)backplate), MouseButton.Left);
+        scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
+        scene.Pump();
+        radio.IsEnabled = true;
+        scene.Pump();
+        Assert.DoesNotContain(":is-hovered", radio.Classes);
+        Assert.DoesNotContain(":hover", backplate.Classes);
     }
 
     // Base Web's @media (pointer: coarse): padding round the root, which takes the pointer, for a 48 px target.

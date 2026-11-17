@@ -220,8 +220,6 @@ public class Radio : RadioButton
     {
         base.OnPointerExited(e);
         SetMouseOver(false);
-        // A press the radio didn't capture (any but the primary button) ends out of its sight: end it on leaving.
-        if (e.Pointer.Captured != this) SetPressed(false);
         SetBackplate(false, _backplateActive);
     }
 
@@ -234,13 +232,8 @@ public class Radio : RadioButton
         SetBackplate(_backplateHover, e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && OverBackplate(e));
     }
 
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        base.OnPointerReleased(e);
-        SetPressed(false);
-        SetBackplate(_backplateHover, false);
-    }
-
+    // Avalonia captures the pointer on any press, a right one included, and lets it go on the release, wherever it
+    // is: the press ends there, as Base Web's onMouseUp ends it.
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
