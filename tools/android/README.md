@@ -138,6 +138,15 @@ Run it with `-NoProfile`, so that nothing in a PowerShell profile changes the ru
 `$PSNativeCommandArgumentPassing` (`Standard`, so a title's quotes reach adb intact) and
 `$PSNativeCommandUseErrorActionPreference` (off, as each call's exit code is checked).
 
+## A long path breaks the Release build on Windows
+
+A Release build compiles the assemblies ahead of time with Mono's AOT compiler, and on Windows that fails from a clone
+whose folder has a long path: `Precompiling failed for …\linked\Avalonia.Android.dll`, `Failed to load method
+0x6000073`, for every assembly. Measured 2026-11-17 on one commit (.NET SDK 10.0.402, android workload 36.1.118): a
+fresh clone at a 134-character path failed, its `linked\Avalonia.Android.dll` 235 characters long; a fresh clone at
+`R:\source\Metered-wt\ah-clean` (29) built, in Release and in Debug, which has no AOT step. Clone near the drive's root.
+CI builds on Linux, from a short path; Linux and macOS haven't been tried at a long one.
+
 ## Not yet run on a phone
 
 The head is built locally and in CI; the device run hasn't been made yet (a hands-on step). Until it has, nothing here
