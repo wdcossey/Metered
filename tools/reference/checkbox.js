@@ -1,18 +1,35 @@
-// The Checkbox's oracle, checkbox.oracle.json (written by cases.js): what Base Web's own style
-// functions for its v1 Checkbox (baseui/checkbox/styled-components) give for each case the tests
-// build, on the real light and dark themes, in Avalonia's units.
+// The oracle for Checkbox (checkbox-v2): what Base Web's own style functions give, for the cases the tests build, on
+// the real light and dark themes, in Avalonia's units. Kept apart from tools/tokens/checkbox.js, which writes the
+// themes: the tests compare one with the other. Read by cases.js, which writes
+// tests/Metered.Tests/Reference/checkbox.oracle.json.
 'use strict';
 
 const css = require('./css');
-const { THEMES, evaluate } = require('./oracle');
-const checkbox = require('baseui/checkbox/styled-components');
+const { THEMES, evaluate, resolve } = require('./oracle');
+const checkbox = require('baseui/checkbox-v2/styled-components');
+const { LABEL_PLACEMENT } = require('baseui/checkbox-v2/constants');
+
+/** checkbox.js's sharedProps, and $labelPlacement. */
+const props = (s) => ({
+  $checked: !!s.checked, $isIndeterminate: !!s.indeterminate, $disabled: !!s.disabled, $error: !!s.error,
+  $isHovered: !!s.isHovered, $isActive: !!s.isActive, $isFocusVisible: !!s.isFocusVisible, $isFocused: !!s.isFocusVisible,
+  $labelPlacement: s.labelPlacement ?? LABEL_PLACEMENT.right, $required: false, $value: '',
+});
+
+/** A part's declarations for the checkbox's props and the part's own CSS state ({ hover, active }), on a coarse pointer or not. */
+function part(styled, theme, s, cssState = {}, coarse = false) {
+  const style = evaluate(styled, theme, props(s));
+  const { self } = resolve(style, cssState);
+  if (coarse) Object.assign(self, style['@media (pointer: coarse)'] || {});
+  return self;
+}
 
 /**
- * The oracle's own reading of a background-image data URL, apart from the generator's: the SVG's
- * width, height and viewBox, and its one path's d and fill. Null for no image.
+ * The oracle's own reading of a background-image data URL, apart from the generator's: the SVG's width, height and
+ * viewBox, and its one path's d and fill. Null for no image.
  */
 function glyph(backgroundImage) {
-  if (!backgroundImage) return null;
+  if (backgroundImage == null) return null;
   const at = backgroundImage.indexOf('data:image/svg+xml,');
   if (at < 0) throw new Error(`Not an SVG data URL: ${backgroundImage}`);
   const svg = decodeURIComponent(backgroundImage.slice(at + 'data:image/svg+xml,'.length).replace(/'\);?\s*$/, ''));
@@ -21,126 +38,128 @@ function glyph(backgroundImage) {
     if (!m) throw new Error(`No ${name} on <${tag}>`);
     return m[1];
   };
-  const width = Number(attr('svg', 'width'));
-  const height = Number(attr('svg', 'height'));
-  if (attr('svg', 'viewBox') !== `0 0 ${width} ${height}`) throw new Error("A viewBox that isn't the SVG's size");
   if ((svg.match(/<path\b/g) || []).length !== 1) throw new Error('Not one path');
-  return { d: attr('path', 'd'), width, height, fill: attr('path', 'fill') };
+  return {
+    d: attr('path', 'd'), width: Number(attr('svg', 'width')), height: Number(attr('svg', 'height')),
+    viewBox: attr('svg', 'viewBox').split(/[\s,]+/).map(Number), fill: attr('path', 'fill'),
+  };
 }
 
-// Interaction states the tests make with real input: [name, $ props]. A mouse press is over the box.
+/** '2px solid <colour>' and its offset, or null for none. */
+function outline(s) {
+  if (s.outline === undefined) return null;
+  const m = /^(\S+) solid (.+)$/.exec(s.outline);
+  if (!m) throw new Error(`outline ${s.outline}`);
+  return { colour: css.color(m[2]), thickness: css.px(m[1]), offset: css.px(s.outlineOffset) };
+}
+
+/**
+ * The states the tests drive with real input: the props they give and the CheckmarkContainer's own CSS state.
+ * hover: a mouse over the container (over the checkbox, so $isHovered too); hoverLabel: a mouse over the label only;
+ * active: a mouse pressed on the container; touchActive: a finger pressed on it (no hover: Metered's, as Base Web's
+ * container hover, is a mouse's); focusVisible: focused by keyboard; keyActive: Space held with keyboard focus
+ * (checkbox.js's onKeyDown sets isActive; the container, the input's sibling, isn't :active).
+ */
 const STATES = [
-  ['rest', {}],
-  ['hover', { $isHovered: true }],
-  ['active', { $isHovered: true, $isActive: true }],
-  ['focusVisible', { $isFocusVisible: true, $isFocused: true }],
+  ['rest', {}, {}],
+  ['hover', { isHovered: true }, { hover: true }],
+  ['hoverLabel', { isHovered: true }, {}],
+  ['active', { isHovered: true, isActive: true }, { hover: true, active: true }],
+  ['touchActive', { isActive: true }, { active: true }],
+  ['focusVisible', { isFocusVisible: true }, {}],
+  ['keyActive', { isFocusVisible: true, isActive: true }, {}],
 ];
-const PLACEMENTS = ['top', 'right', 'bottom', 'left'];
 
-const props = (extra) => ({
-  $checked: false, $isIndeterminate: false, $error: false, $disabled: false, $isHovered: false, $isActive: false,
-  $isFocusVisible: false, $isFocused: false, $required: false, $value: '', $labelPlacement: 'right', ...extra,
-});
-const style = (styled, theme, extra) => evaluate(styled, THEMES[theme], props(extra));
-const colourOrNull = (v) => (v === undefined || v === null ? null : css.color(v));
-
-/** Which glyph an SVG is, by its path; and its fill. */
-function glyphOf(backgroundImage, shapes) {
-  const g = glyph(backgroundImage);
-  if (!g) return { glyph: null, tick: null };
-  const name = Object.keys(shapes).find((k) => shapes[k].d === g.d);
-  if (!name) throw new Error(`An unknown glyph ${g.d}`);
-  return { glyph: name, tick: css.color(g.fill) };
-}
-
-/** A state's own cases: a disabled box can't be hovered, pressed or focused, so only at rest. */
-function* cases(withIndeterminate) {
+function colours(shapes) {
+  const cases = [];
   for (const theme of Object.keys(THEMES)) {
     for (const checked of [false, true]) {
-      for (const indeterminate of withIndeterminate ? [false, true] : [false]) {
+      for (const indeterminate of [false, true]) {
         for (const error of [false, true]) {
           for (const disabled of [false, true]) {
-            for (const [state, extra] of disabled ? [STATES[0]] : STATES) {
-              yield { theme, checked, indeterminate, error, disabled, state, extra };
+            for (const [state, extra, cssState] of STATES) {
+              // A disabled checkbox takes no input.
+              if (disabled && state !== 'rest') continue;
+              const s = { checked, indeterminate, error, disabled, ...extra };
+              const t = THEMES[theme];
+              const mark = part(checkbox.Checkmark, t, s);
+              const container = part(checkbox.CheckmarkContainer, t, s, cssState);
+              const g = glyph(mark.backgroundImage);
+              const name = g && Object.keys(shapes).find((k) => shapes[k].d === g.d);
+              if (g && !name) throw new Error(`An unknown glyph ${g.d}`);
+              const border = new Set(['Left', 'Right', 'Top', 'Bottom'].map((side) => mark[`border${side}Color`]));
+              if (border.size !== 1) throw new Error('Checkmark border colours differ');
+              cases.push({
+                theme, checked, indeterminate, error, disabled, state,
+                background: css.color(mark.backgroundColor),
+                border: css.color([...border][0]),
+                glyph: name ?? null,
+                tick: g ? css.color(g.fill) : null,
+                outline: outline(mark),
+                container: container.backgroundColor === undefined ? '#00000000' : css.color(container.backgroundColor),
+                label: css.color(part(checkbox.Label, t, s).color),
+              });
             }
           }
         }
       }
     }
   }
+  return cases;
+}
+
+function layout() {
+  const cases = [];
+  const L = THEMES.Light;
+  for (const labelPlacement of Object.values(LABEL_PLACEMENT)) {
+    for (const coarse of [false, true]) {
+      const s = { labelPlacement };
+      const root = part(checkbox.Root, L, s, {}, coarse);
+      const container = part(checkbox.CheckmarkContainer, L, s);
+      const mark = part(checkbox.Checkmark, L, s);
+      const label = part(checkbox.Label, L, s);
+      const plate = (side) => css.px(container['padding' + side]);
+      cases.push({
+        labelPlacement, coarse,
+        rootDirection: root.flexDirection,
+        rootAlignItems: root.alignItems,
+        rootPadding: root.padding === undefined ? 0 : css.px(root.padding),
+        rootCursor: root.cursor,
+        containerPadding: ['Left', 'Top', 'Right', 'Bottom'].map(plate),
+        containerRadius: css.px(container.borderRadius),
+        containerMin: [css.px(container.minWidth), css.px(container.minHeight)],
+        // box-sizing border-box: the mark and the padding, or the minimum.
+        containerSize: [
+          Math.max(css.px(container.minWidth), css.px(mark.width) + plate('Left') + plate('Right')),
+          Math.max(css.px(container.minHeight), css.px(mark.height) + plate('Top') + plate('Bottom')),
+        ],
+        markSize: [css.px(mark.width), css.px(mark.height)],
+        markBorder: css.px(mark.borderLeftWidth),
+        markRadius: css.px(mark.borderTopLeftRadius),
+        labelPadding: ['Left', 'Top', 'Right', 'Bottom'].map((side) => css.px(label['padding' + side] ?? 0)),
+        label: { fontSize: css.px(label.fontSize), fontWeight: css.fontWeight(label.fontWeight), lineHeight: css.px(label.lineHeight) },
+      });
+    }
+  }
+  return cases;
+}
+
+function transition() {
+  const s = part(checkbox.Checkmark, THEMES.Light, {});
+  return {
+    properties: s.transitionProperty.split(',').map((p) => p.trim()),
+    seconds: css.seconds(s.transitionDuration),
+    curve: css.cubicBezier(s.transitionTimingFunction),
+  };
 }
 
 function oracle(version) {
   const shapes = {
-    check: glyph(style(checkbox.Checkmark, 'Light', { $checked: true }).backgroundImage),
-    indeterminate: glyph(style(checkbox.Checkmark, 'Light', { $isIndeterminate: true }).backgroundImage),
+    check: glyph(part(checkbox.Checkmark, THEMES.Light, { checked: true }).backgroundImage),
+    indeterminate: glyph(part(checkbox.Checkmark, THEMES.Light, { indeterminate: true }).backgroundImage),
   };
   for (const s of Object.values(shapes)) delete s.fill;
-
-  const checkmark = [];
-  for (const c of cases(true)) {
-    const p = { $checked: c.checked, $isIndeterminate: c.indeterminate, $error: c.error, $disabled: c.disabled, ...c.extra };
-    const s = style(checkbox.Checkmark, c.theme, p);
-    const outline = /^(\d+)px solid (.+)$/.exec(s.outline);
-    if (s.outline !== 'none' && !outline) throw new Error(`outline ${s.outline}`);
-    checkmark.push({
-      theme: c.theme, checked: c.checked, indeterminate: c.indeterminate, error: c.error, disabled: c.disabled, state: c.state,
-      background: css.color(s.backgroundColor),
-      border: css.color(s.borderLeftColor),
-      ...glyphOf(s.backgroundImage, shapes),
-      outlineWidth: outline ? Number(outline[1]) : 0,
-      outline: outline ? css.color(outline[2]) : null,
-      label: css.color(style(checkbox.Label, c.theme, p).color),
-    });
-  }
-
-  const toggle = [];
-  for (const c of cases(false)) {
-    const p = { $checked: c.checked, $error: c.error, $disabled: c.disabled, ...c.extra };
-    const s = style(checkbox.Toggle, c.theme, p);
-    const width = css.px(s.width);
-    const pct = s.transform ? Number(/^translateX\((-?[\d.]+)%\)$/.exec(s.transform)[1]) : 0;
-    toggle.push({
-      theme: c.theme, checked: c.checked, error: c.error, disabled: c.disabled, state: c.state,
-      background: css.color(s.backgroundColor),
-      boxShadow: css.boxShadows(s.boxShadow),
-      translateX: (pct / 100) * width,
-      track: css.color(style(checkbox.ToggleTrack, c.theme, p).backgroundColor),
-      label: css.color(style(checkbox.Label, c.theme, p).color),
-    });
-  }
-
-  const sides = (s, prefix) => ['Left', 'Top', 'Right', 'Bottom'].map((side) => css.px(s[prefix + side] ?? 0));
-  const layout = PLACEMENTS.map((placement) => {
-    const root = style(checkbox.Root, 'Light', { $labelPlacement: placement });
-    const label = style(checkbox.Label, 'Light', { $labelPlacement: placement });
-    return {
-      placement,
-      direction: root.flexDirection,
-      alignItems: root.alignItems,
-      labelPadding: sides(label, 'padding'),
-    };
-  });
-
-  const mark = style(checkbox.Checkmark, 'Light', {});
-  const track = style(checkbox.ToggleTrack, 'Light', {});
-  const knob = style(checkbox.Toggle, 'Light', {});
-  const label = style(checkbox.Label, 'Light', {});
-  return {
-    baseui: version,
-    checkmark,
-    toggle,
-    layout,
-    // checkbox.js: labelPlacement = checkmarkType === toggle ? 'left' : 'right'.
-    defaultPlacement: { default: 'right', toggle: 'left' },
-    sizes: {
-      checkmark: { width: css.px(mark.width), height: css.px(mark.height), margin: sides(mark, 'margin'), borderWidth: css.px(mark.borderLeftWidth), radius: css.px(mark.borderTopLeftRadius) },
-      track: { width: css.px(track.width), height: css.px(track.height), margin: sides(track, 'margin'), radius: css.px(track.borderTopLeftRadius) },
-      toggle: { width: css.px(knob.width), height: css.px(knob.height), radius: knob.borderTopLeftRadius === '50%' ? css.px(knob.width) / 2 : css.px(knob.borderTopLeftRadius) },
-      label: { fontSize: css.px(label.fontSize), fontWeight: css.fontWeight(label.fontWeight), lineHeight: css.px(label.lineHeight) },
-    },
-    glyphs: shapes,
-  };
+  return { baseui: version, colours: colours(shapes), layout: layout(), glyphs: shapes, transition: transition() };
 }
 
 module.exports = { oracle };

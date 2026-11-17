@@ -46,6 +46,16 @@ A radio group, a checkbox group of small pills with what was clicked under it, a
 <img src="docs/preview/dark__buttongroup-1.png" width="270" alt="ButtonGroup, dark: radio, checkbox and wrapping">
 </p>
 
+## Checkbox
+
+Base Web's checkbox-v2: its states (checked, error, disabled), a parent indeterminate while only some of its children
+are checked, the label on the left and on the right, and a label of several lines.
+
+<p>
+<img src="docs/preview/light__checkbox-1.png" width="270" alt="Checkbox, light: states, indeterminate, label placement and a long label">
+<img src="docs/preview/dark__checkbox-1.png" width="270" alt="Checkbox, dark: states, indeterminate, label placement and a long label">
+</p>
+
 ## Radio
 
 Base Web's radio-v2: a group with a description and its selection under it, a horizontal group, the label on top
