@@ -159,5 +159,5 @@ and the parsers read them as they read the fixtures. The fixtures' numbers are s
 | Theme (7 Buttons) | 57, 50, 75, 45, 43 | 50 |
 
 The cold starts were 730 to 783 ms (`am start -W`'s TotalTime). The difference between the two pages is about 4.4 ms
-per Button, about seven times the headless cost. Debug's warm reopens took 223 to 265 ms, with layout 150 to 186 ms of
+per Button, about seven times the headless cost. In Debug, the Button page's five warm reopens took 223 to 265 ms, with layout 150 to 186 ms of
 that. Once, a cold Debug start's lines came before the view was sized (`view=1x1 scaling=1 page=1x0`, #37).

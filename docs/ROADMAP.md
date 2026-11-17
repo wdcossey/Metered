@@ -23,12 +23,13 @@ Button and ButtonGroup, to settle the approach before the inventory:
    most of that state styles it doesn't match (31 % of the work, 45 % of the allocation), as Avalonia
    instances every style of a `ControlTheme` on every element. The mirroring itself is 9 %.
    No reduction within ADR 0001; a theme pruned by kind, size and shape (23 % of the work, 35 % of the
-   allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. Not measured on
-   a phone.
+   allocation) or kind and state in code (at most 32 % and 45 %) would need a new ADR. On a Pixel 8 in
+   Release, about 4.4 ms a Button, some seven times the headless cost (#10,
+   `tools/android/README.md`); whether to cut it is the developer's decision.
 2. **The sample and the real-window run**, as Cornflower's and Avonic's. The sample is a library
    with a page per control, shown by a desktop head (`samples/Metered.Sample`, #7) and an Android
-   head built in CI (#8); still to come: the first device run on the Pixel (`tools/android/run.ps1`,
-   hands-on), which also gives #10 its phone's number, and a scripted real-window run. The
+   head built in CI (#8) and run on a Pixel 8 (`tools/android/run.ps1`, #29); still to come: a
+   scripted real-window run. The
    sample's shell, its subtree theme and the new fonts haven't been seen in a real window (#5).
 
 Done since the pilot (2026-11-16):
@@ -49,8 +50,8 @@ Borrowed from Cornflower and Avonic (2026-11-16):
 
 - [x] CI: build, test, the Node tools' syntax, and both `--check` runs (`.github/workflows/ci.yml`)
 - [x] An Android head and its CI job (#8): `samples/Metered.Sample.Android`, the `android` job, and
-      `tools/android/run.ps1`, the device run, whose self-test reads fixtures with no phone. Not yet
-      run on a phone
+      `tools/android/run.ps1`, the device run, whose self-test reads fixtures with no phone. First run
+      on a Pixel 8 on 2026-11-17 (#29)
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)
 - [x] The style budget for global rules (`tests/Metered.Tests/Performance/`,
       `docs/performance/README.md`). It doesn't replace item 1: a control's own cost isn't global.

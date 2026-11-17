@@ -24,7 +24,7 @@ every commit.
 | Path | What it is |
 |---|---|
 | `Metered.sln` | The solution. Libraries `net8.0`, tests `net10.0`; `global.json` pins SDK 10; Avalonia 12.1.4, xunit v3 (`Directory.Packages.props`) |
-| `.github/` | `pull_request_template.md` (the sections PROCESS §5 relies on). `workflows/ci.yml`: CI on push to `main` and on pull requests: `build-test` (Release build and tests), `android` (`tools/android/run.ps1 -SelfTest`, then the android workload and a Release and a Debug build of the Android head; not a required check) and `generated` (the Node tools' syntax, `tools/breakage/strays.test.js` on Linux, and both `--check` runs) |
+| `.github/` | `pull_request_template.md` (the sections PROCESS §5 relies on). `workflows/ci.yml`: CI on push to `main` and on pull requests: `build-test` (Release build and tests, then packs `Metered.Fonts` and fails unless both `OFL.txt` and Base Web's notice are in it), `android` (`tools/android/run.ps1 -SelfTest`, then the android workload and a Release and a Debug build of the Android head; not a required check) and `generated` (the Node tools' syntax, `tools/breakage/strays.test.js` on Linux, and both `--check` runs) |
 | `Directory.Build.targets` | Auto-discovery: a project that sets `MeteredDiscoverXaml` gets `XamlManifest.Paths` of its `MeteredDiscoveredXaml` globs (from Cornflower) |
 | `package.json` | `baseui` 18.2.0, React 18.3.1, `styletron-react`, `playwright-core`: reference material for `tools/`, never shipped |
 | `PREVIEW.md` | What Metered looks like: the sample's list and each page, light and dark, from `docs/preview/` (`README.md` shows three) |
