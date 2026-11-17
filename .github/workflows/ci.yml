@@ -68,6 +68,10 @@ jobs:
       - name: Build the Android head
         run: dotnet build samples/Metered.Sample.Android --configuration Release -p:AndroidSdkDirectory="$ANDROID_HOME"
 
+      # Debug too: its code differs (Avalonia's diagnostics, for the cost line run.ps1 -Configuration Debug reads).
+      - name: Build the Android head, Debug
+        run: dotnet build samples/Metered.Sample.Android --configuration Debug -p:AndroidSdkDirectory="$ANDROID_HOME"
+
   # The generated files are what the generators write today: the tokens and part themes from the
   # pinned baseui, and the oracle the tests read. Neither needs a browser (only
   # tools/reference/precedence.js does, and it is run by hand).
