@@ -1,3 +1,5 @@
+using System.Reflection;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
@@ -94,6 +96,30 @@ public class FontPackageTests
         Assert.Equal(new FontFamily("Arial"), options.FontFamilyMappings["Brand"]);
         Assert.Same(own, app.FontFamilyMappings);
         Assert.Equal(2, own.Count);
+    }
+
+    // What the extension gives Avalonia: the app's options, with the mapping. The test app passes none, so this runs a
+    // builder's option initialisers (AppBuilder's own field: With has no other way out) in a locator scope of its own,
+    // on the UI thread, so nothing else sees the binding, and reads back the FontManagerOptions FontManager's
+    // constructor reads. AvaloniaLocator is Avalonia's private API, which its reference assemblies leave out: hence
+    // reflection, for members that are public at run time.
+    [AvaloniaFact]
+    public void The_extension_binds_the_apps_options_with_the_mapping()
+    {
+        var builder = AppBuilder.Configure<Application>().WithMeteredFonts(new FontManagerOptions { DefaultFamilyName = MeteredFonts.Figtree });
+        var initializers = (Action)typeof(AppBuilder).GetField("_optionsInitializers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(builder)!;
+        var locator = typeof(AvaloniaLocator);
+
+        using (var scope = (IDisposable)locator.GetMethod("EnterScope", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null)!)
+        {
+            initializers();
+            var current = locator.GetProperty("Current", BindingFlags.Public | BindingFlags.Static)!.GetValue(null)!;
+            var bound = (FontManagerOptions)current.GetType().GetMethod("GetService", [typeof(Type)])!.Invoke(current, [typeof(FontManagerOptions)])!;
+
+            Assert.Equal(MeteredFonts.Figtree, bound.DefaultFamilyName);
+            Assert.Equal(new FontFamily(MeteredFonts.InstrumentSans), bound.FontFamilyMappings!["UberMoveText"]);
+            Assert.Equal(new FontFamily(MeteredFonts.Figtree), bound.FontFamilyMappings["UberMove"]);
+        }
     }
 
     // The copy names each of FontManagerOptions' properties: one Avalonia adds would be dropped, so this goes red first.
