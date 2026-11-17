@@ -37,6 +37,37 @@ jobs:
           name: test-results
           path: TestResults
 
+  # The Android head, in a job of its own: it needs the android workload, which build-test doesn't. Build only, so
+  # the head can't break unnoticed; the device run is tools/android/run.ps1, on the maintainer's phone, and its
+  # self-test (its parsers on fixtures, no device) runs here. From Cornflower's.
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The device run's self-test
+        run: pwsh -NoProfile -File tools/android/run.ps1 -SelfTest
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # .NET for Android 10 supports JDK 17 and 21.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: microsoft
+          java-version: 21
+
+      - name: Install the android workload
+        run: dotnet workload install android
+
+      # The runner's Android SDK may lack the platform the workload targets; this fetches what is missing.
+      - name: Install the Android SDK parts the build needs
+        run: dotnet build samples/Metered.Sample.Android -t:InstallAndroidDependencies -f net10.0-android -p:AndroidSdkDirectory="$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=true
+
+      - name: Build the Android head
+        run: dotnet build samples/Metered.Sample.Android --configuration Release -p:AndroidSdkDirectory="$ANDROID_HOME"
+
   # The generated files are what the generators write today: the tokens and part themes from the
   # pinned baseui, and the oracle the tests read. Neither needs a browser (only
   # tools/reference/precedence.js does, and it is run by hand).
