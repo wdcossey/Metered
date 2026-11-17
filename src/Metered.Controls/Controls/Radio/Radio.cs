@@ -219,12 +219,6 @@ public class Radio : RadioButton
         _pointer.Pressed(e);
     }
 
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        base.OnPointerReleased(e);
-        _pointer.Released(e);
-    }
-
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);

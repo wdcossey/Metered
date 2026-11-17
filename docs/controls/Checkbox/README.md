@@ -94,7 +94,7 @@ toggle is a click (`Click` and `Command` run).
   indeterminate, disabled, hover over the label and the container, a finger, the mouse leaving, focus by mouse and
   keyboard, focus and keys in the label, Enter's press and its own release, a finger dragged off, mirrored states, the
   label only when given, the coarse pointer, automation, a control as the label, disabling, a label drawn as given,
-  overrides and the transition, any button's release, the focus leaving during a key's and a mouse's press: 30 in all.
+  overrides and the transition, any button's release, a finger leaving, the focus leaving during a key's and a mouse's press: 31 in all.
 - `Controls/CheckboxFrames`: the tick's pixels at 17 px over the box, the border, the outline beyond its gap, and the
   container's and the box's hover tints one over the other (4, and the gallery).
 - `Sample/CheckboxPageTests`: the sample's page, 3.

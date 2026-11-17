@@ -69,16 +69,6 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
     }
 
     /// <summary>
-    /// Base Web's <c>onMouseUp</c>, any button's: the press ends, though another button still holds the pointer. CSS's
-    /// <c>:active</c> is the primary button's, so the backplate's ends with that one.
-    /// </summary>
-    public void Released(PointerReleasedEventArgs e)
-    {
-        SetPressed(false);
-        if (e.InitialPressMouseButton == MouseButton.Left) SetBackplate(_backplateHover, false);
-    }
-
-    /// <summary>
     /// Avalonia captures the pointer on any press, a right one included, and lets it go on the release, wherever it is:
     /// the press ends there, as Base Web's <c>onMouseUp</c> ends it.
     /// </summary>

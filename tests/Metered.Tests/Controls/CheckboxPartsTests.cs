@@ -321,8 +321,27 @@ public class CheckboxPartsTests
         Assert.DoesNotContain(":is-active", box.Classes);
     }
 
-    // checkbox.js's onMouseUp is any button's: a right button let go ends the press, though the left still holds the
-    // pointer.
+    // A finger that leaves without a move outside (the content scrolled from under it) ends the press too.
+    [AvaloniaFact]
+    public void A_finger_leaving_ends_the_press()
+    {
+        var box = new Checkbox { Content = "Label" };
+        using var scene = Show(box);
+        var container = P(box, Checkbox.CheckmarkContainerPart);
+        var touch = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+        box.RaiseEvent(new PointerPressedEventArgs(box, touch, scene.Window, scene.CentreOf(container), 0,
+            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+        scene.Pump();
+        Assert.Contains(":is-active", box.Classes);
+
+        box.RaiseEvent(new PointerEventArgs(InputElement.PointerExitedEvent, box, touch, scene.Window, scene.CentreOf(container), 0,
+            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.Other), KeyModifiers.None));
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", box.Classes);
+    }
+
+    // checkbox.js's onMouseUp is any button's: a right button let go ends the press, though the left is still down
+    // (Avalonia lets the pointer's capture go on any release).
     [AvaloniaFact]
     public void Any_button_let_go_ends_the_press()
     {
