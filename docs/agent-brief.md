@@ -42,9 +42,15 @@ You're building one Metered issue while one or two other agents build others. Re
 
 - **Read Base Web before writing a line:** its props, its style functions in
   `node_modules/baseui/<component>/styled-components.js`, and its scenarios, which the npm package
-  doesn't ship: `src/<component>/__tests__/*.scenario.tsx` in `github.com/uber/baseweb` at tag `v18.2.0`. Every value a
+  doesn't ship: `src/<component>/__tests__/*.scenario.tsx` in `github.com/uber/baseweb` at commit `3adb0478c9`, the
+  18.2.0 release (the repository has no `v18.2.0` tag). Every value a
   test expects comes from Base Web: the oracle (`tools/reference/`), or a value read from its source with
   the file named (CLAUDE.md, rule 3). Never re-record an expected value from Avalonia's output.
+- **Build the component's v2 if Base Web has one.** Metered reproduces Base Web's v2 controls (the developer,
+  2026-11-17). Before you choose, read the component's docs page at that commit
+  (`documentation-site/pages/components/`) for a deprecation notice, and look for a `<component>-v2` folder in
+  `node_modules/baseui/`. #40 built v1 Checkbox, whose page says it's "about to be deprecated" in favour of
+  Checkbox-v2 and Switch, and it had to be redone (#42). Also check the page for deprecated props.
 - **Never hand-edit a generated file** (`CLAUDE.md`, rule 1): change the generator and run it, then both
   `--check` runs.
 - **A part's look lives only in its own `Styled{Part}` theme** (ADR 0001); a pseudoclass style outranks a
@@ -68,6 +74,9 @@ You're building one Metered issue while one or two other agents build others. Re
 
 - PROCESS §4 in full: two `code-review` passes (one for a docs-only or chore PR) (`high origin/main...<branch> --max-findings all`), proof
   the tests can fail, a clean run, screenshots.
+- **Preview pictures:** redraw only your own page's (`docs/preview/{light,dark}__<page>-*.png`, from `PreviewGallery`)
+  and write its section of `PREVIEW.md`, in page order. Don't commit the `*__list-*.png` pictures: every new page
+  changes them, so the coordinator redraws them after the batch.
 - Push, `gh pr create` with the template and `Closes #<issue>`. Check it isn't a draft.
 - **CI must be green on your exact commit:** `gh run list --commit <sha>`. Fix it if it's red.
 - **Be honest in the PR:** the true test count, what wasn't tried, known gaps, every waived finding with its
