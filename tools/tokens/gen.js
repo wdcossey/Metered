@@ -120,6 +120,9 @@ files['Typography.g.axaml'] = dictionary('theme.typography: each style\'s family
     ];
   }));
 
+// The themes of Checkbox's parts (checkbox.js).
+files['../Controls/Checkbox.Parts.g.axaml'] = require('./checkbox').file(version);
+
 // The Button's box-shadows (button-shadows.js).
 const shadows = require('./button-shadows');
 files['ButtonBoxShadows.g.axaml'] = dictionary(
