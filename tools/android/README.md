@@ -99,9 +99,11 @@ ignored by git), with a folder per page, named from its title (`button/`, `butto
 
 `-SelfTest` runs every parser the device run uses on `tools/android/fixtures/` and exits non-zero if one fails: the
 `-Page` splitting and the phone shell's quoting, the ready and cost lines (a cold start, a Debug run with reopens, a
-title with spaces, lines that only look like the app's), crash reports (Java's, .NET's, another app's), and `am
+title with spaces, lines that only look like the app's), when an open has come (a page's Nth ready line, its title,
+and in Debug its cost line), `run.json`'s record of a page, crash reports (Java's, .NET's, another app's), and `am
 start`'s output (a cold start, an intent delivered to the running activity, an error, a timeout). It touches no adb
-and no phone; CI runs it in the `android` job.
+and no phone; CI runs it in the `android` job. What it can't reach is adb itself: the order of the steps, the waits,
+the frame.
 
 The fixtures are written in logcat's own format, as a Cornflower run on the Pixel wrote its lines. Their ready and
 cost lines are held to the app by `tests/Metered.Tests/Sample/AndroidRunTests.cs`: each has the shape the shell writes

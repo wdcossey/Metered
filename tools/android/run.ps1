@@ -108,7 +108,7 @@ function Read-Opens([string]$log) {
         if ($line.Contains("$ReadyMarker ", [StringComparison]::Ordinal)) {
             $opens.Add((ConvertFrom-ReadyLine $line))
         }
-        elseif ($line.Contains("$CostMarker ", [StringComparison]::Ordinal) -and $opens.Count -gt 0 -and $null -eq $opens[-1].Cost) {
+        elseif ($line.Contains("$CostMarker ", [StringComparison]::Ordinal) -and $opens.Count -gt 0) {
             $opens[-1].Cost = $line.Substring($line.IndexOf("$CostMarker ", [StringComparison]::Ordinal) + $CostMarker.Length).Trim()
         }
     }
@@ -127,6 +127,29 @@ function Find-CrashIn([string]$log) {
         if ($java -or $dotnet) { return ($lines[$i..([Math]::Min($i + 8, $lines.Count - 1))] -join "`n").TrimEnd() }
     }
     return $null
+}
+
+# Whether open <count> of a page has come, from the opens read so far: the app has written that many ready lines, the
+# last naming <title> (in any case, as the app matches titles), and when <needCost>, as in a Debug build, that line's
+# cost line too. Throws if the app opened another page.
+function Test-Opened([object[]]$opens, [int]$count, [string]$title, [bool]$needCost) {
+    if ($opens.Count -lt $count) { return $false }
+    $last = $opens[$count - 1]
+    if ($last.Title -ne $title) { throw "Asked for the page '$title', but the app opened '$($last.Title)'." }
+    return (-not $needCost) -or [bool]$last.Cost
+}
+
+# A page's run.json: <run>'s facts (the device, the APK, the configuration), the start Android timed, and the page's
+# opens in order, the cold start's first: each one's time, its ready line's facts, and in Debug its cost line.
+function New-PageRun([Collections.IDictionary]$run, $am, $totalTime, [object[]]$opens) {
+    $page = [ordered]@{}
+    foreach ($key in $run.Keys) { $page[$key] = $run[$key] }
+    $page.launchState = $am.LaunchState
+    $page.totalTimeMs = $totalTime
+    $page.page = $opens[0].Title
+    $page.openMs = $opens[0].OpenMs
+    $page.opens = @($opens | ForEach-Object { [ordered]@{ openMs = $_.OpenMs; ready = $_.Ready; cost = $_.Cost } })
+    $page
 }
 
 # What `am start` said: whether it started (or delivered to) the activity, and with -W, the start Android timed.
@@ -188,6 +211,25 @@ function Invoke-SelfTest {
         'Button: 1265 ms, 332 elements, 3 rules (3), layout 302.5, render 88.1',
         'Button: 148 ms, 332 elements, 3 rules (3), layout 41.7, render 12.9',
         'Button: 131 ms, 332 elements, 3 rules (3), layout 38.2, render 11.4')
+
+    Write-Host '-- Waiting for an open'
+    Check 'not yet, with fewer ready lines than opens' (Test-Opened $opens 4 'Button' $false) $false
+    Check 'the second open has come' (Test-Opened $opens 2 'Button' $true) $true
+    Check 'a title is matched in any case' (Test-Opened $opens 3 'button' $false) $true
+    Throws 'another page than the one asked for is an error' { Test-Opened $opens 1 'ButtonGroup' $false }
+    $uncosted = Read-Opens ((Fixture 'logcat-debug-reopen.txt').TrimEnd() -split "`n" | Select-Object -SkipLast 1 | Join-String -Separator "`n")
+    Check 'in Debug, not until its cost line has come' (Test-Opened $uncosted 3 'Button' $true) $false
+    Check 'in Release, the ready line is enough' (Test-Opened $uncosted 3 'Button' $false) $true
+
+    Write-Host '-- run.json'
+    $run = New-PageRun ([ordered]@{ model = 'Pixel 8'; configuration = 'Debug' }) (ConvertFrom-AmStart (Fixture 'am-start-cold.txt')) 1093 (Read-Opens (Fixture 'logcat-debug-reopen.txt'))
+    $json = $run | ConvertTo-Json -Depth 4 | ConvertFrom-Json
+    Check 'the run''s own facts first' @($json.model, $json.configuration) @('Pixel 8', 'Debug')
+    Check 'the start Android timed' @($json.launchState, $json.totalTimeMs) @('COLD', 1093)
+    Check 'the page and its cold open' @($json.page, $json.openMs) @('Button', 1265)
+    Check 'every open, cold then warm' @($json.opens | ForEach-Object openMs) @(1265, 148, 131)
+    Check 'each open''s cost line' $json.opens[2].cost 'Button: 131 ms, 332 elements, 3 rules (3), layout 38.2, render 11.4'
+    Check 'each open''s ready line' $json.opens[1].ready 'open=148ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button'
 
     Write-Host '-- A title with spaces, and lines that only look like the app''s'
     $opens = Read-Opens (Fixture 'logcat-spaces.txt')
@@ -294,12 +336,7 @@ function Wait-Opens([int]$count, [string]$title) {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
         $opens = Read-Opens (Adb logcat -d -s DOTNET:I)
-        if ($opens.Count -ge $count) {
-            $last = $opens[$count - 1]
-            # Titles are matched in any case, as the app matches them.
-            if ($last.Title -ne $title) { throw "Asked for the page '$title', but the app opened '$($last.Title)'." }
-            if ($Configuration -ne 'Debug' -or $last.Cost) { return $opens }
-        }
+        if (Test-Opened $opens $count $title ($Configuration -eq 'Debug')) { return $opens }
         $crash = Find-Crash
         if ($crash) { throw "The app stopped before its ready line:`n$crash" }
         if ((Get-Date) -gt $deadline) {
@@ -439,8 +476,9 @@ foreach ($title in $Pages) {
 
     $log = Adb logcat -d
     Write-Utf8 (Join-Path $PageOut 'logcat.txt') $log
-    $opens = @(Read-Opens $log)
-    $run = [ordered]@{
+    # Read-Opens returns its array as one object: assigned as it is, never wrapped in @(), which would nest it.
+    $opens = Read-Opens $log
+    $facts = [ordered]@{
         when          = (Get-Date).ToString('o')
         model         = $model
         android       = $release
@@ -450,16 +488,11 @@ foreach ($title in $Pages) {
         configuration = $Configuration
         apk           = $apk.Name
         apkBytes      = $apk.Length
-        launchState   = $am.LaunchState
-        totalTimeMs   = $totalTime
-        page          = $opens[0].Title
-        # The cold start's open, then each reopen's: the shell's time, its ready line's facts, and in Debug its cost.
-        openMs        = $opens[0].OpenMs
-        opens         = @($opens | ForEach-Object { [ordered]@{ openMs = $_.OpenMs; ready = $_.Ready; cost = $_.Cost } })
     }
+    $run = New-PageRun $facts $am $totalTime $opens
     Write-Utf8 (Join-Path $PageOut 'run.json') ($run | ConvertTo-Json -Depth 4)
     $runs.Add($run)
-    Step "'$title': start $($am.LaunchState), $totalTime ms (am start -W TotalTime); opened in $(@($opens | ForEach-Object OpenMs) -join ', ') ms (the shell's time, cold then warm)"
+    Step "'$title': start $($am.LaunchState), $totalTime ms (am start -W TotalTime); opened in $(($opens | ForEach-Object OpenMs) -join ', ') ms (the shell's time, cold then warm)"
 }
 $PageOut = $null
 
