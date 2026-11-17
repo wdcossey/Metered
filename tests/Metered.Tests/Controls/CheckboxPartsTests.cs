@@ -117,6 +117,55 @@ public class CheckboxPartsTests
         Assert.DoesNotContain(":is-active", Checkmark(box).Classes);
     }
 
+    // Base Web's key handlers are its input's: a key in a control in the label neither presses nor toggles it.
+    [AvaloniaTheory]
+    [InlineData(Key.Space, PhysicalKey.Space, " ")]
+    [InlineData(Key.Enter, PhysicalKey.Enter, "\r")]
+    public void A_key_in_a_control_in_the_label_isnt_the_checkboxs(Key key, PhysicalKey physical, string text)
+    {
+        var inner = new TextBox { Width = 120 };
+        var box = new Checkbox { Content = inner };
+        using var scene = Show(box);
+        inner.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(inner.IsFocused);
+
+        scene.Window.KeyPress(key, RawInputModifiers.None, physical, text);
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", box.Classes);
+        scene.Window.KeyRelease(key, RawInputModifiers.None, physical, text);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+    }
+
+    // The Enter the checkbox acts on is its own: it doesn't reach a parent too, and only an Enter pressed on the
+    // checkbox toggles it when let go.
+    [AvaloniaFact]
+    public void Enter_is_taken_and_only_its_own_press_toggles()
+    {
+        var before = new Avalonia.Controls.Button { Content = "Before" };
+        var box = new Checkbox { Content = "Label" };
+        using var scene = Show(before, box);
+        var reached = 0;
+        ((Control)box.Parent!).AddHandler(InputElement.KeyDownEvent, (_, e) => { if (e.Key == Key.Enter) reached++; });
+
+        // Pressed on another control, let go on the checkbox: no toggle.
+        before.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        box.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(box.IsFocused);
+        Assert.False(box.IsChecked);
+
+        reached = 0;
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(box.IsChecked);
+        Assert.Equal(0, reached);
+    }
+
     // The StatefulCheckbox's reducer sets only `checked`: isIndeterminate stays as the app set it.
     [AvaloniaFact]
     public void A_click_on_an_indeterminate_box_toggles_checked_and_leaves_it_indeterminate()
@@ -249,6 +298,27 @@ public class CheckboxPartsTests
         scene.Window.MouseUp(scene.CentreOf(container), MouseButton.Left);
         scene.Pump();
         Assert.DoesNotContain(":active", container.Classes);
+    }
+
+    // checkbox.js's onMouseLeave is any pointer's (a browser sends mouse events for a pen and a finger): a finger
+    // dragged off the checkbox ends its press too.
+    [AvaloniaFact]
+    public void A_finger_dragged_off_ends_the_press()
+    {
+        var box = new Checkbox { Content = "Label" };
+        using var scene = Show(box);
+        var container = P(box, Checkbox.CheckmarkContainerPart);
+        var touch = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+        var held = new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.Other);
+        box.RaiseEvent(new PointerPressedEventArgs(box, touch, scene.Window, scene.CentreOf(container), 0,
+            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+        box.RaiseEvent(new PointerEventArgs(InputElement.PointerMovedEvent, box, touch, scene.Window, scene.CentreOf(container), 0, held, KeyModifiers.None));
+        scene.Pump();
+        Assert.Contains(":is-active", box.Classes);
+
+        box.RaiseEvent(new PointerEventArgs(InputElement.PointerMovedEvent, box, touch, scene.Window, Away, 0, held, KeyModifiers.None));
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", box.Classes);
     }
 
     [AvaloniaFact]

@@ -60,7 +60,7 @@ public class CheckboxMark : RadioMark
         if (at.Width <= 0 || at.Height <= 0) return;
         // Drawn over the border, which is transparent wherever a glyph is (checked or indeterminate) or, disabled, the
         // fill's colour, and which the glyph doesn't reach: as CSS draws the image under it.
-        using (context.PushClip(new RoundedRect(new Rect(Bounds.Size), CornerRadius)))
+        using (context.PushClip(new RoundedRect(new Rect(Bounds.Size), Clamp(CornerRadius, Bounds.Size))))
         using (context.PushTransform(Matrix.CreateTranslation(-view.X, -view.Y)
             * Matrix.CreateScale(at.Width / view.Width, at.Height / view.Height)
             * Matrix.CreateTranslation(at.X, at.Y)))

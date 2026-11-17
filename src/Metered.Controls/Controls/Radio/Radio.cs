@@ -71,7 +71,6 @@ public class Radio : RadioButton
     private readonly Parts _parts;
     private RadioGroup? _group;
     private readonly BackplatePointer _pointer;
-    private bool? _coarsePointer;
 
     public Radio()
     {
@@ -80,7 +79,7 @@ public class Radio : RadioButton
         _pointer = new BackplatePointer(this, () => _parts[RadioBackplatePart], SetState, leaveEndsPress: false);
         UpdateContext();
         SetState(":checked", IsChecked == true);
-        SetState(":pointer-coarse", CoarsePointer);
+        _pointer.UpdateCoarse();
     }
 
     /// <summary>Base Web's <c>value</c>: what a <see cref="RadioGroup"/>'s value is when this radio is checked.</summary>
@@ -109,12 +108,8 @@ public class Radio : RadioButton
     /// </summary>
     internal bool CoarsePointer
     {
-        get => _coarsePointer ?? BackplatePointer.PlatformIsCoarse;
-        set
-        {
-            _coarsePointer = value;
-            SetState(":pointer-coarse", CoarsePointer);
-        }
+        get => _pointer.Coarse;
+        set => _pointer.Coarse = value;
     }
 
     /// <summary>The group the radio is in, whose context it draws and which sets its focus ring; null on its own.</summary>

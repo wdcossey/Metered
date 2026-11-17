@@ -10,13 +10,14 @@ namespace Metered.Controls;
 /// <c>Checkbox</c>): <c>:is-hovered</c>, Base Web's <c>$isHovered</c> (<c>onMouseEnter</c> on the root, a mouse's
 /// only here: ADR 0001); <c>:is-active</c>, its <c>$isActive</c> (<c>onMouseDown</c>, any button or a finger, ended by
 /// <c>onMouseUp</c>); and the backplate's own CSS <c>:hover</c> (a mouse over it, inside <c>@media (hover: hover)</c>)
-/// and <c>:active</c> (the primary button or a finger pressed on it), which Base Web styles on that element alone. The
-/// control forwards its pointer events here; the states it sets through <c>setState</c>, onto itself and its parts.
+/// and <c>:active</c> (the primary button or a finger pressed on it), which Base Web styles on that element alone; and
+/// <c>:pointer-coarse</c>, Base Web's <c>@media (pointer: coarse)</c>. The control forwards its pointer events here; the
+/// states it sets through <c>setState</c>, onto itself and its parts.
 /// </summary>
 /// <param name="owner">The control, whose bounds are the root's.</param>
 /// <param name="backplate">The backplate part, when the template has one.</param>
 /// <param name="setState">Sets a pseudoclass on the control and its parts.</param>
-/// <param name="leaveEndsPress">Whether the mouse leaving ends <c>$isActive</c>: checkbox-v2's <c>onMouseLeave</c>
+/// <param name="leaveEndsPress">Whether the pointer leaving ends <c>$isActive</c>: checkbox-v2's <c>onMouseLeave</c>
 /// clears it, radio-v2's doesn't.</param>
 internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backplate, Action<string, bool> setState, bool leaveEndsPress)
 {
@@ -24,9 +25,24 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
     private bool _pressed;
     private bool _backplateHover;
     private bool _backplateActive;
+    private bool? _coarse;
 
-    /// <summary>Base Web's <c>@media (pointer: coarse)</c> on this platform: a phone or tablet (Android, iOS).</summary>
-    public static bool PlatformIsCoarse => OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
+    /// <summary>
+    /// Base Web's <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where the root gets the
+    /// padding that makes a 48 px target. Set, it holds whatever the platform; tests set it.
+    /// </summary>
+    public bool Coarse
+    {
+        get => _coarse ?? (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS());
+        set
+        {
+            _coarse = value;
+            UpdateCoarse();
+        }
+    }
+
+    /// <summary>Sets <c>:pointer-coarse</c> as <see cref="Coarse"/> is.</summary>
+    public void UpdateCoarse() => setState(":pointer-coarse", Coarse);
 
     /// <summary>A new template's backplate: it starts with neither CSS state.</summary>
     public void TemplateApplied()
@@ -81,8 +97,11 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
     {
         // Only a mouse over the control: one that captured the pointer on a press sees it move outside too, and a
         // disabled one can still see a pointer it captured before.
-        var mouse = e.Pointer.Type == PointerType.Mouse && owner.IsEffectivelyEnabled && new Rect(owner.Bounds.Size).Contains(e.GetPosition(owner));
+        var inside = new Rect(owner.Bounds.Size).Contains(e.GetPosition(owner));
+        var mouse = e.Pointer.Type == PointerType.Mouse && owner.IsEffectivelyEnabled && inside;
         SetMouseOver(mouse);
+        // Any pointer's leaving, a pen's or a finger's too, whose browser sends mouse events for them.
+        if (!inside && leaveEndsPress) SetPressed(false);
         SetBackplate(mouse && OverBackplate(e), _backplateActive);
     }
 

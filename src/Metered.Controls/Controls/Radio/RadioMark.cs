@@ -161,7 +161,7 @@ public class RadioMark : Decorator
     }
 
     /// <summary>A radius no larger than half the box, as CSS draws a larger one.</summary>
-    private static CornerRadius Clamp(CornerRadius r, Size size)
+    internal static CornerRadius Clamp(CornerRadius r, Size size)
     {
         var most = Math.Max(0, Math.Min(size.Width, size.Height) / 2);
         return new CornerRadius(Math.Min(r.TopLeft, most), Math.Min(r.TopRight, most), Math.Min(r.BottomRight, most), Math.Min(r.BottomLeft, most));

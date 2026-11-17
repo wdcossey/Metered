@@ -69,7 +69,7 @@ public class Checkbox : AvaloniaCheckBox
 
     private readonly Parts _parts;
     private readonly BackplatePointer _pointer;
-    private bool? _coarsePointer;
+    private bool _enterDown;
 
     public Checkbox()
     {
@@ -78,7 +78,7 @@ public class Checkbox : AvaloniaCheckBox
         UpdateChecked();
         UpdatePlacement();
         SetState(":error", Error);
-        SetState(":pointer-coarse", CoarsePointer);
+        _pointer.UpdateCoarse();
     }
 
     /// <summary>Base Web's <c>labelPlacement</c>: right (its default) or left.</summary>
@@ -99,12 +99,8 @@ public class Checkbox : AvaloniaCheckBox
     /// </summary>
     internal bool CoarsePointer
     {
-        get => _coarsePointer ?? BackplatePointer.PlatformIsCoarse;
-        set
-        {
-            _coarsePointer = value;
-            SetState(":pointer-coarse", CoarsePointer);
-        }
+        get => _pointer.Coarse;
+        set => _pointer.Coarse = value;
     }
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
@@ -151,21 +147,35 @@ public class Checkbox : AvaloniaCheckBox
         else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) _pointer.End();
     }
 
-    // checkbox.js's onKeyDown: Space or Enter sets isActive. Space is the native input's own toggle (on its release,
-    // as Avalonia's); Enter's is checkbox.js's onKeyUp, so its press doesn't click here, and it is left to bubble.
+    // checkbox.js's onKeyDown, on its input alone (a key in a control in the label isn't the checkbox's): Space or Enter
+    // sets isActive. Space is the native input's own toggle, on its release, as Avalonia's; Enter's is checkbox.js's
+    // onKeyUp, so its press doesn't click here. The checkbox takes the Enter it acts on: it doesn't reach a default
+    // button too.
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Source != this) return;
         if (e.Key is Key.Space or Key.Enter) _pointer.SetPressed(true);
-        if (e.Key == Key.Enter) return;
+        if (e.Key == Key.Enter)
+        {
+            _enterDown = true;
+            e.Handled = true;
+            return;
+        }
+
         base.OnKeyDown(e);
     }
 
-    // checkbox.js's onKeyUp: Space or Enter ends isActive, and Enter toggles, as onChange with !checked.
+    // checkbox.js's onKeyUp: Space or Enter ends isActive, and Enter toggles, as onChange with !checked: here only an
+    // Enter pressed on the checkbox, not one pressed elsewhere whose release finds it focused.
     protected override void OnKeyUp(KeyEventArgs e)
     {
+        if (e.Source != this) return;
         if (e.Key is Key.Space or Key.Enter) _pointer.SetPressed(false);
         if (e.Key == Key.Enter)
         {
+            if (!_enterDown) return;
+            _enterDown = false;
+            e.Handled = true;
             OnClick();
             return;
         }
@@ -214,9 +224,11 @@ public class Checkbox : AvaloniaCheckBox
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         base.OnLostFocus(e);
+        if (e.Source != this) return;
         SetState(":focus-visible", false);
         // A key held as the focus left is never let go here.
         _pointer.SetPressed(false);
+        _enterDown = false;
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new CheckboxAutomationPeer(this);

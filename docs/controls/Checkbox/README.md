@@ -73,8 +73,8 @@ toggle is a click (`Click` and `Command` run).
   focus ring is its group's).
 - Space toggles it, as the native input; Enter toggles it when it is let go (checkbox.js's `onKeyUp`). Either held is a
   press (`onKeyDown`): the unchecked box takes the pressed tint, the container doesn't (it isn't the input's ancestor).
-- A press is any pointer's on the checkbox (`onMouseDown`), ended by its release and by the mouse leaving the checkbox
-  (`onMouseLeave`, which radio-v2's doesn't clear); coming back with the button held doesn't press it again. The
+- A press is any pointer's on the checkbox (`onMouseDown`), ended by its release and by the pointer leaving the
+  checkbox (`onMouseLeave`, which radio-v2's doesn't clear); coming back with the button held doesn't press it again. The
   container's own tint is the primary button's or a finger's (CSS's `:active`), until it is let go.
 - The label in `ParagraphSmall`, `contentPrimary` (`contentStateDisabled` disabled), 6 down so its first line sits by
   the box and 4 from the container on its side. The checkbox hugs its content (`inline-flex`) and its label wraps in
@@ -92,8 +92,9 @@ toggle is a click (`Click` and `Command` run).
   a long label wrapping in a 200 px box; no label (6 in all).
 - `Controls/CheckboxPartsTests`: click, the tap area, Space and Enter, keys held, the indeterminate scenario, null as
   indeterminate, disabled, hover over the label and the container, a finger, the mouse leaving, focus by mouse and
-  keyboard, focus in the label, mirrored states, the label only when given, the coarse pointer, automation, a control as
-  the label, disabling, a label drawn as given, overrides and the transition: 24 in all.
+  keyboard, focus and keys in the label, Enter's press and its own release, a finger dragged off, mirrored states, the
+  label only when given, the coarse pointer, automation, a control as the label, disabling, a label drawn as given,
+  overrides and the transition: 28 in all.
 - `Controls/CheckboxFrames`: the tick's pixels at 17 px over the box, the border, the outline beyond its gap, and the
   container's and the box's hover tints one over the other (4, and the gallery).
 - `Sample/CheckboxPageTests`: the sample's page, 3.
@@ -116,8 +117,10 @@ as Base Web's if-chains decide) and checked against Base Web's for every combina
    the left placement; here the panel's `LabelFirst` lays it out first.
 5. **The glyph is drawn over the border**, where CSS draws a background image under it: the glyph never reaches the
    border, which is transparent wherever there is one (or, disabled, the fill's colour), so the pixels are the same.
-6. **A key held as the focus leaves ends the press.** Base Web's `isActive` stays set until a key goes up on its input,
-   which a key let go elsewhere never does.
+6. **Enter is the checkbox's.** Base Web toggles on any Enter let go on its input, one pressed on another control
+   whose release finds the checkbox focused included, and lets the press go on to the page. Here only an Enter pressed
+   on the checkbox toggles it, and the checkbox takes it, so a default button doesn't act on it too. A key held as the
+   focus leaves ends the press, which Base Web's `isActive` keeps until a key goes up on its input.
 7. **The container's hover is its rectangle**; a browser's follows its rounded corners.
 8. **`containsInteractiveElement`**: Avalonia's controls take their own press, so a control in a label never toggles
    the checkbox; Base Web's does unless the prop is set.
