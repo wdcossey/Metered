@@ -1,0 +1,45 @@
+<!--
+  Base Web's Switch (baseui 18.2.0, switch/switch.js), as a template of named parts. Each part's look is its own
+  theme, Switch.Styled<Part> (Switch.Parts.g.axaml), which the switch's Overrides merge over: this file holds only
+  the structure.
+
+  Root                       (a row; the label first for the left placement)
+    ToggleTrack
+      Toggle
+    Label                    (only with content: Base Web renders it only with children)
+      the content
+  Base Web's Input part, the hidden input, is the switch itself.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Switch}" TargetType="b:Switch">
+    <!-- display: inline-flex: the switch hugs its content. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- The focus outline is drawn outside the track: overflow visible. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:RadioRootPanel Name="Root" Theme="{DynamicResource Switch.StyledRoot}">
+          <b:RadioMark Name="ToggleTrack" Theme="{DynamicResource Switch.StyledToggleTrack}">
+            <b:SwitchToggle Name="Toggle" Theme="{DynamicResource Switch.StyledToggle}" />
+          </b:RadioMark>
+          <!-- Shown only for content that is something (Metered.Controls.Switch). -->
+          <Border Name="Label" Theme="{DynamicResource Switch.StyledLabel}">
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              RecognizesAccessKey="True" />
+          </Border>
+        </b:RadioRootPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

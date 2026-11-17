@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.SwitchPage">
+  <!-- Base Web's switch, as its documentation's examples show it: basic, multiple lines, disabled, the two label
+       placements, the two sizes, and the checkmark. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic" />
+      <b:Switch x:Name="Basic" Content="Label" />
+      <TextBlock Classes="label" x:Name="State" />
+
+      <TextBlock Classes="heading" Text="Multiple lines" />
+      <b:Switch x:Name="Multiline" IsChecked="True"
+                Content="It started as a simple idea: what if you could turn a setting on with one tap? The label wraps beside the track, which stays at the top of the first line." />
+
+      <TextBlock Classes="heading" Text="Disabled" />
+      <StackPanel Spacing="4">
+        <b:Switch IsEnabled="False" Content="Disabled switch" />
+        <b:Switch IsEnabled="False" IsChecked="True" Content="Disabled switch (checked)" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Alignments" />
+      <StackPanel Spacing="4">
+        <b:Switch x:Name="Left" LabelPlacement="Left" Content="Label on the left" />
+        <b:Switch LabelPlacement="Right" Content="Label on the right" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <StackPanel Spacing="4">
+        <b:Switch Size="Default" Content="Default size" />
+        <b:Switch x:Name="Small" Size="Small" Content="Small size" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Show icon" />
+      <StackPanel Spacing="4">
+        <b:Switch IsChecked="True" ShowIcon="False" Content="No icon" />
+        <b:Switch x:Name="Icon" IsChecked="True" ShowIcon="True" Content="Show icon" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
