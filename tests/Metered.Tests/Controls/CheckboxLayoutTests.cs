@@ -43,8 +43,8 @@ public class CheckboxLayoutTests
         var root = (LabelPlacementPanel)box.Part(Checkbox.RootPart)!;
         var label = (ContentPresenter)box.Part(Checkbox.LabelPart)!;
         var mark = (Control)box.Part(type == CheckboxStyleType.Toggle ? Checkbox.ToggleTrackPart : Checkbox.CheckmarkPart)!;
-        var other = (Control)box.Part(type == CheckboxStyleType.Toggle ? Checkbox.CheckmarkPart : Checkbox.ToggleTrackPart)!;
-        Assert.False(other.IsVisible);
+        // Base Web renders one or the other.
+        Assert.Null(box.Part(type == CheckboxStyleType.Toggle ? Checkbox.CheckmarkPart : Checkbox.ToggleTrackPart));
 
         Assert.Equal(c.Direction == "row" ? Orientation.Horizontal : Orientation.Vertical, root.Orientation);
         Assert.Equal(c.AlignItems switch { "flex-start" => AlignItems.Start, "center" => AlignItems.Center, _ => throw new InvalidOperationException(c.AlignItems) }, root.AlignItems);

@@ -67,42 +67,39 @@ public class LabelPlacementPanel : Panel
     /// <summary>The label (the last visible child) comes first: Base Web's top and left placements.</summary>
     public bool LabelFirst { get => GetValue(LabelFirstProperty); set => SetValue(LabelFirstProperty, value); }
 
-    /// <summary>The visible children in the order they are laid out.</summary>
-    private List<Control> Line()
+    /// <summary>The index of the label, the last visible child; -1 if none is visible.</summary>
+    private int LabelIndex()
     {
-        var line = Children.Where(c => c.IsVisible).ToList();
-        if (LabelFirst && line.Count > 1)
+        for (var i = Children.Count - 1; i >= 0; i--)
         {
-            var label = line[^1];
-            line.RemoveAt(line.Count - 1);
-            line.Insert(0, label);
+            if (Children[i].IsVisible) return i;
         }
 
-        return line;
+        return -1;
     }
-
-    private Control? Label() => Children.LastOrDefault(c => c.IsVisible);
 
     protected override Size MeasureOverride(Size availableSize)
     {
         var horizontal = Orientation == Orientation.Horizontal;
-        var label = Label();
+        var label = LabelIndex();
         double main = 0, cross = 0;
         // The marks first, at their own size; then the label in what is left along the line.
-        foreach (var child in Children.Where(c => c.IsVisible && c != label))
+        var free = horizontal ? new Size(double.PositiveInfinity, availableSize.Height) : new Size(availableSize.Width, double.PositiveInfinity);
+        for (var i = 0; i < label; i++)
         {
-            child.Measure(horizontal ? new Size(double.PositiveInfinity, availableSize.Height) : new Size(availableSize.Width, double.PositiveInfinity));
+            var child = Children[i];
+            if (!child.IsVisible) continue;
+            child.Measure(free);
             main += horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
             cross = Math.Max(cross, horizontal ? child.DesiredSize.Height : child.DesiredSize.Width);
         }
 
-        if (label is not null)
+        if (label >= 0)
         {
-            label.Measure(horizontal
-                ? new Size(Math.Max(0, availableSize.Width - main), availableSize.Height)
-                : new Size(availableSize.Width, double.PositiveInfinity));
-            main += horizontal ? label.DesiredSize.Width : label.DesiredSize.Height;
-            cross = Math.Max(cross, horizontal ? label.DesiredSize.Height : label.DesiredSize.Width);
+            var child = Children[label];
+            child.Measure(horizontal ? new Size(Math.Max(0, availableSize.Width - main), availableSize.Height) : free);
+            main += horizontal ? child.DesiredSize.Width : child.DesiredSize.Height;
+            cross = Math.Max(cross, horizontal ? child.DesiredSize.Height : child.DesiredSize.Width);
         }
 
         return horizontal ? new Size(main, cross) : new Size(cross, main);
@@ -112,8 +109,10 @@ public class LabelPlacementPanel : Panel
     {
         var horizontal = Orientation == Orientation.Horizontal;
         var lineCross = horizontal ? finalSize.Height : finalSize.Width;
+        var label = LabelIndex();
         double at = 0;
-        foreach (var child in Line())
+
+        void Place(Control child)
         {
             var size = child.DesiredSize;
             var along = horizontal ? size.Width : size.Height;
@@ -126,6 +125,13 @@ public class LabelPlacementPanel : Panel
             };
             child.Arrange(horizontal ? new Rect(at, offset, along, across) : new Rect(offset, at, across, along));
             at += along;
+        }
+
+        var labelFirst = LabelFirst && label > 0;
+        if (labelFirst) Place(Children[label]);
+        for (var i = 0; i < Children.Count; i++)
+        {
+            if (Children[i].IsVisible && !(labelFirst && i == label)) Place(Children[i]);
         }
 
         return finalSize;

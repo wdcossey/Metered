@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
@@ -32,7 +33,8 @@ public enum CheckboxStyleType
 /// <c>IsChecked = null</c> is drawn indeterminate as well.</para>
 /// <para>The state pseudoclasses, set on the checkbox and on each part, are Base Web's <c>$</c>
 /// props: <c>:checked</c>, <c>:is-indeterminate</c>, <c>:error</c>, <c>:label-top</c> (and right,
-/// bottom, left), CSS's <c>:hover</c> (a mouse over it), <c>:active</c> (pressed) and
+/// bottom, left), CSS's <c>:hover</c> (a mouse over it), <c>:active</c> (a mouse pressed on it, as Base Web's
+/// <c>isActive</c> is a mouse's) and
 /// <c>:focus-visible</c> (focus from the keyboard). <c>:disabled</c> is Avalonia's own.
 /// <c>:loaded</c> is set once loaded, so that no transition runs on its first appearance.</para>
 /// </remarks>
@@ -74,6 +76,8 @@ public class Checkbox : AvaloniaCheckBox
     private readonly Parts _parts;
     private LabelPlacement _actualLabelPlacement = Controls.LabelPlacement.Right;
     private bool _mouseOver;
+    private bool _mouseDown;
+    private CheckboxAutomationPeer? _peer;
 
     public Checkbox()
     {
@@ -131,7 +135,6 @@ public class Checkbox : AvaloniaCheckBox
         else if (p == IsIndeterminateProperty) UpdateChecked();
         else if (p == ErrorProperty) SetState(":error", Error);
         else if (p == CheckmarkTypeProperty || p == LabelPlacementProperty) UpdatePlacement();
-        else if (p == IsPressedProperty) SetState(":active", IsPressed);
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
         else if (p == ContentProperty) UpdateStructure();
     }
@@ -159,7 +162,34 @@ public class Checkbox : AvaloniaCheckBox
     {
         base.OnPointerExited(e);
         SetMouseOver(false);
+        // Base Web's onMouseLeave clears isActive too, though the button is still held.
+        SetMouseDown(false);
     }
+
+    // Base Web's isActive is a mouse's: onMouseDown and onMouseUp on the Root. Space on its input, and a
+    // phone's tap (whose compatibility mousedown and mouseup come together after it), never show it.
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (e.Pointer.Type == PointerType.Mouse) SetMouseDown(true);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        SetMouseDown(false);
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        SetMouseDown(false);
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => _peer = new CheckboxAutomationPeer(this);
+
+    /// <summary>Avalonia's toggle, for the automation peer.</summary>
+    internal void ToggleFromAutomation() => Toggle();
 
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
@@ -171,6 +201,13 @@ public class Checkbox : AvaloniaCheckBox
     {
         base.OnLostFocus(e);
         SetState(":focus-visible", false);
+    }
+
+    private void SetMouseDown(bool down)
+    {
+        if (_mouseDown == down) return;
+        _mouseDown = down;
+        SetState(":active", down);
     }
 
     private void SetMouseOver(bool over)
@@ -196,7 +233,9 @@ public class Checkbox : AvaloniaCheckBox
     private void UpdateChecked()
     {
         SetState(":checked", IsChecked == true);
-        SetState(":is-indeterminate", IsIndeterminate || IsChecked is null);
+        var indeterminate = IsIndeterminate || IsChecked is null;
+        SetState(":is-indeterminate", indeterminate);
+        _peer?.StateChanged();
     }
 
     private void UpdatePlacement()
@@ -204,20 +243,25 @@ public class Checkbox : AvaloniaCheckBox
         var toggle = CheckmarkType == CheckboxStyleType.Toggle;
         // checkbox.js: labelPlacement = checkmarkType === toggle ? 'left' : 'right' when unset.
         ActualLabelPlacement = LabelPlacement ?? (toggle ? Controls.LabelPlacement.Left : Controls.LabelPlacement.Right);
+        // The toggle's template (Checkbox.axaml): Base Web renders the track or the checkmark, never both.
         PseudoClasses.Set(":toggle", toggle);
-        for (var i = 0; i < Placements.Length; i++) SetState(Placements[i], i == (int)ActualLabelPlacement);
+        var placement = ActualLabelPlacement switch
+        {
+            Controls.LabelPlacement.Top => ":label-top",
+            Controls.LabelPlacement.Bottom => ":label-bottom",
+            Controls.LabelPlacement.Left => ":label-left",
+            _ => ":label-right",
+        };
+        foreach (var p in Placements) SetState(p, p == placement);
         UpdateStructure();
     }
 
     /// <summary>
-    /// What Base Web renders: the checkmark or the toggle's track, and the label only when there is
-    /// one, before the mark for the top and left placements. Structure, not look: set here, not by a theme.
+    /// What Base Web renders: the label only when there is one, before the mark for the top and left
+    /// placements. Structure, not look: set here, not by a theme.
     /// </summary>
     private void UpdateStructure()
     {
-        var toggle = CheckmarkType == CheckboxStyleType.Toggle;
-        if (_parts[CheckmarkPart] is Visual checkmark) checkmark.IsVisible = !toggle;
-        if (_parts[ToggleTrackPart] is Visual track) track.IsVisible = toggle;
         if (_parts[LabelPart] is Visual label) label.IsVisible = Content is not (null or "");
         if (_parts[RootPart] is LabelPlacementPanel root)
         {

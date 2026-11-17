@@ -178,9 +178,6 @@
       <Setter Property="Background" Value="{DynamicResource colors.toggleFillChecked}" />
       <Setter Property="RenderTransform" Value="translateX(20px)" />
     </Style>
-    <Style Selector="^:error">
-      <Setter Property="Background" Value="{DynamicResource colors.toggleFill}" />
-    </Style>
     <Style Selector="^:error:checked">
       <Setter Property="Background" Value="{DynamicResource colors.tickFillErrorSelected}" />
     </Style>

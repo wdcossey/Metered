@@ -2,14 +2,18 @@
   Base Web's Checkbox (baseui 18.2.0, checkbox/checkbox.tsx: the v1 checkbox, with its toggle style),
   as a template of named parts. Each part's look is its own theme, Checkbox.Styled<Part>
   (Checkbox.Parts.g.axaml), which the checkbox's Overrides merge over: this file holds only the
-  structure.
+  structure. Base Web renders the checkmark or the toggle, never both: two templates.
 
   Root                  (the flex line; the label goes first for the top and left placements)
-    Checkmark           (the box: checkmarkType default)
+    Checkmark           (checkmarkType default)
+    Label               (only with content)
+
+  Root
     ToggleTrack         (checkmarkType toggle)
       Toggle
-    Label               (only with content)
+    Label
   Base Web's Input, the hidden native input, is the Checkbox itself here: it takes focus and keys.
+  The label is drawn as given: Base Web's children are text, with no access key.
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -26,17 +30,28 @@
       <ControlTemplate>
         <b:LabelPlacementPanel Name="Root" Theme="{DynamicResource Checkbox.StyledRoot}">
           <b:CheckboxMark Name="Checkmark" Theme="{DynamicResource Checkbox.StyledCheckmark}" />
-          <Border Name="ToggleTrack" Theme="{DynamicResource Checkbox.StyledToggleTrack}">
-            <b:CheckboxMark Name="Toggle" Theme="{DynamicResource Checkbox.StyledToggle}" />
-          </Border>
           <ContentPresenter Name="Label"
                             Theme="{DynamicResource Checkbox.StyledLabel}"
                             Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            RecognizesAccessKey="True" />
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
         </b:LabelPlacementPanel>
       </ControlTemplate>
     </Setter>
+    <Style Selector="^:toggle">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <b:LabelPlacementPanel Name="Root" Theme="{DynamicResource Checkbox.StyledRoot}">
+            <Border Name="ToggleTrack" Theme="{DynamicResource Checkbox.StyledToggleTrack}">
+              <b:CheckboxMark Name="Toggle" Theme="{DynamicResource Checkbox.StyledToggle}" />
+            </Border>
+            <ContentPresenter Name="Label"
+                              Theme="{DynamicResource Checkbox.StyledLabel}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </b:LabelPlacementPanel>
+        </ControlTemplate>
+      </Setter>
+    </Style>
   </ControlTheme>
 
 </ResourceDictionary>

@@ -17,8 +17,18 @@ namespace Metered.Tests.Controls;
 /// </summary>
 public class CheckboxFrames
 {
-    // A box at (20, 20): its Checkmark, with its 2 px margin, is the 20 × 20 square at (22, 22).
+    // A box at (20, 20): its Checkmark, with its 2 px margin, is the 20 × 20 square at (22, 22) (the oracle's sizes).
     private static Scene Show(Checkbox box) => new(new StackPanel { Margin = new Thickness(20), Children = { box } });
+
+    // The colours are the oracle's, light, at rest unless said; the positions follow from its sizes.
+    private static CheckmarkCase Mark(bool isChecked, string state = "rest") =>
+        CheckboxOracle.Value.Checkmark.Single(c => c is { Theme: "Light", Indeterminate: false, Error: false, Disabled: false } && c.Checked == isChecked && c.State == state);
+
+    private static ToggleCase Knob(bool isChecked) =>
+        CheckboxOracle.Value.Toggle.Single(c => c is { Theme: "Light", Error: false, Disabled: false, State: "rest" } && c.Checked == isChecked);
+
+    /// <summary>The window's own background, under everything: not Base Web's.</summary>
+    private static readonly Color Page = Colors.White;
 
     [AvaloniaFact]
     public void The_tick_is_drawn_inside_the_border_contained_and_centred()
@@ -27,12 +37,15 @@ public class CheckboxFrames
         // The 17 × 13 SVG contained in the 14 × 14 box inside the border: 14 × 10.71 at (25, 26.65).
         using var scene = Show(new Checkbox { IsChecked = true });
         var frame = scene.Capture();
+        var fill = Color.Parse(Mark(true).Background);
+        var tick = Color.Parse(Mark(true).Tick!);
 
-        Assert.Equal(Color.Parse("#FF000000"), Frames.PixelAt(frame, 22, 22)); // the fill reaches under the border
-        Assert.Equal(Color.Parse("#FFFFFFFF"), Frames.PixelAt(frame, 30, 35)); // the tick's foot: (6.5, 10.5) in the SVG
-        Assert.Equal(Color.Parse("#FFFFFFFF"), Frames.PixelAt(frame, 36, 29)); // its long stroke: (13.5, 3) in the SVG
-        Assert.Equal(Color.Parse("#FF000000"), Frames.PixelAt(frame, 34, 35)); // under the long stroke: (11, 10) in the SVG
-        Assert.Equal(Color.Parse("#FF000000"), Frames.PixelAt(frame, 30, 27)); // above the foot: (6, 0.5) in the SVG
+        Assert.Equal(fill, Frames.PixelAt(frame, 22, 22)); // the fill reaches under the border
+        Assert.Equal(tick, Frames.PixelAt(frame, 30, 35)); // the tick's foot: (6.5, 10.5) in the SVG
+        Assert.Equal(tick, Frames.PixelAt(frame, 36, 29)); // its long stroke: (13.5, 3) in the SVG
+        Assert.Equal(fill, Frames.PixelAt(frame, 34, 35)); // under the long stroke: (11, 10) in the SVG
+        Assert.Equal(fill, Frames.PixelAt(frame, 30, 27)); // above the foot: (6, 0.5) in the SVG
+        Assert.Equal(fill, Frames.PixelAt(frame, 39, 28)); // past the tip at (16.1, 3.1): the glyph is contained, not covering
     }
 
     [AvaloniaFact]
@@ -41,11 +54,13 @@ public class CheckboxFrames
         // Light: tickBorder #5E5E5E, 3 px, around tickFill #FFFFFF.
         using var scene = Show(new Checkbox());
         var frame = scene.Capture();
+        var border = Color.Parse(Mark(false).Border);
+        var fill = Color.Parse(Mark(false).Background);
 
-        Assert.Equal(Color.Parse("#FF5E5E5E"), Frames.PixelAt(frame, 22, 32));
-        Assert.Equal(Color.Parse("#FF5E5E5E"), Frames.PixelAt(frame, 24, 32));
-        Assert.Equal(Color.Parse("#FFFFFFFF"), Frames.PixelAt(frame, 25, 32));
-        Assert.Equal(Color.Parse("#FFFFFFFF"), Frames.PixelAt(frame, 32, 32));
+        Assert.Equal(border, Frames.PixelAt(frame, 22, 32));
+        Assert.Equal(border, Frames.PixelAt(frame, 24, 32));
+        Assert.Equal(fill, Frames.PixelAt(frame, 25, 32));
+        Assert.Equal(fill, Frames.PixelAt(frame, 32, 32));
     }
 
     [AvaloniaFact]
@@ -56,13 +71,15 @@ public class CheckboxFrames
         using var scene = Show(box);
         box.Focus(NavigationMethod.Tab);
         var frame = scene.Capture();
+        var ring = Color.Parse(Mark(true, "focusVisible").Outline!);
+        Assert.Equal(3, Mark(true, "focusVisible").OutlineWidth);
 
-        Assert.NotEqual(Color.Parse("#FF276EF1"), Frames.PixelAt(frame, 18, 32));
-        Assert.Equal(Color.Parse("#FF276EF1"), Frames.PixelAt(frame, 19, 32));
-        Assert.Equal(Color.Parse("#FF276EF1"), Frames.PixelAt(frame, 21, 32));
-        Assert.Equal(Color.Parse("#FF000000"), Frames.PixelAt(frame, 22, 32));
-        Assert.Equal(Color.Parse("#FF276EF1"), Frames.PixelAt(frame, 19, 19)); // a square corner
-        Assert.Equal(Color.Parse("#FF276EF1"), Frames.PixelAt(frame, 32, 43));
+        Assert.NotEqual(ring, Frames.PixelAt(frame, 18, 32));
+        Assert.Equal(ring, Frames.PixelAt(frame, 19, 32));
+        Assert.Equal(ring, Frames.PixelAt(frame, 21, 32));
+        Assert.Equal(Color.Parse(Mark(true, "focusVisible").Background), Frames.PixelAt(frame, 22, 32));
+        Assert.Equal(ring, Frames.PixelAt(frame, 19, 19)); // a square corner
+        Assert.Equal(ring, Frames.PixelAt(frame, 32, 43));
     }
 
     [AvaloniaTheory]
@@ -71,14 +88,14 @@ public class CheckboxFrames
     public void The_knob_sits_at_the_tracks_start_or_one_width_along(bool isChecked, int knobX, int trackX)
     {
         // No label: the 40 × 14 track at (26, 26) after its 6 px margins, the 20 px knob centred across it.
-        // Light: toggleFill #FFFFFF, toggleFillChecked #000000, toggleTrackFill #E8E8E8.
         using var scene = Show(new Checkbox { CheckmarkType = CheckboxStyleType.Toggle, IsChecked = isChecked });
         var frame = scene.Capture();
+        var knob = Color.Parse(Knob(isChecked).Background);
 
-        Assert.Equal(Color.Parse(isChecked ? "#FF000000" : "#FFFFFFFF"), Frames.PixelAt(frame, knobX, 33));
-        Assert.Equal(Color.Parse(isChecked ? "#FF000000" : "#FFFFFFFF"), Frames.PixelAt(frame, knobX, 24)); // above the track
-        Assert.Equal(Color.Parse("#FFE8E8E8"), Frames.PixelAt(frame, trackX, 33));
-        Assert.Equal(Color.Parse("#FFFFFFFF"), Frames.PixelAt(frame, trackX, 24)); // beside the knob, above the track
+        Assert.Equal(knob, Frames.PixelAt(frame, knobX, 33));
+        Assert.Equal(knob, Frames.PixelAt(frame, knobX, 24)); // above the track
+        Assert.Equal(Color.Parse(Knob(isChecked).Track), Frames.PixelAt(frame, trackX, 33));
+        Assert.Equal(Page, Frames.PixelAt(frame, trackX, 24)); // beside the knob, above the track
     }
 
     [AvaloniaTheory]

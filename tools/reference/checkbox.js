@@ -6,7 +6,27 @@
 const css = require('./css');
 const { THEMES, evaluate } = require('./oracle');
 const checkbox = require('baseui/checkbox/styled-components');
-const { glyph } = require('../tokens/checkbox');
+
+/**
+ * The oracle's own reading of a background-image data URL, apart from the generator's: the SVG's
+ * width, height and viewBox, and its one path's d and fill. Null for no image.
+ */
+function glyph(backgroundImage) {
+  if (!backgroundImage) return null;
+  const at = backgroundImage.indexOf('data:image/svg+xml,');
+  if (at < 0) throw new Error(`Not an SVG data URL: ${backgroundImage}`);
+  const svg = decodeURIComponent(backgroundImage.slice(at + 'data:image/svg+xml,'.length).replace(/'\);?\s*$/, ''));
+  const attr = (tag, name) => {
+    const m = new RegExp(String.raw`<${tag}\b[^>]*\s${name}="([^"]*)"`).exec(svg);
+    if (!m) throw new Error(`No ${name} on <${tag}>`);
+    return m[1];
+  };
+  const width = Number(attr('svg', 'width'));
+  const height = Number(attr('svg', 'height'));
+  if (attr('svg', 'viewBox') !== `0 0 ${width} ${height}`) throw new Error("A viewBox that isn't the SVG's size");
+  if ((svg.match(/<path\b/g) || []).length !== 1) throw new Error('Not one path');
+  return { d: attr('path', 'd'), width, height, fill: attr('path', 'fill') };
+}
 
 // Interaction states the tests make with real input: [name, $ props]. A mouse press is over the box.
 const STATES = [

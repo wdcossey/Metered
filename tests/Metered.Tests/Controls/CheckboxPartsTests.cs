@@ -7,6 +7,11 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
+using Avalonia.Controls.Primitives;
 using Metered.Controls;
 
 namespace Metered.Tests.Controls;
@@ -184,7 +189,7 @@ public class CheckboxPartsTests
         var box = new Checkbox { Content = "Label", IsChecked = true, Error = true, CheckmarkType = CheckboxStyleType.Toggle };
         using var scene = Show(box);
 
-        foreach (var name in new[] { Checkbox.RootPart, Checkbox.CheckmarkPart, Checkbox.LabelPart, Checkbox.ToggleTrackPart, Checkbox.TogglePart })
+        foreach (var name in new[] { Checkbox.RootPart, Checkbox.LabelPart, Checkbox.ToggleTrackPart, Checkbox.TogglePart })
         {
             var part = box.Part(name);
             Assert.NotNull(part);
@@ -198,6 +203,13 @@ public class CheckboxPartsTests
         box.IsChecked = false;
         Assert.DoesNotContain(":error", P(box, Checkbox.TogglePart).Classes);
         Assert.DoesNotContain(":checked", P(box, Checkbox.TogglePart).Classes);
+
+        // A new template's parts take the states as they are.
+        box.CheckmarkType = CheckboxStyleType.Default;
+        box.Error = true;
+        scene.Pump();
+        Assert.Contains(":error", Checkmark(box).Classes);
+        Assert.Contains(":label-right", Checkmark(box).Classes);
     }
 
     [AvaloniaFact]
@@ -209,7 +221,8 @@ public class CheckboxPartsTests
 
         Assert.False(P(box, Checkbox.LabelPart).IsVisible);
         Assert.False(P(empty, Checkbox.LabelPart).IsVisible);
-        Assert.Equal(new Point(2, 2), Checkmark(box).Bounds.Position);
+        var margin = CheckboxOracle.Value.Sizes.Checkmark.Margin!;
+        Assert.Equal(new Point(margin[0], margin[1]), Checkmark(box).Bounds.Position);
 
         box.Content = "Now a label";
         scene.Pump();
@@ -219,16 +232,80 @@ public class CheckboxPartsTests
     [AvaloniaFact]
     public void The_checkmark_type_chooses_the_box_or_the_toggle()
     {
+        // Base Web renders the checkmark or the toggle, never both: the other isn't in the template at all.
         var box = new Checkbox { Content = "Label" };
         using var scene = Show(box);
-        Assert.True(Checkmark(box).IsVisible);
-        Assert.False(P(box, Checkbox.ToggleTrackPart).IsVisible);
+        Assert.NotNull(box.Part(Checkbox.CheckmarkPart));
+        Assert.Null(box.Part(Checkbox.ToggleTrackPart));
+        Assert.Null(box.Part(Checkbox.TogglePart));
 
         box.CheckmarkType = CheckboxStyleType.Toggle;
         scene.Pump();
-        Assert.False(Checkmark(box).IsVisible);
-        Assert.True(P(box, Checkbox.ToggleTrackPart).IsVisible);
+        Assert.Null(box.Part(Checkbox.CheckmarkPart));
+        Assert.NotNull(box.Part(Checkbox.ToggleTrackPart));
+        Assert.NotNull(box.Part(Checkbox.TogglePart));
         Assert.Equal(LabelPlacement.Left, box.ActualLabelPlacement);
+        Assert.Equal(0, ((LabelPlacementPanel)P(box, Checkbox.RootPart)).Children.IndexOf((Control)P(box, Checkbox.ToggleTrackPart)));
+    }
+
+    // Base Web's isActive comes from onMouseDown and onMouseUp on the Root, and onMouseLeave clears it.
+    [AvaloniaFact]
+    public void Only_a_mouse_press_is_active_and_leaving_ends_it()
+    {
+        var box = new Checkbox { Content = "Label" };
+        var below = new Border { Height = 100, Background = Brushes.Transparent };
+        using var scene = Show(box, below);
+        box.Focus(NavigationMethod.Tab);
+        scene.Pump();
+
+        // Space held: the native input is pressed, but Base Web's box isn't active.
+        scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+        scene.Pump();
+        Assert.DoesNotContain(":active", Checkmark(box).Classes);
+        scene.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+        scene.Pump();
+
+        // A finger: no active fill for the touch.
+        var touch = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+        box.RaiseEvent(new PointerPressedEventArgs(box, touch, scene.Window, scene.CentreOf(box), 0,
+            new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+        scene.Pump();
+        Assert.DoesNotContain(":active", Checkmark(box).Classes);
+
+        scene.Press(box);
+        Assert.Contains(":active", Checkmark(box).Classes);
+        // Dragged off, still held.
+        scene.Window.MouseMove(scene.CentreOf(below));
+        scene.Pump();
+        Assert.DoesNotContain(":active", Checkmark(box).Classes);
+    }
+
+    // Base Web sets its input's indeterminate, which assistive technology reads as mixed.
+    [AvaloniaFact]
+    public void An_indeterminate_box_is_mixed_to_automation()
+    {
+        var box = new Checkbox { Content = "Label", IsIndeterminate = true };
+        using var scene = Show(box);
+        var toggle = (IToggleProvider)ControlAutomationPeer.CreatePeerForElement(box);
+
+        Assert.Equal(ToggleState.Indeterminate, toggle.ToggleState);
+        box.IsIndeterminate = false;
+        Assert.Equal(ToggleState.Off, toggle.ToggleState);
+        toggle.Toggle();
+        Assert.True(box.IsChecked);
+        Assert.Equal(ToggleState.On, toggle.ToggleState);
+    }
+
+    // Base Web renders children as given: an underscore is drawn, not taken as an access key.
+    [AvaloniaFact]
+    public void A_label_is_drawn_as_given()
+    {
+        var box = new Checkbox { Content = "snake_case option" };
+        using var scene = Show(box);
+
+        var text = P(box, Checkbox.LabelPart).GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.Equal("snake_case option", text.Text);
+        Assert.IsNotType<AccessText>(text);
     }
 
     // ADR 0001: an override's plain setter replaces the default however the default reached it, a $ prop included.
@@ -286,11 +363,12 @@ public class CheckboxPartsTests
     public void Transitions_wait_for_load()
     {
         var box = new Checkbox { Content = "Label", CheckmarkType = CheckboxStyleType.Toggle };
+        var plain = new Checkbox { Content = "Label" };
         var host = new Border { Child = box };
-        using var scene = Show(host);
+        using var scene = Show(host, plain);
         var knob = (CheckboxMark)P(box, Checkbox.TogglePart);
         Assert.NotNull(knob.Transitions);
-        Assert.NotNull(Checkmark(box).Transitions);
+        Assert.NotNull(Checkmark(plain).Transitions);
 
         // Taken out of the window, it is unloaded; its parts keep their theme but lose the transitions.
         host.Child = null;

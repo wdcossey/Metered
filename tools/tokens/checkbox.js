@@ -85,9 +85,13 @@ function layers(relevant, value) {
     chosen.push([best.term, want.get(best.hit[0])]);
     open = open.filter((s) => !best.hit.includes(s));
   }
-  const list = chosen.reverse();
-  for (const [state, v] of want) {
-    if (v !== undefined && gives(list, state) !== v) throw new Error(`Layering wrong at ${selector(state)}`);
+  let list = chosen.reverse();
+  const right = (l) => [...want].every(([state, v]) => v === undefined || gives(l, state) === v);
+  if (!right(list)) throw new Error('Layering wrong');
+  // Then each layer the others already make redundant goes, the highest first.
+  for (let i = list.length - 1; i >= 0; i--) {
+    const without = list.filter((_, j) => j !== i);
+    if (right(without)) list = without;
   }
   return list;
 }

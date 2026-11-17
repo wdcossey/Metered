@@ -6,9 +6,11 @@ a box with a tick or, with `CheckmarkType="Toggle"`, a knob on a track.
 ![light](frames/checkbox-gallery-light.png)
 ![dark](frames/checkbox-gallery-dark.png)
 
-Base Web's own scenarios: `checkbox-states` (the left column, then hover, press and keyboard focus),
-`checkbox-toggle` (the middle column, 200 px wide, the last one with keyboard focus) and
-`checkbox-placement`. Drawn headless by `Controls/CheckboxFrames` with `METERED_FRAMES` set, in
+Base Web's own scenarios: `checkbox-states` (the left column), `checkbox-toggle` (the middle column,
+200 px wide) and `checkbox-placement`. Under the states: a mouse pressed on "press" and keyboard focus
+on the last toggle above; a mouse over "hover" and keyboard focus on "keyboard focus" in the frames
+`checkbox-gallery-light-hover.png` and `checkbox-gallery-dark-hover.png` (one pointer and one focus a
+frame). Drawn headless by `Controls/CheckboxFrames` with `METERED_FRAMES` set, in
 Instrument Sans, the substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
 
 ## Which checkbox
@@ -40,7 +42,11 @@ Switch. Metered's `Checkbox` is v1.
 
 Parts: `Root` (a `LabelPlacementPanel`, the flex line), `Checkmark` and `Toggle` (`CheckboxMark`, a
 box that also draws Base Web's background-image glyph and CSS's outline), `ToggleTrack` (`Border`),
-`Label` (`ContentPresenter`). `LabelPlacementPanel` and `LabelPlacement` are for any control with
+`Label` (`ContentPresenter`, drawn as given: no access key). As Base Web renders the checkmark or the
+toggle, never both, there are two templates, the toggle's chosen by `:toggle`. `:active` is a mouse's
+press only, as Base Web's `isActive` is (`onMouseDown`, cleared by `onMouseUp` and `onMouseLeave`):
+not Space, not a finger. `CheckboxAutomationPeer` reports an indeterminate box as mixed, as Base Web's
+input's `indeterminate` does. `LabelPlacementPanel` and `LabelPlacement` are for any control with
 Base Web's label placements (Radio's v1 has the same four).
 
 ## How the themes are made
@@ -63,10 +69,11 @@ same functions on the light theme.
   order and position), the default placement, the sizes and the label's type, and a long label
   wrapping beside the mark in Base Web's 200 px toggle scenario.
 - `CheckboxPartsTests`: click, Space but not Enter, the indeterminate scenario, the whole row taking
-  the tap, disabled, touch not hovering, mouse focus without the ring, mirrored states, no label,
-  the type switch, overrides and the transitions waiting for load.
-- `CheckboxFrames`: the tick's pixels inside the border, the border, the 3 px focus outline, and the
-  knob at either end.
+  the tap, disabled, touch not hovering, a mouse's press alone being active and leaving ending it,
+  mouse focus without the ring, mirrored states, no label, the type switch, automation's mixed
+  state, a label drawn as given, overrides and the transitions waiting for load.
+- `CheckboxFrames`: the tick's pixels contained inside the border, the border, the 3 px focus
+  outline, and the knob at either end, in the oracle's colours.
 - `Sample/CheckboxPageTests`: the sample's page.
 
 ## Known differences
@@ -87,4 +94,8 @@ same functions on the light theme.
 6. **RTL** isn't done: Base Web mirrors the label's padding and the toggle's travel.
 7. **Fonts**: the label's UberMoveText draws in Instrument Sans ([ADR 0003](../../decisions/0003-font.md)),
    so a label wraps a little differently from baseweb.design's.
-8. **Transparent** is Avalonia's `#00FFFFFF` where Base Web's is `#00000000`; both draw nothing.
+8. **The not-allowed cursor** over a disabled checkbox doesn't show: Base Web's Root sets it, and the
+   theme does too, but Avalonia doesn't hit-test a disabled control, so the pointer is over its parent.
+9. **`LabelPlacementPanel` takes its last visible child as the label.** A `Root` override or a
+   template that adds a child after the label changes which child shrinks.
+10. **Transparent** is Avalonia's `#00FFFFFF` where Base Web's is `#00000000`; both draw nothing.
