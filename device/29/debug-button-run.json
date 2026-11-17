@@ -1,0 +1,47 @@
+{
+  "when": "2026-11-17T17:57:52.5067690+00:00",
+  "model": "Pixel 8",
+  "android": "17",
+  "sdk": 37,
+  "wmSize": "Physical size: 1080x2400",
+  "wmDensity": "Physical density: 420",
+  "configuration": "Debug",
+  "apk": "io.github.wdcossey.metered.sample-Signed.apk",
+  "apkBytes": 75252589,
+  "launchState": "COLD",
+  "totalTimeMs": 1338,
+  "page": "Button",
+  "openMs": 438,
+  "opens": [
+    {
+      "openMs": 438,
+      "ready": "open=438ms scaling=1 view=1x1 raw=1x1 safe=0,0,0,0 page=1x0 title=Button",
+      "cost": "Button: 438 ms, 324 elements, 3 rules (3), layout 350.2, render 0.0"
+    },
+    {
+      "openMs": 236,
+      "ready": "open=236ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+      "cost": "Button: 236 ms, 326 elements, 3 rules (3), layout 176.0, render 6.6"
+    },
+    {
+      "openMs": 265,
+      "ready": "open=265ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+      "cost": "Button: 265 ms, 326 elements, 3 rules (3), layout 176.7, render 6.0"
+    },
+    {
+      "openMs": 242,
+      "ready": "open=242ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+      "cost": "Button: 242 ms, 326 elements, 3 rules (3), layout 186.5, render 3.9"
+    },
+    {
+      "openMs": 251,
+      "ready": "open=251ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+      "cost": "Button: 251 ms, 326 elements, 3 rules (3), layout 171.7, render 9.1"
+    },
+    {
+      "openMs": 223,
+      "ready": "open=223ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+      "cost": "Button: 223 ms, 326 elements, 3 rules (3), layout 150.8, render 3.9"
+    }
+  ]
+}

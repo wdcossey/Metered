@@ -1,0 +1,68 @@
+[
+  {
+    "when": "2026-11-17T17:52:28.0771826+00:00",
+    "model": "Pixel 8",
+    "android": "17",
+    "sdk": 37,
+    "wmSize": "Physical size: 1080x2400",
+    "wmDensity": "Physical density: 420",
+    "configuration": "Release",
+    "apk": "io.github.wdcossey.metered.sample-Signed.apk",
+    "apkBytes": 38965015,
+    "launchState": "COLD",
+    "totalTimeMs": 781,
+    "page": "Button",
+    "openMs": 278,
+    "opens": [
+      {
+        "openMs": 278,
+        "ready": "open=278ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Button",
+        "cost": null
+      }
+    ]
+  },
+  {
+    "when": "2026-11-17T17:52:33.3948552+00:00",
+    "model": "Pixel 8",
+    "android": "17",
+    "sdk": 37,
+    "wmSize": "Physical size: 1080x2400",
+    "wmDensity": "Physical density: 420",
+    "configuration": "Release",
+    "apk": "io.github.wdcossey.metered.sample-Signed.apk",
+    "apkBytes": 38965015,
+    "launchState": "COLD",
+    "totalTimeMs": 783,
+    "page": "ButtonGroup",
+    "openMs": 267,
+    "opens": [
+      {
+        "openMs": 267,
+        "ready": "open=267ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=ButtonGroup",
+        "cost": null
+      }
+    ]
+  },
+  {
+    "when": "2026-11-17T17:52:38.7079536+00:00",
+    "model": "Pixel 8",
+    "android": "17",
+    "sdk": 37,
+    "wmSize": "Physical size: 1080x2400",
+    "wmDensity": "Physical density: 420",
+    "configuration": "Release",
+    "apk": "io.github.wdcossey.metered.sample-Signed.apk",
+    "apkBytes": 38965015,
+    "launchState": "COLD",
+    "totalTimeMs": 739,
+    "page": "Theme",
+    "openMs": 251,
+    "opens": [
+      {
+        "openMs": 251,
+        "ready": "open=251ms scaling=2.625 view=411.43x914.29 raw=1080x2400 safe=0,50.29,0,24 page=411.43x784 title=Theme",
+        "cost": null
+      }
+    ]
+  }
+]
