@@ -57,9 +57,11 @@ Application.Current!.Resources.MergedDictionaries.Add(ThemeProvider.CreateResour
 replaces their tokens. With the theme in `Application.Resources`, `BaseTheme` goes in
 `Application.Styles`, as in the sample's `App.axaml`: the application looks in its resources before
 its styles, but a `BaseTheme` in a window's styles is found before the application, so its default
-tokens win in that window (measured; `ThemeProviderTests` covers the application's way). Clearing `ThemeProvider.Theme`, and `ThemeProvider.DarkTheme` if it was
-given, gives the subtree back the app's tokens: a `DarkTheme` left alone still holds in the dark
-variant.
+tokens win in that window (`ThemeProviderTests`, both ways). A window with its own `BaseTheme` takes
+the theme from `ThemeProvider.Theme` on the window instead.
+
+Clearing `ThemeProvider.Theme`, and `ThemeProvider.DarkTheme` if it was given, gives the subtree
+back the app's tokens: a `DarkTheme` left alone still holds in the dark variant.
 
 ## What doesn't change
 
