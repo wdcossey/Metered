@@ -136,6 +136,8 @@ for (const size of SIZES) {
 }
 
 const files = {
+  // Base Web's radio-v2 Radio and RadioGroup (radio.js).
+  'radio.oracle.json': require('./radio').oracle(version),
   // Base Web's v1 Checkbox, with its toggle style (checkbox.js).
   'checkbox.oracle.json': require('./checkbox').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },

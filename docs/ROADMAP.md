@@ -76,3 +76,6 @@ theme Avalonia's (checkbox, radio, switch, input, textarea, slider, progress bar
 tooltip, popover, menu, select), then the small new ones, then the overlays and navigation.
 
 - [x] Checkbox (#34): Base Web's v1, the one baseweb.design shows, with its toggle style and four label placements (`docs/controls/Checkbox/`)
+- [x] Radio and RadioGroup (#35): Base Web's radio-v2, the one its documentation recommends for new work; parts,
+      overrides, label placement, align, description, error, the group's tab stop and arrow keys, the touch padding
+      (`docs/controls/Radio/`)

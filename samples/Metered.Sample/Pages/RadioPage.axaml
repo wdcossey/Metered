@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.RadioPage">
+  <!-- Base Web's radio-v2, as its documentation shows it: a group with descriptions, horizontal, the label on top,
+       disabled and in error, and a radio on its own. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic" />
+      <TextBlock Classes="label" Margin="0,0,0,6" Text="Arrow keys move the selection" />
+      <b:RadioGroup x:Name="Basic" Value="2">
+        <b:Radio Value="1" Content="First" />
+        <b:Radio Value="2" Content="Second" Description="This is a radio description, it gives a little more context about what this is." />
+        <b:Radio Value="3" Content="Third" />
+      </b:RadioGroup>
+      <TextBlock Classes="label" x:Name="Selected" />
+
+      <TextBlock Classes="heading" Text="Horizontal" />
+      <b:RadioGroup x:Name="Horizontal" Align="Horizontal" Value="1">
+        <b:Radio Value="1" Content="Small" />
+        <b:Radio Value="2" Content="Medium" />
+        <b:Radio Value="3" Content="Large" />
+      </b:RadioGroup>
+
+      <TextBlock Classes="heading" Text="Label on top" />
+      <b:RadioGroup x:Name="Top" Align="Horizontal" LabelPlacement="Top" Value="2">
+        <b:Radio Value="1" Content="Day" />
+        <b:Radio Value="2" Content="Week" Description="Most used" />
+        <b:Radio Value="3" Content="Month" />
+      </b:RadioGroup>
+
+      <TextBlock Classes="heading" Text="Disabled" />
+      <b:RadioGroup x:Name="Disabled" IsEnabled="False" Value="1">
+        <b:Radio Value="1" Content="Checked" />
+        <b:Radio Value="2" Content="Unchecked" />
+      </b:RadioGroup>
+
+      <TextBlock Classes="heading" Text="Error" />
+      <b:RadioGroup x:Name="Error" Error="True" Value="1">
+        <b:Radio Value="1" Content="Checked" />
+        <b:Radio Value="2" Content="Unchecked" />
+      </b:RadioGroup>
+
+      <TextBlock Classes="heading" Text="On its own" />
+      <b:Radio x:Name="Alone" Content="Remember this choice" Description="A radio outside a group, checked by a tap." />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
