@@ -41,10 +41,11 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 | Base Web's group | Metered's `RadioGroup` |
 |---|---|
 | `value`, `initialState.value` | `Value`, two-way: a click or an arrow key sets it |
-| `align`, `labelPlacement`, `error` | `Align`, `LabelPlacement`, `Error`: they replace each radio's own |
+| `align`, `labelPlacement`, `error` | `Align`, `LabelPlacement`, `Error`: each radio draws them in place of its own, which it keeps for when it leaves |
 | `disabled` | `IsEnabled`; a radio's own stays |
 | `onChange` | `Value`'s change |
 | `overrides` | `Overrides`: `RadioGroupRoot` |
+| `role="radiogroup"` | announced as a group (Avalonia has no radio group); `aria-invalid` has no equivalent |
 | `name`, `autoFocus`, `required`, `stateReducer`, `aria-*` | not yet |
 
 ## Behaviour, as Base Web's
@@ -63,8 +64,10 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - A coarse pointer (a phone or tablet) pads the radio by 8 all round, so a tap 8 outside the backplate still checks it.
 - The group: a column 8 apart, or a row 16 apart that wraps onto lines 8 apart, the radios at the top of a line (at
   its bottom with the label on top, so the marks line up). Only the checked radio (or the first, with none) is a tab
-  stop; the arrow keys move the selection and the focus to the next or previous enabled radio, wrapping. Space checks
-  the focused radio; Enter doesn't.
+  stop; the arrow keys (with no Alt, Ctrl or Meta) move the selection and the focus to the next or previous enabled
+  radio, wrapping. Space checks the focused radio; Enter doesn't.
+- A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
+  finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
 ## Held by
 

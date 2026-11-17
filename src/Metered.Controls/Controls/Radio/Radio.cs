@@ -14,16 +14,18 @@ namespace Metered.Controls;
 /// <remarks>
 /// <para>Base Web's <c>checked</c> is <c>IsChecked</c>, which a click sets, as an Avalonia radio button's;
 /// <c>disabled</c> is <c>IsEnabled</c>; <c>children</c> is <c>Content</c>, the label; <c>name</c> is
-/// <c>GroupName</c>. In a <see cref="RadioGroup"/>, the group's value, align, label placement and error replace the
-/// radio's own, as Base Web's group context does.</para>
+/// <c>GroupName</c>. In a <see cref="RadioGroup"/>, the group's value checks it, and the group's align, label
+/// placement and error are drawn in place of the radio's own, which stay as they are, as Base Web's
+/// <c>groupContext?.align ?? align</c>.</para>
 /// <para>The state pseudoclasses, set on the radio and on each part, are Base Web's <c>$</c> props:
 /// <c>:checked</c>, <c>:error</c>, <c>:align-*</c>, <c>:label-placement-*</c>, <c>:is-hovered</c> (a mouse over
 /// the radio), <c>:is-active</c> (pressed by any pointer), <c>:focus-visible</c> (focused by keyboard, in a group:
 /// a radio on its own takes it from its app in Base Web, and never shows it here), and <c>:pointer-coarse</c>
 /// (Base Web's <c>@media (pointer: coarse)</c>: a phone's touch screen). <c>:disabled</c> is Avalonia's own.
 /// The <c>RadioBackplate</c> part alone also takes CSS's <c>:hover</c> (a mouse over the backplate) and
-/// <c>:active</c> (pressed on it), which Base Web styles on that element. <c>:loaded</c> is set once the radio is
-/// loaded, so the mark's transition doesn't run on its first appearance, as CSS's doesn't.</para>
+/// <c>:active</c> (the primary button or a finger pressed on it), which Base Web styles on that element.
+/// <c>:loaded</c> is set once the radio is loaded, so the mark's transition doesn't run on its first appearance, as
+/// CSS's doesn't.</para>
 /// <para>Base Web's <c>Input</c> part, the hidden <c>input</c>, is the radio itself.</para>
 /// </remarks>
 [TemplatePart(RootPart, typeof(StyledElement))]
@@ -67,6 +69,7 @@ public class Radio : RadioButton
     private static readonly string[] Placements = [":label-placement-top", ":label-placement-right", ":label-placement-bottom", ":label-placement-left"];
 
     private readonly Parts _parts;
+    private RadioGroup? _group;
     private bool? _coarsePointer;
     private bool _mouseOver;
     private bool _pressed;
@@ -77,9 +80,7 @@ public class Radio : RadioButton
     {
         _parts = new Parts(this, "Radio",
             [RootPart, RadioBackplatePart, RadioMarkOuterPart, RadioMarkInnerPart, LabelWrapperPart, LabelPart, DescriptionPart]);
-        UpdateAlign();
-        UpdateLabelPlacement();
-        SetState(":error", Error);
+        UpdateContext();
         SetState(":checked", IsChecked == true);
         SetState(":pointer-coarse", CoarsePointer);
     }
@@ -90,13 +91,14 @@ public class Radio : RadioButton
     /// <summary>Base Web's <c>description</c>: text under the label; none when null or empty.</summary>
     public string? Description { get => GetValue(DescriptionProperty); set => SetValue(DescriptionProperty, value); }
 
-    /// <summary>Base Web's <c>align</c>. Vertical by default; horizontal holds the label and description to 240 wide and three lines.</summary>
+    /// <summary>Base Web's <c>align</c>. Vertical by default; horizontal holds the label and description to 240 wide
+    /// and three lines. In a group, the group's is drawn.</summary>
     public RadioAlign Align { get => GetValue(AlignProperty); set => SetValue(AlignProperty, value); }
 
-    /// <summary>Base Web's <c>labelPlacement</c>. Right by default.</summary>
+    /// <summary>Base Web's <c>labelPlacement</c>. Right by default. In a group, the group's is drawn.</summary>
     public RadioLabelPlacement LabelPlacement { get => GetValue(LabelPlacementProperty); set => SetValue(LabelPlacementProperty, value); }
 
-    /// <summary>Base Web's <c>error</c>.</summary>
+    /// <summary>Base Web's <c>error</c>. In a group, the group's is drawn.</summary>
     public bool Error { get => GetValue(ErrorProperty); set => SetValue(ErrorProperty, value); }
 
     /// <summary>Base Web's <c>overrides</c>, by part: <c>Root</c>, <c>RadioBackplate</c>, <c>RadioMarkOuter</c>,
@@ -117,13 +119,40 @@ public class Radio : RadioButton
         }
     }
 
-    /// <summary>The group the radio is in, which sets its focus ring; null on its own.</summary>
-    internal RadioGroup? Group { get; set; }
+    /// <summary>The group the radio is in, whose context it draws and which sets its focus ring; null on its own.</summary>
+    internal RadioGroup? Group
+    {
+        get => _group;
+        set
+        {
+            _group = value;
+            UpdateContext();
+        }
+    }
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
 
     protected override Type StyleKeyOverride => typeof(Radio);
+
+    /// <summary>
+    /// The align, label placement and error drawn: the group's, in a group, or the radio's own (Base Web's
+    /// <c>groupContext?.align ?? alignProp</c>, whose group always gives one).
+    /// </summary>
+    internal void UpdateContext()
+    {
+        SetContextStates(SetState, _group?.Align ?? Align, _group?.LabelPlacement ?? LabelPlacement, _group?.Error ?? Error);
+    }
+
+    /// <summary>The pseudoclasses of an align, a label placement and an error, a radio's or a group's.</summary>
+    internal static void SetContextStates(Action<string, bool> set, RadioAlign align, RadioLabelPlacement placement, bool error)
+    {
+        set(":align-vertical", align == RadioAlign.Vertical);
+        set(":align-horizontal", align == RadioAlign.Horizontal);
+        var on = Placements[(int)placement];
+        foreach (var p in Placements) set(p, p == on);
+        set(":error", error);
+    }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -131,6 +160,7 @@ public class Radio : RadioButton
         _parts.Attach(e.NameScope);
         _backplateHover = _backplateActive = false;
         UpdateBackplate();
+        UpdateLabel();
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -145,15 +175,23 @@ public class Radio : RadioButton
         SetState(":loaded", false);
     }
 
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        EndPointer();
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         var p = change.Property;
         if (p == IsCheckedProperty) SetState(":checked", IsChecked == true);
-        else if (p == AlignProperty) UpdateAlign();
-        else if (p == LabelPlacementProperty) UpdateLabelPlacement();
-        else if (p == ErrorProperty) SetState(":error", Error);
+        else if (p == AlignProperty || p == LabelPlacementProperty || p == ErrorProperty) UpdateContext();
+        else if (p == ValueProperty) _group?.Refresh(this);
+        else if (p == ContentProperty) UpdateLabel();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
+        // A disabled radio takes no pointer: a hover or a press it had would come back stale when it is enabled.
+        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) EndPointer();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -181,35 +219,37 @@ public class Radio : RadioButton
     {
         base.OnPointerExited(e);
         SetMouseOver(false);
-        _backplateHover = false;
-        UpdateBackplate();
+        SetBackplate(false, _backplateActive);
     }
 
-    // Base Web's $isActive (a press on the root) and the backplate's CSS :active (a press on the backplate), by any pointer.
+    // Base Web's $isActive: onMouseDown on the root, any button or a finger. The backplate's CSS :active: the primary
+    // button or a finger, on the backplate.
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         SetPressed(true);
-        _backplateActive = OverBackplate(e);
-        UpdateBackplate();
+        SetBackplate(_backplateHover, e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && OverBackplate(e));
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        EndPress();
+        SetPressed(false);
+        SetBackplate(_backplateHover, false);
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        EndPress();
+        SetPressed(false);
+        SetBackplate(_backplateHover, false);
     }
 
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         base.OnGotFocus(e);
-        SetState(":focus-visible", Group is not null && e.NavigationMethod is NavigationMethod.Tab or NavigationMethod.Directional);
+        // Only the radio's own focus: GotFocus also bubbles from a control in its label, which Base Web's input never sees.
+        if (e.Source == this) SetState(":focus-visible", _group is not null && e.NavigationMethod is NavigationMethod.Tab or NavigationMethod.Directional);
     }
 
     protected override void OnLostFocus(FocusChangedEventArgs e)
@@ -220,20 +260,20 @@ public class Radio : RadioButton
 
     private void TrackMouse(PointerEventArgs e)
     {
-        var mouse = e.Pointer.Type == PointerType.Mouse;
+        // A disabled radio can still see a pointer it captured before: it doesn't hover.
+        var mouse = e.Pointer.Type == PointerType.Mouse && IsEffectivelyEnabled;
         SetMouseOver(mouse);
-        _backplateHover = mouse && OverBackplate(e);
-        UpdateBackplate();
+        SetBackplate(mouse && OverBackplate(e), _backplateActive);
     }
 
     private bool OverBackplate(PointerEventArgs e) =>
         _parts[RadioBackplatePart] is Visual backplate && new Rect(backplate.Bounds.Size).Contains(e.GetPosition(backplate));
 
-    private void EndPress()
+    private void EndPointer()
     {
+        SetMouseOver(false);
         SetPressed(false);
-        _backplateActive = false;
-        UpdateBackplate();
+        SetBackplate(false, false);
     }
 
     private void SetMouseOver(bool over)
@@ -250,6 +290,14 @@ public class Radio : RadioButton
         SetState(":is-active", pressed);
     }
 
+    private void SetBackplate(bool hover, bool active)
+    {
+        if (_backplateHover == hover && _backplateActive == active) return;
+        _backplateHover = hover;
+        _backplateActive = active;
+        UpdateBackplate();
+    }
+
     /// <summary>The backplate's own CSS states, which Base Web doesn't pass to the other parts.</summary>
     private void UpdateBackplate()
     {
@@ -259,21 +307,15 @@ public class Radio : RadioButton
         classes.Set(":active", _backplateActive);
     }
 
+    /// <summary>Base Web renders the label wrapper only for children that are something (<c>!!children</c>): not for none or an empty string.</summary>
+    private void UpdateLabel()
+    {
+        if (_parts[LabelWrapperPart] is Visual wrapper) wrapper.IsVisible = Content is not (null or "");
+    }
+
     private void SetState(string pseudoClass, bool on)
     {
         PseudoClasses.Set(pseudoClass, on);
         _parts.SetState(pseudoClass, on);
-    }
-
-    private void UpdateAlign()
-    {
-        SetState(":align-vertical", Align == RadioAlign.Vertical);
-        SetState(":align-horizontal", Align == RadioAlign.Horizontal);
-    }
-
-    private void UpdateLabelPlacement()
-    {
-        var placement = Placements[(int)LabelPlacement];
-        foreach (var p in Placements) SetState(p, p == placement);
     }
 }

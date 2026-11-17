@@ -128,6 +128,76 @@ public class RadioTests
         described.Description = "";
         scene.Pump();
         Assert.False(((Visual)described.Part(Radio.DescriptionPart)!).IsVisible);
+
+        // !!children: an empty string is no label either.
+        labelled.Content = "";
+        scene.Pump();
+        Assert.False(((Visual)labelled.Part(Radio.LabelWrapperPart)!).IsVisible);
+        Assert.Equal(backplate.Bounds.Size, labelled.Bounds.Size);
+        labelled.Content = "Back";
+        scene.Pump();
+        Assert.True(((Visual)labelled.Part(Radio.LabelWrapperPart)!).IsVisible);
+    }
+
+    // Base Web's onFocus is the hidden input's: a control in the label taking the keyboard's focus isn't the radio's.
+    [AvaloniaFact]
+    public void Focus_on_a_control_in_the_label_isnt_the_radios()
+    {
+        var inner = new Avalonia.Controls.Button { Content = "Pick a colour" };
+        var radio = new Radio { Value = "1", Content = inner };
+        var group = new RadioGroup { Value = "1", Items = { radio } };
+        using var scene = new Scene(group);
+        inner.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(inner.IsFocused);
+        Assert.DoesNotContain(":focus-visible", radio.Classes);
+        Assert.Equal(0, ((RadioMark)radio.Part(Radio.RadioMarkOuterPart)!).OutlineThickness);
+    }
+
+    // CSS's :active is the primary button's; Base Web's $isActive is onMouseDown's, any button.
+    [AvaloniaFact]
+    public void A_right_press_is_the_radios_but_not_the_backplates()
+    {
+        var radio = new Radio { Content = "Label" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { radio } });
+        var backplate = radio.Part(Radio.RadioBackplatePart)!;
+        var at = scene.CentreOf((Visual)backplate);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Pump();
+        Assert.Contains(":is-active", radio.Classes);
+        Assert.DoesNotContain(":active", backplate.Classes);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", radio.Classes);
+    }
+
+    // A disabled radio takes no pointer, so it can't see the mouse leave: its hover and press end when it is disabled.
+    [AvaloniaFact]
+    public void Disabling_a_radio_ends_its_hover_and_press()
+    {
+        var radio = new Radio { Content = "Label" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { radio } });
+        var backplate = radio.Part(Radio.RadioBackplatePart)!;
+        scene.Hover((Visual)backplate);
+        Assert.Contains(":is-hovered", radio.Classes);
+        Assert.Contains(":hover", backplate.Classes);
+
+        radio.IsEnabled = false;
+        scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
+        scene.Pump();
+        radio.IsEnabled = true;
+        scene.Pump();
+        Assert.DoesNotContain(":is-hovered", radio.Classes);
+        Assert.DoesNotContain(":hover", backplate.Classes);
+
+        scene.Press((Visual)backplate);
+        Assert.Contains(":is-active", radio.Classes);
+        Assert.Contains(":active", backplate.Classes);
+        radio.IsEnabled = false;
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", radio.Classes);
+        Assert.DoesNotContain(":active", backplate.Classes);
     }
 
     // Base Web's @media (pointer: coarse): padding round the root, which takes the pointer, for a 48 px target.

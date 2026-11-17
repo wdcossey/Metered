@@ -82,11 +82,11 @@ public class RadioRootPanel : Panel
         var row = Orientation == Orientation.Horizontal;
         var inner = new Rect(finalSize).Deflate(Padding);
         var crossSize = row ? inner.Height : inner.Width;
-        var children = LabelFirst ? Enumerable.Reverse(Children) : Children;
         double position = 0;
         var count = 0;
-        foreach (var child in children)
+        for (var i = 0; i < Children.Count; i++)
         {
+            var child = Children[LabelFirst ? Children.Count - 1 - i : i];
             if (!child.IsVisible) continue;
             if (count++ > 0) position += Spacing;
             var desired = child.DesiredSize;

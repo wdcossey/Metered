@@ -102,18 +102,21 @@ public class RadioLayoutTests
         var label = TextOf(radio.Part(Radio.LabelPart)!);
         var description = (TextBlock)radio.Part(Radio.DescriptionPart)!;
         var c = RadioOracle.Data.Layout.First(l => l.Align == align.ToString().ToLowerInvariant());
+        // The clamp, Base Web's WebkitLineClamp, is the horizontal radio's.
+        var h = RadioOracle.Data.Layout.First(l => l.Align == "horizontal");
+        Assert.True(h.Label.MaxLines > 0 && h.Description.MaxLines > 0);
 
         if (align == RadioAlign.Horizontal)
         {
-            Assert.Equal(3 * c.Label.LineHeight, label.Bounds.Height, 3);
-            Assert.Equal(3 * c.Description.LineHeight, description.Bounds.Height, 3);
+            Assert.Equal(h.Label.MaxLines * c.Label.LineHeight, label.Bounds.Height, 3);
+            Assert.Equal(h.Description.MaxLines * c.Description.LineHeight, description.Bounds.Height, 3);
             Assert.Equal(TextTrimming.CharacterEllipsis, label.TextTrimming);
             Assert.True(((Visual)radio.Part(Radio.LabelWrapperPart)!).Bounds.Width <= c.WrapperMaxWidth!.Value);
         }
         else
         {
-            Assert.True(label.Bounds.Height > 3 * c.Label.LineHeight, $"{label.Bounds.Height}");
-            Assert.True(description.Bounds.Height > 3 * c.Description.LineHeight, $"{description.Bounds.Height}");
+            Assert.True(label.Bounds.Height > h.Label.MaxLines * c.Label.LineHeight, $"{label.Bounds.Height}");
+            Assert.True(description.Bounds.Height > h.Description.MaxLines * c.Description.LineHeight, $"{description.Bounds.Height}");
         }
     }
 

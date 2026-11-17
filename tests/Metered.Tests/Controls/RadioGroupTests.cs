@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Metered.Controls;
@@ -206,26 +207,92 @@ public class RadioGroupTests
         Assert.Equal("1", group.Value);
     }
 
-    // Base Web's group context: the group's align, label placement and error replace the radio's own.
-    [AvaloniaFact]
-    public void The_groups_align_placement_and_error_replace_the_radios_and_leave_with_it()
+    // Base Web's group context (groupContext?.align ?? alignProp): the group's align, label placement and error are
+    // drawn in place of the radio's own, which the radio keeps, and draws again when it leaves.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_group_draws_its_context_and_the_radio_keeps_its_own(bool clear)
     {
-        var radio = new Radio { Value = "1", Content = "One", Align = RadioAlign.Vertical, LabelPlacement = RadioLabelPlacement.Right };
-        var group = new RadioGroup { Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Left, Error = true, Items = { radio } };
+        var radio = new Radio { Value = "1", Content = "One", Align = RadioAlign.Vertical, LabelPlacement = RadioLabelPlacement.Right, Error = true };
+        var group = new RadioGroup { Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Left, Error = false, Items = { radio } };
         using var scene = new Scene(group);
-        Assert.Equal(RadioAlign.Horizontal, radio.Align);
-        Assert.Equal(RadioLabelPlacement.Left, radio.LabelPlacement);
-        Assert.True(radio.Error);
-        Assert.Contains(":error", radio.Part(Radio.RadioMarkOuterPart)!.Classes);
+        var outer = radio.Part(Radio.RadioMarkOuterPart)!;
+        Assert.Contains(":align-horizontal", outer.Classes);
+        Assert.Contains(":label-placement-left", outer.Classes);
+        Assert.DoesNotContain(":error", outer.Classes);
+        Assert.True(((RadioRootPanel)radio.Part(Radio.RootPart)!).LabelFirst);
 
         group.LabelPlacement = RadioLabelPlacement.Bottom;
-        Assert.Equal(RadioLabelPlacement.Bottom, radio.LabelPlacement);
-
-        group.Items.Remove(radio);
-        scene.Pump();
-        Assert.Equal(RadioAlign.Vertical, radio.Align);
+        Assert.Contains(":label-placement-bottom", outer.Classes);
         Assert.Equal(RadioLabelPlacement.Right, radio.LabelPlacement);
-        Assert.False(radio.Error);
+
+        // Removed, or the whole group cleared (a reset, which names no old items).
+        if (clear) group.Items.Clear();
+        else group.Items.Remove(radio);
+        scene.Pump();
+        Assert.Contains(":align-vertical", outer.Classes);
+        Assert.Contains(":label-placement-right", outer.Classes);
+        Assert.Contains(":error", outer.Classes);
+
+        // It no longer answers to the group.
+        radio.IsChecked = true;
+        Assert.Null(group.Value);
+    }
+
+    [AvaloniaFact]
+    public void A_radio_whose_value_comes_later_is_checked_by_it()
+    {
+        var radio = new Radio { Content = "Late" };
+        var group = new RadioGroup { Value = "late", Items = { new Radio { Value = "early", Content = "Early" }, radio } };
+        using var scene = new Scene(group);
+        Assert.False(radio.IsChecked);
+
+        radio.Value = "late";
+        Assert.True(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+    }
+
+    // The tab stop of a group with no value is its first radio, whichever that is now.
+    [AvaloniaFact]
+    public void The_first_radio_is_the_tab_stop_after_the_first_leaves()
+    {
+        var (group, radios) = Group(null, ["1", "2", "3"]);
+        using var scene = new Scene(group);
+        group.Items.Remove(radios[0]);
+        scene.Pump();
+        Assert.True(radios[1].IsTabStop);
+        Assert.False(radios[2].IsTabStop);
+        Assert.True(radios[0].IsTabStop); // its own again, out of the group
+
+        var first = new Radio { Value = "0", Content = "0" };
+        group.Items.Insert(0, first);
+        scene.Pump();
+        Assert.True(first.IsTabStop);
+        Assert.False(radios[1].IsTabStop);
+    }
+
+    // Alt+Left is a back gesture, Ctrl+arrow another shortcut: not the radios' to take.
+    [AvaloniaTheory]
+    [InlineData(RawInputModifiers.Alt)]
+    [InlineData(RawInputModifiers.Control)]
+    public void An_arrow_with_a_modifier_is_left_alone(RawInputModifiers modifier)
+    {
+        var (group, radios) = Group("1", ["1", "2"]);
+        using var scene = new Scene(group);
+        scene.Key(Key.Tab);
+        scene.Window.KeyPress(Key.Down, modifier, PhysicalKey.None, null);
+        scene.Window.KeyRelease(Key.Down, modifier, PhysicalKey.None, null);
+        scene.Pump();
+        Assert.Equal("1", group.Value);
+    }
+
+    // Base Web's role="radiogroup": Avalonia has no radio group, so a group.
+    [AvaloniaFact]
+    public void The_group_is_announced_as_a_group()
+    {
+        var (group, _) = Group(null, ["1"]);
+        Assert.Equal(Avalonia.Automation.Peers.AutomationControlType.Group, Avalonia.Automation.AutomationProperties.GetControlTypeOverride(group));
     }
 
     // Base Web's containsInteractiveElement: a control in the label takes its own press; the radio isn't checked.

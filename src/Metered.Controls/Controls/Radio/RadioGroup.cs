@@ -1,4 +1,6 @@
 using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
@@ -16,10 +18,11 @@ namespace Metered.Controls;
 /// <para>Base Web's two components are one here. <see cref="Value"/> is the checked radio's value: set it or bind it
 /// (Base Web's controlled <c>value</c>), and a click or an arrow key changes it as <c>StatefulRadioGroup</c>'s
 /// container does. <c>disabled</c> is <c>IsEnabled</c>, which Avalonia passes to the radios; a radio's own stays.</para>
-/// <para>As Base Web's group context: the group's <see cref="Align"/>, <see cref="LabelPlacement"/> and
-/// <see cref="Error"/> replace each radio's own; the radio whose value is the group's is checked; only that radio (or
-/// the first, when the group has no value) is a tab stop. The arrow keys move the selection and the focus to the next
-/// or previous radio that is enabled, wrapping, as a browser does for radios of one name.</para>
+/// <para>As Base Web's group context: each radio draws the group's <see cref="Align"/>, <see cref="LabelPlacement"/>
+/// and <see cref="Error"/> in place of its own, which it keeps for when it leaves; the radio whose value is the
+/// group's is checked; only that radio (or the first, when the group has no value) is a tab stop. The arrow keys move
+/// the selection and the focus to the next or previous radio that is enabled, wrapping, as a browser does for radios
+/// of one name. It is announced as a group (Base Web's <c>role="radiogroup"</c>; Avalonia has no radio group).</para>
 /// <para>Its one part is <c>RadioGroupRoot</c>.</para>
 /// </remarks>
 [TemplatePart(RadioGroupRootPart, typeof(StyledElement))]
@@ -44,9 +47,15 @@ public class RadioGroup : ItemsControl
     public static readonly StyledProperty<OverrideCollection?> OverridesProperty =
         AvaloniaProperty.Register<RadioGroup, OverrideCollection?>(nameof(Overrides));
 
-    private static readonly string[] Placements = [":label-placement-top", ":label-placement-right", ":label-placement-bottom", ":label-placement-left"];
-
     private readonly Parts _parts;
+
+    /// <summary>The radios the group has taken, so that each is given back when it leaves, however it leaves.</summary>
+    private readonly HashSet<Radio> _members = [];
+
+    static RadioGroup()
+    {
+        AutomationProperties.ControlTypeOverrideProperty.OverrideDefaultValue<RadioGroup>(AutomationControlType.Group);
+    }
 
     public RadioGroup()
     {
@@ -59,13 +68,13 @@ public class RadioGroup : ItemsControl
     /// <summary>Base Web's <c>value</c>: the checked radio's <see cref="Radio.Value"/>. Null or empty checks none.</summary>
     public string? Value { get => GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
 
-    /// <summary>Base Web's <c>align</c>, given to every radio: a column (vertical, the default) or a wrapping row.</summary>
+    /// <summary>Base Web's <c>align</c>, drawn by every radio: a column (vertical, the default) or a wrapping row.</summary>
     public RadioAlign Align { get => GetValue(AlignProperty); set => SetValue(AlignProperty, value); }
 
-    /// <summary>Base Web's <c>labelPlacement</c>, given to every radio. Right by default.</summary>
+    /// <summary>Base Web's <c>labelPlacement</c>, drawn by every radio. Right by default.</summary>
     public RadioLabelPlacement LabelPlacement { get => GetValue(LabelPlacementProperty); set => SetValue(LabelPlacementProperty, value); }
 
-    /// <summary>Base Web's <c>error</c>, given to every radio.</summary>
+    /// <summary>Base Web's <c>error</c>, drawn by every radio.</summary>
     public bool Error { get => GetValue(ErrorProperty); set => SetValue(ErrorProperty, value); }
 
     /// <summary>Base Web's <c>overrides</c>: its one part, <c>RadioGroupRoot</c>.</summary>
@@ -88,9 +97,12 @@ public class RadioGroup : ItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is not Radio radio) return;
-        radio.Group = this;
-        radio.IsCheckedChanged -= OnRadioCheckedChanged;
-        radio.IsCheckedChanged += OnRadioCheckedChanged;
+        if (_members.Add(radio))
+        {
+            radio.IsCheckedChanged += OnRadioCheckedChanged;
+            radio.Group = this;
+        }
+
         Apply(radio, index);
     }
 
@@ -110,29 +122,43 @@ public class RadioGroup : ItemsControl
     {
         base.OnPropertyChanged(change);
         var p = change.Property;
-        if (p == ValueProperty || p == AlignProperty || p == LabelPlacementProperty || p == ErrorProperty) ApplyAll();
-        if (p == AlignProperty || p == LabelPlacementProperty || p == ErrorProperty) UpdateStates();
+        if (p == ValueProperty) ApplyAll();
+        if (p == AlignProperty || p == LabelPlacementProperty || p == ErrorProperty)
+        {
+            UpdateStates();
+            foreach (var radio in _members) radio.UpdateContext();
+        }
+
         if (p == OverridesProperty) _parts.SetOverrides(Overrides);
+    }
+
+    /// <summary>A radio moved, as another came or went before it: the first may be another, the tab stop of a group with no value.</summary>
+    protected override void ContainerIndexChangedOverride(Control container, int oldIndex, int newIndex)
+    {
+        base.ContainerIndexChangedOverride(container, oldIndex, newIndex);
+        if (container is Radio radio && _members.Contains(radio)) Apply(radio, newIndex);
+    }
+
+    /// <summary>A radio's value changed: whether it is checked, and a tab stop, again.</summary>
+    internal void Refresh(Radio radio)
+    {
+        var index = IndexFromContainer(radio);
+        if (index >= 0) Apply(radio, index);
     }
 
     private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // A radio that is its own container isn't cleared by ItemsControl when it leaves.
-        foreach (var removed in e.OldItems?.OfType<Radio>() ?? [])
-        {
-            if (!Items.Contains(removed)) Release(removed);
-        }
+        // A radio that is its own container isn't cleared by ItemsControl when it leaves, nor on a reset (Clear), which
+        // lists no old items: give back every radio no longer in the group.
+        foreach (var gone in _members.Where(radio => !Items.Contains(radio)).ToList()) Release(gone);
     }
 
     /// <summary>Gives a radio that leaves the group its own values back.</summary>
     private void Release(Radio radio)
     {
-        if (radio.Group != this) return;
+        if (!_members.Remove(radio)) return;
         radio.IsCheckedChanged -= OnRadioCheckedChanged;
         radio.Group = null;
-        radio.ClearValue(Radio.AlignProperty);
-        radio.ClearValue(Radio.LabelPlacementProperty);
-        radio.ClearValue(Radio.ErrorProperty);
         radio.ClearValue(IsTabStopProperty);
     }
 
@@ -140,17 +166,12 @@ public class RadioGroup : ItemsControl
     {
         foreach (var container in GetRealizedContainers())
         {
-            if (container is Radio radio) Apply(radio, IndexFromContainer(radio));
+            if (container is Radio radio && _members.Contains(radio)) Apply(radio, IndexFromContainer(radio));
         }
     }
 
     private void Apply(Radio radio, int index)
     {
-        // Base Web's group context: the group's align, label placement and error win over the radio's.
-        radio.Align = Align;
-        radio.LabelPlacement = LabelPlacement;
-        radio.Error = Error;
-
         var none = string.IsNullOrEmpty(Value);
         var isChecked = !none && radio.Value == Value;
         radio.SetCurrentValue(ToggleButton.IsCheckedProperty, isChecked);
@@ -170,8 +191,10 @@ public class RadioGroup : ItemsControl
         else if (e.Key is Key.Down or Key.Right) step = 1;
         else return;
 
+        // A shortcut with an arrow (Alt+Left is a back gesture) isn't the radios' to take.
+        if ((e.KeyModifiers & (KeyModifiers.Alt | KeyModifiers.Control | KeyModifiers.Meta)) != 0) return;
         // Only from a radio of this group itself, not a control in a radio's label.
-        if (e.Source is not Radio from || from.Group != this) return;
+        if (e.Source is not Radio from || !_members.Contains(from)) return;
         var index = IndexFromContainer(from);
         var count = ItemCount;
         if (index < 0 || count == 0) return;
@@ -187,14 +210,7 @@ public class RadioGroup : ItemsControl
         }
     }
 
-    private void UpdateStates()
-    {
-        SetState(":align-vertical", Align == RadioAlign.Vertical);
-        SetState(":align-horizontal", Align == RadioAlign.Horizontal);
-        var placement = Placements[(int)LabelPlacement];
-        foreach (var p in Placements) SetState(p, p == placement);
-        SetState(":error", Error);
-    }
+    private void UpdateStates() => Radio.SetContextStates(SetState, Align, LabelPlacement, Error);
 
     private void SetState(string pseudoClass, bool on)
     {

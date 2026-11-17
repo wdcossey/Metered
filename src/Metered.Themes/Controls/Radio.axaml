@@ -7,7 +7,7 @@
     RadioBackplate
       RadioMarkOuter
         RadioMarkInner
-    LabelWrapper             (only with content: Base Web renders it only with children)
+    LabelWrapper             (only with content: Base Web renders it only with children, !!children)
       Label
         the content
       Description            (only with a description)
@@ -35,9 +35,8 @@
               <b:RadioMark Name="RadioMarkInner" Theme="{DynamicResource Radio.StyledRadioMarkInner}" />
             </b:RadioMark>
           </Border>
-          <StackPanel Name="LabelWrapper"
-                      Theme="{DynamicResource Radio.StyledLabelWrapper}"
-                      IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <!-- Shown only for content that is something (Metered.Controls.Radio). -->
+          <StackPanel Name="LabelWrapper" Theme="{DynamicResource Radio.StyledLabelWrapper}">
             <Border Name="Label" Theme="{DynamicResource Radio.StyledLabel}">
               <ContentPresenter Name="PART_ContentPresenter"
                                 Content="{TemplateBinding Content}"
