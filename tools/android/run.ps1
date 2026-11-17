@@ -129,28 +129,29 @@ function Read-Opens([string]$log) {
 
 # The app's crash in a log, if there is one, with the lines that say why: Java's report (FATAL EXCEPTION, then
 # "Process: <package>, PID: ..."), or .NET's own, when the runtime aborts on an unhandled exception before Java
-# reports it (UNHANDLED EXCEPTION). Another app's crash isn't the sample's: Java's names its package, and .NET's is
-# the sample's only from <processId>, the app's process, in logcat's pid column; with no process known, only Java's.
+# reports it (UNHANDLED EXCEPTION). Another app's crash isn't the sample's: Java's names its package, and .NET's,
+# given <processId>, the app's process, has to be from it (logcat's pid column). With no process known (the app died
+# before pidof saw it), any .NET report counts: the log was just cleared, and a report missed would cost the whole
+# timeout and hide the reason, where one from another app is shown with its own stack.
 function Find-CrashIn([string]$log, [string]$processId) {
     $lines = @($log -split "`r?`n")
     $process = "Process: $([regex]::Escape($Package)),"
     $ours = if ($processId) { "^\S+\s+\S+\s+$([regex]::Escape($processId))\s+\d+\s+[A-Z]\s" }
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $java = $lines[$i] -match 'FATAL EXCEPTION' -and $i + 1 -lt $lines.Count -and $lines[$i + 1] -match $process
-        $dotnet = $ours -and $lines[$i] -match 'UNHANDLED EXCEPTION' -and $lines[$i] -match $ours
+        $dotnet = $lines[$i] -match 'UNHANDLED EXCEPTION' -and (-not $ours -or $lines[$i] -match $ours)
         if ($java -or $dotnet) { return ($lines[$i..([Math]::Min($i + 8, $lines.Count - 1))] -join "`n").TrimEnd() }
     }
     return $null
 }
 
-# Whether open <count> of a page has come, from the opens read so far: the app has written that many ready lines, the
-# last naming <title> (in any case, as the app matches titles), and when <needCost>, as in a Debug build, that line's
-# cost line too. Throws if the app opened another page.
-function Test-Opened([object[]]$opens, [int]$count, [string]$title, [bool]$needCost) {
-    if ($opens.Count -lt $count) { return $false }
-    $last = $opens[$count - 1]
-    if ($last.Title -ne $title) { throw "Asked for the page '$title', but the app opened '$($last.Title)'." }
-    return (-not $needCost) -or [bool]$last.Cost
+# Whether an open of a page has come, from the opens read since the log was cleared for it: a ready line naming
+# <title> (in any case, as the app matches titles), and when <needCost>, as in a Debug build, its cost line too.
+# Throws if the app opened another page.
+function Test-Opened([object[]]$opens, [string]$title, [bool]$needCost) {
+    if ($opens.Count -eq 0) { return $false }
+    if ($opens[0].Title -ne $title) { throw "Asked for the page '$title', but the app opened '$($opens[0].Title)'." }
+    return (-not $needCost) -or [bool]$opens[0].Cost
 }
 
 # A page's run.json: <run>'s facts (the device, the APK, the configuration), the start Android timed, and the page's
@@ -169,12 +170,21 @@ function New-PageRun([Collections.IDictionary]$run, $am, $totalTime, [object[]]$
 # What `am start` said: whether it started (or delivered to) the activity, and with -W, its Status and the start
 # Android timed. am can exit 0 when it can't start the activity; it says so in its output. Only -W writes a Status, so
 # a start that has to be timed needs Status ok as well as Ok.
+# Delivered: the intent went to the running activity (single-top) rather than starting one, as a warm reopen must.
 function ConvertFrom-AmStart([string]$output) {
     $status = if ($output -match '(?m)^Status:\s*(\S+)') { $Matches[1] } else { $null }
     $failed = $output -match '(?m)^Error' -or ($status -and $status -ne 'ok')
     $totalTime = if ($output -match 'TotalTime:\s*(\d+)') { [int]$Matches[1] } else { $null }
     $launchState = if ($output -match 'LaunchState:\s*(\w+)') { $Matches[1] } else { $null }
-    [pscustomobject]@{ Ok = -not $failed; Status = $status; TotalTimeMs = $totalTime; LaunchState = $launchState }
+    $delivered = $output -match 'intent has been delivered to currently running top-most instance'
+    [pscustomobject]@{ Ok = -not $failed; Status = $status; TotalTimeMs = $totalTime; LaunchState = $launchState; Delivered = $delivered }
+}
+
+# The cold start's time Android measured, or null if it timed something else: its TotalTime when it says the start
+# was COLD, or says nothing of it (am writes LaunchState only from Android 10, API 29; -S has stopped the app, so
+# the start is cold).
+function Get-ColdStartTime($am) {
+    if ($am.TotalTimeMs -and ($null -eq $am.LaunchState -or $am.LaunchState -eq 'COLD')) { $am.TotalTimeMs } else { $null }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -185,7 +195,6 @@ function ConvertFrom-AmStart([string]$output) {
 function Invoke-SelfTest {
     $fixtures = Join-Path $PSScriptRoot 'fixtures'
     $failures = [Collections.Generic.List[string]]::new()
-    $checks = 0
     function Fixture([string]$name) { Get-Content -Raw -LiteralPath (Join-Path $fixtures $name) }
     function Check([string]$what, $actual, $expected) {
         $script:checks++
@@ -229,14 +238,14 @@ function Invoke-SelfTest {
         'Button: 148 ms, 332 elements, 3 rules (3), layout 41.7, render 12.9',
         'Button: 131 ms, 332 elements, 3 rules (3), layout 38.2, render 11.4')
 
-    Write-Host '-- Waiting for an open'
-    Check 'not yet, with fewer ready lines than opens' (Test-Opened $opens 4 'Button' $false) $false
-    Check 'the second open has come' (Test-Opened $opens 2 'Button' $true) $true
-    Check 'a title is matched in any case' (Test-Opened $opens 3 'button' $false) $true
-    Throws 'another page than the one asked for is an error' { Test-Opened $opens 1 'ButtonGroup' $false }
-    $uncosted = Read-Opens ((Fixture 'logcat-debug-reopen.txt').TrimEnd() -split "`n" | Select-Object -SkipLast 1 | Join-String -Separator "`n")
-    Check 'in Debug, not until its cost line has come' (Test-Opened $uncosted 3 'Button' $true) $false
-    Check 'in Release, the ready line is enough' (Test-Opened $uncosted 3 'Button' $false) $true
+    Write-Host '-- Waiting for an open (the log is cleared before each)'
+    Check 'not before its ready line' (Test-Opened (Read-Opens (Fixture 'crash-other-app.txt')) 'Button' $false) $false
+    Check 'in Debug, with its cost line, it has come' (Test-Opened $opens 'Button' $true) $true
+    Check 'a title is matched in any case' (Test-Opened $opens 'button' $false) $true
+    Throws 'another page than the one asked for is an error' { Test-Opened $opens 'ButtonGroup' $false }
+    $uncosted = Read-Opens (Fixture 'logcat-release.txt')
+    Check 'in Debug, not until its cost line has come' (Test-Opened $uncosted 'Button' $true) $false
+    Check 'in Release, the ready line is enough' (Test-Opened $uncosted 'Button' $false) $true
 
     Write-Host '-- run.json'
     $run = New-PageRun ([ordered]@{ model = 'Pixel 8'; configuration = 'Debug' }) (ConvertFrom-AmStart (Fixture 'am-start-cold.txt')) 1093 (Read-Opens (Fixture 'logcat-debug-reopen.txt'))
@@ -267,15 +276,19 @@ function Invoke-SelfTest {
         '11-17 09:20:44.902 10022 10022 E DOTNET  : UNHANDLED EXCEPTION:',
         '11-17 09:20:44.902 10022 10022 E DOTNET  : System.ArgumentException: The sample has no page titled ''nowhere''. Its pages are: ''Button'', ''ButtonGroup'', ''Theme''. (Parameter ''title'')')
     Check '.NET''s report from another process is not the sample''s' (Find-CrashIn (Fixture 'crash-dotnet.txt') '1002') $null
-    Check '.NET''s report with no process known is not the sample''s' (Find-CrashIn (Fixture 'crash-dotnet.txt')) $null
+    Check '.NET''s report with no process known counts' ((Find-CrashIn (Fixture 'crash-dotnet.txt')) -split "`n" | Select-Object -First 1) '11-17 09:20:44.902 10022 10022 E DOTNET  : UNHANDLED EXCEPTION:'
     Check 'another app''s crash, Java''s or .NET''s, is not the sample''s' (Find-CrashIn (Fixture 'crash-other-app.txt') '9311') $null
     Check 'Java''s report needs no process' ((Find-CrashIn (Fixture 'crash-java.txt') '1') -split "`n" | Select-Object -First 1) '11-17 09:14:02.118  9311  9311 E AndroidRuntime: FATAL EXCEPTION: main'
 
     Write-Host '-- am start'
     $am = ConvertFrom-AmStart (Fixture 'am-start-cold.txt')
-    Check 'a cold start: ok, its Status, COLD, its TotalTime' @($am.Ok, $am.Status, $am.LaunchState, $am.TotalTimeMs) @($true, 'ok', 'COLD', 1093)
+    Check 'a cold start: ok, its Status, COLD, its TotalTime, not delivered' @($am.Ok, $am.Status, $am.LaunchState, $am.TotalTimeMs, $am.Delivered) @($true, 'ok', 'COLD', 1093, $false)
+    Check 'a cold start''s time' (Get-ColdStartTime $am) 1093
+    Check 'before Android 10, no LaunchState: still the cold start''s time' (Get-ColdStartTime (ConvertFrom-AmStart (Fixture 'am-start-cold-api28.txt'))) 987
+    Check 'a start Android says was warm has no cold time' (Get-ColdStartTime (ConvertFrom-AmStart (Fixture 'am-start-warm.txt'))) $null
     $am = ConvertFrom-AmStart (Fixture 'am-start-delivered.txt')
-    Check 'an intent delivered to the running activity is ok, with no Status, untimed' @($am.Ok, $am.Status, $am.LaunchState, $am.TotalTimeMs) @($true, $null, $null, $null)
+    Check 'an intent delivered to the running activity is ok and delivered, with no Status, untimed' @($am.Ok, $am.Delivered, $am.Status, $am.LaunchState, $am.TotalTimeMs) @($true, $true, $null, $null, $null)
+    Check 'a start that made a new activity was not delivered' (ConvertFrom-AmStart (Fixture 'am-start-new.txt')).Delivered $false
     $am = ConvertFrom-AmStart (Fixture 'am-start-error.txt')
     Check 'an activity am can''t start is a failure, though am exits 0' $am.Ok $false
     $am = ConvertFrom-AmStart (Fixture 'am-start-timeout.txt')
@@ -364,7 +377,9 @@ function Wait-Open([string]$title, [string]$processId) {
     while ($true) {
         $log = Read-Log
         $opens = Read-Opens $log
-        if (Test-Opened $opens 1 $title ($Configuration -eq 'Debug')) { return $opens[0] }
+        if (Test-Opened $opens $title ($Configuration -eq 'Debug')) { return $opens[0] }
+        # The process can be read only once it has started.
+        if (-not $processId) { $processId = Get-AppProcess }
         $crash = Find-CrashIn $log $processId
         if ($crash) { throw "The app stopped before its ready line:`n$crash" }
         if ((Get-Date) -gt $deadline) {
@@ -393,11 +408,9 @@ function Wait-Awake {
     }
 }
 
-# The page's log so far: one whole dump per open, as the log is cleared before each.
-$PageLog = [Collections.Generic.List[string]]::new()
+# Adds what the log holds now to the page's logcat.txt: one whole dump per open, as the log is cleared before each.
 function Save-PageLog {
-    $PageLog.Add((Adb logcat -d))
-    Write-Utf8 (Join-Path $PageOut 'logcat.txt') ($PageLog -join "`n")
+    Add-Content -LiteralPath (Join-Path $PageOut 'logcat.txt') -Value (Adb logcat -d) -Encoding utf8NoBOM
 }
 
 # Any failure from here on keeps the phone's log next to the page's run, if its folder exists yet.
@@ -426,6 +439,10 @@ if (-not $Out) {
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $Out = Join-Path $Repo 'artifacts' 'device' ("$stamp-" + ($model -replace '[^A-Za-z0-9]+', '-'))
 }
+# A run's files are its own: an earlier run's left beside them would look like this one's.
+if ((Test-Path -LiteralPath $Out) -and (Get-ChildItem -LiteralPath $Out -Force | Select-Object -First 1)) {
+    throw "-Out $Out isn't empty. Give a new or empty folder, so that no earlier run's files are mixed with this one's."
+}
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 
@@ -451,7 +468,6 @@ for ($p = 0; $p -lt $Pages.Count; $p++) {
     $title = $Pages[$p]
     $PageOut = Join-Path $Out $folders[$p]
     New-Item -ItemType Directory -Force -Path $PageOut | Out-Null
-    $PageLog.Clear()
     $opens = [Collections.Generic.List[object]]::new()
     $extra = @('--es', $PageExtra, (ConvertTo-ShellWord $title))
 
@@ -479,11 +495,10 @@ for ($p = 0; $p -lt $Pages.Count; $p++) {
         throw "am start failed:`n$start"
     }
     $processId = Get-AppProcess
-    $totalTime = $am.TotalTimeMs
-    if ($am.LaunchState -ne 'COLD' -or -not $totalTime) {
+    $totalTime = Get-ColdStartTime $am
+    if (-not $totalTime) {
         # Not a cold start Android timed (the activity was already on top, say): no time to record.
-        Write-Warning "am start -W did not time a cold start (LaunchState $($am.LaunchState), TotalTime $totalTime):`n$start"
-        $totalTime = $null
+        Write-Warning "am start -W did not time a cold start (LaunchState $($am.LaunchState), TotalTime $($am.TotalTimeMs)):`n$start"
     }
 
     # 6. Wait for the page to say it has drawn: the shell writes its ready line once the frame after the page's first
@@ -511,13 +526,20 @@ for ($p = 0; $p -lt $Pages.Count; $p++) {
 
     # 8. Warm opens: Back to the list, as a user goes, then the page again through an intent to the running activity
     #    (single-top: MainActivity.OnNewIntent opens it in the shell). Not timed by Android; the shell times each.
+    #    The log is cleared before Back, so that what Back does, a crash included, is in the reopen's log.
     for ($i = 1; $i -le $Reopen; $i++) {
         Save-PageLog
+        Adb logcat -c | Out-Null
         Adb shell input keyevent KEYCODE_BACK | Out-Null
         Start-Sleep -Milliseconds $SettleMilliseconds
-        Adb logcat -c | Out-Null
+        $crash = Find-CrashIn (Read-Log) $processId
+        if ($crash) { throw "The app stopped on Back, before reopen $i of '$title':`n$crash" }
         try { $again = Adb shell am start -n $Activity @extra } catch { $again = "Error: $($_.Exception.Message)" }
-        if (-not (ConvertFrom-AmStart $again).Ok) { throw "am start failed on reopen $i of '$title':`n$again" }
+        $reopened = ConvertFrom-AmStart $again
+        if (-not $reopened.Ok) { throw "am start failed on reopen $i of '$title':`n$again" }
+        # Anything but the running activity taking the intent (a new activity, or a new process, as when Back left the
+        # app) isn't a warm open, and would be recorded as one.
+        if (-not $reopened.Delivered) { throw "Reopen $i of '$title' wasn't delivered to the running activity, so it isn't warm:`n$again" }
         $open = Wait-Open $title $processId
         $opens.Add($open)
         Step "Reopen $($i): $($open.Ready)"

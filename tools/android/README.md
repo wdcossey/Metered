@@ -8,7 +8,7 @@ Cornflower's. Anything on the phone is ask-first and goes through the device lea
 pwsh -NoProfile -File tools/android/run.ps1 -SelfTest                          # the parsers, on fixtures: no adb, no phone
 pwsh -NoProfile -File tools/android/run.ps1 -Page Button,ButtonGroup,Theme     # build, install, open each page cold
 pwsh -NoProfile -File tools/android/run.ps1 -Configuration Debug -Page Button -Reopen 5   # the cost line, cold then warm
-pwsh -NoProfile -File tools/android/run.ps1 -NoBuild -Page Button -Out ~/temp/run1        # the last build, a folder of your own
+pwsh -NoProfile -File tools/android/run.ps1 -NoBuild -Page Button -Out ~/temp/run1        # the last build, a new folder of your own
 ```
 
 It runs on Linux, macOS and Windows, under PowerShell 7.4 or later (`pwsh`), with the .NET SDK and its `android`
@@ -32,7 +32,7 @@ workload for the build.
 - The window behind the view is white, as the sample opens light, so nothing flashes before the first frame.
 
 It isn't in `Metered.sln`, as it needs the `android` workload: CI's `android` job installs the workload and builds it
-in Release, after running the self-test.
+in Release and in Debug (whose code differs, for the cost line), after running the self-test.
 
 ## What `run.ps1` does
 
@@ -43,21 +43,26 @@ in Release, after running the self-test.
    1. Wakes the screen, before each page, as a long run can outlast the screen's timeout. A phone with a secure lock
       has to be unlocked by hand: the script says so and waits (`-UnlockTimeoutSeconds`, 60 by default), then waits
       for the screen to be fully awake. Then it goes home, stops the app, clears the log, and starts it cold at the
-      page with `am start -W -S` and `--es page <title>`. Android reports the time from the intent to the activity's first frame (`TotalTime`); if it
-      doesn't report a `COLD` start, the script warns and records no time. If `am start` fails, the script first looks
-      for the app's crash report, so that a crash at start is reported with the app's own message.
+      page with `am start -W -S` and `--es page <title>`. Android reports the time from the intent to the
+      activity's first frame (`TotalTime`). If it reports a `LaunchState` other than `COLD`, the script warns and
+      records no time; before Android 10 (API 29) am writes no `LaunchState`, and `-S` has stopped the app, so the
+      time is the cold start's. If `am start` fails, the script first looks for the app's crash report, so that a
+      crash at start is reported with the app's own message.
    2. Waits for the page's ready line in logcat (`-TimeoutSeconds`, 60 by default), and in a Debug build its cost line,
       or stops at once on a crash report for the app: Java's (`FATAL EXCEPTION` then `Process: <package>`) or .NET's
-      (`UNHANDLED EXCEPTION`, from the app's process, `pidof` once it has started; another .NET app's isn't the
-      sample's). Each poll is one dump: `DOTNET` at Info and up, and every error. The line has to name the page asked
-      for, in any case.
+      (`UNHANDLED EXCEPTION`: from the app's process once `pidof` has seen it, so another .NET app's isn't the
+      sample's; before that, any since the log was cleared, so that a crash at start isn't missed). Each poll is one
+      dump: `DOTNET` at Info and up, and every error. The line has to name the page asked for, in any case.
    3. Saves the screen with `adb exec-out screencap -p` to `frame.png`, and checks it starts with PNG's signature
       (`exec-out` passes on neither screencap's exit code nor its errors apart from its output).
-   4. `-Reopen <n>` times: Back to the list (`KEYCODE_BACK`, the shell's back request), `-SettleMilliseconds` (1000)
-      for the list to show, clears the log, then `am start` with the page's extra again, which `OnNewIntent` opens in
-      the running app, and waits for that open's ready line (and cost line). Android doesn't time these; the shell
-      does. The log is cleared before every open and saved after it, so a long run can't lose an open's lines from
-      logcat's ring buffer, and each wait reads only its own open.
+   4. `-Reopen <n>` times: clears the log, Back to the list (`KEYCODE_BACK`, the shell's back request),
+      `-SettleMilliseconds` (1000) for the list to show, a check for a crash on Back, then `am start` with the page's
+      extra again, and waits for that open's ready line (and cost line). am has to say the intent was delivered to the
+      running activity (`OnNewIntent`, single-top): a new activity or a new process isn't a warm open, and stops the
+      run. Android doesn't time these; the shell does. The log is cleared before every open and saved after it, so a
+      long run can't lose an open's lines from logcat's ring buffer, and each wait reads only its own open. The settle
+      is a fixed wait, as the list writes no line: if Back hasn't been handled by then, the page is opened over
+      itself and its time includes leaving the old one. Raise `-SettleMilliseconds` on a slow phone.
    5. Saves `logcat.txt` (each open's dump in turn) and `run.json`.
 
 `-Page` takes catalogue titles in any case, comma-separated (`pwsh -File` passes `a,b` as one string, so the script
@@ -93,8 +98,9 @@ opens it from the list, read the reopens: `-Configuration Debug -Reopen <n>`.
 ## What it writes
 
 One folder per run, `artifacts/device/<yyyyMMdd-HHmmss>-<model>/` unless `-Out` says otherwise (`artifacts/` is
-ignored by git), with a folder per page, named from its title (`button/`, `buttongroup/`, `theme/`; a name already
-taken, by the same title again or one that differs only in case or marks, gets `-2`, `-3`):
+ignored by git; `-Out` has to be new or empty, so no earlier run's files are mixed with this one's), with a folder
+per page, named from its title (`button/`, `buttongroup/`, `theme/`; a name already taken, by the same title again or
+one that differs only in case or marks, gets `-2`, `-3`):
 
 | File | What |
 |---|---|
@@ -108,9 +114,10 @@ taken, by the same title again or one that differs only in case or marks, gets `
 `-SelfTest` runs every parser the device run uses on `tools/android/fixtures/` and exits non-zero if one fails: the
 `-Page` splitting, the page folders and the phone shell's quoting, the ready and cost lines (a cold start, a Debug run with reopens, a
 title with spaces, lines that only look like the app's), when an open has come (a page's Nth ready line, its title,
-and in Debug its cost line), `run.json`'s record of a page, crash reports (Java's, .NET's from the app's process,
-another app's of either), and `am start`'s output (a cold start, an intent delivered to the running activity, an
-error, a timeout). It touches no adb
+and in Debug its cost line), `run.json`'s record of a page, crash reports (Java's, .NET's from the app's process or
+with none known, another app's of either), and `am start`'s output (a cold start, one before Android 10 with no
+`LaunchState`, a warm one, an intent delivered to the running activity, one that started a new activity, an error, a
+timeout). It touches no adb
 and no phone; CI runs it in the `android` job. What it can't reach is adb itself: the order of the steps, the waits,
 the frame.
 

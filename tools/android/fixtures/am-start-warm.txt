@@ -1,0 +1,7 @@
+Starting: Intent { cmp=io.github.wdcossey.metered.sample/metered.sample.MainActivity (has extras) }
+Status: ok
+LaunchState: WARM
+Activity: io.github.wdcossey.metered.sample/metered.sample.MainActivity
+TotalTime: 204
+WaitTime: 210
+Complete

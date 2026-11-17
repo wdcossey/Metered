@@ -39,13 +39,13 @@ public class AndroidRunTests
         var applicationId = XDocument.Load(Path.Combine(head, "Metered.Sample.Android.csproj"))
             .Descendants("ApplicationId").Single().Value;
         var source = File.ReadAllText(Path.Combine(head, "MainActivity.cs"));
-        var activity = Regex.Match(source, "Name = \"([^\"]+)\"").Groups[1].Value;
+        // The [Activity] attribute's Name, the Java name `am start -n` gives.
+        var activity = Assert.Single(Regex.Matches(source, "\\bName\\s*=\\s*\"([^\"]+)\""), _ => true).Groups[1].Value;
 
         Assert.Equal(applicationId, ScriptString("Package"));
-        Assert.Matches("^\\$Activity = \"\\$Package/" + Regex.Escape(activity) + "\"$", ScriptLine("Activity"));
-        // The start's intent and a later one's: both read the page from the app's extra.
-        var extras = Regex.Matches(source, "GetStringExtra\\(([^)]*)\\)").Select(match => match.Groups[1].Value).ToList();
-        Assert.Equal(["App.PageExtra", "App.PageExtra"], extras);
+        Assert.Equal($"$Activity = \"$Package/{activity}\"", ScriptLine("Activity"));
+        // The start's intent and a later one's both read the page from the app's extra (another extra may be read too).
+        Assert.Equal(2, Regex.Matches(source, "GetStringExtra\\(\\s*App\\.PageExtra\\s*\\)").Count);
     }
 
     // The shell's own line, for a real page in a window, against each fixture's: the same keys in the same order, a
