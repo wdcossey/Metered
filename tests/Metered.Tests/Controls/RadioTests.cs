@@ -154,6 +154,25 @@ public class RadioTests
         Assert.Equal(0, ((RadioMark)radio.Part(Radio.RadioMarkOuterPart)!).OutlineThickness);
     }
 
+    // The backplate's :active lasts while the button is down, and ends when it is let go, wherever.
+    [AvaloniaFact]
+    public void A_release_ends_the_backplates_press()
+    {
+        var radio = new Radio { Content = "Label" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { radio } });
+        var backplate = radio.Part(Radio.RadioBackplatePart)!;
+        scene.Press((Visual)backplate);
+        Assert.Contains(":active", backplate.Classes);
+        Assert.Contains(":is-active", radio.Classes);
+
+        var away = new Point(Scene.Width - 1, Scene.Height - 1);
+        scene.Window.MouseMove(away);
+        scene.Window.MouseUp(away, MouseButton.Left);
+        scene.Pump();
+        Assert.DoesNotContain(":active", backplate.Classes);
+        Assert.DoesNotContain(":is-active", radio.Classes);
+    }
+
     // A press captures the mouse; moved off the radio, it no longer hovers it (Base Web's mouseleave).
     [AvaloniaFact]
     public void A_pressed_mouse_moved_off_the_radio_stops_hovering_it()

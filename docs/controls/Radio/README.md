@@ -79,7 +79,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
   each behaviour of the group above: 32 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
-  description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 21 in all.
+  description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.
 
 The part themes are generated (`tools/tokens/radio.js`): radio-v2's style functions evaluated on Base Web's theme

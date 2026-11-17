@@ -217,7 +217,8 @@ public class RadioGroupTests
     {
         var radio = new Radio { Value = "1", Content = "One", Align = RadioAlign.Vertical, LabelPlacement = RadioLabelPlacement.Right, Error = true };
         var group = new RadioGroup { Align = RadioAlign.Horizontal, LabelPlacement = RadioLabelPlacement.Left, Error = false };
-        if (leave == "source") group.ItemsSource = new[] { radio };
+        var source = new System.Collections.ObjectModel.ObservableCollection<Radio> { radio };
+        if (leave == "source") group.ItemsSource = source;
         else group.Items.Add(radio);
         using var scene = new Scene(group);
         var outer = radio.Part(Radio.RadioMarkOuterPart)!;
@@ -230,10 +231,10 @@ public class RadioGroupTests
         Assert.Contains(":label-placement-bottom", outer.Classes);
         Assert.Equal(RadioLabelPlacement.Right, radio.LabelPlacement);
 
-        // Removed, the whole group cleared, or its source replaced: a reset, which names no old items.
+        // Removed, the whole group cleared, or its source cleared: a reset, which names no old items.
         if (leave == "remove") group.Items.Remove(radio);
         else if (leave == "clear") group.Items.Clear();
-        else group.ItemsSource = Array.Empty<Radio>();
+        else source.Clear();
         scene.Pump();
         Assert.Contains(":align-vertical", outer.Classes);
         Assert.Contains(":label-placement-right", outer.Classes);
