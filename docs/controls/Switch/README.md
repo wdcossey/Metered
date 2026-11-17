@@ -53,7 +53,7 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   only the transform.
 - `ShowIcon`: on, a checkmark in `contentPrimary`, 16 (12 small), in the middle of the knob; its path is Base Web's
   SVG's.
-- On or off: `IsThreeState` is held false, as Base Web's switch has no third state.
+- On or off: `IsThreeState` is held false and a null `IsChecked` is false, as Base Web's switch has no third state.
 - Under the mouse (anywhere over the switch, its label included): the track takes `hoverOverlayAlpha` off and
   `hoverOverlayInverseAlpha` on, the knob the other one, each over its fill (Base Web's `inset 0 0 0 999px` shadow).
 - Focused by keyboard: a 2 px `brandBorderAccessible` outline, 2 px out from the track. Not on a click's focus.
@@ -64,7 +64,8 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   padding toggles it.
 - Enter toggles on its release (Base Web's `onKeyUp`), Space as a checkbox's. `:is-active` (Base Web's `$isActive`)
   is set while any pointer presses the switch or Space or Enter is held, and ends on the release or when the mouse
-  leaves; no style of Base Web's reads it, an override may.
+  leaves; no style of Base Web's reads it, an override may. Keys in a control in the label are that control's: they
+  neither toggle the switch nor make it active, as Base Web's handlers are its hidden input's.
 
 ## Held by
 
@@ -74,9 +75,9 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
 - `Controls/SwitchLayoutTests`: 32 cases (size × placement × pointer × on and off × enabled and disabled): the parts'
   lengths and type, and where layout puts the track, the knob and the label; and a long label that wraps (33 in all).
 - `Controls/SwitchTests`: toggling by click, Space and Enter (Base Web's browser test), the parts' state, hover and
-  press by mouse and finger, keyboard focus, the label only with content, no third state, hover and press ending on
-  disabling and on leaving the window, the coarse pointer, the transition, overrides, and the drawn checkmark (and its
-  clip to the knob's circle), outline and overlay: 23 in all.
+  press by mouse and finger, keyboard focus, keys in a control in the label, the label only with content, no third
+  state, hover and press ending on disabling and on leaving the window, the coarse pointer, the transition, overrides,
+  and the drawn checkmark (and its clip to the knob's circle), outline and overlay: 24 in all.
 - `Sample/SwitchPageTests`: the sample's page, 3.
 
 The part themes are generated (`tools/tokens/switch.js`): the switch's style functions evaluated on Base Web's theme

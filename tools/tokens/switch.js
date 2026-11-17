@@ -12,7 +12,7 @@ const css = require('../reference/css');
 const { THEMES, evaluate } = require('../reference/oracle');
 const sw = require('baseui/switch/styled-components');
 const { SIZE, LABEL_PLACEMENT } = require('baseui/switch/constants');
-const { theme, NAMED, colour, px, cursor, check, font, TEXT, RADII, half } = require('./radio');
+const { theme, combinations, NAMED, colour, px, cursor, check, font, TEXT, RADII, half } = require('./radio');
 
 const L = THEMES.Light;
 
@@ -196,10 +196,8 @@ function transition() {
 
 /** Base Web passes $isActive to every part, but none reads it: in no combination of the states does a press change a style. */
 function activeChangesNothing() {
-  const combos = [{}];
-  for (const a of AXES) combos.splice(0, combos.length, ...combos.flatMap((c) => a.values.map((v) => ({ ...c, [a.name]: v }))));
   for (const p of PARTS) {
-    for (const c of combos) {
+    for (const c of combinations(AXES)) {
       const at = JSON.stringify(declarations(p.styled, NAMED, c));
       if (at !== JSON.stringify(declarations(p.styled, NAMED, { ...c, isActive: true }))) {
         throw new Error(`${p.part} reads $isActive in ${JSON.stringify(c)}: add it to the states`);

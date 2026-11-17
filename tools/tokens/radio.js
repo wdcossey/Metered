@@ -389,4 +389,4 @@ ${themes.join('\n')}
 `;
 }
 
-module.exports = { file, AXES, PARTS, declarations, NAMED, theme, colour, px, cursor, check, font, TEXT, RADII, half };
+module.exports = { file, AXES, PARTS, declarations, NAMED, combinations, theme, colour, px, cursor, check, font, TEXT, RADII, half };

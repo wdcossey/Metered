@@ -53,11 +53,13 @@ public class Switch : ToggleButton
     private bool _mouseOver;
     private bool _pointerPressed;
     private bool _keyPressed;
+    private bool _active;
 
     static Switch()
     {
-        // Base Web's switch is on or off: no third state, whatever an app sets.
+        // Base Web's switch is on or off: no third state, whatever an app sets. A null IsChecked is off.
         IsThreeStateProperty.OverrideMetadata<Switch>(new StyledPropertyMetadata<bool>(false, coerce: (_, _) => false));
+        IsCheckedProperty.OverrideMetadata<Switch>(new StyledPropertyMetadata<bool?>(false, coerce: (_, v) => v ?? false));
     }
 
     public Switch()
@@ -133,9 +135,11 @@ public class Switch : ToggleButton
     }
 
     // Base Web's onKeyDown: Enter and Space make the switch active. Enter toggles it on its release (onKeyUp), not here
-    // as an Avalonia button's does; Space is a checkbox's, which toggles on its release too.
+    // as an Avalonia button's does; Space is a checkbox's, which toggles on its release too. Only the switch's own keys:
+    // a key in a control in its label bubbles here, which Base Web's input never sees.
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Source != this) return;
         if (e.Key is Key.Enter or Key.Space) SetKeyPressed(true);
         if (e.Key == Key.Enter)
         {
@@ -148,6 +152,7 @@ public class Switch : ToggleButton
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
+        if (e.Source != this) return;
         if (e.Key is Key.Enter or Key.Space) SetKeyPressed(false);
         if (e.Key == Key.Enter)
         {
@@ -237,13 +242,22 @@ public class Switch : ToggleButton
     private void SetPointerPressed(bool pressed)
     {
         _pointerPressed = pressed;
-        SetState(":is-active", _pointerPressed || _keyPressed);
+        UpdateActive();
     }
 
     private void SetKeyPressed(bool pressed)
     {
         _keyPressed = pressed;
-        SetState(":is-active", _pointerPressed || _keyPressed);
+        UpdateActive();
+    }
+
+    /// <summary>Base Web's $isActive: a pointer's press or a key's.</summary>
+    private void UpdateActive()
+    {
+        var active = _pointerPressed || _keyPressed;
+        if (_active == active) return;
+        _active = active;
+        SetState(":is-active", active);
     }
 
     private void UpdateSize()

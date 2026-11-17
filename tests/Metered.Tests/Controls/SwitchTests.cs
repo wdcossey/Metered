@@ -174,6 +174,33 @@ public class SwitchTests
         Assert.True(sw.IsChecked);
         scene.Click(sw);
         Assert.False(sw.IsChecked);
+
+        // A null IsChecked is off, so the next tap turns it on.
+        sw.IsChecked = null;
+        Assert.False(sw.IsChecked);
+        scene.Click(sw);
+        Assert.True(sw.IsChecked);
+    }
+
+    // Base Web's onKeyDown and onKeyUp are the hidden input's: keys in a control in the label neither toggle the switch
+    // nor make it active.
+    [AvaloniaFact]
+    public void Keys_in_a_control_in_the_label_arent_the_switchs()
+    {
+        var inner = new TextBox { Text = "Name" };
+        var (sw, scene) = Make(new Switch { Content = inner });
+        using var _ = scene;
+        inner.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        foreach (var key in new[] { Key.Enter, Key.Space })
+        {
+            scene.Window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null);
+            scene.Pump();
+            Assert.DoesNotContain(":is-active", sw.Classes);
+            scene.Window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null);
+            scene.Pump();
+            Assert.False(sw.IsChecked);
+        }
     }
 
     // A right press is Base Web's onMouseDown too, and ends when it is let go.
