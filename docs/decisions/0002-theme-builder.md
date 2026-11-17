@@ -119,4 +119,5 @@ Read in `node_modules/baseui/themes/` and `styles/theme-provider.js`:
   the overlay's shadows there: invisible, but not the same `BoxShadows` value.
 - `tools/reference/themes.js` runs Base Web's `createTheme` and `createDarkTheme` on eight cases into
   `theme.oracle.json`; `ThemeBuilderTests` checks every token of each, `ThemeProviderTests` the
-  subtree, the variant switch and app-wide use through `Scene`.
+  subtree, the variant switch, app-wide use through `Scene` and through `Application.Resources`
+  (`CreateResources`).

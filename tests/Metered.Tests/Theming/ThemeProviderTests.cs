@@ -269,6 +269,119 @@ public class ThemeProviderTests
         Assert.Equal(Expected("darkFoundation", "colors.buttonSecondaryFill"), Fill(button));
     }
 
+    /// <summary>
+    /// <paramref name="test"/> with <see cref="BaseTheme"/> in the application's styles, as the sample's <c>App.axaml</c>
+    /// has it, and <paramref name="resources"/> in its resources, as docs/theming.md tells an app to. The application
+    /// looks in its resources before its styles. Avalonia.Headless gives each test an application of its own (its
+    /// default isolation, <c>AvaloniaTestIsolationLevel.PerTest</c>; this assembly sets none) and runs one test at a
+    /// time on its thread, so this can't reach another test. Both are taken out again so that it still couldn't under
+    /// <c>PerAssembly</c> isolation.
+    /// </summary>
+    private static void WithAppResources(ResourceDictionary resources, Action<Avalonia.Application> test)
+    {
+        var app = Avalonia.Application.Current!;
+        var theme = new BaseTheme();
+        app.Styles.Add(theme);
+        app.Resources.MergedDictionaries.Add(resources);
+        try
+        {
+            test(app);
+        }
+        finally
+        {
+            app.Resources.MergedDictionaries.Remove(resources);
+            app.Styles.Remove(theme);
+        }
+    }
+
+    /// <summary>
+    /// A precondition: the two oracle cases differ in each of these tokens, so a colour asserted to be the one's can't
+    /// pass as the other's. Not every token differs (dark and darkFoundation share the primary fill).
+    /// </summary>
+    private static void Distinct(string one, string other, params string[] tokens)
+    {
+        foreach (var token in tokens)
+        {
+            Assert.NotEqual(Expected(one, token), Expected(other, token));
+        }
+    }
+
+    [AvaloniaFact]
+    public void App_wide_through_the_applications_resources_in_every_window()
+    {
+        const string tertiaryText = "colors.buttonTertiaryText";
+        const string secondaryText = "colors.buttonSecondaryText";
+        const string dangerFill = "colors.buttonDangerPrimaryFill";
+        Distinct("light", "lightFoundation", tertiaryText, secondaryText, dangerFill);
+        Distinct("dark", "darkFoundation", tertiaryText, secondaryText, dangerFill);
+        Distinct("lightFoundation", "darkFoundation", tertiaryText, secondaryText, dangerFill);
+
+        var resources = ThemeProvider.CreateResources(Built("lightFoundation"), Built("darkFoundation"));
+        WithAppResources(resources, app =>
+        {
+            var top = new Button { Content = "Top", Kind = Metered.Controls.ButtonKind.Tertiary };
+            var nested = new Button { Content = "Nested", Kind = Metered.Controls.ButtonKind.Secondary };
+            var other = new Button { Content = "Other window", Kind = Metered.Controls.ButtonKind.DangerPrimary };
+            using var scene = new Scene(new StackPanel
+            {
+                Children = { top, new Border { Child = new StackPanel { Children = { nested } } } },
+            }, themes: []);
+            using var second = new Scene(other, themes: []);
+
+            void Drawn(string theme)
+            {
+                Assert.Equal(Expected(theme, tertiaryText), Text(top));
+                Assert.Equal(Expected(theme, secondaryText), Text(nested));
+                Assert.Equal(Expected(theme, dangerFill), Fill(other));
+            }
+
+            Drawn("lightFoundation");
+
+            scene.Window.RequestedThemeVariant = second.Window.RequestedThemeVariant = ThemeVariant.Dark;
+            scene.Pump();
+            second.Pump();
+            Drawn("darkFoundation");
+
+            // Taken out, the application's own dark tokens: the colours above were the dictionary's.
+            app.Resources.MergedDictionaries.Remove(resources);
+            scene.Pump();
+            second.Pump();
+            Drawn("dark");
+
+            // Added again with the windows open, as an app changing its theme at run time does.
+            app.Resources.MergedDictionaries.Add(resources);
+            scene.Pump();
+            second.Pump();
+            Drawn("darkFoundation");
+        });
+    }
+
+    [AvaloniaFact]
+    public void App_wide_a_theme_alone_holds_whatever_the_variant()
+    {
+        Distinct("dark", "lightFoundation", "colors.buttonPrimaryFill", "colors.buttonPrimaryText");
+        WithAppResources(ThemeProvider.CreateResources(Built("lightFoundation")), _ =>
+        {
+            var button = new Button { Content = "Button" };
+            using var scene = new Scene(button, ThemeVariant.Dark, themes: []);
+            Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryFill"), Fill(button));
+            Assert.Equal(Expected("lightFoundation", "colors.buttonPrimaryText"), Text(button));
+        });
+    }
+
+    [AvaloniaFact]
+    public void App_wide_gives_way_to_a_BaseTheme_in_a_windows_styles()
+    {
+        // docs/theming.md: a window's styles are looked in before the application, so BaseTheme's own tokens win there.
+        Distinct("light", "lightFoundation", "colors.buttonPrimaryFill");
+        WithAppResources(ThemeProvider.CreateResources(Built("lightFoundation")), _ =>
+        {
+            var button = new Button { Content = "Button" };
+            using var scene = new Scene(button);
+            Assert.Equal(Expected("light", "colors.buttonPrimaryFill"), Fill(button));
+        });
+    }
+
     [AvaloniaFact]
     public void The_default_themes_draw_as_the_app_does()
     {
