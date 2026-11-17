@@ -67,7 +67,7 @@ unless Avonic is named.
 | What | Where it is there | Take it when |
 |---|---|---|
 | **A test clock and a manual render timer**: `TestClock` (time moves only when the test says, each callback run at its own time), `ManualRenderTimer` (a frame only on a forced tick), and the harness's own tests | `tests/Cornflower.Tests/TestClock.cs`, `ManualRenderTimer.cs`, `Harness/`; the clock it replaces, `CornflowerClock`, is in `src/Cornflower.Controls` | The first control whose motion must match Base Web frame by frame. Avalonia 12's animation clock is internal, so `Transitions` and `Animation` run on real time and are tested at their end value (Cornflower's ADR 0003); the spinner's ring is the first candidate |
-| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 3. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
+| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 2. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
 
 ## Inventory
 

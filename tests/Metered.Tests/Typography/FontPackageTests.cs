@@ -49,19 +49,23 @@ public class FontPackageTests
         });
     }
 
-    // The package's resources are the eight faces in fonts/, and nothing else: not a licence, not a stray file.
+    // The assembly's resources, all of them, are the eight faces in fonts/, in the collection's folder, and nothing else
+    // but Avalonia's own index (/!AvaloniaResourceXamlInfo, which Avalonia.Fonts.Inter's assembly has too).
     [AvaloniaFact]
     public void The_package_carries_the_eight_faces_and_nothing_else()
     {
-        var names = AssetLoader.GetAssets(new Uri(MeteredFontCollection.Assets, UriKind.Absolute), null)
-            .Select(uri => uri.AbsolutePath[(uri.AbsolutePath.LastIndexOf('/') + 1)..])
+        var paths = AssetLoader.GetAssets(new Uri("avares://Metered.Fonts/", UriKind.Absolute), null)
+            .Select(uri => uri.AbsolutePath)
+            .Where(path => !path.StartsWith("/!", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal);
 
         Assert.Equal(
-        [
-            "Figtree-Bold.ttf", "Figtree-Medium.ttf", "Figtree-Regular.ttf", "Figtree-SemiBold.ttf",
-            "InstrumentSans-Bold.ttf", "InstrumentSans-Medium.ttf", "InstrumentSans-Regular.ttf", "InstrumentSans-SemiBold.ttf",
-        ], names);
+            new[]
+            {
+                "Figtree-Bold.ttf", "Figtree-Medium.ttf", "Figtree-Regular.ttf", "Figtree-SemiBold.ttf",
+                "InstrumentSans-Bold.ttf", "InstrumentSans-Medium.ttf", "InstrumentSans-Regular.ttf", "InstrumentSans-SemiBold.ttf",
+            }.Select(name => new Uri(MeteredFontCollection.Assets, UriKind.Absolute).AbsolutePath + "/" + name),
+            paths);
     }
 
     // With no options of the app's, the package's are its two mappings alone, and the default family the platform's.
@@ -98,36 +102,36 @@ public class FontPackageTests
         Assert.Equal(2, own.Count);
     }
 
-    // What the extension gives Avalonia: the app's options, with the mapping. The test app passes none, so this runs a
-    // builder's option initialisers (AppBuilder's own field: With has no other way out) in a locator scope of its own,
-    // on the UI thread, so nothing else sees the binding, and reads back the FontManagerOptions FontManager's
-    // constructor reads. AvaloniaLocator is Avalonia's private API, which its reference assemblies leave out: hence
-    // reflection, for members that are public at run time.
+    // What the extension gives Avalonia: the app's options, with the mapping. The test app passes none, and the options
+    // a builder is given go only into a binding Avalonia makes at setup, once per process. So this reads them where With
+    // holds them, without running anything: AppBuilder's own initialisers (its private field: With has no other way out)
+    // hold one closure, over the options it will bind. Reflection, so each lookup says what moved if Avalonia changes.
     [AvaloniaFact]
     public void The_extension_binds_the_apps_options_with_the_mapping()
     {
         var builder = AppBuilder.Configure<Application>().WithMeteredFonts(new FontManagerOptions { DefaultFamilyName = MeteredFonts.Figtree });
-        var initializers = (Action)typeof(AppBuilder).GetField("_optionsInitializers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(builder)!;
-        var locator = typeof(AvaloniaLocator);
 
-        using (var scope = (IDisposable)locator.GetMethod("EnterScope", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null)!)
-        {
-            initializers();
-            var current = locator.GetProperty("Current", BindingFlags.Public | BindingFlags.Static)!.GetValue(null)!;
-            var bound = (FontManagerOptions)current.GetType().GetMethod("GetService", [typeof(Type)])!.Invoke(current, [typeof(FontManagerOptions)])!;
+        var field = typeof(AppBuilder).GetField("_optionsInitializers", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.True(field is not null, "AppBuilder no longer has _optionsInitializers, where With keeps the options");
+        var initializers = Assert.IsAssignableFrom<Delegate>(field.GetValue(builder)).GetInvocationList();
+        var closure = Assert.Single(initializers).Target;
+        Assert.True(closure is not null, "With's initialiser no longer closes over the options");
+        var captured = closure.GetType().GetFields().Where(f => f.FieldType == typeof(FontManagerOptions)).ToList();
+        Assert.True(captured.Count == 1, $"With's initialiser holds {captured.Count} FontManagerOptions, not one");
+        var bound = Assert.IsType<FontManagerOptions>(captured[0].GetValue(closure));
 
-            Assert.Equal(MeteredFonts.Figtree, bound.DefaultFamilyName);
-            Assert.Equal(new FontFamily(MeteredFonts.InstrumentSans), bound.FontFamilyMappings!["UberMoveText"]);
-            Assert.Equal(new FontFamily(MeteredFonts.Figtree), bound.FontFamilyMappings["UberMove"]);
-        }
+        Assert.Equal(MeteredFonts.Figtree, bound.DefaultFamilyName);
+        Assert.Equal(new FontFamily(MeteredFonts.InstrumentSans), bound.FontFamilyMappings!["UberMoveText"]);
+        Assert.Equal(new FontFamily(MeteredFonts.Figtree), bound.FontFamilyMappings["UberMove"]);
     }
 
-    // The copy names each of FontManagerOptions' properties: one Avalonia adds would be dropped, so this goes red first.
+    // The copy names each of FontManagerOptions' properties: one Avalonia adds, settable or not, would be dropped, so
+    // this goes red first.
     [Fact]
     public void The_copy_carries_every_option_Avalonia_has()
     {
         Assert.Equal(
             ["DefaultFamilyName", "FontFallbacks", "FontFamilyMappings"],
-            typeof(FontManagerOptions).GetProperties().Where(p => p.CanWrite).Select(p => p.Name).Order(StringComparer.Ordinal));
+            typeof(FontManagerOptions).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(p => p.Name).Order(StringComparer.Ordinal));
     }
 }

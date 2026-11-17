@@ -37,9 +37,12 @@ public static class MeteredFonts
             [UberMoveText] = new(InstrumentSans),
             [UberMove] = new(Figtree),
         };
-        foreach (var (name, family) in options?.FontFamilyMappings ?? new Dictionary<string, FontFamily>())
+        if (options?.FontFamilyMappings is { } own)
         {
-            mappings[name] = family;
+            foreach (var (name, family) in own)
+            {
+                mappings[name] = family;
+            }
         }
 
         return new FontManagerOptions
