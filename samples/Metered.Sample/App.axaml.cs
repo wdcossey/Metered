@@ -17,6 +17,13 @@ public partial class App : Application
     /// </summary>
     public static string? StartPage { get; set; }
 
+    /// <summary>
+    /// The intent extra an Android start names its page in, as <c>tools/android/run.ps1</c> passes it
+    /// (<c>am start --es page &lt;title&gt;</c>). The Android head reads it into <see cref="StartPage"/> at start, and opens
+    /// the page it names in the running app when a later intent carries it.
+    /// </summary>
+    public const string PageExtra = "page";
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()

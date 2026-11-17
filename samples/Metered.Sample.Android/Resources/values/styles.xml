@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+  <!-- The window behind the Avalonia view is white, as the sample opens light (Base Web's light
+       backgroundPrimary), so the app doesn't flash another colour before its first frame. -->
+  <style name="Metered.NoActionBar" parent="@style/Theme.AppCompat.NoActionBar">
+    <item name="android:windowActionBar">false</item>
+    <item name="android:windowNoTitle">true</item>
+    <item name="android:windowBackground">@android:color/white</item>
+  </style>
+</resources>

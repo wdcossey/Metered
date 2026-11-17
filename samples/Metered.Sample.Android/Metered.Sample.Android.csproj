@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Android head: the sample on a phone. It holds only the entry point, the activity and the Android
+       resources; the app, its shell, its pages and its fonts are Metered.Sample's. Not in Metered.sln, because it
+       needs the android workload: CI builds it in a job of its own (`android`), and tools/android/run.ps1 builds,
+       installs and runs it on a device. From Cornflower's. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Avalonia 12 supports net10.0 alone on Android. -->
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <IsPackable>false</IsPackable>
+    <ApplicationId>io.github.wdcossey.metered.sample</ApplicationId>
+    <ApplicationTitle>Metered</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <!-- Debug builds too: run.ps1 installs the -Signed.apk with adb, which Fast Deployment's assembly-less Debug APK
+         can't start from. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Metered.Sample\Metered.Sample.csproj" />
+  </ItemGroup>
+
+</Project>
