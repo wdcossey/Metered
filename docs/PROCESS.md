@@ -133,9 +133,11 @@ Claude merges its own PRs once **all** of these hold:
 
 **One at a time:** merge, then bring the next PR up to date (`gh pr update-branch <n>`, or merge
 `origin/main` into it and push; no force-push); in its worktree `git pull` and check `git rev-parse HEAD`
-equals the PR's `headRefOid`; wait for its checks on that head, merge. Until branch protection and
-auto-merge are turned on (ask-first, §2), GitHub won't stop a merge on red or pending checks: read
-`statusCheckRollup` on the head commit every time, and don't use `gh pr merge --auto`. **Counters** two PRs both bump from one base (the limits in
+equals the PR's `headRefOid`; wait for its checks on that head, merge. `main` is protected (since 2026-11-16): a PR, `build-test`
+and `generated` green, the branch up to date, squash only, linear history, admins included; head
+branches are deleted on merge. Still read `statusCheckRollup` on the head commit before merging, merge
+with `gh pr merge <n> --squash --match-head-commit <sha>`, and don't use `gh pr merge --auto`: it stays
+armed through `gh pr update-branch` and merges before any local re-run. **Counters** two PRs both bump from one base (the limits in
 `StyleBudgetTests`) merge "cleanly" but wrong: re-bump on top. **Shared docs** (`CLAUDE.md`,
 `docs/ROADMAP.md`) conflict the same way: merge `origin/main` in and fold both changes. After each merge:
 `main`'s CI is green, the worktree is removed (`git worktree remove`), then its local branch
