@@ -173,7 +173,8 @@ public class RadioTests
         Assert.DoesNotContain(":is-active", radio.Classes);
     }
 
-    // A press captures the mouse; moved off the radio, it no longer hovers it (Base Web's mouseleave).
+    // A press captures the mouse; moved off the radio, it no longer hovers it (Base Web's mouseleave), and is still its
+    // press: radio-v2's onMouseLeave, unlike checkbox-v2's, leaves isActive.
     [AvaloniaFact]
     public void A_pressed_mouse_moved_off_the_radio_stops_hovering_it()
     {
@@ -185,6 +186,7 @@ public class RadioTests
         scene.Pump();
         Assert.DoesNotContain(":is-hovered", radio.Classes);
         Assert.DoesNotContain(":hover", radio.Part(Radio.RadioBackplatePart)!.Classes);
+        Assert.Contains(":is-active", radio.Classes);
     }
 
     // CSS's :active is the primary button's; Base Web's $isActive is onMouseDown's, any button.

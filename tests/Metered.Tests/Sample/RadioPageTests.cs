@@ -10,7 +10,7 @@ using Metered.Sample.Pages;
 namespace Metered.Tests.Sample;
 
 /// <summary>
-/// The sample's Radio page: its place in the catalogue (its issue's number, 35, the last control before the theme),
+/// The sample's Radio page: its place in the catalogue (its issue's number, 35, before the theme),
 /// Metered's radios in every group, the first group's selection said under it, by a tap and by the arrow keys, and the
 /// horizontal groups within a phone's width.
 /// </summary>
@@ -24,7 +24,7 @@ public class RadioPageTests
 
         Assert.Equal("Radio", entry.Title);
         Assert.Equal(35, typeof(RadioPage).GetCustomAttributes(typeof(SamplePageAttribute), false).Cast<SamplePageAttribute>().Single().Order);
-        Assert.Equal(titles.IndexOf("Theme") - 1, titles.IndexOf(entry.Title));
+        Assert.True(titles.IndexOf(entry.Title) < titles.IndexOf("Theme"));
     }
 
     [AvaloniaFact]

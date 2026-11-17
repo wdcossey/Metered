@@ -137,6 +137,9 @@ files['../Controls/Button.Parts.g.axaml'] = require('./button').file(version);
 // The themes of Radio's parts, from Base Web's radio-v2 (radio.js).
 files['../Controls/Radio.Parts.g.axaml'] = require('./radio').file(version);
 
+// The themes of Switch's parts, from Base Web's switch (switch.js).
+files['../Controls/Switch.Parts.g.axaml'] = require('./switch').file(version);
+
 // What createTheme and createDarkTheme derive, for Metered.Themes.Theme (theme.js).
 files['../Theming/ThemeDerivation.g.cs'] = require('./theme').file(version);
 

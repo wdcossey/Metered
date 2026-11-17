@@ -102,6 +102,7 @@ public class RadioMark : Decorator
             Math.Max(0, outer.BottomRight - Math.Max(b.Right, b.Bottom)), Math.Max(0, outer.BottomLeft - Math.Max(b.Left, b.Bottom))), inside.Size);
 
         if (Background is { } background) context.DrawRectangle(background, null, new RoundedRect(box, outer));
+        RenderImage(context, new RoundedRect(box, outer), inside);
 
         if (BorderBrush is { } border && b != default)
         {
@@ -136,6 +137,15 @@ public class RadioMark : Decorator
         }
     }
 
+    /// <summary>
+    /// CSS's <c>background-image</c>: drawn over the fill, under the border and the overlay (Switch's knob draws its
+    /// checkmark here), given the border box with its corners (where CSS clips a background) and the padding box (where
+    /// it places one). Nothing by default.
+    /// </summary>
+    protected virtual void RenderImage(DrawingContext context, RoundedRect border, Rect padding)
+    {
+    }
+
     /// <summary>A box with rounded corners, as a geometry.</summary>
     private static StreamGeometry Box(Rect r, CornerRadius c)
     {
@@ -161,7 +171,7 @@ public class RadioMark : Decorator
     }
 
     /// <summary>A radius no larger than half the box, as CSS draws a larger one.</summary>
-    internal static CornerRadius Clamp(CornerRadius r, Size size)
+    private static CornerRadius Clamp(CornerRadius r, Size size)
     {
         var most = Math.Max(0, Math.Min(size.Width, size.Height) / 2);
         return new CornerRadius(Math.Min(r.TopLeft, most), Math.Min(r.TopRight, most), Math.Min(r.BottomRight, most), Math.Min(r.BottomLeft, most));

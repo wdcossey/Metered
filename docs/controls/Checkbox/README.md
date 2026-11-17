@@ -54,7 +54,8 @@ none.
 
 Parts: `Root` (a `RadioRootPanel`, radio-v2's root: the row, the label first for the left placement),
 `CheckmarkContainer` (a `Border`, the backplate), `Checkmark` (a `CheckboxMark`: radio-v2's `RadioMark`, a box with CSS's
-outline and its offset, that also draws Base Web's background image, the tick or the dash), `Label` (a
+outline and its offset, that also draws Base Web's background image, the tick or the dash, under the border by its
+`RenderImage`), `Label` (a
 `ContentPresenter`, drawn as given: no access key). The pointer states are `BackplatePointer`'s, the same as the radio's.
 `CheckboxAutomationPeer` reports an indeterminate box as mixed, as Base Web's input's `indeterminate` does, and its
 toggle is a click (`Click` and `Command` run).
@@ -99,7 +100,7 @@ toggle is a click (`Click` and `Command` run).
   container's and the box's hover tints one over the other (4, and the gallery).
 - `Sample/CheckboxPageTests`: the sample's page, 3.
 
-The part themes are generated (`tools/tokens/checkbox.js`) by the engine radio-v2's use too (`tools/tokens/parts.js`):
+The part themes are generated (`tools/tokens/checkbox.js`) with radio-v2's theme writer (`tools/tokens/radio.js`), as the switch's are:
 checkbox-v2's style functions evaluated on Base Web's theme with each colour replaced by its own name, for every
 combination of the states, written as the fewest layered state styles (each naming only the states that must be on,
 as Base Web's if-chains decide) and checked against Base Web's for every combination. The oracle
@@ -118,18 +119,16 @@ as Base Web's if-chains decide) and checked against Base Web's for every combina
    touch-screen laptop has.
 4. **The root is radio-v2's panel** (`RadioRootPanel`): Base Web orders the label before the container in its markup for
    the left placement; here the panel's `LabelFirst` lays it out first.
-5. **The glyph is drawn over the border**, where CSS draws a background image under it: the glyph never reaches the
-   border, which is transparent wherever there is one (or, disabled, the fill's colour), so the pixels are the same.
-6. **Enter is the checkbox's.** Base Web toggles on any Enter let go on its input, one pressed on another control
+5. **Enter is the checkbox's.** Base Web toggles on any Enter let go on its input, one pressed on another control
    whose release finds the checkbox focused included, and lets the press go on to the page. Here only an Enter pressed
    on the checkbox toggles it, and the checkbox takes it, so a default button doesn't act on it too. A key held as the
    focus leaves ends the press, which Base Web's `isActive` keeps until a key goes up on its input.
-7. **The container's hover is its rectangle**; a browser's follows its rounded corners.
-8. **`containsInteractiveElement`**: Avalonia's controls take their own press, so a control in a label never toggles
+6. **The container's hover is its rectangle**; a browser's follows its rounded corners.
+7. **`containsInteractiveElement`**: Avalonia's controls take their own press, so a control in a label never toggles
    the checkbox; Base Web's does unless the prop is set.
-9. **The not-allowed cursor isn't shown.** Avalonia doesn't hit-test a disabled control, so the cursor is its
+8. **The not-allowed cursor isn't shown.** Avalonia doesn't hit-test a disabled control, so the cursor is its
    parent's. The theme still sets Base Web's (`Cursor` No), as the radio's does.
-10. **RTL** isn't done: Base Web mirrors the label's padding.
-11. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)), so a
+9. **RTL** isn't done: Base Web mirrors the label's padding.
+10. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)), so a
     label wraps a little differently from baseweb.design's.
-12. **Transparent** is Avalonia's `#00FFFFFF` where Base Web's is `#00000000`; both draw nothing.
+11. **Transparent** is Avalonia's `#00FFFFFF` where Base Web's is `#00000000`; both draw nothing.

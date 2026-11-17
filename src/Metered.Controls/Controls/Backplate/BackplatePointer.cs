@@ -114,7 +114,6 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
         if (_mouseOver == over) return;
         _mouseOver = over;
         setState(":is-hovered", over);
-        if (!over && leaveEndsPress) SetPressed(false);
     }
 
     private void SetBackplate(bool hover, bool active)

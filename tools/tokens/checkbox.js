@@ -1,13 +1,14 @@
 // The themes of Checkbox's parts, Checkbox.Styled<Part>, generated from Base Web's checkbox-v2
-// (baseui/checkbox-v2/styled-components) by the engine the v2 controls share (parts.js): each style function
+// (baseui/checkbox-v2/styled-components) with the theme writer the v2 controls share (radio.js): each style function
 // evaluated on a theme whose colours are their own names, for every combination of the checkbox's states, written as
 // the fewest state styles and checked against Base Web's own. Nothing here is a port of Base Web's branches. The tests'
 // oracle (tools/reference/checkbox.js) checks the result against the real colours.
 'use strict';
 
 const {
-  L, NAMED, engine, colour, px, uniform, check, RADII, TEXT, font, flexRoot, backplate, outline, timing,
-} = require('./parts');
+  L, NAMED, theme: write, declarations: radioDeclarations, colour, px, uniform, check, RADII, TEXT, font, flexRoot, backplate,
+  outline, timing,
+} = require('./radio');
 const checkbox = require('baseui/checkbox-v2/styled-components');
 const { LABEL_PLACEMENT } = require('baseui/checkbox-v2/constants');
 
@@ -41,7 +42,10 @@ const props = (c) => ({
   $labelPlacement: c.labelPlacement, $required: false, $value: '',
 });
 
-const { DEFAULT, declarations, theme } = engine({ axes: AXES, props, layered: true });
+const DEFAULT = Object.fromEntries(AXES.map((a) => [a.name, a.values[0]]));
+const declarations = (styled, t, c) => radioDeclarations(styled, t, c, props);
+/** A part's theme: the fewest state styles that give Base Web's values in every combination. */
+const theme = (p) => write(p, AXES, declarations, { layered: true });
 
 /** The SVG of a background-image data URL: its size, its viewBox, its one path and that path's fill. */
 function glyph(backgroundImage) {

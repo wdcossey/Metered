@@ -70,6 +70,20 @@ Base Web's radio-v2: a group with a description and its selection under it, a ho
 <img src="docs/preview/dark__radio-2.png" width="270" alt="Radio, dark, scrolled: disabled, error and a radio on its own">
 </p>
 
+## Switch
+
+Base Web's switch, as its documentation's examples: basic with its state under it, a label over several lines,
+disabled off and on, the label left and right, the two sizes, and the checkmark.
+
+<p>
+<img src="docs/preview/light__switch-1.png" width="270" alt="Switch, light: basic, multiple lines, disabled, alignments and sizes">
+<img src="docs/preview/dark__switch-1.png" width="270" alt="Switch, dark: basic, multiple lines, disabled, alignments and sizes">
+</p>
+<p>
+<img src="docs/preview/light__switch-2.png" width="270" alt="Switch, light, scrolled: sizes and the checkmark">
+<img src="docs/preview/dark__switch-2.png" width="270" alt="Switch, dark, scrolled: sizes and the checkmark">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by
