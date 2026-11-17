@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The OFL substitutes for Uber Move (docs/decisions/0003-font.md), after Avalonia.Fonts.Inter: the faces are
+       resources of the assembly, and an AppBuilder extension registers them and maps Base Web's two families to them.
+       A package of its own, so an app with its own fonts carries none of these. -->
+  <PropertyGroup>
+    <PackageId>Metered.Fonts</PackageId>
+    <Description>The fonts for Metered's themes: Instrument Sans and Figtree, the OFL substitutes for Base Web's UberMoveText and UberMove, and WithMeteredFonts, which maps the two families to them.</Description>
+    <IsPackable>true</IsPackable>
+    <PackageTags>$(PackageTags);fonts</PackageTags>
+    <!-- Instrument Sans and Figtree are OFL-1.1 (ADR 0003). -->
+    <PackageLicenseExpression>Apache-2.0 AND OFL-1.1</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+  </ItemGroup>
+
+  <!-- The static TTFs at 400 to 700, from fonts/, the one copy in the repository: avares://Metered.Fonts/Assets. -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\fonts\*\*.ttf" Link="Assets\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Each family's licence travels with its fonts, as Cornflower's does; and Base Web's notice, whose family names the
+       mapping takes (baseui/themes/shared/typography.js). -->
+  <ItemGroup>
+    <None Include="..\..\fonts\InstrumentSans\OFL.txt" Link="Licences\InstrumentSans\OFL.txt" Pack="true" PackagePath="fonts/InstrumentSans/OFL.txt" />
+    <None Include="..\..\fonts\Figtree\OFL.txt" Link="Licences\Figtree\OFL.txt" Pack="true" PackagePath="fonts/Figtree/OFL.txt" />
+    <None Include="..\Metered.Themes\LICENSE-baseweb.txt" Link="LICENSE-baseweb.txt" Pack="true" PackagePath="LICENSE-baseweb.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Metered.Tests" />
+  </ItemGroup>
+
+</Project>

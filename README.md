@@ -31,16 +31,17 @@ The sample's pages, drawn headless. More in [PREVIEW.md](PREVIEW.md).
   [`docs/theming.md`](docs/theming.md)).
 - **Fonts are substituted.** Uber Move is proprietary and isn't shipped. Base Web's two families map
   to Instrument Sans (UberMoveText) and Figtree (UberMove), OFL fonts chosen by measurement against
-  baseweb.design ([ADR 0003](docs/decisions/0003-font.md)). The tests and the sample embed them and
-  map the families (`samples/Metered.Sample/SampleFonts.cs`); the packages don't carry them yet.
+  baseweb.design ([ADR 0003](docs/decisions/0003-font.md)). `Metered.Fonts` carries them, and
+  `WithMeteredFonts()` on the app's builder maps the families (below).
 
 ## Packages
 
 | Package | Contents |
 |---|---|
-| `Metered` | Everything: the one most apps want |
+| `Metered` | The controls and the themes: the one most apps want, with `Metered.Fonts` |
 | `Metered.Controls` | The controls and the overrides API, no visual opinion |
 | `Metered.Themes` | Base Web's light and dark themes: `BaseTheme`, and the theme builder and `ThemeProvider` |
+| `Metered.Fonts` | The fonts, apart, so an app with its own carries none: Instrument Sans and Figtree (OFL-1.1) and `WithMeteredFonts()` |
 
 Targets .NET 8, Avalonia 12.
 
@@ -49,6 +50,15 @@ Targets .NET 8, Avalonia 12.
   <b:BaseTheme xmlns:b="using:Metered.Themes" />
 </Application.Styles>
 ```
+
+```csharp
+AppBuilder.Configure<App>()
+    .UsePlatformDetect()
+    .WithMeteredFonts(); // Metered.Fonts: UberMoveText and UberMove drawn in Instrument Sans and Figtree
+```
+
+An app with font options of its own passes them, `WithMeteredFonts(new FontManagerOptions { ... })`, rather than
+to `With`: Avalonia keeps only the last `FontManagerOptions`, which would drop the mapping.
 
 ## Building
 

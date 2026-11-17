@@ -1,8 +1,6 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Headless;
-using Avalonia.Media;
-using Avalonia.Media.Fonts;
 using Metered.Tests.Performance;
 
 [assembly: AvaloniaTestApplication(typeof(Metered.Tests.TestApp))]
@@ -11,33 +9,24 @@ namespace Metered.Tests;
 
 public class TestApp : Application
 {
-    /// <summary>The embedded OFL substitutes for Uber Move (<c>fonts/</c>, linked into <c>Fonts/</c>).</summary>
-    public const string FontCollection = "fonts:Metered";
-
+    /// <summary>The family Instrument Sans's faces report, which Base Web's UberMoveText draws in.</summary>
     public const string TextFamily = "Instrument Sans";
 
+    /// <summary>The family Figtree's faces report, which Base Web's UberMove draws in.</summary>
     public const string DisplayFamily = "Figtree";
 
     // Uber Move is proprietary. Base Web's two families map to the substitutes chosen by measurement
     // against baseweb.design (docs/decisions/0003-font.md): UberMoveText, the primary family, to
-    // Instrument Sans; UberMove, the secondary (display) family, to Figtree. The default family stays
-    // the platform's, unlike the sample's: a family Avalonia can't find falls back to the default, so a
-    // default of Instrument Sans would hide a missing UberMoveText mapping (every text here takes a
-    // family from the tokens; FontSubstituteTests checks the default isn't a substitute).
+    // Instrument Sans; UberMove, the secondary (display) family, to Figtree. The fonts and the mapping
+    // are Metered.Fonts', as an app has them, and nothing else: the tests prove the package. The default
+    // family stays the platform's, unlike the sample's: a family Avalonia can't find falls back to the
+    // default, so a default of Instrument Sans would hide a missing UberMoveText mapping (every text here
+    // takes a family from the tokens; FontSubstituteTests checks the default isn't a substitute).
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<TestApp>()
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
-            .ConfigureFonts(fonts => fonts.AddFontCollection(new EmbeddedFontCollection(
-                new Uri(FontCollection, UriKind.Absolute), new Uri("avares://Metered.Tests/Fonts", UriKind.Absolute))))
-            .With(new FontManagerOptions
-            {
-                FontFamilyMappings = new Dictionary<string, FontFamily>
-                {
-                    ["UberMoveText"] = new($"{FontCollection}#{TextFamily}"),
-                    ["UberMove"] = new($"{FontCollection}#{DisplayFamily}"),
-                },
-            });
+            .WithMeteredFonts();
 
     /// <summary>
     /// Turns on Avalonia's diagnostics, which <see cref="StyleTrace"/> reads. Avalonia reads the switch

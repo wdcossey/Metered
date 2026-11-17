@@ -47,7 +47,7 @@ public class PreviewGallery
     /// <summary>
     /// The sample's default family (<see cref="SampleFonts.DefaultFamilyName"/>), for the text the tokens don't give a
     /// family: its headings. The tests keep the platform's default (TestApp), so the window is given it, as the
-    /// sample's whole app is. The tests' font collection has the sample's name, so the name finds the same font.
+    /// sample's whole app is. The tests have the sample's fonts, Metered.Fonts', so the name finds the same font.
     /// </summary>
     private static readonly FontFamily SampleDefaultFamily = new(SampleFonts.DefaultFamilyName);
 

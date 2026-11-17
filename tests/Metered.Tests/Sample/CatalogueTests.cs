@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
 using Avalonia.Threading;
@@ -123,13 +124,18 @@ public class CatalogueTests
         Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("Date/Time"));
     }
 
-    // The preview gives the sample's window the sample's default family, by name: the tests' collection must have the
-    // sample's name for that name to find the same font.
-    [Fact]
-    public void The_Tests_Fonts_Are_Under_The_Samples_Collection_Name()
+    // The preview gives the sample's window the sample's default family, by name: in the tests, which have the same
+    // package's fonts, the name must find Instrument Sans itself (here at 400 and 700, whose faces report the family
+    // alone), not the platform's default that a name Avalonia can't find falls back to.
+    [AvaloniaFact]
+    public void The_Samples_Default_Family_Finds_Instrument_Sans_In_The_Tests()
     {
-        Assert.Equal(SampleFonts.Collection, TestApp.FontCollection);
-        Assert.StartsWith(SampleFonts.Collection + "#", SampleFonts.DefaultFamilyName, StringComparison.Ordinal);
+        foreach (var weight in new[] { FontWeight.Normal, FontWeight.Bold })
+        {
+            Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(SampleFonts.DefaultFamilyName, FontStyle.Normal, weight), out var face));
+            Assert.Equal(TestApp.TextFamily, face.FamilyName);
+            Assert.Equal(weight, face.Weight);
+        }
     }
 
     [AvaloniaFact]
