@@ -41,9 +41,9 @@ const AXES = [
   { name: 'active', values: [false, true], pseudo: () => ':active' },
 ];
 
-function* combinations(i = 0, combo = {}) {
-  if (i === AXES.length) { yield { ...combo }; return; }
-  for (const v of AXES[i].values) { combo[AXES[i].name] = v; yield* combinations(i + 1, combo); }
+function* combinations(all = AXES, i = 0, combo = {}) {
+  if (i === all.length) { yield { ...combo }; return; }
+  for (const v of all[i].values) { combo[all[i].name] = v; yield* combinations(all, i + 1, combo); }
 }
 const COMBOS = [...combinations()];
 const DEFAULT = Object.fromEntries(AXES.map((a) => [a.name, a.values[0]]));
@@ -256,19 +256,22 @@ const PARTS = [
   },
 ];
 
-const AXIS = Object.fromEntries(AXES.map((a) => [a.name, a]));
-const selectorOf = (combo, axes) => '^' + axes.map((name) => {
-  const a = AXIS[name], v = combo[name];
+const selectorOf = (combo, axes, all = AXES) => '^' + axes.map((name) => {
+  const a = all.find((x) => x.name === name), v = combo[name];
   if (typeof v === 'boolean') return v ? a.pseudo(v) : `:not(${a.pseudo(v)})`;
   return a.pseudo(v);
 }).join('');
 const keyOf = (combo, axes) => axes.map((n) => String(combo[n])).join('|');
 const setter = (prop, value) => `      <Setter Property="${prop}" Value="${value}" />`;
 
-/** A part's theme: plain setters for the default state, a state style per combination that differs. */
-function theme(p) {
-  const values = COMBOS.map((c) => ({ c, v: { ...p.convert(declarations(p.styled, NAMED, c), c) } }));
-  const base = values.find(({ c }) => AXES.every((a) => c[a.name] === DEFAULT[a.name])).v;
+/**
+ * A part's theme: plain setters for the default state, a state style per combination that differs. Another control's
+ * generator (switch.js) gives its own states and declarations; the radio's are the default.
+ */
+function theme(p, all = AXES, decl = declarations) {
+  const combos = all === AXES ? COMBOS : [...combinations(all)];
+  const values = combos.map((c) => ({ c, v: { ...p.convert(decl(p.styled, NAMED, c), c) } }));
+  const base = values.find(({ c }) => all.every((a) => c[a.name] === a.values[0])).v;
   const props = Object.keys(base);
   for (const { v } of values) {
     const ks = Object.keys(v);
@@ -278,10 +281,10 @@ function theme(p) {
   // The states each property depends on.
   const depends = {};
   for (const prop of props) {
-    depends[prop] = AXES.map((a) => a.name).filter((name) => {
+    depends[prop] = all.map((a) => a.name).filter((name) => {
       const byOthers = new Map();
       for (const { c, v } of values) {
-        const key = AXES.filter((a) => a.name !== name).map((a) => String(c[a.name])).join('|');
+        const key = all.filter((a) => a.name !== name).map((a) => String(c[a.name])).join('|');
         const seen = byOthers.get(key);
         if (seen === undefined) byOthers.set(key, v[prop]);
         else if (seen !== v[prop]) return true;
@@ -301,7 +304,7 @@ function theme(p) {
       if (done.has(key)) continue;
       done.add(key);
       if (v[prop] === base[prop]) continue;
-      const selector = selectorOf(c, axes);
+      const selector = selectorOf(c, axes, all);
       if (!styles.has(selector)) styles.set(selector, { combo: c, axes, setters: {} });
       styles.get(selector).setters[prop] = v[prop];
     }
@@ -320,7 +323,7 @@ function theme(p) {
   }
 
   const plain = Object.entries({ ...(p.fixed || {}), ...base }).map(([k, v]) => `    <Setter Property="${k}" Value="${v}" />`);
-  const blocks = list.map((s) => `    <Style Selector="${selectorOf(s.combo, s.axes)}">\n${Object.entries(s.setters).map(([k, v]) => setter(k, v)).join('\n')}\n    </Style>`);
+  const blocks = list.map((s) => `    <Style Selector="${selectorOf(s.combo, s.axes, all)}">\n${Object.entries(s.setters).map(([k, v]) => setter(k, v)).join('\n')}\n    </Style>`);
   return { plain, blocks };
 }
 
@@ -386,4 +389,4 @@ ${themes.join('\n')}
 `;
 }
 
-module.exports = { file, AXES, PARTS, declarations, NAMED };
+module.exports = { file, AXES, PARTS, declarations, NAMED, combinations, theme, colour, px, cursor, check, font, TEXT, RADII, half };

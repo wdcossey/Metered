@@ -102,6 +102,7 @@ public class RadioMark : Decorator
             Math.Max(0, outer.BottomRight - Math.Max(b.Right, b.Bottom)), Math.Max(0, outer.BottomLeft - Math.Max(b.Left, b.Bottom))), inside.Size);
 
         if (Background is { } background) context.DrawRectangle(background, null, new RoundedRect(box, outer));
+        RenderImage(context, new RoundedRect(box, outer), inside);
 
         if (BorderBrush is { } border && b != default)
         {
@@ -134,6 +135,15 @@ public class RadioMark : Decorator
             _outlinePen ??= new ImmutablePen(brush.ToImmutable(), OutlineThickness);
             context.DrawRectangle(null, _outlinePen, new RoundedRect(box.Inflate(grow), radii));
         }
+    }
+
+    /// <summary>
+    /// CSS's <c>background-image</c>: drawn over the fill, under the border and the overlay (Switch's knob draws its
+    /// checkmark here), given the border box with its corners (where CSS clips a background) and the padding box (where
+    /// it places one). Nothing by default.
+    /// </summary>
+    protected virtual void RenderImage(DrawingContext context, RoundedRect border, Rect padding)
+    {
     }
 
     /// <summary>A box with rounded corners, as a geometry.</summary>
