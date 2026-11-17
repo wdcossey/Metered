@@ -120,12 +120,6 @@ public class Switch : ToggleButton
         SetState(":loaded", false);
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnDetachedFromVisualTree(e);
-        EndInput();
-    }
-
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -136,8 +130,6 @@ public class Switch : ToggleButton
         else if (p == ShowIconProperty) SetState(":show-icon", ShowIcon);
         else if (p == ContentProperty) UpdateLabel();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
-        // A disabled switch takes no input: a hover or a press it had would come back stale when it is enabled.
-        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) EndInput();
     }
 
     // Base Web's onKeyDown: Enter and Space make the switch active. Enter toggles it on its release (onKeyUp), not here
@@ -233,13 +225,6 @@ public class Switch : ToggleButton
         if (!_mouseOver) return;
         SetMouseOver(false);
         SetPointerPressed(false);
-    }
-
-    private void EndInput()
-    {
-        SetMouseOver(false);
-        SetPointerPressed(false);
-        SetKeyPressed(false);
     }
 
     private void SetMouseOver(bool over)

@@ -136,6 +136,33 @@ public class SwitchTests
         Assert.DoesNotContain(":is-active", sw.Classes);
     }
 
+    // Taken out of the window while hovered, pressed and with a key held, the switch sees none of them end: put back,
+    // it has none of them (Avalonia ends them on the way out, as on disabling).
+    [AvaloniaFact]
+    public void Taken_out_and_put_back_it_has_no_stale_hover_or_press()
+    {
+        var sw = new Switch { Content = "Label" };
+        var panel = new StackPanel { Margin = new Thickness(20), Children = { sw } };
+        using var scene = new Scene(panel);
+        scene.Key(Key.Tab);
+        scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        scene.Press(sw);
+        Assert.Contains(":is-hovered", sw.Classes);
+        Assert.Contains(":is-active", sw.Classes);
+
+        panel.Children.Remove(sw);
+        scene.Pump();
+        scene.Window.MouseUp(new Point(Scene.Width - 1, Scene.Height - 1), MouseButton.Left);
+        scene.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        scene.Window.MouseMove(new Point(Scene.Width - 1, Scene.Height - 1));
+        scene.Pump();
+        panel.Children.Add(sw);
+        scene.Pump();
+        Assert.DoesNotContain(":is-hovered", sw.Classes);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+        Assert.DoesNotContain(":is-active", sw.Part(Switch.TogglePart)!.Classes);
+    }
+
     // Base Web's switch is on or off: an app's IsThreeState doesn't give it a third state.
     [AvaloniaFact]
     public void It_has_no_third_state()
@@ -229,8 +256,8 @@ public class SwitchTests
         Assert.True(((Visual)labelled.Part(Switch.LabelPart)!).IsVisible);
     }
 
-    // A disabled switch takes no pointer and no key, so it can't see the mouse leave or the key go up: its hover and
-    // press end when it is disabled.
+    // A disabled switch takes no pointer and no key, so it never sees the mouse leave or the key go up: its hover and
+    // press end when it is disabled (Avalonia's pointer exit, capture loss and focus loss, which the switch follows).
     [AvaloniaFact]
     public void Disabling_it_ends_its_hover_and_press()
     {
