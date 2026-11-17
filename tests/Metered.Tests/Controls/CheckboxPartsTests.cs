@@ -317,7 +317,18 @@ public class CheckboxPartsTests
         using var scene = Show(box);
 
         Assert.Same(P(box, Checkbox.LabelPart), text.GetVisualParent());
+        Assert.Same(box, text.Parent);
         Assert.True(P(box, Checkbox.LabelPart).IsVisible);
+
+        // Another control, once shown; and the template swapped under it.
+        var other = new TextBlock { Text = "Another" };
+        box.Content = other;
+        scene.Pump();
+        Assert.Same(P(box, Checkbox.LabelPart), other.GetVisualParent());
+        Assert.Same(box, other.Parent);
+        box.CheckmarkType = CheckboxStyleType.Toggle;
+        scene.Pump();
+        Assert.Same(P(box, Checkbox.LabelPart), other.GetVisualParent());
     }
 
     [AvaloniaFact]

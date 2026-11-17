@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
-using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using AvaloniaCheckBox = Avalonia.Controls.CheckBox;
@@ -137,12 +136,6 @@ public class Checkbox : AvaloniaCheckBox
         else if (p == CheckmarkTypeProperty || p == LabelPlacementProperty) UpdatePlacement();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
         else if (p == ContentProperty) UpdateStructure();
-        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled)
-        {
-            // A disabled control isn't hit-tested, so no pointer event would clear these.
-            SetMouseOver(false);
-            SetMouseDown(false);
-        }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -196,10 +189,6 @@ public class Checkbox : AvaloniaCheckBox
 
     /// <summary>A click, for the automation peer: it toggles, and raises <c>Click</c> and runs <c>Command</c>.</summary>
     internal void ClickFromAutomation() => OnClick();
-
-    /// <summary>The label is the content's presenter, under Base Web's name.</summary>
-    protected override bool RegisterContentPresenter(ContentPresenter presenter) =>
-        presenter.Name == LabelPart || base.RegisterContentPresenter(presenter);
 
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {

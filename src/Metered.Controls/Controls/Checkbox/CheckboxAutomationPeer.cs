@@ -33,8 +33,6 @@ public class CheckboxAutomationPeer : ContentControlAutomationPeer, IToggleProvi
         Owner.ClickFromAutomation();
     }
 
-    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.CheckBox;
-
     private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property != Checkbox.IsCheckedProperty && e.Property != Checkbox.IsIndeterminateProperty) return;
