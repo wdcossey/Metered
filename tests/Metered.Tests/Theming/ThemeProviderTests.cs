@@ -274,7 +274,8 @@ public class ThemeProviderTests
     /// has it, and <paramref name="resources"/> in its resources, as docs/theming.md tells an app to. The application
     /// looks in its resources before its styles. Avalonia.Headless gives each test an application of its own (its
     /// default isolation, <c>AvaloniaTestIsolationLevel.PerTest</c>; this assembly sets none) and runs one test at a
-    /// time on its thread, so this can't reach another test; both are taken out again all the same.
+    /// time on its thread, so this can't reach another test. Both are taken out again so that it still couldn't under
+    /// <c>PerAssembly</c> isolation.
     /// </summary>
     private static void WithAppResources(ResourceDictionary resources, Action<Avalonia.Application> test)
     {
@@ -293,7 +294,10 @@ public class ThemeProviderTests
         }
     }
 
-    /// <summary>Base Web's two themes differ in each token, so a colour asserted to be the one's can't be the other's.</summary>
+    /// <summary>
+    /// A precondition: the two oracle cases differ in each of these tokens, so a colour asserted to be the one's can't
+    /// pass as the other's. Not every token differs (dark and darkFoundation share the primary fill).
+    /// </summary>
     private static void Distinct(string one, string other, params string[] tokens)
     {
         foreach (var token in tokens)
@@ -310,6 +314,7 @@ public class ThemeProviderTests
         const string dangerFill = "colors.buttonDangerPrimaryFill";
         Distinct("light", "lightFoundation", tertiaryText, secondaryText, dangerFill);
         Distinct("dark", "darkFoundation", tertiaryText, secondaryText, dangerFill);
+        Distinct("lightFoundation", "darkFoundation", tertiaryText, secondaryText, dangerFill);
 
         var resources = ThemeProvider.CreateResources(Built("lightFoundation"), Built("darkFoundation"));
         WithAppResources(resources, app =>
@@ -342,6 +347,12 @@ public class ThemeProviderTests
             scene.Pump();
             second.Pump();
             Drawn("dark");
+
+            // Added again with the windows open, as an app changing its theme at run time does.
+            app.Resources.MergedDictionaries.Add(resources);
+            scene.Pump();
+            second.Pump();
+            Drawn("darkFoundation");
         });
     }
 
