@@ -70,16 +70,14 @@ public class Radio : RadioButton
 
     private readonly Parts _parts;
     private RadioGroup? _group;
+    private readonly BackplatePointer _pointer;
     private bool? _coarsePointer;
-    private bool _mouseOver;
-    private bool _pressed;
-    private bool _backplateHover;
-    private bool _backplateActive;
 
     public Radio()
     {
         _parts = new Parts(this, "Radio",
             [RootPart, RadioBackplatePart, RadioMarkOuterPart, RadioMarkInnerPart, LabelWrapperPart, LabelPart, DescriptionPart]);
+        _pointer = new BackplatePointer(this, () => _parts[RadioBackplatePart], SetState, leaveEndsPress: false);
         UpdateContext();
         SetState(":checked", IsChecked == true);
         SetState(":pointer-coarse", CoarsePointer);
@@ -111,7 +109,7 @@ public class Radio : RadioButton
     /// </summary>
     internal bool CoarsePointer
     {
-        get => _coarsePointer ?? (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS());
+        get => _coarsePointer ?? BackplatePointer.PlatformIsCoarse;
         set
         {
             _coarsePointer = value;
@@ -159,8 +157,7 @@ public class Radio : RadioButton
     {
         base.OnApplyTemplate(e);
         _parts.Attach(e.NameScope);
-        _backplateHover = _backplateActive = false;
-        UpdateBackplate();
+        _pointer.TemplateApplied();
         UpdateLabel();
     }
 
@@ -179,7 +176,7 @@ public class Radio : RadioButton
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        EndPointer();
+        _pointer.End();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -192,7 +189,7 @@ public class Radio : RadioButton
         else if (p == ContentProperty) UpdateLabel();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
         // A disabled radio takes no pointer: a hover or a press it had would come back stale when it is enabled.
-        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) EndPointer();
+        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) _pointer.End();
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -202,43 +199,35 @@ public class Radio : RadioButton
         base.OnKeyDown(e);
     }
 
-    // Base Web's $isHovered and the backplate's CSS :hover: a mouse's only (the backplate's is inside
-    // @media (hover: hover); Metered's hover is a mouse's throughout, ADR 0001).
+    // Base Web's $isHovered and $isActive, and the backplate's CSS :hover and :active (BackplatePointer).
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);
-        TrackMouse(e);
+        _pointer.Entered(e);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        TrackMouse(e);
+        _pointer.Moved(e);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
-        SetMouseOver(false);
-        SetBackplate(false, _backplateActive);
+        _pointer.Exited();
     }
 
-    // Base Web's $isActive: onMouseDown on the root, any button or a finger. The backplate's CSS :active: the primary
-    // button or a finger, on the backplate.
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        SetPressed(true);
-        SetBackplate(_backplateHover, e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && OverBackplate(e));
+        _pointer.Pressed(e);
     }
 
-    // Avalonia captures the pointer on any press, a right one included, and lets it go on the release, wherever it
-    // is: the press ends there, as Base Web's onMouseUp ends it.
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        SetPressed(false);
-        SetBackplate(_backplateHover, false);
+        _pointer.CaptureLost();
     }
 
     protected override void OnGotFocus(FocusChangedEventArgs e)
@@ -252,56 +241,6 @@ public class Radio : RadioButton
     {
         base.OnLostFocus(e);
         SetState(":focus-visible", false);
-    }
-
-    private void TrackMouse(PointerEventArgs e)
-    {
-        // Only a mouse over the radio: a radio that captured the pointer on a press sees it move outside too, and a
-        // disabled one can still see a pointer it captured before.
-        var mouse = e.Pointer.Type == PointerType.Mouse && IsEffectivelyEnabled && new Rect(Bounds.Size).Contains(e.GetPosition(this));
-        SetMouseOver(mouse);
-        SetBackplate(mouse && OverBackplate(e), _backplateActive);
-    }
-
-    private bool OverBackplate(PointerEventArgs e) =>
-        _parts[RadioBackplatePart] is Visual backplate && new Rect(backplate.Bounds.Size).Contains(e.GetPosition(backplate));
-
-    private void EndPointer()
-    {
-        SetMouseOver(false);
-        SetPressed(false);
-        SetBackplate(false, false);
-    }
-
-    private void SetMouseOver(bool over)
-    {
-        if (_mouseOver == over) return;
-        _mouseOver = over;
-        SetState(":is-hovered", over);
-    }
-
-    private void SetPressed(bool pressed)
-    {
-        if (_pressed == pressed) return;
-        _pressed = pressed;
-        SetState(":is-active", pressed);
-    }
-
-    private void SetBackplate(bool hover, bool active)
-    {
-        if (_backplateHover == hover && _backplateActive == active) return;
-        _backplateHover = hover;
-        _backplateActive = active;
-        UpdateBackplate();
-    }
-
-    /// <summary>The backplate's own CSS states, which Base Web doesn't pass to the other parts.</summary>
-    private void UpdateBackplate()
-    {
-        if (_parts[RadioBackplatePart] is not { } backplate) return;
-        var classes = (IPseudoClasses)backplate.Classes;
-        classes.Set(":hover", _backplateHover);
-        classes.Set(":active", _backplateActive);
     }
 
     /// <summary>Base Web renders the label wrapper only for children that are something (<c>!!children</c>): not for none or an empty string.</summary>
