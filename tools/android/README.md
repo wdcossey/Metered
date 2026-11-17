@@ -147,7 +147,17 @@ fresh clone at a 134-character path failed, its `linked\Avalonia.Android.dll` 23
 `R:\source\Metered-wt\ah-clean` (29) built, in Release and in Debug, which has no AOT step. Clone near the drive's root.
 CI builds on Linux, from a short path; Linux and macOS haven't been tried at a long one.
 
-## Not yet run on a phone
+## On a phone
 
-The head is built locally and in CI; the device run hasn't been made yet (a hands-on step). Until it has, nothing here
-is a phone's measurement: the fixtures' numbers are made up in the phone's format.
+First run on 2026-11-17 (#29, #10), on a Pixel 8 over wireless ADB: Android 17 (API 37), 1080 × 2400 at 420 dpi, so a
+render scaling of 2.625 and a view of 411.43 × 914.29. The ready and cost lines land in logcat under the `DOTNET` tag,
+and the parsers read them as they read the fixtures. The fixtures' numbers are still made up in the phone's format.
+
+| Release, warm reopens (5 each) | Opens, ms | Median |
+|---|---|---|
+| Button (24 Buttons) | 97, 124, 128, 126, 111 | 124 |
+| Theme (7 Buttons) | 57, 50, 75, 45, 43 | 50 |
+
+The cold starts were 730 to 783 ms (`am start -W`'s TotalTime). The difference between the two pages is about 4.4 ms
+per Button, about seven times the headless cost. In Debug, the Button page's five warm reopens took 223 to 265 ms, with layout 150 to 186 ms of
+that. Once, a cold Debug start's lines came before the view was sized (`view=1x1 scaling=1 page=1x0`, #37).

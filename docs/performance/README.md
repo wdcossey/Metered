@@ -164,7 +164,7 @@ process, so one lives only while its page opens. Release builds write only the r
 On a phone, `tools/android/run.ps1 -Configuration Debug -Page <title> -Reopen <n>` is to read the
 line from logcat for the cold start and for each warm reopen from the list; the cold one includes
 the app's start and the JIT, so a page's cost is the reopens'
-([`tools/android/README.md`](../../tools/android/README.md)). Not yet run on a phone (#29).
+([`tools/android/README.md`](../../tools/android/README.md), which has the first phone's numbers: #29, #10).
 
 ## Breakage runs
 

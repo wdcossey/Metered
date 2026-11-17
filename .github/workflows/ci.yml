@@ -31,6 +31,17 @@ jobs:
       - name: Test
         run: dotnet test Metered.sln --no-build --configuration Release --logger "trx" --results-directory TestResults
 
+      # The fonts' package must carry both OFL notices and Base Web's (#31): a dropped licence fails here.
+      - name: Pack the fonts and check their licences travel
+        run: |
+          dotnet pack src/Metered.Fonts --no-build --configuration Release --output pack
+          entries=$(unzip -Z1 pack/Metered.Fonts.*.nupkg)
+          missing=0
+          for licence in fonts/InstrumentSans/OFL.txt fonts/Figtree/OFL.txt LICENSE-baseweb.txt; do
+            grep -qxF "$licence" <<< "$entries" || { echo "::error::Metered.Fonts is missing $licence"; missing=1; }
+          done
+          exit $missing
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
