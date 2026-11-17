@@ -74,3 +74,7 @@ unless Avonic is named.
 By the research's grouping (`R:\source\baseui-research\README.md` §5): first the controls that
 theme Avalonia's (checkbox, radio, switch, input, textarea, slider, progress bar, spinner, tabs,
 tooltip, popover, menu, select), then the small new ones, then the overlays and navigation.
+
+- [x] Radio and RadioGroup (#35): Base Web's radio-v2, the one its documentation recommends for new work; parts,
+      overrides, label placement, align, description, error, the group's tab stop and arrow keys, the touch padding
+      (`docs/controls/Radio/`)

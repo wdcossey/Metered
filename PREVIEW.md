@@ -46,6 +46,20 @@ A radio group, a checkbox group of small pills with what was clicked under it, a
 <img src="docs/preview/dark__buttongroup-1.png" width="270" alt="ButtonGroup, dark: radio, checkbox and wrapping">
 </p>
 
+## Radio
+
+Base Web's radio-v2: a group with a description and its selection under it, a horizontal group, the label on top
+(the marks in a line under labels of different heights), disabled, in error, and a radio on its own.
+
+<p>
+<img src="docs/preview/light__radio-1.png" width="270" alt="Radio, light: a group with a description, horizontal, the label on top, disabled and error">
+<img src="docs/preview/dark__radio-1.png" width="270" alt="Radio, dark: a group with a description, horizontal, the label on top, disabled and error">
+</p>
+<p>
+<img src="docs/preview/light__radio-2.png" width="270" alt="Radio, light, scrolled: disabled, error and a radio on its own">
+<img src="docs/preview/dark__radio-2.png" width="270" alt="Radio, dark, scrolled: disabled, error and a radio on its own">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by
