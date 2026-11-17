@@ -175,7 +175,11 @@ node tools/breakage/run.js <temp folder> <list.js> <results.txt> "<test filter>"
 The list and the meaning of each result are in the script's header. It finds the clone's one
 `*.Tests.csproj` under `tests/` unless one is named. A run that times out (10 minutes, or
 `BREAKAGE_TIMEOUT_MS`) has whatever it left running from the clone killed, so a hung test host
-can't lock the next build. The clone needs no `npm install`: the tests read the committed oracle.
+can't lock the next build. On Linux and macOS it never kills `run.js` or anything that started it,
+and matches the clone's path literally and whole. On Windows it spares only `run.js`, and matches
+the path as a `-like` wildcard and a prefix: it can stop its own PowerShell before reaching the
+strays, and a clone at `C:\tmp\clone` also matches `C:\tmp\clone2` (#24). Until #24 is fixed, give
+parallel runs on Windows clone paths where neither is a prefix of the other. The clone needs no `npm install`: the tests read the committed oracle.
 
 Run on 2026-11-16 against the colour guard, the census, the trace, the budget and the discovery
 tests: 10 breaks, all caught (one of them on a second run, as its text to find was mistyped in the

@@ -56,6 +56,11 @@ You're building one Metered issue while one or two other agents build others. Re
 - **Traps already hit** in the developer's other projects: `~/.claude/ways-of-working/LESSONS.md`.
 - **Numbers in the PR are measured,** not estimated: test counts, breakage counts, timings.
 - **Review findings can be wrong.** Check each against the code and Base Web before acting.
+- **A breakage list goes stale when review fixes change the code.** Run it again on the final head. A
+  NOT APPLIED, NO BUILD, NO RESULT or TIMED OUT result proves nothing: fix that break or the run, and
+  run it again before you report.
+- **Finish PROCESS §4 before you hand back** (the merge in §7 is the coordinator's). Don't leave CI on
+  your head, the clean run, the breakage run or a placeholder in the PR body for later. If you can't finish, say exactly what's left.
 - **Never restore a file over uncommitted work:** commit first, then break things to prove the tests.
 - **A build step skipped runs stale code** (`--no-build` after an edit): build, then test.
 
