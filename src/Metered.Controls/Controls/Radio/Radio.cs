@@ -104,7 +104,7 @@ public class Radio : RadioButton
 
     /// <summary>
     /// Base Web's <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where the root gets the
-    /// padding that makes a 48 px target. Null follows the platform; tests set it.
+    /// padding that makes a 48 px target: the platform's until set; tests set it.
     /// </summary>
     internal bool CoarsePointer
     {
@@ -217,6 +217,12 @@ public class Radio : RadioButton
     {
         base.OnPointerPressed(e);
         _pointer.Pressed(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _pointer.Released(e);
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)

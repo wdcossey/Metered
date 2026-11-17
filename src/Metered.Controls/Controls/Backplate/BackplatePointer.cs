@@ -29,7 +29,7 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
 
     /// <summary>
     /// Base Web's <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where the root gets the
-    /// padding that makes a 48 px target. Set, it holds whatever the platform; tests set it.
+    /// padding that makes a 48 px target. Once set, it holds whatever the platform; tests set it.
     /// </summary>
     public bool Coarse
     {
@@ -58,6 +58,7 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
     public void Exited()
     {
         SetMouseOver(false);
+        if (leaveEndsPress) SetPressed(false);
         SetBackplate(false, _backplateActive);
     }
 
@@ -65,6 +66,16 @@ internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backp
     {
         SetPressed(true);
         SetBackplate(_backplateHover, e.GetCurrentPoint(owner).Properties.IsLeftButtonPressed && OverBackplate(e));
+    }
+
+    /// <summary>
+    /// Base Web's <c>onMouseUp</c>, any button's: the press ends, though another button still holds the pointer. CSS's
+    /// <c>:active</c> is the primary button's, so the backplate's ends with that one.
+    /// </summary>
+    public void Released(PointerReleasedEventArgs e)
+    {
+        SetPressed(false);
+        if (e.InitialPressMouseButton == MouseButton.Left) SetBackplate(_backplateHover, false);
     }
 
     /// <summary>

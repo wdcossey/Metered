@@ -36,6 +36,7 @@ function uniform(s, prefix) {
   const [t, rt, b, l] = sides.map((x) => css.px(x ?? 0));
   return `${l},${t},${rt},${b}`;
 }
+const RADII = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'];
 function check(s, what, known) {
   for (const k of Object.keys(s)) if (!known.includes(k)) throw new Error(`${what}: a declaration this generator doesn't read: ${k}`);
 }
@@ -293,5 +294,5 @@ function engine({ axes, props, layered = false }) {
 }
 
 module.exports = {
-  L, NAMED, engine, r, colour, px, cursor, uniform, check, TEXT, font, flexRoot, backplate, outline, timing,
+  L, NAMED, engine, r, colour, px, cursor, uniform, check, RADII, TEXT, font, flexRoot, backplate, outline, timing,
 };

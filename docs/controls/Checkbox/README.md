@@ -73,7 +73,7 @@ toggle is a click (`Click` and `Command` run).
   focus ring is its group's).
 - Space toggles it, as the native input; Enter toggles it when it is let go (checkbox.js's `onKeyUp`). Either held is a
   press (`onKeyDown`): the unchecked box takes the pressed tint, the container doesn't (it isn't the input's ancestor).
-- A press is any pointer's on the checkbox (`onMouseDown`), ended by its release and by the pointer leaving the
+- A press is any pointer's on the checkbox (`onMouseDown`), ended by any button's release and by the pointer leaving the
   checkbox (`onMouseLeave`, which radio-v2's doesn't clear); coming back with the button held doesn't press it again. The
   container's own tint is the primary button's or a finger's (CSS's `:active`), until it is let go.
 - The label in `ParagraphSmall`, `contentPrimary` (`contentStateDisabled` disabled), 6 down so its first line sits by
@@ -94,7 +94,7 @@ toggle is a click (`Click` and `Command` run).
   indeterminate, disabled, hover over the label and the container, a finger, the mouse leaving, focus by mouse and
   keyboard, focus and keys in the label, Enter's press and its own release, a finger dragged off, mirrored states, the
   label only when given, the coarse pointer, automation, a control as the label, disabling, a label drawn as given,
-  overrides and the transition: 28 in all.
+  overrides and the transition, any button's release, the focus leaving during a key's and a mouse's press: 30 in all.
 - `Controls/CheckboxFrames`: the tick's pixels at 17 px over the box, the border, the outline beyond its gap, and the
   container's and the box's hover tints one over the other (4, and the gallery).
 - `Sample/CheckboxPageTests`: the sample's page, 3.
@@ -109,8 +109,11 @@ as Base Web's if-chains decide) and checked against Base Web's for every combina
 
 1. **No `Input` part.** Base Web's hidden native input is the `Checkbox` itself: it takes focus and keys. An `Input`
    override has nothing to apply to.
-2. **Hover is a mouse's.** Base Web's `$isHovered` comes from `mouseenter`, which a phone's browser fires on a tap and
-   keeps until the next tap elsewhere; here a finger never hovers (ADR 0001). A press is any pointer's.
+2. **Hover is a mouse's; a press is any pointer's.** Base Web's `$isHovered` comes from `mouseenter`, which a phone's
+   browser fires on a tap and keeps until the next tap elsewhere; here a finger never hovers (ADR 0001). Its
+   `$isActive` comes from `mousedown`, which a phone's browser sends with the `mouseup` after the finger lifts, so a
+   finger held on a Base Web checkbox never shows the box's pressed tint (the container's CSS `:active` is the browser's); here it shows
+   both while held, as the radio does (`BackplatePointer`).
 3. **`@media (pointer: coarse)` is the platform**: Android and iOS are coarse, desktops fine, whatever pointer a
    touch-screen laptop has.
 4. **The root is radio-v2's panel** (`RadioRootPanel`): Base Web orders the label before the container in its markup for

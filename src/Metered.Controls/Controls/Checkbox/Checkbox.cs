@@ -70,6 +70,7 @@ public class Checkbox : AvaloniaCheckBox
     private readonly Parts _parts;
     private readonly BackplatePointer _pointer;
     private bool _enterDown;
+    private bool _keyDown;
 
     public Checkbox()
     {
@@ -95,7 +96,7 @@ public class Checkbox : AvaloniaCheckBox
 
     /// <summary>
     /// Base Web's <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where the root gets the
-    /// padding that makes a 48 px target. Null follows the platform; tests set it.
+    /// padding that makes a 48 px target: the platform's until set; tests set it.
     /// </summary>
     internal bool CoarsePointer
     {
@@ -131,7 +132,7 @@ public class Checkbox : AvaloniaCheckBox
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        _pointer.End();
+        EndPress();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -144,7 +145,7 @@ public class Checkbox : AvaloniaCheckBox
         else if (p == ContentProperty) UpdateLabel();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
         // A disabled checkbox takes no pointer or key: a hover or a press it had would come back stale when it is enabled.
-        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) _pointer.End();
+        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) EndPress();
     }
 
     // checkbox.js's onKeyDown, on its input alone (a key in a control in the label isn't the checkbox's): Space or Enter
@@ -154,7 +155,12 @@ public class Checkbox : AvaloniaCheckBox
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Source != this) return;
-        if (e.Key is Key.Space or Key.Enter) _pointer.SetPressed(true);
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            _keyDown = true;
+            _pointer.SetPressed(true);
+        }
+
         if (e.Key == Key.Enter)
         {
             _enterDown = true;
@@ -170,7 +176,12 @@ public class Checkbox : AvaloniaCheckBox
     protected override void OnKeyUp(KeyEventArgs e)
     {
         if (e.Source != this) return;
-        if (e.Key is Key.Space or Key.Enter) _pointer.SetPressed(false);
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            _keyDown = false;
+            _pointer.SetPressed(false);
+        }
+
         if (e.Key == Key.Enter)
         {
             if (!_enterDown) return;
@@ -208,6 +219,12 @@ public class Checkbox : AvaloniaCheckBox
         _pointer.Pressed(e);
     }
 
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _pointer.Released(e);
+    }
+
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
@@ -226,15 +243,22 @@ public class Checkbox : AvaloniaCheckBox
         base.OnLostFocus(e);
         if (e.Source != this) return;
         SetState(":focus-visible", false);
-        // A key held as the focus left is never let go here.
-        _pointer.SetPressed(false);
-        _enterDown = false;
+        // A key held as the focus left is never let go here; a pointer's press goes on.
+        if (_keyDown) _pointer.SetPressed(false);
+        _keyDown = _enterDown = false;
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new CheckboxAutomationPeer(this);
 
     /// <summary>A click, for the automation peer: it toggles, and raises <c>Click</c> and runs <c>Command</c>.</summary>
     internal void ClickFromAutomation() => OnClick();
+
+    /// <summary>Every press ends, a key's too: the checkbox left the tree or was disabled.</summary>
+    private void EndPress()
+    {
+        _pointer.End();
+        _keyDown = _enterDown = false;
+    }
 
     private void SetState(string pseudoClass, bool on)
     {

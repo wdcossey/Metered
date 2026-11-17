@@ -321,6 +321,47 @@ public class CheckboxPartsTests
         Assert.DoesNotContain(":is-active", box.Classes);
     }
 
+    // checkbox.js's onMouseUp is any button's: a right button let go ends the press, though the left still holds the
+    // pointer.
+    [AvaloniaFact]
+    public void Any_button_let_go_ends_the_press()
+    {
+        var box = new Checkbox { Content = "Label" };
+        using var scene = Show(box);
+        var at = scene.CentreOf(P(box, Checkbox.CheckmarkContainerPart));
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Pump();
+        Assert.Contains(":is-active", box.Classes);
+
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", box.Classes);
+    }
+
+    // The focus leaving ends a key's press, never let go here; a mouse's goes on, as Base Web's onBlur leaves isActive.
+    [AvaloniaFact]
+    public void The_focus_leaving_ends_a_keys_press_but_not_a_mouses()
+    {
+        var box = new Checkbox { Content = "Label" };
+        var other = new Avalonia.Controls.Button { Content = "Other" };
+        using var scene = Show(box, other);
+        scene.Key(Key.Tab);
+        scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+        scene.Pump();
+        Assert.Contains(":is-active", box.Classes);
+        other.Focus();
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", box.Classes);
+
+        scene.Press(P(box, Checkbox.CheckmarkContainerPart));
+        Assert.True(box.IsFocused);
+        other.Focus();
+        scene.Pump();
+        Assert.Contains(":is-active", box.Classes);
+    }
+
     [AvaloniaFact]
     public void A_mouse_click_focuses_without_the_focus_ring_and_Tab_gives_it()
     {

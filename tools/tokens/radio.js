@@ -6,7 +6,7 @@
 const css = require('../reference/css');
 const { evaluate } = require('../reference/oracle');
 const {
-  L, NAMED, engine, colour, px, cursor, check, TEXT, font, flexRoot, backplate, outline, timing,
+  L, NAMED, engine, colour, px, cursor, check, RADII, TEXT, font, flexRoot, backplate, outline, timing,
 } = require('./parts');
 const radio = require('baseui/radio-v2/styled-components');
 const { LABEL_PLACEMENT, ALIGN } = require('baseui/radio-v2/constants');
@@ -39,7 +39,6 @@ const props = (c) => ({
 
 const { DEFAULT, declarations, theme } = engine({ axes: AXES, props });
 
-const RADII = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'];
 function half(s, what) {
   for (const k of RADII) if (s[k] !== '50%') throw new Error(`${what}: ${k} ${s[k]}`);
 }

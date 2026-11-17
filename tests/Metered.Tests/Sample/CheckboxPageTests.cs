@@ -34,8 +34,9 @@ public class CheckboxPageTests
         var boxes = page.GetVisualDescendants().OfType<Checkbox>().ToList();
         Assert.True(boxes.Count >= 10, $"{boxes.Count}");
         Assert.All(boxes, box => Assert.NotNull(box.Part(Checkbox.RootPart)));
-        Assert.Contains(boxes, box => box.LabelPlacement == CheckboxLabelPlacement.Left);
-        Assert.Contains(boxes, box => box.LabelPlacement == CheckboxLabelPlacement.Right);
+        Assert.Equal(
+            [CheckboxLabelPlacement.Left, CheckboxLabelPlacement.Right],
+            boxes.Where(box => box.IsSet(Checkbox.LabelPlacementProperty)).Select(box => box.LabelPlacement));
     }
 
     [AvaloniaFact]

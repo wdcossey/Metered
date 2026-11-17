@@ -5,9 +5,8 @@
 // oracle (tools/reference/checkbox.js) checks the result against the real colours.
 'use strict';
 
-const css = require('../reference/css');
 const {
-  L, NAMED, engine, colour, px, check, TEXT, font, flexRoot, backplate, outline, timing,
+  L, NAMED, engine, colour, px, uniform, check, RADII, TEXT, font, flexRoot, backplate, outline, timing,
 } = require('./parts');
 const checkbox = require('baseui/checkbox-v2/styled-components');
 const { LABEL_PLACEMENT } = require('baseui/checkbox-v2/constants');
@@ -59,7 +58,6 @@ function glyph(backgroundImage) {
 }
 
 const SIDES = ['Left', 'Right', 'Top', 'Bottom'];
-const RADII = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'];
 /** The same value on every side: border{Side}{suffix}. */
 function same(s, suffix, what) {
   const v = SIDES.map((side) => s[`border${side}${suffix}`]);
@@ -128,8 +126,7 @@ const PARTS = [
       check(s, 'Label', ['verticalAlign', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'color',
         'fontFamily', 'fontSize', 'fontWeight', 'lineHeight']);
       const n = TEXT(false);
-      const [t, rt, b, l] = ['Top', 'Right', 'Bottom', 'Left'].map((side) => css.px(s['padding' + side] ?? 0));
-      return { Padding: `${l},${t},${rt},${b}`, [n.Foreground]: colour(s.color, 'Label'), ...font(s, 'Label', n) };
+      return { Padding: uniform(s, 'padding'), [n.Foreground]: colour(s.color, 'Label'), ...font(s, 'Label', n) };
     },
   },
 ];
