@@ -71,8 +71,9 @@ $PageExtra = 'page'
 # ---------------------------------------------------------------------------------------------------------------------
 # What the script reads: pure functions of text, which -SelfTest checks on fixtures.
 
-# The titles -Page gives: comma-separated in each value, trimmed, none empty. Always a list: PowerShell unrolls a
-# one-item array a function returns, so `-Page Button` would give the string 'Button', and $Pages[0] its letter 'B'.
+# The titles -Page gives: comma-separated in each value, trimmed, none empty. Always one list, written whole: PowerShell
+# unrolls a one-item array a function returns, so `-Page Button` would give the string 'Button', and $Pages[0] its letter
+# 'B' (#29). Assign it; piped on, the list arrives as one item.
 function Split-Pages([string[]]$values) {
     Write-Output -NoEnumerate @($values | ForEach-Object { "$_" -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 }
@@ -88,15 +89,16 @@ function Get-PageFolder([string]$title) {
 }
 
 # A folder for each title, in order, none twice: a title whose name is taken (the same title again, or one that differs
-# only in case or marks) gets -2, -3 and so on, so no page's files overwrite another's.
+# only in case or marks) gets -2, -3 and so on, so no page's files overwrite another's. One list, written whole, as
+# Split-Pages.
 function Get-PageFolders([string[]]$titles) {
     $taken = [Collections.Generic.HashSet[string]]::new()
-    foreach ($title in $titles) {
+    Write-Output -NoEnumerate @(foreach ($title in $titles) {
         $base = Get-PageFolder $title
         $name = $base
         for ($n = 2; -not $taken.Add($name); $n++) { $name = "$base-$n" }
         $name
-    }
+    })
 }
 
 # The facts of one ready line, from its marker on:
@@ -215,12 +217,14 @@ function Invoke-SelfTest {
     Check '-Page values are split on commas and trimmed' (Split-Pages @('Button, ButtonGroup', 'Theme', ' ', ',')) @('Button', 'ButtonGroup', 'Theme')
     Check 'one -Page value is a list of one title, not its letters' (Split-Pages @('Button')) @('Button')
     Check 'no -Page value is an empty list' (Split-Pages @()) @()
+    Check '-Page left out is an empty list' (Split-Pages $null) @()
     Check 'a title is one word for the phone''s shell' (ConvertTo-ShellWord 'Button') "'Button'"
     Check 'a quote in a title survives the phone''s shell' (ConvertTo-ShellWord "it's a page") "'it'\''s a page'"
     Check 'a page''s folder' (Get-PageFolder 'ButtonGroup') 'buttongroup'
     Check 'a title with spaces and marks makes one folder name' (Get-PageFolder ' Slow page / 2 ') 'slow-page-2'
     Check 'a title with no letter still makes a folder' (Get-PageFolder '***') 'page'
-    Check 'no two pages share a folder' @(Get-PageFolders @('Button', 'button', 'Theme', 'BUTTON!')) @('button', 'button-2', 'theme', 'button-3')
+    Check 'no two pages share a folder' (Get-PageFolders @('Button', 'button', 'Theme', 'BUTTON!')) @('button', 'button-2', 'theme', 'button-3')
+    Check 'one page is a list of one folder, not its letters' (Get-PageFolders @('Button')) @('button')
 
     Write-Host '-- A cold start, Release: one ready line among the phone''s own'
     $opens = Read-Opens (Fixture 'logcat-release.txt')
@@ -466,7 +470,7 @@ Step "Installing $($apk.Name)"
 Adb install -r $apk.FullName | Out-Null
 
 $runs = [Collections.Generic.List[object]]::new()
-$folders = @(Get-PageFolders $Pages)
+$folders = Get-PageFolders $Pages
 for ($p = 0; $p -lt $Pages.Count; $p++) {
     $title = $Pages[$p]
     $PageOut = Join-Path $Out $folders[$p]
