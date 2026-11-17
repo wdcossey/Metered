@@ -71,9 +71,10 @@ $PageExtra = 'page'
 # ---------------------------------------------------------------------------------------------------------------------
 # What the script reads: pure functions of text, which -SelfTest checks on fixtures.
 
-# The titles -Page gives: comma-separated in each value, trimmed, none empty.
+# The titles -Page gives: comma-separated in each value, trimmed, none empty. Always a list: PowerShell unrolls a
+# one-item array a function returns, so `-Page Button` would give the string 'Button', and $Pages[0] its letter 'B'.
 function Split-Pages([string[]]$values) {
-    @($values | ForEach-Object { "$_" -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    Write-Output -NoEnumerate @($values | ForEach-Object { "$_" -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 }
 
 # A word for the phone's shell, which adb joins its arguments into one command for: single-quoted, with a single
@@ -212,6 +213,8 @@ function Invoke-SelfTest {
 
     Write-Host '-- Arguments'
     Check '-Page values are split on commas and trimmed' (Split-Pages @('Button, ButtonGroup', 'Theme', ' ', ',')) @('Button', 'ButtonGroup', 'Theme')
+    Check 'one -Page value is a list of one title, not its letters' (Split-Pages @('Button')) @('Button')
+    Check 'no -Page value is an empty list' (Split-Pages @()) @()
     Check 'a title is one word for the phone''s shell' (ConvertTo-ShellWord 'Button') "'Button'"
     Check 'a quote in a title survives the phone''s shell' (ConvertTo-ShellWord "it's a page") "'it'\''s a page'"
     Check 'a page''s folder' (Get-PageFolder 'ButtonGroup') 'buttongroup'
