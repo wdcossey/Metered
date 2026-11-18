@@ -58,7 +58,9 @@ outline and its offset, that also draws Base Web's background image, the tick or
 `RenderImage`), `Label` (a
 `ContentPresenter`, drawn as given: no access key). The pointer states are `BackplatePointer`'s, the same as the radio's.
 `CheckboxAutomationPeer` reports an indeterminate box as mixed, as Base Web's input's `indeterminate` does, and its
-toggle is a click (`Click` and `Command` run).
+toggle is a click (`Click` and `Command` run). It is a control and a content element, as Avalonia's toggle button's
+peer is, so UI Automation's control and content views, which screen readers walk, include the box, as a browser's
+accessibility tree does Base Web's input (#56, found by the first real-window run).
 
 ## Behaviour, as Base Web's
 
