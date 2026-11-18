@@ -531,6 +531,11 @@ public class CheckboxPartsTests
         Assert.True(peer.IsContentElement());
         Assert.Equal("Toppings", peer.GetAutomationId());
         Assert.Equal("Label", peer.GetName());
+
+        // An app's AccessibilityView still decides, as for Avalonia's own CheckBox: Raw takes it out of both views.
+        AutomationProperties.SetAccessibilityView(box, AccessibilityView.Raw);
+        Assert.False(peer.IsControlElement());
+        Assert.False(peer.IsContentElement());
     }
 
     [AvaloniaFact]
