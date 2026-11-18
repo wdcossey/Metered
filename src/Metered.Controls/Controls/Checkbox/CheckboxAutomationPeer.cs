@@ -10,7 +10,10 @@ namespace Metered.Controls;
 /// while it is drawn indeterminate, as Base Web sets its input's <c>indeterminate</c> for assistive
 /// technology, whatever <c>IsChecked</c> is. It is the only source of the state's change events, so
 /// none says Off or On while the box reads as mixed. A toggle through it is a click: <c>Click</c> and
-/// <c>Command</c> run, as Avalonia's own toggle button peer does.
+/// <c>Command</c> run, as Avalonia's own toggle button peer does. It is a control and a content element,
+/// as that peer is, so UI Automation's control and content views, which screen readers walk, include it:
+/// <see cref="ContentControlAutomationPeer"/> says neither, and Base Web's input is always in the
+/// accessibility tree (#56).
 /// </summary>
 public class CheckboxAutomationPeer : ContentControlAutomationPeer, IToggleProvider
 {
@@ -26,6 +29,10 @@ public class CheckboxAutomationPeer : ContentControlAutomationPeer, IToggleProvi
     private new Checkbox Owner => (Checkbox)base.Owner;
 
     public ToggleState ToggleState => Of(Owner);
+
+    protected override bool IsControlElementCore() => true;
+
+    protected override bool IsContentElementCore() => true;
 
     public void Toggle()
     {

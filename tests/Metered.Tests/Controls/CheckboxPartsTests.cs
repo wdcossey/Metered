@@ -518,6 +518,21 @@ public class CheckboxPartsTests
         Assert.Equal([ToggleState.On, ToggleState.Off], said);
     }
 
+    // Base Web's input is always in the accessibility tree: UI Automation's control and content views, which screen readers
+    // walk, include the box, as they do Avalonia's own toggle button (#56, found by tools/real-window).
+    [AvaloniaFact]
+    public void The_box_is_in_automation_s_control_and_content_views()
+    {
+        var box = new Checkbox { Content = "Label", Name = "Toppings" };
+        using var scene = Show(box);
+        var peer = ControlAutomationPeer.CreatePeerForElement(box);
+
+        Assert.True(peer.IsControlElement());
+        Assert.True(peer.IsContentElement());
+        Assert.Equal("Toppings", peer.GetAutomationId());
+        Assert.Equal("Label", peer.GetName());
+    }
+
     [AvaloniaFact]
     public void A_control_can_be_the_label()
     {
