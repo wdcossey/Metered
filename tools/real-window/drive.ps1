@@ -505,16 +505,17 @@ try {
         finally { $rest.Dispose() }
     }
 
-    # The checkbox group of pills: the page's line says the last click's index and the selection.
+    # The checkbox group of pills: the page's line says the last click's index and the selection. A group in checkbox mode
+    # gives each of its buttons UI Automation's check box type (ButtonGroup's ControlTypeOverride).
     Section 'buttongroup: taps and clicks on the checkbox group' {
         Open 'ButtonGroup'
         $clicked = ReadOut 'Clicked'
         function Said { $clicked.Current.Name }
         Check 'nothing is clicked yet' ((Said) -ceq 'Clicked: none') (Said)
-        $tx, $ty = Centre (Named $CT::Button 'Parking')
+        $tx, $ty = Centre (Named $CT::CheckBox 'Parking')
         Tap $tx $ty
         Check 'a tap on Parking selects it' (((After (Said) 'Clicked') -eq '1') -and ((After (Said) 'selected') -eq '1')) (Said)
-        Click (Named $CT::Button 'Pool')
+        Click (Named $CT::CheckBox 'Pool')
         Check 'a click on Pool adds it' (((After (Said) 'Clicked') -eq '2') -and ((After (Said) 'selected') -eq '1, 2')) (Said)
         Tap $tx $ty
         Check 'a second tap on Parking takes it off' (((After (Said) 'Clicked') -eq '1') -and ((After (Said) 'selected') -eq '2')) (Said)

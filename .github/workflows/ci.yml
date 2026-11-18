@@ -105,6 +105,11 @@ jobs:
       - name: The breakage tool kills its strays, never itself (Linux)
         run: node tools/breakage/strays.test.js
 
+      # drive.ps1 itself needs Windows and a display, so CI checks it without a window: its helpers, the sizes it
+      # expects against the sample, and the script as parsed.
+      - name: The real-window driver's self-test
+        run: pwsh -NoProfile -File tools/real-window/selftest.ps1
+
       - name: Tokens and part themes are up to date
         run: node tools/tokens/gen.js --check
 
