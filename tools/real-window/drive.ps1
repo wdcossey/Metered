@@ -353,6 +353,8 @@ function Section($title, [scriptblock]$body) {
 }
 
 $p = Start-Process $Exe -PassThru -RedirectStandardOutput $stdout
+# A process from Start-Process -PassThru reports no ExitCode unless its handle was opened while it ran.
+$null = $p.Handle
 try {
     $win = $null
     for ($i = 0; $i -lt 40 -and -not $win; $i++) {
@@ -380,6 +382,8 @@ try {
 
     Section 'Every page on the list: a click opens it and Back leaves it' {
         foreach ($title in $titles) {
+          # Each page on its own, so that one that throws is a failure of its own and the pages after it still run.
+          try {
             Index
             $link = Named $CT::Button $title
             $x, $y = Centre $link
@@ -408,6 +412,8 @@ try {
             }
             Click (Named $CT::Button 'Back')
             Check "Back from '$title' shows the list" (OnIndex)
+          }
+          catch { LetGo; Check "'$title' could be opened and left" $false "$($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)" }
         }
     }
 
@@ -467,6 +473,8 @@ try {
             Shot 'button-hovered'
             Check 'the mouse over Primary draws its hover' ($hovered -gt $Moved) "$hovered sampled pixels differ"
             Away
+            # The Button's 200 ms background transition (Button.Parts.g.axaml, from Base Web's), with room to spare.
+            Start-Sleep -Milliseconds 300
             $left = Changed $rest (Look $primary)
             Check 'and it goes when the mouse leaves' ($left -lt $Same) "$left sampled pixels differ"
 
@@ -482,7 +490,11 @@ try {
             $pb = $primary.Current.BoundingRectangle
             $verdict = TapVerdict $hovered $afterTap (Inside $pb.X $pb.Y $pb.Right $pb.Bottom $at[0] $at[1])
             "        after the touch is lifted, Primary is $verdict ($afterTap sampled pixels differ from its rest; the cursor at $($at[0]), $($at[1]))"
-            Check 'a touch, once lifted, leaves no hover or press drawn' ($verdict -ne 'left drawn') $verdict
+            # Windows moves the cursor to a touch it injects, which hovers the button as a mouse would; then the frames can't
+            # tell a hover stuck by the touch from the mouse's, and only a phone can (tools/android). Counted only when it
+            # settles, so a run never reads as having shown what it couldn't.
+            if ($verdict -in 'at rest', 'left drawn') { Check 'a touch, once lifted, leaves no hover or press drawn' ($verdict -eq 'at rest') $verdict }
+            else { "        not counted: whether a lifted touch leaves a hover can't be told on this PC" }
         }
         finally { $rest.Dispose() }
     }
@@ -642,6 +654,8 @@ try {
         # 300 pixels wider, less what the frame takes, which is far less than 100.
         Check 'once wider, the page is laid out wider' ($w -gt $WindowWidth + 200 / (ScalingOf $line)) "$line"
         Shot 'theme-resized'
+        $transform.Resize($r.Width, $r.Height)
+        Start-Sleep -Milliseconds 300
     }
 
     # A mistyped -Only would otherwise pass with nothing run.

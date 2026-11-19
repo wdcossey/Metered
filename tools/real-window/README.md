@@ -38,7 +38,7 @@ an error leaves held, the mouse button or a touch, it lets go of.
 
 - **Every page on the list,** with nothing to add for a new control: opens it with a real click, checks that the shell
   writes the page's ready line under its title, saves a frame, fails on a button, check box or radio with no size and, in a Debug build, on
-  a missing cost line under the title, then clicks Back and checks the list is back. A page below the fold of a long list
+  a missing cost line under the title, then clicks Back and checks the list is back. A page that throws fails on its own, and the pages after it still run. A page below the fold of a long list
   is opened through UI Automation instead: a click never goes outside the window. Titles are matched exactly, case and
   all, from each page's `[SamplePage]`.
 - **The phone's view:** the Theme page's ready line,
@@ -47,7 +47,8 @@ an error leaves held, the mouse button or a touch, it lets go of.
   pixels, so at 125 % a 390 page can come out at 389.6. Only `page=`, `scaling=` and `title=` are read.
 - **Alt+Left,** Avalonia's back request on desktop, from a page to the list.
 - **Light and Dark:** the bar's switch names the other variant, and the list's background changes, and changes back.
-- **Resizing:** the window has to say it can be resized, and the page is laid out wider once the window is.
+- **Resizing:** the window has to say it can be resized, and the page is laid out wider once the window is; then the
+  window goes back to its size.
 
 Then a section for each control with input of its own, on its sample page. A control is found by its `x:Name`, which
 Avalonia gives UI Automation as its AutomationId, or by its text, which is its name there. A checkbox's or a switch's
@@ -55,10 +56,11 @@ state is read through UI Automation's toggle pattern; a page's line under a cont
 pressed on its mark, at its start: its root is a flex row whose empty end takes no input. Pixels are compared as how
 many of a region's sampled pixels differ: under 5 is the same, over 20 a change (`helpers.ps1`).
 
-- **button:** the mouse over Primary draws its hover, which goes when it leaves; a held touch draws it pressed; once the
-  touch is lifted nothing is left drawn, which would be a hover stuck after a tap (it says if the cursor was on the button
-  then, as Windows can make a mouse move of a touch). "Click to load" turns its spinner, and after `ButtonPage.LoadingFor`
-  (2 s) is drawn as it was.
+- **button:** the mouse over Primary draws its hover, which goes when it leaves; a held touch draws it pressed. Whether a
+  lifted touch leaves anything drawn (a hover stuck after a tap) is counted only when it settles: Windows moves the cursor
+  to a touch it injects, which hovers the button as the mouse would, and then it prints why it isn't counted. On this
+  PC it never settles; a phone is where that is seen (`tools/android`). "Click to load" turns its spinner, and after
+  `ButtonPage.LoadingFor` (2 s) is drawn as it was.
 - **buttongroup:** taps and a click on the checkbox group's pills, read from the page's `Clicked` line.
 - **checkbox:** the parent follows its two children, and UI Automation reads it indeterminate (`CheckboxAutomationPeer`);
   a click focuses a box, Space and an Enter on it toggle it; a held touch draws the backplate's pressed tint (#49: kept,

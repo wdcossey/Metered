@@ -54,7 +54,8 @@ Borrowed from Cornflower and Avonic (2026-11-16):
       `tools/android/run.ps1`, the device run, whose self-test reads fixtures with no phone. First run
       on a Pixel 8 on 2026-11-17 (#29)
 - [x] A real-window driver (#6): `tools/real-window/drive.ps1`, `helpers.ps1` and `selftest.ps1`, from
-      Cornflower's; the self-test runs in CI's `generated` job. Windows only
+      Cornflower's; the self-test runs in CI's `generated` job (Linux) and its `real-window` job (Windows PowerShell
+      5.1 and pwsh 7). Windows only
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)
 - [x] The style budget for global rules (`tests/Metered.Tests/Performance/`,
       `docs/performance/README.md`). It doesn't replace item 1: a control's own cost isn't global.

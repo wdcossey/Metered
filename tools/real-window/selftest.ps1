@@ -116,7 +116,12 @@ foreach ($title in $opened) {
 # Content, a Text, an AutomationProperties.Name, or the shell's IndexTitle.
 $shellFiles = @('SampleShell.axaml', 'SampleShell.axaml.cs') | ForEach-Object { Join-Path (Join-Path $sample 'Metered.Sample') $_ }
 function XNames($files) { @($files | ForEach-Object { Select-String -Path $_ -Pattern 'x:Name="([^"]+)"' -AllMatches } | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value }) }
-function Quoted($files, $text) { [bool]@($files | Where-Object { (Get-Content -Raw $_).Contains('"' + $text + '"') }) }
+# Only where a control's text comes from: a Content, a Text or an AutomationProperties.Name, or a C# constant (the shell's
+# IndexTitle): not any quoted value, as Kind="Primary" beside Content="Primary" would let a changed label pass.
+function Quoted($files, $text) {
+    $t = [regex]::Escape($text)
+    [bool]@($files | Where-Object { (Get-Content -Raw $_) -cmatch "(\b(Content|Text|AutomationProperties\.Name)=`"$t`")|(const string \w+ = `"$t`")" })
+}
 function Calls($root, $name) { @($root.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq $name }, $true)) }
 function Literally($call, $at) {
     $e = $call.CommandElements
