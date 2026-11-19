@@ -28,9 +28,10 @@ Button and ButtonGroup, to settle the approach before the inventory:
    `tools/android/README.md`); whether to cut it is the developer's decision.
 2. **The sample and the real-window run**, as Cornflower's and Avonic's. The sample is a library
    with a page per control, shown by a desktop head (`samples/Metered.Sample`, #7) and an Android
-   head built in CI (#8) and run on a Pixel 8 (`tools/android/run.ps1`, #29); still to come: a
-   scripted real-window run. The
-   sample's shell, its subtree theme and the new fonts haven't been seen in a real window (#5).
+   head built in CI (#8) and run on a Pixel 8 (`tools/android/run.ps1`, #29), and a scripted
+   real-window run (`tools/real-window/drive.ps1`, #6): every page, the shell, and each control's
+   input by mouse, keys and touch, on Windows. Its first run found #56. Still to come: a way in on
+   macOS and Fedora.
 
 Done since the pilot (2026-11-16):
 
@@ -52,6 +53,9 @@ Borrowed from Cornflower and Avonic (2026-11-16):
 - [x] An Android head and its CI job (#8): `samples/Metered.Sample.Android`, the `android` job, and
       `tools/android/run.ps1`, the device run, whose self-test reads fixtures with no phone. First run
       on a Pixel 8 on 2026-11-17 (#29)
+- [x] A real-window driver (#6): `tools/real-window/drive.ps1`, `helpers.ps1` and `selftest.ps1`, from
+      Cornflower's; the self-test runs in CI's `generated` job (Linux) and its `real-window` job (Windows PowerShell
+      5.1 and pwsh 7). Windows only
 - [x] The literal-colour guard (`tests/Metered.Tests/Repository/`)
 - [x] The style budget for global rules (`tests/Metered.Tests/Performance/`,
       `docs/performance/README.md`). It doesn't replace item 1: a control's own cost isn't global.
@@ -68,7 +72,6 @@ unless Avonic is named.
 | What | Where it is there | Take it when |
 |---|---|---|
 | **A test clock and a manual render timer**: `TestClock` (time moves only when the test says, each callback run at its own time), `ManualRenderTimer` (a frame only on a forced tick), and the harness's own tests | `tests/Cornflower.Tests/TestClock.cs`, `ManualRenderTimer.cs`, `Harness/`; the clock it replaces, `CornflowerClock`, is in `src/Cornflower.Controls` | The first control whose motion must match Base Web frame by frame. Avalonia 12's animation clock is internal, so `Transitions` and `Animation` run on real time and are tested at their end value (Cornflower's ADR 0003); the spinner's ring is the first candidate |
-| **A real-window driver**: opens the desktop sample's real window, clicks through every page and saves frames; its self-test runs without a window | `tools/real-window/drive.ps1`, `selftest.ps1`; Avonic's `tools/real-window/` | With item 2. Avonic's found a bug 1,486 headless tests had missed. It is PowerShell and Windows only today: on macOS and Fedora it needs another way in. CI then parses every `.ps1` (Cornflower's `tools` job) |
 
 ## Inventory
 

@@ -105,8 +105,29 @@ jobs:
       - name: The breakage tool kills its strays, never itself (Linux)
         run: node tools/breakage/strays.test.js
 
+      # drive.ps1 itself needs Windows and a display, so CI checks it without a window: its helpers, the sizes it
+      # expects against the sample, and the script as parsed.
+      - name: The real-window driver's self-test
+        run: pwsh -NoProfile -File tools/real-window/selftest.ps1
+
       - name: Tokens and part themes are up to date
         run: node tools/tokens/gen.js --check
 
       - name: Oracle is up to date
         run: node tools/reference/cases.js --check
+
+  # drive.ps1 runs under Windows PowerShell 5.1 as well as pwsh 7, and helpers.ps1, which it loads, has to parse and work
+  # under both. generated's Linux pwsh can't see 5.1-only breakage (a ?? or a ternary would pass there), so the self-test
+  # runs here under each. Not a required check.
+  real-window:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The real-window driver's self-test, Windows PowerShell 5.1
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/real-window/selftest.ps1
+
+      - name: The real-window driver's self-test, pwsh 7
+        shell: pwsh
+        run: pwsh -NoProfile -File tools/real-window/selftest.ps1
