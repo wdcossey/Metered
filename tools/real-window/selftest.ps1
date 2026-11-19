@@ -35,9 +35,10 @@ Check 'Inside is inside' (Inside 0 0 10 10 5 5)
 Check 'Inside leaves out the edges' (-not (Inside 0 0 10 10 0 5) -and -not (Inside 0 0 10 10 5 10))
 Check 'Inside leaves out a point beyond them' (-not (Inside 0 0 10 10 11 5))
 
-$path = @(DragPath 100 200 30 -60 3)
-Check 'DragPath has its steps, and ends where the drag does' (($path.Count -eq 3) -and ($path[2].X -eq 130) -and ($path[2].Y -eq 140)) (($path | ForEach-Object { "$($_.X),$($_.Y)" }) -join ' ')
-Check 'DragPath moves evenly, in whole pixels' (($path[0].X -eq 110) -and ($path[0].Y -eq 180) -and ($path[1].X -eq 120) -and ($path[1].Y -eq 160))
+$whole = @(WholeLines "one`r`ntwo`nthree, still being writ")
+Check 'WholeLines leaves out a last line with no line break yet' (($whole.Count -eq 2) -and ($whole[0] -ceq 'one') -and ($whole[1] -ceq 'two')) ($whole -join ' | ')
+Check 'WholeLines keeps every line that ends in one' (@(WholeLines "a`nb`n").Count -eq 2)
+Check 'WholeLines is nothing for a text with no line break, or none' ((@(WholeLines 'partial').Count -eq 0) -and (@(WholeLines '').Count -eq 0))
 
 Check 'After reads a line''s one value' ((After 'Selected: 3' 'Selected') -ceq '3') (After 'Selected: 3' 'Selected')
 $group = 'Clicked: 1; selected: 1, 2'
@@ -47,6 +48,7 @@ Check 'After reads an empty selection as empty' ((After 'Clicked: 0; selected: '
 
 Check 'TapVerdict: a look back at its rest is at rest' (((TapVerdict 100 0 $false) -eq 'at rest') -and ((TapVerdict 100 ($Same - 1) $true) -eq 'at rest'))
 Check 'TapVerdict: still drawn, the cursor off it, is left drawn' ((TapVerdict 100 50 $false) -eq 'left drawn')
+Check 'TapVerdict: between the same and the moved settles nothing' (((TapVerdict 100 $Same $false) -eq 'unsettled') -and ((TapVerdict 100 $Moved $false) -eq 'unsettled'))
 Check 'TapVerdict: still drawn with the cursor on it is not settled' ((TapVerdict 100 50 $true) -like 'drawn, but*')
 Check 'TapVerdict: a hover the samples don''t show settles nothing' ((TapVerdict $Moved 50 $false) -eq 'unsettled')
 Check 'the same is under the moved' ($Same -lt $Moved)
@@ -93,19 +95,62 @@ foreach ($title in $sections) {
 }
 
 # The sample's pages, by their [SamplePage] titles, and its controls' x:Names.
-# Not bin/ or obj/, where a stale copy could keep a name the source has lost.
-function Sources($filter) { Get-ChildItem $sample -Recurse -Filter $filter | Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } }
-$pages = @(Sources *.cs | Select-String -Pattern '\[SamplePage\("([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })
-$names = @(Sources *.axaml | Select-String -Pattern 'x:Name="([^"]+)"' -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value })
-Check 'the sample has pages' ($pages.Count -gt 0)
+# Not bin/ or obj/, where a stale copy could keep a name the source has lost; matched on the path below samples/, so a
+# clone that sits under a folder called bin or obj is still read.
+function Sources($filter) { Get-ChildItem $sample -Recurse -Filter $filter | Where-Object { $_.FullName.Substring($sample.Length) -notmatch '[\\/](bin|obj)[\\/]' } }
+# Each page's title, from its [SamplePage], and the XAML beside its code.
+$pageFile = @{}
+foreach ($cs in @(Sources *.axaml.cs)) {
+    $m = Select-String -Path $cs.FullName -Pattern '\[SamplePage\("([^"]+)"' | Select-Object -First 1
+    if ($m) { $pageFile[$m.Matches[0].Groups[1].Value] = $cs.FullName -replace '\.cs$', '' }
+}
+Check 'the sample has pages' ($pageFile.Count -gt 0)
 $opened = @(ArgumentsOf 'Open' | Sort-Object -Unique)
 Check 'it opens pages by name' ($opened.Count -gt 0)
 foreach ($title in $opened) {
-    Check "the page it opens, '$title', is in the sample" ($pages -ccontains $title)
+    Check "the page it opens, '$title', is in the sample" ($pageFile.ContainsKey($title))
 }
-foreach ($id in @((ArgumentsOf 'ById') + (ArgumentsOf 'ReadOut') | Sort-Object -Unique)) {
-    Check "the control it finds as '$id' is named in the sample" ($names -ccontains $id)
+
+# Each section's names against its own page and the shell, not the whole sample, where two pages can both have a 'Basic'.
+# A control found by ById or ReadOut is an x:Name there; one found by Named, by its text, is a quoted value there: a
+# Content, a Text, an AutomationProperties.Name, or the shell's IndexTitle.
+$shellFiles = @('SampleShell.axaml', 'SampleShell.axaml.cs') | ForEach-Object { Join-Path (Join-Path $sample 'Metered.Sample') $_ }
+function XNames($files) { @($files | ForEach-Object { Select-String -Path $_ -Pattern 'x:Name="([^"]+)"' -AllMatches } | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value }) }
+function Quoted($files, $text) { [bool]@($files | Where-Object { (Get-Content -Raw $_).Contains('"' + $text + '"') }) }
+function Calls($root, $name) { @($root.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq $name }, $true)) }
+function Literally($call, $at) {
+    $e = $call.CommandElements
+    if ($e.Count -gt $at -and $e[$at] -is [System.Management.Automation.Language.StringConstantExpressionAst]) { $e[$at].Value }
 }
+function InSection($node) {
+    for ($up = $node.Parent; $up; $up = $up.Parent) {
+        if ($up -is [System.Management.Automation.Language.CommandAst] -and $up.GetCommandName() -eq 'Section') { return $true }
+    }
+    $false
+}
+$found = 0
+foreach ($section in (Calls $ast 'Section')) {
+    $title = $section.CommandElements[1].Value
+    $body = $section.CommandElements[2]
+    $page = @(Calls $body 'Open' | ForEach-Object { Literally $_ 1 } | Where-Object { $_ } | Select-Object -First 1)
+    $files = @($shellFiles)
+    if ($page.Count -and $pageFile.ContainsKey($page[0])) { $files += $pageFile[$page[0]] }
+    $ids = XNames $files
+    foreach ($call in @(@(Calls $body 'ById') + @(Calls $body 'ReadOut'))) {
+        $id = Literally $call 1
+        if ($id) { $found++; Check "'$title' finds '$id', an x:Name on its page or the shell" ($ids -ccontains $id) ($files -join ', ') }
+    }
+    foreach ($call in (Calls $body 'Named')) {
+        $text = Literally $call 2
+        if ($text) { $found++; Check "'$title' finds '$text' by its text, on its page or the shell" (Quoted $files $text) ($files -join ', ') }
+    }
+}
+# Outside the sections: what the list's and the pages' helpers find, which is the shell's.
+foreach ($call in @(Calls $ast 'Named' | Where-Object { -not (InSection $_) })) {
+    $text = Literally $call 2
+    if ($text) { $found++; Check "the shell has '$text', which the helpers find by its text" (Quoted $shellFiles $text) }
+}
+Check 'it finds controls by name' ($found -gt 0)
 # Every call outside the two functions' own definitions names its control in single quotes, so the checks above see it.
 function InsideFinder($node) {
     for ($up = $node.Parent; $up; $up = $up.Parent) {

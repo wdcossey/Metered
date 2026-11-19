@@ -35,12 +35,12 @@ function Literal($text) { [Management.Automation.WildcardPattern]::Escape($text)
 # Whether a point is inside a rectangle, its edges excluded, so that a point on the window's frame is outside it.
 function Inside([double]$left, [double]$top, [double]$right, [double]$bottom, [double]$x, [double]$y) { $x -gt $left -and $x -lt $right -and $y -gt $top -and $y -lt $bottom }
 
-# The points a drag passes through after its first, in whole pixels, as X and Y: $steps of them, evenly, the last at
-# $x + $dx, $y + $dy.
-function DragPath([double]$x, [double]$y, [double]$dx, [double]$dy, [int]$steps) {
-    for ($i = 1; $i -le $steps; $i++) {
-        [pscustomobject]@{ X = [int][math]::Round($x + $dx * $i / $steps); Y = [int][math]::Round($y + $dy * $i / $steps) }
-    }
+# The lines of a text that are whole, with their line break: a writer may be partway through the last.
+function WholeLines([string]$text) {
+    $lines = @($text -split "`r?`n")
+    # After the last line break comes an empty string, or a line not yet finished: either way, not a line. A loop, as
+    # PowerShell's 0..-1 counts down rather than being empty.
+    for ($i = 0; $i -lt $lines.Count - 1; $i++) { $lines[$i] }
 }
 
 # What a page's line says after its label: 'Selected: 3' is '3' (the Radio page), 'Clicked: 1; selected: 1, 2' is '1' for
@@ -55,9 +55,11 @@ $Moved = 20
 # What a mouse that has left a control, then a touch tap on it, leave drawn, from three samples of the control's pixels
 # against its look at rest: under the mouse (which has to differ, or the samples show nothing), and after the tap; and
 # whether the cursor was on the control after it, as Windows can make a mouse move of a touch, which would hover it.
+# Between the same and the moved is neither, as with any compare here.
 function TapVerdict([int]$hovered, [int]$afterTap, [bool]$cursorOn) {
     if ($hovered -le $Moved) { 'unsettled' }
     elseif ($afterTap -lt $Same) { 'at rest' }
+    elseif ($afterTap -le $Moved) { 'unsettled' }
     elseif ($cursorOn) { 'drawn, but the cursor was on it, so perhaps by the mouse' }
     else { 'left drawn' }
 }

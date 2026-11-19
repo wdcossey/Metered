@@ -115,3 +115,19 @@ jobs:
 
       - name: Oracle is up to date
         run: node tools/reference/cases.js --check
+
+  # drive.ps1 runs under Windows PowerShell 5.1 as well as pwsh 7, and helpers.ps1, which it loads, has to parse and work
+  # under both. generated's Linux pwsh can't see 5.1-only breakage (a ?? or a ternary would pass there), so the self-test
+  # runs here under each. Not a required check.
+  real-window:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The real-window driver's self-test, Windows PowerShell 5.1
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/real-window/selftest.ps1
+
+      - name: The real-window driver's self-test, pwsh 7
+        shell: pwsh
+        run: pwsh -NoProfile -File tools/real-window/selftest.ps1

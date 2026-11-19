@@ -37,7 +37,7 @@ an error leaves held, the mouse button or a touch, it lets go of.
 ## What it does
 
 - **Every page on the list,** with nothing to add for a new control: opens it with a real click, checks that the shell
-  writes the page's ready line under its title, saves a frame, fails on a button with no size and, in a Debug build, on
+  writes the page's ready line under its title, saves a frame, fails on a button, check box or radio with no size and, in a Debug build, on
   a missing cost line under the title, then clicks Back and checks the list is back. A page below the fold of a long list
   is opened through UI Automation instead: a click never goes outside the window. Titles are matched exactly, case and
   all, from each page's `[SamplePage]`.
@@ -72,12 +72,14 @@ many of a region's sampled pixels differ: under 5 is the same, over 20 a change 
 
 ## Checking it without a run
 
-`helpers.ps1` holds the script's pure helpers: the ready line's fields, `-Only`'s match, a drag's points, a page line's
-values, the pixel thresholds and the tap's verdict, and the sizes it expects. `selftest.ps1` checks them on known
+`helpers.ps1` holds the script's pure helpers: the ready line's fields, `-Only`'s match, a page line's
+values, the whole lines of a growing file, the pixel thresholds and the tap's verdict, and the sizes it expects. `selftest.ps1` checks them on known
 answers, checks those sizes against `MainWindow.axaml` and `SampleShell.axaml`, and checks the script as parsed: that it
-parses, that each section's title selects it alone, and that every page it opens and every control it finds by name is in
-the sample. It takes no input and opens no window, so it runs on any OS, under pwsh 7 (and Windows PowerShell 5.1, as
-`helpers.ps1` has to, since `drive.ps1` loads it under both). CI's `generated` job runs it on Linux:
+parses, that each section's title selects it alone, that every page it opens is in the sample, and that every control a
+section finds is on that section's page or the shell: an `x:Name` for `ById` and `ReadOut`, a quoted value (a `Content`, a
+`Text`, an `AutomationProperties.Name`) for `Named`. It takes no input and opens no window, so it runs on any OS, under pwsh 7 (and Windows PowerShell 5.1, as
+`helpers.ps1` has to, since `drive.ps1` loads it under both). CI's `generated` job runs it on Linux, and its `real-window`
+job on Windows under both:
 
 ```powershell
 pwsh -NoProfile -File tools/real-window/selftest.ps1

@@ -81,7 +81,6 @@ public static class RealInput {
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
   public static void Down() { mouse_event(2, 0, 0, 0, IntPtr.Zero); }
   public static void Up() { mouse_event(4, 0, 0, 0, IntPtr.Zero); }
-  public static void Wheel(int d) { mouse_event(0x800, 0, 0, unchecked((uint)d), IntPtr.Zero); }
   [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
   [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
   [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
@@ -164,14 +163,18 @@ function Region($x, $y, $wd, $ht) {
     $bmp
 }
 # The region a control covers on the screen, as UI Automation reports it.
-function Look($el) { $b = $el.Current.BoundingRectangle; Region $b.X $b.Y $b.Width $b.Height }
+# Each read of the screen first makes sure the sample is in front, as a picture of another app's window would compare as
+# well as one of the sample's: a baseline of the wrong window passes or fails checks falsely.
+function Look($el) { Guard; $b = $el.Current.BoundingRectangle; Region $b.X $b.Y $b.Width $b.Height }
 function Shot($name) {
+    Guard
     $r = $win.Current.BoundingRectangle
     $bmp = Region $r.X $r.Y $r.Width $r.Height
     try { $bmp.Save((Join-Path $Out "$name.png")) } finally { $bmp.Dispose() }
 }
 # One pixel of the screen, as ARGB.
 function Pixel($x, $y) {
+    Guard
     $bmp = Region $x $y 1 1
     try { $bmp.GetPixel(0, 0).ToArgb() } finally { $bmp.Dispose() }
 }
@@ -252,7 +255,7 @@ function OnScreen($x, $y) {
     if (-not [System.Windows.Forms.SystemInformation]::VirtualScreen.Contains([int]$x, [int]$y)) { throw "$x, $y is off the screen, so no input was sent" }
 }
 # The cursor to the window's top left corner, in the bar, off every control the sections use.
-function Away { $r = $win.Current.BoundingRectangle; [void][RealInput]::SetCursorPos(([int]$r.X + 4), ([int]$r.Y + 4)); Start-Sleep -Milliseconds 250 }
+function Away { Guard; $r = $win.Current.BoundingRectangle; [void][RealInput]::SetCursorPos(([int]$r.X + 4), ([int]$r.Y + 4)); Start-Sleep -Milliseconds 250 }
 function Key($text, $ms = 400) { Guard; $SendKeys::SendWait($text); Start-Sleep -Milliseconds $ms }
 function Press { Guard; $script:held = $true; [RealInput]::Down() }
 function Release { [RealInput]::Up(); $script:held = $false }
@@ -306,7 +309,8 @@ function WaitForText($like, $seconds = 5) {
 function ReadyLines {
     try {
         $stream = [IO.File]::Open($stdout, 'Open', 'Read', 'ReadWrite')
-        try { $reader = New-Object IO.StreamReader $stream; @($reader.ReadToEnd() -split "`r?`n" | Where-Object { $_ -like 'METERED ready*' }) }
+        # Only whole lines: the last, without its line break yet, may still be being written.
+        try { $reader = New-Object IO.StreamReader $stream; @(WholeLines $reader.ReadToEnd() | Where-Object { $_ -like 'METERED ready*' }) }
         finally { $stream.Dispose() }
     }
     catch { @() }
@@ -390,11 +394,12 @@ try {
             Away
             Shot $title
             # A control with no size is invisible, as Avonic's fixed slot's button once was.
-            $empty = @(AppButtons | Where-Object {
+            # Buttons, and the ButtonGroup's pills, which a group gives the check box or radio button type.
+            $empty = @(@(AppButtons) + @(All $CT::CheckBox) + @(All $CT::RadioButton) | Where-Object {
                 $b = $_.Current.BoundingRectangle
                 [double]::IsInfinity($b.Width) -or [double]::IsInfinity($b.Height) -or $b.Width -eq 0 -or $b.Height -eq 0
             } | ForEach-Object { $_.Current.Name })
-            Check "$title has no button without a size" ($empty.Count -eq 0) ($empty -join ', ')
+            Check "$title has no button, check box or radio without a size" ($empty.Count -eq 0) ($empty -join ', ')
             if ($debugBuild) {
                 # The shell's Debug line under the title (PerformanceMonitor): '<title>: <ms> ms, <elements> elements, ...'.
                 $line = WaitForText "$(Literal $title): * ms, *"
@@ -457,7 +462,7 @@ try {
         $rest = Look $primary
         try {
             Guard
-            [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 400
+            Within $x $y; [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 400
             $hovered = Changed $rest (Look $primary)
             Shot 'button-hovered'
             Check 'the mouse over Primary draws its hover' ($hovered -gt $Moved) "$hovered sampled pixels differ"
@@ -495,7 +500,7 @@ try {
             }
             finally { $first.Dispose() }
             Shot 'button-loading'
-            Check 'a click shows the spinner, turning' ($turned -gt $Same) "$turned sampled pixels differ in 250 ms"
+            Check 'a click shows the spinner, turning' ($turned -gt $Moved) "$turned sampled pixels differ in 250 ms"
             Away
             # ButtonPage.LoadingFor is 2 s, from the click.
             Start-Sleep -Milliseconds 2200
@@ -573,7 +578,7 @@ try {
         try {
             Guard
             $sx, $sy = Mark $second
-            [void][RealInput]::SetCursorPos($sx, $sy); Start-Sleep -Milliseconds 400
+            Within $sx $sy; [void][RealInput]::SetCursorPos($sx, $sy); Start-Sleep -Milliseconds 400
             $hovered = Changed $rest (Look $second)
             Check 'the mouse over a radio draws its hover' ($hovered -gt $Moved) "$hovered sampled pixels differ"
             Away
