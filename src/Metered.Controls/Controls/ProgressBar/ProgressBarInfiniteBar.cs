@@ -72,18 +72,32 @@ public class ProgressBarInfiniteBar : Control
         if (Fill is not ISolidColorBrush fill || ImageWidth <= 0) return;
         var c = fill.Color;
         var colour = new Color((byte)Math.Round(c.A * fill.Opacity), c.R, c.G, c.B);
-        var clear = new Color(0, c.R, c.G, c.B);
+        var key = (colour, FillStart, FillEnd, ImageWidth);
+        // The animation moves the position on every frame: the brush is made again only when what it is made of changes.
+        if (_brush is null || _brushKey != key)
+        {
+            var clear = new Color(0, c.R, c.G, c.B);
+            _brush = new ImmutableLinearGradientBrush(
+                [
+                    new ImmutableGradientStop(0, clear),
+                    new ImmutableGradientStop(FillStart / 100, colour),
+                    new ImmutableGradientStop(FillEnd / 100, colour),
+                    new ImmutableGradientStop(1, clear),
+                ],
+                startPoint: new RelativePoint(0, 0, RelativeUnit.Absolute),
+                endPoint: new RelativePoint(ImageWidth, 0, RelativeUnit.Absolute));
+            _brushKey = key;
+        }
+
+        // The image from its left edge: the box drawn in the image's coordinates.
         var left = ImageLeft;
-        var brush = new ImmutableLinearGradientBrush(
-            [
-                new ImmutableGradientStop(0, clear),
-                new ImmutableGradientStop(FillStart / 100, colour),
-                new ImmutableGradientStop(FillEnd / 100, colour),
-                new ImmutableGradientStop(1, clear),
-            ],
-            startPoint: new RelativePoint(left, 0, RelativeUnit.Absolute),
-            endPoint: new RelativePoint(left + ImageWidth, 0, RelativeUnit.Absolute));
         var size = Bounds.Size;
-        context.DrawRectangle(brush, null, new RoundedRect(new Rect(size), RadioMark.Clamp(CornerRadius, size)));
+        using (context.PushTransform(Matrix.CreateTranslation(left, 0)))
+        {
+            context.DrawRectangle(_brush, null, new RoundedRect(new Rect(-left, 0, size.Width, size.Height), RadioMark.Clamp(CornerRadius, size)));
+        }
     }
+
+    private ImmutableLinearGradientBrush? _brush;
+    private (Color, double, double, double) _brushKey;
 }

@@ -210,14 +210,24 @@ public class ProgressBar : RangeBase
     }
 
     /// <summary>
-    /// An integer, a NaN or an infinity as JavaScript writes it in a template literal: every digit below 10²¹, then the
-    /// shortest exponent form ("1e+21"); −0 as 0.
+    /// An integer, a NaN or an infinity as JavaScript writes it in a template literal (Number::toString): the shortest
+    /// digits that round-trip, padded with zeros below 10²¹ ("123456789012345680000"), then in exponent form ("1e+21");
+    /// −0 as 0.
     /// </summary>
-    private static string Js(double x) =>
-        double.IsNaN(x) ? "NaN"
-        : double.IsInfinity(x) ? (x > 0 ? "Infinity" : "-Infinity")
-        : Math.Abs(x) < 1e21 ? (x + 0.0).ToString("F0", CultureInfo.InvariantCulture)
-        : x.ToString("R", CultureInfo.InvariantCulture).ToLowerInvariant();
+    internal static string Js(double x)
+    {
+        if (double.IsNaN(x)) return "NaN";
+        if (double.IsInfinity(x)) return x > 0 ? "Infinity" : "-Infinity";
+        var shortest = (x + 0.0).ToString("R", CultureInfo.InvariantCulture);
+        if (Math.Abs(x) >= 1e21) return shortest.ToLowerInvariant();
+        var e = shortest.IndexOf('E');
+        if (e < 0) return shortest;
+        // An integer below 1e21 in .NET's exponent form: its digits, then zeros up to the exponent.
+        var sign = shortest[0] == '-' ? "-" : "";
+        var digits = shortest[sign.Length..e].Replace(".", "");
+        var exponent = int.Parse(shortest[(e + 1)..], CultureInfo.InvariantCulture);
+        return sign + digits + new string('0', exponent + 1 - digits.Length);
+    }
 
     /// <summary>
     /// The bars Base Web renders: a Bar and its BarProgress for each step, or the two InfiniteBars. Each new element has

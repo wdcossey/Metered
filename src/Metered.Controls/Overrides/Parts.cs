@@ -51,7 +51,6 @@ internal sealed class Parts
     /// <summary>Every element of the part of that name: the template's one, or the ones <see cref="Place"/> gave.</summary>
     public IReadOnlyList<StyledElement> All(string name) => _found.TryGetValue(name, out var list) ? list : [];
 
-    private IEnumerable<StyledElement> Elements => _found.Values.SelectMany(list => list);
 
     /// <summary>Takes the parts of a newly applied template.</summary>
     public void Attach(INameScope scope)
@@ -68,7 +67,10 @@ internal sealed class Parts
 
         foreach (var (pseudo, on) in _states)
         {
-            foreach (var element in Elements) Set(element, pseudo, on);
+            foreach (var list in _found.Values)
+            {
+                foreach (var element in list) Set(element, pseudo, on);
+            }
         }
 
         ApplyOverrides();
@@ -98,14 +100,20 @@ internal sealed class Parts
             }
         }
 
-        ApplyOverrides();
+        foreach (var (name, elements) in parts)
+        {
+            foreach (var element in elements) ApplyOverride(name, element);
+        }
     }
 
     /// <summary>Sets a state pseudoclass on every part (the control sets its own).</summary>
     public void SetState(string pseudoClass, bool on)
     {
         _states[pseudoClass] = on;
-        foreach (var element in Elements) Set(element, pseudoClass, on);
+        foreach (var list in _found.Values)
+        {
+            foreach (var element in list) Set(element, pseudoClass, on);
+        }
     }
 
     /// <summary>Uses a new overrides collection, following its changes.</summary>
@@ -122,24 +130,29 @@ internal sealed class Parts
     /// <summary>Gives each part its theme, with its override merged over it.</summary>
     public void ApplyOverrides()
     {
-        foreach (var (name, element) in _found.SelectMany(pair => pair.Value.Select(element => (pair.Key, element))))
+        foreach (var (name, list) in _found)
         {
-            var entry = Find(name);
-            if (entry is null || (entry.Component is null && entry.Style is null && entry.Props is null))
-            {
-                if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
-                continue;
-            }
-
-            var head = entry.Component ?? DefaultTheme(name, element);
-            foreach (var layer in new[] { entry.Style, entry.Props })
-            {
-                if (layer is not null) head = Derive(layer, head);
-            }
-
-            element.Theme = head;
-            _themed.Add(element);
+            foreach (var element in list) ApplyOverride(name, element);
         }
+    }
+
+    private void ApplyOverride(string name, StyledElement element)
+    {
+        var entry = Find(name);
+        if (entry is null || (entry.Component is null && entry.Style is null && entry.Props is null))
+        {
+            if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
+            return;
+        }
+
+        var head = entry.Component ?? DefaultTheme(name, element);
+        foreach (var layer in new[] { entry.Style, entry.Props })
+        {
+            if (layer is not null) head = Derive(layer, head);
+        }
+
+        element.Theme = head;
+        _themed.Add(element);
     }
 
     /// <summary>The theme key of a part: <c>Button.StyledBaseButton</c>.</summary>

@@ -110,6 +110,20 @@ public class ProgressBarLayoutTests
         Assert.Equal(Math.Max(width, 4 * margin), bars.Sum(bar => bar.Bounds.Width) + 4 * margin, 6);
     }
 
+    // CSS takes a negative margin, which an override may give a bar: the bars overlap, and nothing is ever less than
+    // nothing wide (Avalonia refuses a negative arrange).
+    [AvaloniaFact]
+    public void A_negative_margin_overlaps_the_bars()
+    {
+        var style = new Avalonia.Styling.ControlTheme(typeof(Border));
+        style.Setters.Add(new Avalonia.Styling.Setter(Layoutable.MarginProperty, new Thickness(-200, 0, 0, 0)));
+        var pb = new ProgressBar { Steps = 3, Value = 50, Overrides = [new Override { Part = ProgressBar.BarPart, Style = style }] };
+        using var scene = new Scene(new StackPanel { Width = 100, Children = { pb } });
+        var bars = pb.Elements(ProgressBar.BarPart).Cast<Control>().ToList();
+        Assert.Equal(3, bars.Count);
+        Assert.All(bars, bar => Assert.True(bar.Bounds.Width >= 0));
+    }
+
     private static CornerRadius Corners(double[] r) => new(r[0], r[1], r[2], r[3]);
 
     private static void AssertNear(Point expected, Point actual)

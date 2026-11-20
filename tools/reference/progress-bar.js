@@ -92,6 +92,7 @@ const VALUES = [
   { value: 2.5, minValue: 0, maxValue: 50, showLabel: true },
   { value: 33.3, steps: 3 },
   { value: 1e15, showLabel: true },
+  { value: 1.2345678901234568e18, showLabel: true },
   { value: 1e21, showLabel: true },
   { infinite: true },
   { infinite: true, steps: 3 },

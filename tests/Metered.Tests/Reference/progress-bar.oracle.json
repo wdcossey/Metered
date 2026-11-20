@@ -973,6 +973,25 @@
    "infiniteBars": 0
   },
   {
+   "value": 1234567890123456800,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "1234567890123456800% Complete",
+   "busy": false,
+   "label": "1234567890123456800% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": 0
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
    "value": 1e+21,
    "minValue": 0,
    "maxValue": 100,
