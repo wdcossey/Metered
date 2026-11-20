@@ -270,10 +270,13 @@ public class SpinnerTests
 
     /// <summary>
     /// The ring's angle, as the turn's animation sets it on the rotation Avalonia puts in its render transform; Button's
-    /// ring's too. <see cref="Scene.Pump"/> queues a job first, so that the animations' clock moves (#69).
+    /// ring's too. Avalonia's dispatcher promotes its due timers (the one that asks for the animations' next frame among
+    /// them) only after it runs a job, and a test's <c>RunJobs</c> runs none when nothing is queued, so a job first: the
+    /// clock then moves as an app's main loop moves it, rather than only when something else happens to queue a job.
     /// </summary>
     internal static double Angle(SpinnerRing ring, Scene scene)
     {
+        Avalonia.Threading.Dispatcher.UIThread.Post(static () => { });
         scene.Pump();
         var group = Assert.IsType<TransformGroup>(ring.RenderTransform);
         return Assert.Single(group.Children.OfType<RotateTransform>()).Angle;

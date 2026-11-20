@@ -671,7 +671,7 @@ try {
     }
 
     # Base Web's switch: the page's line under the first says whether it is on. Touch, the mouse, Space and an Enter
-    # pressed on it each toggle it.
+    # pressed on it each toggle it, and a held touch draws the pressed tint (#68: Metered's, as the checkbox's and the radio's).
     Section 'switch: a tap, a click, Space, Enter and the pressed tint' {
         Open 'Switch'
         $basic = ById 'Basic'
@@ -704,6 +704,12 @@ try {
         Check 'and leaves the switch it was pressed on as it was' ((Toggled $multiline) -ceq $before) (Toggled $multiline)
 
         # #68: a held touch draws the pressed tint, as on the checkbox and the radio (Metered's: Base Web's switch has none).
+        # Tab takes the focus to the next switch, and two clicks bring it back to Basic by the pointer, off and with no
+        # keyboard focus ring (set only as it gains focus), so that the picture at rest has none a touch could take away.
+        Key '{TAB}'
+        ClickMark $basic 20
+        ClickMark $basic 20
+        Check 'Tab away and two clicks leave it off, focused by the pointer' (((State) -ceq 'Off') -and (IsFocused $basic)) "$(State), $($AE::FocusedElement.Current.Name)"
         Away
         $rest = Look $basic
         try {
