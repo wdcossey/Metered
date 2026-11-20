@@ -371,7 +371,7 @@ public partial class SampleShell : UserControl
         }
 
         /// <summary>Whether the wait for a size has run out: the page is reported with the size it has.</summary>
-        public bool SizeWaitOver { get; private set; }
+        public bool SizeWaitOver => _waitLeft <= TimeSpan.Zero;
 
         /// <summary>
         /// Waits for <paramref name="top"/> to have a size: <paramref name="sized"/> once it gets one, or
@@ -388,7 +388,7 @@ public partial class SampleShell : UserControl
             {
                 if (!EndWait())
                     return;
-                SizeWaitOver = true;
+                _waitLeft = TimeSpan.Zero;
                 over();
             }, _waitLeft);
             // The observable gives the size it has at once: none, as the shell waits only then; if it had one, that would
