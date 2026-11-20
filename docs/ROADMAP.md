@@ -87,3 +87,5 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       (`docs/controls/Radio/`)
 - [x] Switch (#43): Base Web's `baseui/switch`, its v2 toggle; parts, overrides, the two sizes and label placements,
       the checkmark, Enter on its release, the touch padding (`docs/controls/Switch/`)
+- [x] Slider (#55): Base Web's `baseui/slider` (no v2), dragged and stepped as react-range does it; one thumb or a range,
+      marks, labels, parts and overrides, a touch drag that never pans the page (`docs/controls/Slider/`)
