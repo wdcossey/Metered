@@ -4,8 +4,8 @@
 // As radio.js does for the radio, and with its theme writer: each style function is evaluated on Base Web's light
 // theme with its colours replaced by their own names ('@contentPrimary'), for every combination of the switch's
 // states, so that the themes refer to the colours by token and read every length; each property is a plain setter
-// for the default state and a state style for each combination it differs in, checked against Base Web's for every
-// combination.
+// for the default state and the fewest layered state styles (`layered`, as checkbox.js writes), checked against Base
+// Web's for every combination.
 //
 // One difference, Metered's own (#68, docs/controls/Switch/): a press draws the pressed tint Radio and Checkbox draw,
 // which Base Web's switch doesn't (`pressed` below).
@@ -247,7 +247,8 @@ const DESCRIBE = {
 function file(version) {
   activeIsOnlyTheTint();
   const themes = PARTS.map((p) => {
-    const { plain, blocks } = theme(p, AXES, declarations);
+    // Layered: with the press a state, a style per combination would write each hover overlay twice.
+    const { plain, blocks } = theme(p, AXES, declarations, { layered: true });
     const extra = p.part === 'Toggle' ? '\n' + transition() : '';
     return `  <!-- ${p.part}: ${DESCRIBE[p.part]} -->
   <ControlTheme x:Key="Switch.Styled${p.part}" TargetType="${p.type}">

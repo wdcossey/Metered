@@ -636,19 +636,10 @@ public class SwitchTests
         var (sw, scene) = Make(new Switch());
         using var _ = scene;
         scene.Hover(sw);
-        var frame = scene.Capture();
         var track = (Visual)sw.Part(Switch.ToggleTrackPart)!;
         // Inside the border, right of the knob.
-        var p = track.TranslatePoint(new Point(track.Bounds.Width - 12, track.Bounds.Height / 2), scene.Window)!.Value;
-        var pixel = Frames.PixelAt(frame, (int)p.X, (int)p.Y);
-        var overlay = Color.Parse(c.TrackOverlay!);
-        var under = Color.Parse(c.TrackBackground);
-        var a = overlay.A / 255.0;
-        int Blend(byte top, byte bottom) => (int)Math.Round(top * a + bottom * (1 - a));
-        Assert.InRange(pixel.R, Blend(overlay.R, under.R) - 1, Blend(overlay.R, under.R) + 1);
-        Assert.InRange(pixel.G, Blend(overlay.G, under.G) - 1, Blend(overlay.G, under.G) + 1);
-        Assert.InRange(pixel.B, Blend(overlay.B, under.B) - 1, Blend(overlay.B, under.B) + 1);
-        Assert.NotEqual(under, pixel);
+        var pixel = Pixel(scene, scene.Capture(), track, new Point(track.Bounds.Width - 12, track.Bounds.Height / 2));
+        AssertBlend(pixel, c.TrackOverlay!, c.TrackBackground);
     }
 
     // #68, Metered's difference: a real finger held on the switch draws the pressed tint (the oracle's touch case, Base
@@ -715,19 +706,24 @@ public class SwitchTests
     [AvaloniaFact]
     public void A_held_key_draws_the_pressed_tint_as_on_the_checkbox()
     {
-        var c = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "touch");
         var (sw, scene) = Make(new Switch());
         using var _ = scene;
         var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
+        var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
         scene.Key(Key.Tab);
-        foreach (var (key, physical) in new[] { (Key.Space, PhysicalKey.Space), (Key.Enter, PhysicalKey.Enter) })
+        // Space held on the switch off, then Enter held on it on (Space's release turned it on).
+        foreach (var (key, physical, on) in new[] { (Key.Space, PhysicalKey.Space, false), (Key.Enter, PhysicalKey.Enter, true) })
         {
+            Assert.Equal(on, sw.IsChecked);
+            var c = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && x.Checked == on && !x.Disabled && !x.ShowIcon && x.State == "touch");
             scene.Window.KeyPress(key, RawInputModifiers.None, physical, null);
             scene.Pump();
             Assert.Equal(c.TrackOverlay, SwitchColourTests.Colour(track.Overlay));
+            Assert.Equal(c.ToggleOverlay, SwitchColourTests.Colour(toggle.Overlay));
             scene.Window.KeyRelease(key, RawInputModifiers.None, physical, null);
             scene.Pump();
             Assert.Null(track.Overlay);
+            Assert.Null(toggle.Overlay);
         }
     }
 
@@ -748,11 +744,12 @@ public class SwitchTests
         var expected = SwitchColourTests.Colour((IBrush)token!);
         Assert.Equal(SwitchOracle.Data.Colours.First(x => x.Theme == theme && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "touch").TrackOverlay, expected);
 
-        string Held(Control target, Func<IBrush?> brush)
+        // Each control off when the finger goes down, and read while it is held.
+        string[] Held(Control target, params Func<IBrush?>[] brushes)
         {
             var touch = scene.Window.TouchBegin(scene.CentreOf(target), RawInputModifiers.None);
             scene.Pump();
-            var got = SwitchColourTests.Colour(brush());
+            var got = brushes.Select(b => SwitchColourTests.Colour(b())).ToArray();
             scene.Window.TouchEnd(touch, scene.CentreOf(target), RawInputModifiers.None);
             scene.Pump();
             return got;
@@ -762,10 +759,9 @@ public class SwitchTests
         var container = (Border)box.Part(Checkbox.CheckmarkContainerPart)!;
         var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
         var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
-        Assert.Equal(expected, Held(backplate, () => backplate.Background));
-        Assert.Equal(expected, Held(container, () => container.Background));
-        Assert.Equal(expected, Held(track, () => track.Overlay));
-        Assert.Equal(expected, Held(toggle, () => toggle.Overlay));
+        Assert.Equal([expected], Held(backplate, () => backplate.Background));
+        Assert.Equal([expected], Held(container, () => container.Background));
+        Assert.Equal([expected, expected], Held(track, () => track.Overlay, () => toggle.Overlay));
     }
 
     // switch.js's handlers are checkbox.js's: one isActive, set by a press or Space or Enter, and ended by a button's

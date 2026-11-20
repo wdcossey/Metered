@@ -91,8 +91,8 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
 - `Sample/SwitchPageTests`: the sample's page, 3.
 
 The part themes are generated (`tools/tokens/switch.js`): the switch's style functions evaluated on Base Web's theme
-with each colour replaced by its own name, for every combination of the states, written by `radio.js`'s theme writer,
-which checks its state styles reproduce Base Web's for each combination. The pressed tint (difference 12) is added to
+with each colour replaced by its own name, for every combination of the states, written by `radio.js`'s theme writer
+as the fewest layered state styles (as the checkbox's are), and checked to reproduce Base Web's for each combination. The pressed tint (difference 12) is added to
 Base Web's declarations there, and the generator checks that a press changes nothing else. The oracle
 (`tools/reference/switch.js`) evaluates the same functions on the real light and dark themes, and adds the tint on
 its own.

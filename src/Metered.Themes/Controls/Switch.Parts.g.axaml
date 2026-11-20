@@ -20,7 +20,7 @@
     <Style Selector="^:label-placement-left">
       <Setter Property="LabelFirst" Value="True" />
     </Style>
-    <Style Selector="^:size-default:pointer-coarse">
+    <Style Selector="^:pointer-coarse">
       <Setter Property="Padding" Value="8" />
     </Style>
     <Style Selector="^:size-small:pointer-coarse">
@@ -47,53 +47,37 @@
       <Setter Property="Width" Value="40" />
       <Setter Property="Height" Value="24" />
     </Style>
-    <Style Selector="^:not(:checked):disabled">
-      <Setter Property="Background" Value="{DynamicResource colors.backgroundStateDisabled}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource colors.borderStateDisabled}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled)">
+    <Style Selector="^:checked">
       <Setter Property="Background" Value="{DynamicResource colors.backgroundInversePrimary}" />
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
-    <Style Selector="^:checked:disabled">
+    <Style Selector="^:disabled">
       <Setter Property="Background" Value="{DynamicResource colors.backgroundStateDisabled}" />
       <Setter Property="BorderBrush" Value="{DynamicResource colors.borderStateDisabled}" />
+      <Setter Property="BorderThickness" Value="2" />
     </Style>
-    <Style Selector="^:not(:checked):not(:disabled):not(:is-hovered):is-active">
+    <Style Selector="^:is-active">
       <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
     </Style>
-    <Style Selector="^:not(:checked):not(:disabled):is-hovered:not(:is-active)">
+    <Style Selector="^:disabled">
+      <Setter Property="Overlay" Value="{x:Null}" />
+    </Style>
+    <Style Selector="^:is-hovered">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
     </Style>
-    <Style Selector="^:not(:checked):not(:disabled):is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):disabled:is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):disabled:is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled):not(:is-hovered):is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled):is-hovered:not(:is-active)">
+    <Style Selector="^:checked:is-hovered">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
     </Style>
-    <Style Selector="^:checked:not(:disabled):is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:checked:disabled:is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:checked:disabled:is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:not(:disabled):focus-visible">
+    <Style Selector="^:focus-visible">
       <Setter Property="OutlineBrush" Value="{DynamicResource colors.brandBorderAccessible}" />
       <Setter Property="OutlineThickness" Value="2" />
       <Setter Property="OutlineOffset" Value="2" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="OutlineBrush" Value="{x:Null}" />
+      <Setter Property="OutlineThickness" Value="0" />
+      <Setter Property="OutlineOffset" Value="0" />
     </Style>
   </ControlTheme>
   <!-- Toggle: the knob: its size and fill by state, moved along the track when checked, the hover and press overlays, and the checkmark with showIcon. -->
@@ -116,64 +100,42 @@
         </Transitions>
       </Setter>
     </Style>
-    <Style Selector="^:not(:checked):size-small">
+    <Style Selector="^:size-small">
       <Setter Property="Width" Value="12" />
       <Setter Property="Height" Value="12" />
       <Setter Property="CornerRadius" Value="6" />
     </Style>
-    <Style Selector="^:checked:size-default">
+    <Style Selector="^:checked">
       <Setter Property="Width" Value="24" />
       <Setter Property="Height" Value="24" />
+      <Setter Property="Background" Value="{DynamicResource colors.contentInversePrimary}" />
       <Setter Property="CornerRadius" Value="12" />
       <Setter Property="RenderTransform" Value="translateX(20px)" />
     </Style>
-    <Style Selector="^:not(:checked):disabled">
-      <Setter Property="Background" Value="{DynamicResource colors.contentStateDisabled}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled)">
-      <Setter Property="Background" Value="{DynamicResource colors.contentInversePrimary}" />
-    </Style>
-    <Style Selector="^:checked:disabled">
-      <Setter Property="Background" Value="{DynamicResource colors.contentStateDisabled}" />
-    </Style>
-    <Style Selector="^:not(:checked):not(:disabled):not(:is-hovered):is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):not(:disabled):is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):not(:disabled):is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):disabled:is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:not(:checked):disabled:is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled):not(:is-hovered):is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled):is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:not(:disabled):is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:disabled:is-hovered:not(:is-active)">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
-    <Style Selector="^:checked:disabled:is-hovered:is-active">
-      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
-    </Style>
     <Style Selector="^:checked:size-small">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="CornerRadius" Value="8" />
       <Setter Property="RenderTransform" Value="translateX(16px)" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Background" Value="{DynamicResource colors.contentStateDisabled}" />
+    </Style>
+    <Style Selector="^:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Overlay" Value="{x:Null}" />
+    </Style>
+    <Style Selector="^:is-hovered">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:checked:is-hovered">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
     </Style>
     <Style Selector="^:checked:show-icon">
       <Setter Property="Icon" Value="m8.5 19.84-6.56-6.56 2.12-2.12L8.5 15.6 19.94 4.16l2.12 2.12L8.5 19.84Z" />
       <Setter Property="IconBrush" Value="{DynamicResource colors.contentPrimary}" />
-    </Style>
-    <Style Selector="^:checked:size-default:show-icon">
       <Setter Property="IconSize" Value="16" />
     </Style>
     <Style Selector="^:checked:size-small:show-icon">
@@ -189,23 +151,21 @@
     <Setter Property="TextElement.FontSize" Value="{DynamicResource typography.ParagraphMedium.fontSize}" />
     <Setter Property="TextElement.FontWeight" Value="{DynamicResource typography.ParagraphMedium.fontWeight}" />
     <Setter Property="TextBlock.LineHeight" Value="{DynamicResource typography.ParagraphMedium.lineHeight}" />
-    <Style Selector="^:size-default:label-placement-left">
+    <Style Selector="^:label-placement-left">
       <Setter Property="Padding" Value="0,4,8,0" />
     </Style>
-    <Style Selector="^:size-small:label-placement-right">
+    <Style Selector="^:size-small">
       <Setter Property="Padding" Value="8,2,0,0" />
+      <Setter Property="TextElement.FontFamily" Value="{DynamicResource typography.ParagraphSmall.fontFamily}" />
+      <Setter Property="TextElement.FontSize" Value="{DynamicResource typography.ParagraphSmall.fontSize}" />
+      <Setter Property="TextElement.FontWeight" Value="{DynamicResource typography.ParagraphSmall.fontWeight}" />
+      <Setter Property="TextBlock.LineHeight" Value="{DynamicResource typography.ParagraphSmall.lineHeight}" />
     </Style>
     <Style Selector="^:size-small:label-placement-left">
       <Setter Property="Padding" Value="0,2,8,0" />
     </Style>
     <Style Selector="^:disabled">
       <Setter Property="TextElement.Foreground" Value="{DynamicResource colors.contentStateDisabled}" />
-    </Style>
-    <Style Selector="^:size-small">
-      <Setter Property="TextElement.FontFamily" Value="{DynamicResource typography.ParagraphSmall.fontFamily}" />
-      <Setter Property="TextElement.FontSize" Value="{DynamicResource typography.ParagraphSmall.fontSize}" />
-      <Setter Property="TextElement.FontWeight" Value="{DynamicResource typography.ParagraphSmall.fontWeight}" />
-      <Setter Property="TextBlock.LineHeight" Value="{DynamicResource typography.ParagraphSmall.lineHeight}" />
     </Style>
   </ControlTheme>
 </ResourceDictionary>
