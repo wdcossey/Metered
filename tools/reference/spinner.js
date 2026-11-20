@@ -38,8 +38,8 @@ function style(theme, props) {
  * other text, a number, or unset. The scenario's (src/spinner/__tests__/spinner.scenario.tsx at 3adb0478c9) among them:
  * the three sizes, '20px', '40px', '60px', 60, 20, scale1000, scale900, scale700, scale300, scale200, scale100.
  */
-const SIZES = [undefined, SIZE.small, SIZE.medium, SIZE.large, 'scale1000', 'scale900', 'scale700', '20px', '60px', 60, '60.7px', 0, -5, 'abc'];
-const BORDERS = [undefined, SIZE.small, SIZE.medium, SIZE.large, 'scale300', 'scale200', 'scale100', 20, '12px', 0, -3, 'abc'];
+const SIZES = [undefined, SIZE.small, SIZE.medium, SIZE.large, 'scale1000', 'scale900', 'scale700', '20px', '60px', 60, '60.7px', 0, -5, '-5px', 'abc'];
+const BORDERS = [undefined, SIZE.small, SIZE.medium, SIZE.large, 'scale300', 'scale200', 'scale100', 20, '12px', 0, -3, '-3px', 'abc'];
 
 function describe(v) {
   if (v === undefined) return { kind: 'unset' };

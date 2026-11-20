@@ -21,9 +21,8 @@ public class SpinnerLayoutTests
     public void Box_and_border_match_Base_Web(int index)
     {
         var c = SpinnerOracle.Data.Layout[index];
-        var spinner = new Spinner { BorderWidth = c.BorderWidth.ToLength() };
-        if (c.Size.Kind != "unset") spinner.Size = c.Size.ToLength();
-        else spinner.ClearValue(Spinner.SizeProperty);
+        // Unset is given as unset, Base Web's undefined, which its default parameter makes medium.
+        var spinner = new Spinner { Size = c.Size.ToLength(), BorderWidth = c.BorderWidth.ToLength() };
         using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { spinner } });
         var ring = SpinnerColourTests.Ring(spinner);
 

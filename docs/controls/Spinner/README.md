@@ -94,11 +94,11 @@ leaves unset), coloured by `$color`, 1 s.
 
 - `Controls/SpinnerColourTests`: 6 cases (light and dark × no `$color`, the theme's `negative`, its `positive`): the top
   and the rest against Base Web's, and the pixels the ring draws at rest.
-- `Controls/SpinnerLayoutTests`: 168 cases (`$size` × `$borderWidth`: unset, the three names, sizing tokens, lengths,
-  numbers, 0, negatives, text that is none of these; the scenario's among them): the box, the border and the size layout
-  gives the spinner; and its place in a wider parent, stretched or not (169 in all).
+- `Controls/SpinnerLayoutTests`: 195 cases (`$size` × `$borderWidth`: unset, the three names, sizing tokens, lengths,
+  numbers, 0, negative numbers and lengths, text that is none of these; the scenario's among them): the box, the
+  border and the size layout gives the spinner; and its place in a wider parent, stretched or not (196 in all).
 - `Controls/SpinnerTests`: the turn's end values, that it turns, that `:metered-still` holds it at 0°, the cursor over
-  the whole disc, the colour following `Color`, the states moving with the lengths, a sizing token the theme holds (one
+  the whole disc (a ring all border too), the colour following `Color`, the states moving with the lengths, a sizing token the theme holds (one
   Base Web lacks, another value for one it has), the text the lengths are read from, an override over the props, the
   automation peer, and Button's ring keeping its border box: 11 in all.
 - `Sample/SpinnerPageTests`: the sample's page, 3.

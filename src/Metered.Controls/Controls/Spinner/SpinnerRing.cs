@@ -64,13 +64,14 @@ public class SpinnerRing : Control
     {
         var size = Math.Min(Bounds.Width, Bounds.Height);
         var t = Thickness;
+        var c = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        // The spinner's ring (a box of its own) takes the pointer over its whole disc, its hollow middle too, as the round
+        // box Base Web draws its border on does (cursor: wait over all of it); a transparent fill draws nothing. Button's
+        // ring, inside the button, is as it was.
+        if (!double.IsNaN(BoxSize) && size > 0) context.DrawEllipse(Brushes.Transparent, null, c, size / 2, size / 2);
         if (size <= t || t <= 0) return;
 
         var r = (size - t) / 2;
-        var c = new Point(Bounds.Width / 2, Bounds.Height / 2);
-        // The whole disc takes the pointer, its hollow middle too, as the round box Base Web draws its border on does
-        // (cursor: wait over all of it): a transparent fill draws nothing.
-        context.DrawEllipse(Brushes.Transparent, null, c, size / 2, size / 2);
         if (Background is { } background)
         {
             context.DrawEllipse(null, new Pen(background, t), c, r, r);

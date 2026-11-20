@@ -11,7 +11,7 @@ namespace Metered.Controls;
 /// <remarks>
 /// <para>From XAML text: <c>Small</c>, <c>Medium</c> or <c>Large</c> (in any case) is the size; text that is a number
 /// (<c>60</c>, <c>0</c>) is the number, as JSX's <c>{60}</c>, XAML having no other way to write one; anything else is
-/// text, as Base Web's string; empty text is unset.</para>
+/// text, as Base Web's string, empty text included (Base Web's <c>""</c> isn't <c>undefined</c>).</para>
 /// <para>The <see cref="Spinner"/> reads it as Base Web's style function does: a size by its name; then text as a
 /// sizing token's name, if the theme has one; then <see cref="Pixels"/>, which is JavaScript's <c>parseInt</c> of the
 /// value (<c>60.7</c> and <c>"60.7px"</c> are 60).</para>
@@ -48,7 +48,7 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
     /// <summary>
     /// Text, Base Web's <c>string</c>: <c>SIZE</c>'s own strings (<c>"small"</c>, <c>"medium"</c>, <c>"large"</c>) are the
     /// sizes, as Base Web's lookup finds them; other text is a sizing token's name or a length such as <c>60px</c>. Empty
-    /// text is unset.
+    /// text is text, which JavaScript reads as false and <c>parseInt</c> as NaN.
     /// </summary>
     public SpinnerLength(string text)
     {
@@ -60,8 +60,8 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
             return;
         }
 
-        _kind = text.Length == 0 ? Kind.Unset : Kind.Text;
-        _text = text.Length == 0 ? null : text;
+        _kind = Kind.Text;
+        _text = text;
     }
 
     public static implicit operator SpinnerLength(SpinnerSize size) => new(size);
@@ -86,27 +86,27 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
     /// </summary>
     public double Pixels => _kind switch
     {
-        Kind.Number => double.IsFinite(_number) ? Math.Truncate(_number) : double.NaN,
+        Kind.Number => ParseIntOf(_number),
         Kind.Text => ParseInt(_text!),
         _ => double.NaN,
     };
 
     /// <summary>
-    /// JavaScript's truth of the value, which Base Web's <c>$borderWidth || $size</c> reads: unset, the number 0 and
-    /// NaN are false.
+    /// JavaScript's truth of the value, which Base Web's <c>$borderWidth || $size</c> reads: unset, the number 0, NaN
+    /// and empty text are false.
     /// </summary>
     internal bool IsTruthy => _kind switch
     {
         Kind.Unset => false,
         Kind.Number => _number != 0 && !double.IsNaN(_number),
+        Kind.Text => _text!.Length > 0,
         _ => true,
     };
 
-    /// <summary>Reads XAML's text: a size by its name, a number, or other text; empty is unset.</summary>
+    /// <summary>Reads XAML's text: a size by its name, a number, or other text.</summary>
     public static SpinnerLength Parse(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        if (text.Length == 0) return default;
         if (Named(text, StringComparison.OrdinalIgnoreCase) is { } size) return new SpinnerLength(size);
         if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number))
             return new SpinnerLength(number);
@@ -131,7 +131,7 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
     private static double ParseInt(string text)
     {
         var i = 0;
-        while (i < text.Length && char.IsWhiteSpace(text[i])) i++;
+        while (i < text.Length && (char.IsWhiteSpace(text[i]) || text[i] == '\uFEFF')) i++;
         var negative = false;
         if (i < text.Length && (text[i] == '+' || text[i] == '-'))
         {
@@ -156,6 +156,19 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
 
         if (i == start) return double.NaN;
         return negative ? -value : value;
+    }
+
+    /// <summary>
+    /// <c>parseInt(number)</c>, which reads the number's text: whole for most, but from 1e21 up and under 1e-6 JavaScript
+    /// writes an exponent (<c>1e+21</c>, <c>5e-7</c>), so only the digit before it is read.
+    /// </summary>
+    private static double ParseIntOf(double number)
+    {
+        if (!double.IsFinite(number)) return double.NaN;
+        var magnitude = Math.Abs(number);
+        if (magnitude == 0 || (magnitude < 1e21 && magnitude >= 1e-6)) return Math.Truncate(number);
+        var lead = Math.Truncate(magnitude / Math.Pow(10, Math.Floor(Math.Log10(magnitude))));
+        return Math.Sign(number) * Math.Min(lead, 9);
     }
 
     private static int? Digit(char c) => c switch

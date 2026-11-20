@@ -83,8 +83,15 @@ public class SpinnerTests
     {
         var (_, ring, scene) = Make(new Spinner());
         using var _ = scene;
-        Thread.Sleep(150);
-        Assert.NotEqual(SpinnerOracle.Data.Motion.From, Angle(ring, scene));
+        // Turning first (a few tries, for a slow runner), so standing at 0 below is the hold's doing.
+        var turned = false;
+        for (var i = 0; i < 5 && !turned; i++)
+        {
+            Thread.Sleep(150);
+            turned = Angle(ring, scene) != SpinnerOracle.Data.Motion.From;
+        }
+
+        Assert.True(turned, "the ring never turned");
         SpinnerColourTests.Still(ring);
         Assert.Equal(SpinnerOracle.Data.Motion.From, Angle(ring, scene));
         Thread.Sleep(150);
@@ -98,7 +105,13 @@ public class SpinnerTests
         var (spinner, ring, scene) = Make(new Spinner());
         using var _ = scene;
         Assert.Equal(new Cursor(StandardCursorType.Wait).ToString(), ring.Cursor?.ToString());
-        // Over all of the round box, as the browser's: its hollow middle takes the pointer too.
+        // Over all of the round box, as the browser's: its hollow middle takes the pointer too, and a ring all border.
+        Assert.Same(ring, scene.Window.InputHitTest(scene.CentreOf(ring)));
+        spinner.Size = 0;
+        spinner.BorderWidth = 0;
+        spinner.Size = 20;
+        scene.Pump();
+        Assert.Equal(0, ring.Thickness);
         Assert.Same(ring, scene.Window.InputHitTest(scene.CentreOf(ring)));
     }
 
@@ -179,9 +192,16 @@ public class SpinnerTests
         Assert.Equal(60, new SpinnerLength(60.7).Pixels);
         Assert.Equal(12, SpinnerLength.Parse("  12px").Pixels);
         Assert.Equal(-5, SpinnerLength.Parse("-5").Pixels);
+        Assert.Equal(-5, new SpinnerLength("-5px").Pixels);
+        // parseInt(number) reads its text: 1e+21 and 5e-7 are 1 and 5.
+        Assert.Equal(1, new SpinnerLength(1e21).Pixels);
+        Assert.Equal(5, new SpinnerLength(5e-7).Pixels);
+        Assert.Equal(12, new SpinnerLength("\uFEFF12px").Pixels);
+        // "" isn't undefined: text, false to JavaScript, NaN to parseInt.
+        Assert.True(new SpinnerLength("").IsSet);
+        Assert.True(double.IsNaN(new SpinnerLength("").Pixels));
         Assert.True(double.IsNaN(SpinnerLength.Parse("abc").Pixels));
         Assert.Equal("scale1000", SpinnerLength.Parse("scale1000").Text);
-        Assert.False(SpinnerLength.Parse("").IsSet);
         Assert.False(default(SpinnerLength).IsSet);
 
         // XAML reads it through its type converter.
@@ -241,6 +261,8 @@ public class SpinnerTests
         Assert.IsAssignableFrom<SpinnerRing>(ring);
         Assert.True(double.IsNaN(ring.BoxSize));
         Assert.Equal(new Size(ring.Width, ring.Height), ring.Bounds.Size);
+        // And takes the pointer only where it draws, as it did: its hollow middle is the button's.
+        Assert.NotSame(ring, scene.Window.InputHitTest(scene.CentreOf(ring)));
     }
 
     private static double Token(string name, Scene scene) =>

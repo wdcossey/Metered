@@ -47,6 +47,20 @@ public class SpinnerColourTests
         Assert.Equal(c.Foreground, Frames.PixelAt(frame, (int)(at.X + side / 2), (int)(at.Y + t / 2)).ToString().ToUpperInvariant());
         Assert.Equal(c.Background, Frames.PixelAt(frame, (int)(at.X + side / 2), (int)(at.Y + side - t / 2)).ToString().ToUpperInvariant());
         Assert.Equal(c.Background, Frames.PixelAt(frame, (int)(at.X + t / 2), (int)(at.Y + side / 2)).ToString().ToUpperInvariant());
+        // The top quarter runs from 45 degrees left of the top to 45 right of it, where the CSS border's colour changes.
+        Assert.Equal(c.Foreground, OnRing(-112.5));
+        Assert.Equal(c.Foreground, OnRing(-67.5));
+        Assert.Equal(c.Background, OnRing(-157.5));
+        Assert.Equal(c.Background, OnRing(-22.5));
+
+        string OnRing(double degrees)
+        {
+            var a = degrees * Math.PI / 180;
+            var r = (side - t) / 2;
+            var x = at.X + side / 2 + r * Math.Cos(a);
+            var y = at.Y + side / 2 + r * Math.Sin(a);
+            return Frames.PixelAt(frame, (int)Math.Floor(x), (int)Math.Floor(y)).ToString().ToUpperInvariant();
+        }
     }
 
     internal static SpinnerRing Ring(Spinner spinner) => (SpinnerRing)spinner.Part(Spinner.SpinnerPart)!;

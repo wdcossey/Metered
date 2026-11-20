@@ -66,8 +66,8 @@ public class Spinner : TemplatedControl
         SetState(":has-color", Color is not null);
         // A sizing token is the theme's: read again when the resources the spinner sees change, and on a variant switch
         // between a ThemeProvider's Theme and DarkTheme, which Avalonia doesn't report as a change of resources.
-        ResourcesChanged += (_, _) => UpdateLengths();
-        ActualThemeVariantChanged += (_, _) => UpdateLengths();
+        ResourcesChanged += (_, _) => UpdateTokens();
+        ActualThemeVariantChanged += (_, _) => UpdateTokens();
     }
 
     /// <summary>Base Web's <c>$size</c>: the box inside the ring's border. Medium by default.</summary>
@@ -107,7 +107,13 @@ public class Spinner : TemplatedControl
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
         base.OnAttachedToLogicalTree(e);
-        UpdateLengths();
+        UpdateTokens();
+    }
+
+    /// <summary>Reads the lengths again where a value is text, which may name a sizing token of the theme it now sees.</summary>
+    private void UpdateTokens()
+    {
+        if (Size.Text is not null || BorderWidth.Text is not null) UpdateLengths();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
