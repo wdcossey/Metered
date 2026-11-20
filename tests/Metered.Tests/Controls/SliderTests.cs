@@ -365,6 +365,11 @@ public class SliderTests
     [AvaloniaFact]
     public void Steps_past_counting_make_no_marks()
     {
+        // numOfMarks + 1, rounded up: 10 steps make 11 marks, 2.5 make 4 (i = 0 to 3).
+        Assert.Equal(11, Slider.MarkCount(10));
+        Assert.Equal(4, Slider.MarkCount(2.5));
+        Assert.Equal(0, Slider.MarkCount(1e15));
+        Assert.Equal(0, Slider.MarkCount(int.MaxValue));
         var slider = new Slider { Min = 0, Max = 1e12, Step = 1e-3, Value = [0], Marks = true };
         Assert.Empty(slider.Elements(Slider.MarkPart));
     }

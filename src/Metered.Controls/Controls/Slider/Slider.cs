@@ -644,7 +644,7 @@ public class Slider : TemplatedControl
     private void RebuildMarks()
     {
         var steps = (Max - Min) / Step;
-        var count = Marks && steps > 0 && steps < int.MaxValue - 1 ? (int)Math.Ceiling(steps + 1) : 0;
+        var count = Marks ? MarkCount(steps) : 0;
         while (_marks.Count > count)
         {
             var mark = _marks[^1];
@@ -662,6 +662,12 @@ public class Slider : TemplatedControl
         if (_marks.Count != _parts.All(MarkPart).Count) PlaceMarks();
         _inner?.SetMarks(count, steps);
     }
+
+    /// <summary>
+    /// react-range's mark count for numOfMarks steps: one for each i &lt; numOfMarks + 1. None for no steps, or for more
+    /// than a count can hold (a cast would saturate, or wrap, to a number of marks no one asked for).
+    /// </summary>
+    internal static int MarkCount(double steps) => steps > 0 && steps < int.MaxValue - 1 ? (int)Math.Ceiling(steps + 1) : 0;
 
     /// <summary>Base Web renders a thumb's ThumbValue and InnerThumb only while it shows its label.</summary>
     private void UpdateLabels()
