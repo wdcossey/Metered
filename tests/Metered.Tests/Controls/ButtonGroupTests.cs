@@ -4,6 +4,7 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -144,6 +145,8 @@ public class ButtonGroupTests
         Assert.Null(group.Selected);
         Assert.False(At(group, 1).IsSet(Button.IsSelectedProperty));
         Assert.Equal([1], clicks);
+        // button-group.js: role is undefined for a simple clickable group's child with none of its own.
+        Assert.All(group.Items.Cast<Button>(), b => Assert.False(b.IsSet(AutomationProperties.ControlTypeOverrideProperty)));
     }
 
     [AvaloniaFact]
@@ -296,7 +299,7 @@ public class ButtonGroupTests
     }
 
     // A reset lets go only of the buttons that are gone: those still in the source stay the group's, a button's own
-    // selection kept (a button let go and taken again would lose it, as letting go clears what the group wrote: #70).
+    // selection kept.
     [AvaloniaFact]
     public void A_reset_keeps_the_buttons_still_in_the_group()
     {
@@ -324,6 +327,255 @@ public class ButtonGroupTests
         Assert.Equal([0], clicks);
         Assert.Equal([0], group.Selected!);
         Assert.True(kept.IsSelected);
+    }
+
+    /// <summary>A group of the given buttons, through its items or a source, and how they leave it, as above.</summary>
+    private static (ButtonGroup Group, Action Leave) Joined(Button[] buttons, Action<ButtonGroup> setup, string leave)
+    {
+        var group = new ButtonGroup();
+        setup(group);
+        if (leave == "source")
+        {
+            var source = new System.Collections.ObjectModel.ObservableCollection<Button>(buttons);
+            group.ItemsSource = source;
+            return (group, source.Clear);
+        }
+
+        foreach (var button in buttons) group.Items.Add(button);
+        return leave switch
+        {
+            "remove" => (group, () => { foreach (var button in buttons) group.Items.Remove(button); }),
+            "clear" => (group, group.Items.Clear),
+            _ => throw new ArgumentOutOfRangeException(nameof(leave), leave, "remove, clear or source"),
+        };
+    }
+
+    // #70, 1. Base Web's cloneElement keeps a child's own isSelected of true, and doesn't change the child: outside
+    // the group it renders with its own props again, so its own true is still there.
+    [AvaloniaTheory]
+    [InlineData("remove")]
+    [InlineData("clear")]
+    [InlineData("source")]
+    public void A_buttons_own_selection_stays_when_it_leaves(string leave)
+    {
+        var own = new Button { Content = "Own", IsSelected = true };
+        var other = new Button { Content = "Other" };
+        var (group, go) = Joined([own, other], g => { g.Mode = ButtonGroupMode.Radio; g.Selected = [1]; }, leave);
+        using var scene = new Scene(group);
+        Assert.True(own.IsSelected);
+        Assert.True(other.IsSelected);
+
+        go();
+        scene.Pump();
+        Assert.True(own.IsSet(Button.IsSelectedProperty));
+        Assert.True(own.IsSelected);
+        Assert.False(other.IsSet(Button.IsSelectedProperty));
+    }
+
+    // #70, 2. Inside the group, the group's kind, size and shape replace the button's own, and so do its tabIndex and
+    // role (button-group.js's cloneElement). The child element itself is unchanged: once it leaves, it is its own again.
+    [AvaloniaTheory]
+    [InlineData("remove")]
+    [InlineData("clear")]
+    [InlineData("source")]
+    public void A_buttons_own_kind_size_shape_tab_stop_and_role_come_back_when_it_leaves(string leave)
+    {
+        var button = new Button { Content = "Own", Kind = ButtonKind.Secondary, Size = ButtonSize.Compact, Shape = ButtonShape.Pill, IsTabStop = false };
+        AutomationProperties.SetControlTypeOverride(button, AutomationControlType.Hyperlink);
+        var plain = new Button { Content = "Plain" };
+        var (group, go) = Joined([button, plain], g =>
+        {
+            g.Mode = ButtonGroupMode.Radio;
+            g.Selected = [0];
+            g.Kind = ButtonKind.Tertiary;
+            g.Size = ButtonSize.Large;
+            g.Shape = ButtonShape.Circle;
+        }, leave);
+        using var scene = new Scene(group);
+        Assert.Equal(ButtonKind.Tertiary, button.Kind);
+        Assert.Equal(ButtonSize.Large, button.Size);
+        Assert.Equal(ButtonShape.Circle, button.Shape);
+        Assert.True(button.IsTabStop);
+        Assert.Equal(AutomationControlType.RadioButton, AutomationProperties.GetControlTypeOverride(button));
+        // The group's kind changed while it holds the button: the new one replaces the old.
+        group.Kind = ButtonKind.Outline;
+        scene.Pump();
+        Assert.Equal(ButtonKind.Outline, button.Kind);
+
+        go();
+        scene.Pump();
+        Assert.Equal(ButtonKind.Secondary, button.Kind);
+        Assert.Equal(ButtonSize.Compact, button.Size);
+        Assert.Equal(ButtonShape.Pill, button.Shape);
+        Assert.False(button.IsTabStop);
+        Assert.Equal(AutomationControlType.Hyperlink, AutomationProperties.GetControlTypeOverride(button));
+        // One with none of its own has the control's defaults, none of them left set.
+        Assert.Equal(ButtonKind.Primary, plain.Kind);
+        Assert.False(plain.IsSet(Button.KindProperty));
+        Assert.False(plain.IsSet(Button.SizeProperty));
+        Assert.False(plain.IsSet(Button.ShapeProperty));
+        Assert.False(plain.IsSet(InputElement.IsTabStopProperty));
+        Assert.False(plain.IsSet(AutomationProperties.ControlTypeOverrideProperty));
+    }
+
+    // #70, 3. Base Web's selected is by place: isIndexSelected(selected, index), with React.Children.map's index. After a
+    // button before it comes or goes, a button is selected, and a tab stop, by its new place.
+    [AvaloniaFact]
+    public void Selection_and_tab_stop_follow_the_place_after_a_removal_an_insertion_or_a_move()
+    {
+        var group = Group(3, g => { g.Mode = ButtonGroupMode.Radio; g.Selected = [0]; });
+        var (a, b, c) = (At(group, 0), At(group, 1), At(group, 2));
+        var source = new System.Collections.ObjectModel.ObservableCollection<Button>(
+            Enumerable.Range(0, 3).Select(i => new Button { Content = $"Item {i}" }));
+        var (first, second) = (source[0], source[1]);
+        var sourced = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [0], ItemsSource = source };
+        using var scene = new Scene(new StackPanel { Children = { group, sourced } });
+        Assert.True(a.IsSelected);
+        Assert.True(first.IsSelected);
+
+        group.Items.RemoveAt(0);
+        scene.Pump();
+        Assert.True(b.IsSelected);
+        Assert.True(b.IsTabStop);
+        Assert.False(c.IsSelected);
+        Assert.False(c.IsTabStop);
+
+        var inserted = new Button { Content = "Inserted" };
+        group.Items.Insert(0, inserted);
+        scene.Pump();
+        Assert.True(inserted.IsSelected);
+        Assert.True(inserted.IsTabStop);
+        Assert.False(b.IsSelected);
+        Assert.False(b.IsTabStop);
+
+        // A group with none selected: the first, whichever it now is, is the tab stop.
+        group.Selected = [];
+        scene.Pump();
+        group.Items.RemoveAt(0);
+        scene.Pump();
+        Assert.True(b.IsTabStop);
+        Assert.False(c.IsTabStop);
+
+        // A move, through a source: the button that was first is selected no more, and the one now first is.
+        source.Move(0, 2);
+        scene.Pump();
+        Assert.False(first.IsSelected);
+        Assert.False(first.IsTabStop);
+        Assert.True(second.IsSelected);
+        Assert.True(second.IsTabStop);
+    }
+
+    // #70, as 1 and 2, for a button's own values however it has them: a style's, a binding's, or one set on it while
+    // it is in the group. While it is in the group, the group's replace them (an own isSelected of true kept); once it
+    // leaves, they are all its own again, the style and the binding still live.
+    [AvaloniaFact]
+    public void A_buttons_own_values_stay_beneath_the_groups_styled_bound_or_set_while_in_it()
+    {
+        var model = new Switchable();
+        var button = new Button { Content = "Own", Classes = { "danger" }, DataContext = model };
+        button.Bind(Button.IsSelectedProperty, new ReflectionBinding(nameof(Switchable.IsOn)));
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [1], Kind = ButtonKind.Tertiary };
+        group.Items.Add(button);
+        group.Items.Add(new Button { Content = "Other" });
+        var elsewhere = new StackPanel();
+        var root = new StackPanel { Children = { group, elsewhere } };
+        root.Styles.Add(new Style(x => x.Class("danger")) { Setters = { new Setter(Button.KindProperty, ButtonKind.DangerPrimary) } });
+        using var scene = new Scene(root);
+        Assert.Equal(ButtonKind.Tertiary, button.Kind);
+        Assert.False(button.IsSelected);
+        Assert.False(button.IsTabStop);
+        // Held at Avalonia's Animation priority, the one above a local value (the README's known difference 5).
+        Assert.True(button.IsAnimating(Button.KindProperty));
+
+        // The own true, read when the group applies (Avalonia tells of no change beneath the group's value), is kept;
+        // gone again, the group's selection shows at once.
+        model.IsOn = true;
+        group.Selected = [1];
+        scene.Pump();
+        Assert.True(button.IsSelected);
+        Assert.True(button.IsTabStop);
+        model.IsOn = false;
+        scene.Pump();
+        Assert.False(button.IsSelected);
+        Assert.False(button.IsTabStop);
+
+        button.Size = ButtonSize.Compact;
+        Assert.Equal(ButtonSize.Default, button.Size);
+
+        group.Items.Remove(button);
+        elsewhere.Children.Add(button);
+        scene.Pump();
+        Assert.Equal(ButtonKind.DangerPrimary, button.Kind);
+        Assert.False(button.IsAnimating(Button.KindProperty));
+        Assert.Equal(ButtonSize.Compact, button.Size);
+        Assert.True(button.IsTabStop);
+        button.Classes.Remove("danger");
+        Assert.Equal(ButtonKind.Primary, button.Kind);
+        model.IsOn = true;
+        Assert.True(button.IsSelected);
+    }
+
+    // A TwoWay binding writes the group's selection back to its source, beneath the group's value. That isn't the
+    // button's own isSelected: the group still decides. A true the source sets itself is the button's own, kept.
+    [AvaloniaFact]
+    public void A_two_way_bound_selection_follows_the_group_and_keeps_an_own_true()
+    {
+        var model = new Switchable();
+        var bound = new Button { Content = "Bound", DataContext = model };
+        bound.Bind(Button.IsSelectedProperty, new ReflectionBinding(nameof(Switchable.IsOn)) { Mode = BindingMode.TwoWay });
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [1] };
+        group.Items.Add(new Button { Content = "First" });
+        group.Items.Add(bound);
+        using var scene = new Scene(group);
+        Assert.True(bound.IsSelected);
+        Assert.True(model.IsOn);
+
+        group.Selected = [0];
+        scene.Pump();
+        Assert.False(bound.IsSelected);
+        Assert.False(bound.IsTabStop);
+        Assert.False(model.IsOn);
+
+        model.IsOn = true;
+        group.Selected = [0];
+        scene.Pump();
+        Assert.True(bound.IsSelected);
+        Assert.True(bound.IsTabStop);
+    }
+
+    // When a button's own true goes, the group's selection takes its place, after the change has been told: a listener
+    // that came after the group hears the values in order, the last of them the one the button has.
+    [AvaloniaFact]
+    public void A_listener_hears_the_groups_selection_after_the_buttons_own()
+    {
+        var button = new Button { Content = "Own", IsSelected = true };
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [0] };
+        group.Items.Add(button);
+        using var scene = new Scene(group);
+        var heard = new List<bool>();
+        button.PropertyChanged += (_, e) => { if (e.Property == Button.IsSelectedProperty) heard.Add((bool)e.NewValue!); };
+
+        button.IsSelected = false;
+        scene.Pump();
+        Assert.True(button.IsSelected);
+        Assert.Equal([false, true], heard);
+    }
+
+    private sealed class Switchable : System.ComponentModel.INotifyPropertyChanged
+    {
+        private bool _isOn;
+
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        public bool IsOn
+        {
+            get => _isOn;
+            set
+            {
+                _isOn = value;
+                PropertyChanged?.Invoke(this, new(nameof(IsOn)));
+            }
+        }
     }
 
     /// <summary>A source that tells of a removal only as a reset, as a collection that rebuilds itself does.</summary>
