@@ -304,6 +304,24 @@ public class ProgressBarTests
         }
     }
 
+    // A half keeps its gradient while the colour holds, and draws the new one when it changes (an intent, a theme).
+    [AvaloniaFact]
+    public void An_infinite_half_draws_a_new_colour_when_its_fill_changes()
+    {
+        var s = ProgressBarOracle.Data.Motion.Infinite[0];
+        Color Of(string intent) => Color.Parse(ProgressBarOracle.Data.Colours.First(c => c.Theme == "Light" && c.Intent == intent).Infinite);
+        var half = new ProgressBarInfiniteBar
+        {
+            Width = 200, Height = 8, Fill = new ImmutableSolidColorBrush(Of("positive")), ImageSize = s.ImageSize,
+            FillStart = s.Start, FillEnd = s.End, Position = 50,
+        };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { half } });
+        Color Middle() { var p = scene.CentreOf(half); return Frames.PixelAt(scene.Capture(), (int)p.X, (int)p.Y); }
+        Assert.Equal(Of("positive"), Middle());
+        half.Fill = new ImmutableSolidColorBrush(Of("negative"));
+        Assert.Equal(Of("negative"), Middle());
+    }
+
     // The fill, drawn: translateX(-80%) at 20 leaves the bar's first fifth filled, the rest its track.
     [AvaloniaFact]
     public void The_fill_covers_the_bar_as_far_as_the_value()

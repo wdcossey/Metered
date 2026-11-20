@@ -110,8 +110,9 @@ public class ProgressBarLayoutTests
         Assert.Equal(Math.Max(width, 4 * margin), bars.Sum(bar => bar.Bounds.Width) + 4 * margin, 6);
     }
 
-    // CSS takes a negative margin, which an override may give a bar: the bars overlap, and nothing is ever less than
-    // nothing wide (Avalonia refuses a negative arrange).
+    // CSS takes a negative margin, which an override may give a bar: the bars overlap. Avalonia takes the negative slot
+    // that leaves without complaint (a clamp review pass 2 asked for changed nothing) and lays out nothing narrower than
+    // nothing.
     [AvaloniaFact]
     public void A_negative_margin_overlaps_the_bars()
     {

@@ -20,7 +20,7 @@ public class ProgressBarContainer : Panel
         {
             if (!child.IsVisible) continue;
             var m = child.Margin;
-            child.Measure(new Size(Math.Max(0, share + m.Left + m.Right), availableSize.Height));
+            child.Measure(new Size(share + m.Left + m.Right, availableSize.Height));
             width += child.DesiredSize.Width;
             height = Math.Max(height, child.DesiredSize.Height);
         }
@@ -42,8 +42,7 @@ public class ProgressBarContainer : Panel
             var m = child.Margin;
             var slot = share + m.Left + m.Right;
             var left = Edge(x);
-            // A negative margin (an override's) overlaps the bars, as CSS's does; the slot is never less than nothing.
-            child.Arrange(new Rect(left, 0, Math.Max(0, Edge(x + slot) - left), finalSize.Height));
+            child.Arrange(new Rect(left, 0, Edge(x + slot) - left, finalSize.Height));
             x += slot;
         }
 
