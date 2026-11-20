@@ -7,7 +7,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
-using Avalonia.Threading;
 using Metered.Controls;
 using Button = Metered.Controls.Button;
 
@@ -124,19 +123,8 @@ public class ButtonPartsTests
         return ((ButtonLoadingSpinner)button.Part(Button.LoadingSpinnerPart)!, scene);
     }
 
-    /// <summary>
-    /// The ring's angle, as the turn's animation sets it on the rotation Avalonia puts in its render transform. Avalonia's
-    /// dispatcher promotes its due timers (the one that asks for the animations' next frame among them) only after it runs
-    /// a job, and a test's <c>RunJobs</c> runs none when nothing is queued, so a job first: the clock then moves as an
-    /// app's main loop moves it, rather than only when something else happens to queue a job.
-    /// </summary>
-    private static double Angle(ButtonLoadingSpinner ring, Scene scene)
-    {
-        Dispatcher.UIThread.Post(static () => { });
-        scene.Pump();
-        var group = Assert.IsType<TransformGroup>(ring.RenderTransform);
-        return Assert.Single(group.Children.OfType<RotateTransform>()).Angle;
-    }
+    /// <summary>The ring's angle, read as the Spinner's tests read it: its ring is the same <see cref="SpinnerRing"/>.</summary>
+    private static double Angle(ButtonLoadingSpinner ring, Scene scene) => SpinnerTests.Angle(ring, scene);
 
     [AvaloniaFact]
     public void Enhancers_sit_beside_the_content_with_Base_Webs_margins()

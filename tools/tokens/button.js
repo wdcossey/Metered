@@ -207,6 +207,11 @@ function spinnerThemes() {
   const spin = resolve(evaluate(button.LoadingSpinner, L, props({})), {}).self;
   same(spin.animationDuration, '700ms', 'spin duration');
   same(spin.animationIterationCount, 'infinite', 'spin count');
+  same(spin.animationTimingFunction, 'linear', 'spin curve');
+  // The keyframes are an object, which resolve() leaves out: read from the style function's own output.
+  const keyframes = evaluate(button.LoadingSpinner, L, props({})).animationName;
+  same(keyframes.from.transform, 'rotate(0deg)', 'spin from');
+  same(keyframes.to.transform, 'rotate(360deg)', 'spin to');
   // Every turn is the same: a picture of the page can't wait for it to end. So it runs unless :metered-still, which only
   // the tests' PreviewGallery sets (Avalonia 12's animation clock is internal: #13); the ring then stands at 0deg, as
   // Spinner's does (tools/tokens/spinner.js).
