@@ -84,6 +84,22 @@ disabled off and on, the label left and right, the two sizes, and the checkmark.
 <img src="docs/preview/dark__switch-2.png" width="270" alt="Switch, dark, scrolled: sizes and the checkmark">
 </p>
 
+## Spinner
+
+Base Web's spinner, as its documentation's examples and its scenario: basic, the three sizes, border widths and
+lengths (a number with a named border, a named size with a 20 border, sizing tokens, and a length with no border,
+which a browser draws at CSS's `medium`, 3), two colours, and the documentation's customised one, by an override. The
+rings turn; the pictures hold them still at 0°, Base Web's `from`.
+
+<p>
+<img src="docs/preview/light__spinner-1.png" width="270" alt="Spinner, light: basic, sizes, border widths and lengths, colours">
+<img src="docs/preview/dark__spinner-1.png" width="270" alt="Spinner, dark: basic, sizes, border widths and lengths, colours">
+</p>
+<p>
+<img src="docs/preview/light__spinner-2.png" width="270" alt="Spinner, light, scrolled: colours and the customised spinner">
+<img src="docs/preview/dark__spinner-2.png" width="270" alt="Spinner, dark, scrolled: colours and the customised spinner">
+</p>
+
 ## Slider
 
 Base Web's slider, as its documentation's examples: basic with its value under it, marks every ten, a range, disabled,
@@ -111,7 +127,7 @@ Buttons under the app's theme, then the same in a subtree given its own by `Them
 ## Not shown
 
 The pages at rest only. Hover, press and the keyboard's focus ring are in the Button's frames
-([`docs/controls/Button/`](docs/controls/Button/)); the loading spinner turns, and the background's 200 ms
+([`docs/controls/Button/`](docs/controls/Button/)); the Button's loading spinner turns (the Spinner's rings are held still for the pictures), and the background's 200 ms
 transition moves, which still pictures can't show. The shell's Debug line under the title (what a page cost to open,
 [`docs/performance/README.md`](docs/performance/README.md)) is turned off for the pictures, as its times change on
 every run. The scroll bar is Avalonia's Simple theme, which the sample puts under Metered's for the controls Metered

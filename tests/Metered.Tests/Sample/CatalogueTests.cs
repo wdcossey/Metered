@@ -105,6 +105,7 @@ public class CatalogueTests
                 ("Checkbox", typeof(CheckboxPage)),
                 ("Radio", typeof(RadioPage)),
                 ("Switch", typeof(SwitchPage)),
+                ("Spinner", typeof(SpinnerPage)),
                 ("Slider", typeof(SliderPage)),
                 ("Theme", typeof(ThemePage)),
             ],
@@ -127,7 +128,7 @@ public class CatalogueTests
     [AvaloniaFact]
     public void Every_Page_Can_Name_Its_Pictures_And_None_Takes_The_Lists()
     {
-        Assert.Equal(["button", "buttongroup", "checkbox", "radio", "switch", "slider", "theme"], SampleShell.Pages.Select(page => PreviewGallery.PictureName(page.Title)));
+        Assert.Equal(["button", "buttongroup", "checkbox", "radio", "switch", "spinner", "slider", "theme"], SampleShell.Pages.Select(page => PreviewGallery.PictureName(page.Title)));
         Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("List"));
         Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("Date/Time"));
     }
@@ -211,7 +212,7 @@ public class CatalogueTests
         var error = Assert.Throws<ArgumentException>(() => shell.Open("Tabs"));
 
         Assert.Contains("'Tabs'", error.Message);
-        Assert.Contains("'Button', 'ButtonGroup', 'Checkbox', 'Radio', 'Switch', 'Slider', 'Theme'", error.Message);
+        Assert.Contains("'Button', 'ButtonGroup', 'Checkbox', 'Radio', 'Switch', 'Spinner', 'Slider', 'Theme'", error.Message);
         Assert.False(shell.IsShowingPage);
     }
 

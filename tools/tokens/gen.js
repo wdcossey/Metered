@@ -140,6 +140,9 @@ files['../Controls/Radio.Parts.g.axaml'] = require('./radio').file(version);
 // The themes of Switch's parts, from Base Web's switch (switch.js).
 files['../Controls/Switch.Parts.g.axaml'] = require('./switch').file(version);
 
+// The theme of Spinner's part, from Base Web's spinner (spinner.js).
+files['../Controls/Spinner.Parts.g.axaml'] = require('./spinner').file(version);
+
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');
 files['../Controls/Slider.Parts.g.axaml'] = slider.file(version);
