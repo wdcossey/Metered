@@ -268,9 +268,13 @@ public class SpinnerTests
     private static double Token(string name, Scene scene) =>
         scene.Window.TryFindResource("sizing." + name, scene.Window.ActualThemeVariant, out var value) ? (double)value! : double.NaN;
 
-    /// <summary>The ring's angle, as the turn's animation sets it on the rotation Avalonia puts in its render transform.</summary>
+    /// <summary>
+    /// The ring's angle, as the turn's animation sets it on the rotation Avalonia puts in its render transform. A job first,
+    /// so the dispatcher promotes its due timers and the clock moves (ButtonPartsTests' <c>Angle</c> says why).
+    /// </summary>
     private static double Angle(SpinnerRing ring, Scene scene)
     {
+        Avalonia.Threading.Dispatcher.UIThread.Post(static () => { });
         scene.Pump();
         var group = Assert.IsType<TransformGroup>(ring.RenderTransform);
         return Assert.Single(group.Children.OfType<RotateTransform>()).Angle;

@@ -72,7 +72,10 @@ A style animation of `RotateTransform.Angle`, 0 to 360, as Button's ring turns; 
 the ring's `RenderTransform` to hold the rotation. It is tested at its end values: the animation's keyframes,
 duration, easing and count against Base Web's, and that the angle moves on Avalonia's clock. A frame-by-frame
 comparison needs a test clock (#13), which doesn't exist yet: Avalonia 12's animation clock is internal, so the turn
-runs on real time.
+runs on real time. A test's `Dispatcher.UIThread.RunJobs()` promotes the dispatcher's due timers (among them the one
+that asks for the animations' next frame) only after it runs a job, and runs none when nothing is queued; an app's main
+loop doesn't wait for a job. So the tests queue an empty job before each frame they read, or the ring can stand still
+for a whole test, as `The_ring_turns` did in 3 of 12 runs beside Button's ring tests (#69); with the job, in none of 8.
 
 **`:metered-still`.** A turn without end would keep `PreviewGallery` from ever drawing a picture at rest, so it runs
 only while the ring isn't `:metered-still`. Only the tests set it: `PreviewGallery` sets it on every element of a

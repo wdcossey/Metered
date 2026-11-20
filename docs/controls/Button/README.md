@@ -35,8 +35,9 @@ substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
   Hover, press and keyboard focus are real input.
 - `ButtonLayoutTests`: 40 cases (each size × shape × width type): padding, radius, sizes, type,
   and the laid-out height.
-- `ButtonPartsTests`: the spinner (112 cases), loading, the enhancers, `artworkSize`, touch not
-  hovering, the tap band, and the parts' mirrored state.
+- `ButtonPartsTests`: the spinner (112 cases), loading, that the loading ring turns and that
+  `:metered-still` holds it at 0°, the enhancers, `artworkSize`, touch not hovering, the tap band,
+  and the parts' mirrored state.
 - `ButtonFrames`: the hover overlay's and the focus ring's pixels.
 
 ## Known differences
@@ -49,6 +50,10 @@ substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
 4. **`outline`'s hover overlay** is Base Web's `::after` (a fill and a ring) drawn as the button's
    own box-shadows, first, on top.
 5. **The spinner's arc** ends square; a CSS border's colour changes on a diagonal mitre.
+   Its turn (Base Web's `rotate(0deg)` to `rotate(360deg)`, 700 ms, linear, endless) runs only
+   while the ring isn't `:metered-still`, a style inside its `ControlTheme` that exists for the
+   pictures: `PreviewGallery` sets it, and the ring stands at 0°, as the Spinner's does
+   ([`docs/controls/Spinner/`](../Spinner/README.md)).
 6. **`round`** (deprecated) is drawn with a 999 radius: Base Web's 50% makes an ellipse of a
    button that isn't square.
 7. **`minHitArea="tap"`** widens the Button's bounds to the 48 px band after layout (spikes);
