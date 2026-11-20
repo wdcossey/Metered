@@ -766,9 +766,11 @@ public class SwitchTests
 
     // switch.js's handlers are checkbox.js's: one isActive, set by a press or Space or Enter, and ended by a button's
     // release, a key's release, or any pointer leaving, whichever comes first. The switch and the checkbox take the same
-    // input to the same states.
+    // input to the same states. A key let go is tried under a finger, not a held mouse: its release toggles the switch,
+    // and Avalonia then raises PointerExited for the captured mouse as the scene redraws
+    // (PointerOverPreProcessor.SceneInvalidated), which ends the press whichever rule holds.
     [AvaloniaTheory]
-    [InlineData("press, Space, let go of Space, release", new[] { true, true, false, false })]
+    [InlineData("touch, Space, let go of Space, lift", new[] { true, true, false, false })]
     [InlineData("Space, press, release, let go of Space", new[] { true, true, false, false })]
     [InlineData("touch, drag off, lift", new[] { true, false, false })]
     public void A_press_and_a_key_end_as_on_the_checkbox(string sequence, bool[] expected)
