@@ -4,6 +4,7 @@ using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 
@@ -52,7 +53,11 @@ public sealed class ButtonGroupClickEventArgs(RoutedEvent routedEvent, int index
 /// own; a button's own <c>IsSelected</c> of true is kept, and otherwise the group sets it from
 /// <see cref="Selected"/>, except in a group of plain buttons (no mode, no selection), which
 /// leaves it alone. In radio mode only the selected button (or the first, with none) is a tab
-/// stop, and the arrow keys move the selection and the focus, wrapping.</para>
+/// stop, and the arrow keys move the selection and the focus, wrapping. <see cref="Selected"/> is by place, as Base
+/// Web's index is: when a button comes or goes before another, that one is selected, and a tab stop, by its new
+/// place.</para>
+/// <para>As <c>cloneElement</c> leaves the child itself unchanged: a button that leaves has its own values back,
+/// as they were when it joined (its kind, size, shape, selection, tab stop and role).</para>
 /// <para>Its one part is <c>Root</c>, the row.</para>
 /// </remarks>
 [TemplatePart(RootPart, typeof(StyledElement))]
@@ -88,18 +93,41 @@ public class ButtonGroup : ItemsControl
     public static readonly RoutedEvent<ButtonGroupClickEventArgs> ClickEvent =
         RoutedEvent.Register<ButtonGroup, ButtonGroupClickEventArgs>(nameof(Click), RoutingStrategies.Bubble);
 
-    /// <summary>Whether the button's own IsSelected was true when it joined the group, which Base Web keeps.</summary>
-    private static readonly AttachedProperty<bool> OwnSelectedProperty =
-        AvaloniaProperty.RegisterAttached<ButtonGroup, Button, bool>("OwnSelected");
-
     /// <summary>Whether the group has written the button's IsSelected, so that it can take it back.</summary>
     private static readonly AttachedProperty<bool> GroupSelectedProperty =
         AvaloniaProperty.RegisterAttached<ButtonGroup, Button, bool>("GroupSelected");
 
     private readonly Parts _parts;
 
-    /// <summary>The buttons the group has taken, so that each is given back when it leaves, however it leaves.</summary>
-    private readonly HashSet<Button> _members = [];
+    /// <summary>
+    /// The buttons the group has taken, so that each is given back when it leaves, however it leaves, with what it had
+    /// of its own when it joined: each value the group stands in for, if the button set it (Base Web's child props,
+    /// which <c>cloneElement</c> leaves unchanged).
+    /// </summary>
+    private readonly Dictionary<Button, Own> _members = [];
+
+    private readonly record struct Own(
+        Optional<bool> IsSelected,
+        Optional<ButtonKind> Kind,
+        Optional<ButtonSize> Size,
+        Optional<ButtonShape> Shape,
+        Optional<bool> IsTabStop,
+        Optional<AutomationControlType?> ControlType)
+    {
+        /// <summary>Base Web's <c>child.props.isSelected</c> of true, which the group keeps.</summary>
+        public bool Selected => IsSelected is { HasValue: true, Value: true };
+
+        public static Own Of(Button button) => new(
+            OwnValue(button, Button.IsSelectedProperty),
+            OwnValue(button, Button.KindProperty),
+            OwnValue(button, Button.SizeProperty),
+            OwnValue(button, Button.ShapeProperty),
+            OwnValue(button, IsTabStopProperty),
+            OwnValue(button, AutomationProperties.ControlTypeOverrideProperty));
+
+        private static Optional<T> OwnValue<T>(Button button, StyledProperty<T> property) =>
+            button.IsSet(property) ? new Optional<T>(button.GetValue(property)) : default;
+    }
 
     public ButtonGroup()
     {
@@ -115,7 +143,7 @@ public class ButtonGroup : ItemsControl
         // ObservableCollection's Clear), which lists no old items, so then every button no longer in the group is given
         // back.
         var gone = e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset
-            ? _members.Where(button => !Items.Contains(button)).ToList()
+            ? _members.Keys.Where(button => !Items.Contains(button)).ToList()
             : e.OldItems?.OfType<Button>().Where(button => !Items.Contains(button)).ToList() ?? [];
         foreach (var button in gone) Release(button);
     }
@@ -170,12 +198,7 @@ public class ButtonGroup : ItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is not Button button) return;
-        if (!button.GetValue(GroupSelectedProperty) && button.IsSet(Button.IsSelectedProperty) && button.IsSelected)
-        {
-            button.SetValue(OwnSelectedProperty, true);
-        }
-
-        if (_members.Add(button)) button.Click += OnButtonClick;
+        if (_members.TryAdd(button, Own.Of(button))) button.Click += OnButtonClick;
         Apply(button, index);
     }
 
@@ -185,23 +208,37 @@ public class ButtonGroup : ItemsControl
         if (container is Button button) Release(button);
     }
 
-    /// <summary>Gives a button that leaves the group its own values back.</summary>
+    /// <summary>A button moved, as another came or went before it: Base Web's index is its place, so its selection and tab stop are its new place's.</summary>
+    protected override void ContainerIndexChangedOverride(Control container, int oldIndex, int newIndex)
+    {
+        base.ContainerIndexChangedOverride(container, oldIndex, newIndex);
+        if (container is Button button && _members.ContainsKey(button)) Apply(button, newIndex);
+    }
+
+    /// <summary>Gives a button that leaves the group its own values back, as they were when it joined.</summary>
     private void Release(Button button)
     {
-        if (!_members.Remove(button)) return;
+        if (!_members.Remove(button, out var own)) return;
         button.Click -= OnButtonClick;
-        if (button.GetValue(GroupSelectedProperty))
-        {
-            button.ClearValue(Button.IsSelectedProperty);
-            button.ClearValue(GroupSelectedProperty);
-        }
+        if (button.GetValue(GroupSelectedProperty)) GiveBackSelected(button, own);
+        Restore(button, Button.KindProperty, own.Kind);
+        Restore(button, Button.SizeProperty, own.Size);
+        Restore(button, Button.ShapeProperty, own.Shape);
+        Restore(button, IsTabStopProperty, own.IsTabStop);
+        Restore(button, AutomationProperties.ControlTypeOverrideProperty, own.ControlType);
+    }
 
-        button.ClearValue(Button.KindProperty);
-        button.ClearValue(Button.SizeProperty);
-        button.ClearValue(Button.ShapeProperty);
-        button.ClearValue(IsTabStopProperty);
-        button.ClearValue(AutomationProperties.ControlTypeOverrideProperty);
-        button.ClearValue(OwnSelectedProperty);
+    /// <summary>The group no longer sets the button's IsSelected: its own comes back, or none.</summary>
+    private static void GiveBackSelected(Button button, Own own)
+    {
+        Restore(button, Button.IsSelectedProperty, own.IsSelected);
+        button.ClearValue(GroupSelectedProperty);
+    }
+
+    private static void Restore<T>(Button button, StyledProperty<T> property, Optional<T> own)
+    {
+        if (own.HasValue) button.SetValue(property, own.Value);
+        else button.ClearValue(property);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -227,7 +264,7 @@ public class ButtonGroup : ItemsControl
     {
         foreach (var container in GetRealizedContainers())
         {
-            if (container is Button button) Apply(button, IndexFromContainer(button));
+            if (container is Button button && _members.ContainsKey(button)) Apply(button, IndexFromContainer(button));
         }
     }
 
@@ -238,7 +275,8 @@ public class ButtonGroup : ItemsControl
         button.Shape = Shape;
         button.Size = Size;
 
-        bool? isSelected = button.GetValue(OwnSelectedProperty) ? true
+        var own = _members[button];
+        bool? isSelected = own.Selected ? true
             : IsSimpleClickable ? null
             : Selected?.Contains(index) == true;
         if (isSelected is { } selected)
@@ -248,8 +286,7 @@ public class ButtonGroup : ItemsControl
         }
         else if (button.GetValue(GroupSelectedProperty))
         {
-            button.ClearValue(Button.IsSelectedProperty);
-            button.ClearValue(GroupSelectedProperty);
+            GiveBackSelected(button, own);
         }
 
         // Base Web's role and tabIndex.
