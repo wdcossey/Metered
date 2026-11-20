@@ -65,7 +65,12 @@ public class ProgressBar : RangeBase
 
     private static readonly string[] Intents = [":intent-default", ":intent-positive", ":intent-warning", ":intent-negative", ":intent-brand"];
 
+    private static readonly string[] StepStates = [":step-completed", ":step-in-progress", ":step-awaits"];
+
     private readonly Parts _parts;
+
+    /// <summary>The value's offset on the fill of a bar of one step, at Template priority: replaced, never stacked.</summary>
+    private IDisposable? _offset;
 
     static ProgressBar()
     {
@@ -109,13 +114,13 @@ public class ProgressBar : RangeBase
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
 
     /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, or its default.</summary>
-    public string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DefaultLabel(Value, Maximum, Minimum);
+    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DefaultLabel(Value, Maximum, Minimum);
 
     /// <summary>
     /// The name Base Web gives assistive technology when the app gives none (<c>aria-label</c>): "Loading" when infinite,
     /// "Step 3 of 4" with steps, otherwise the label.
     /// </summary>
-    public string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? StepLabel(Value, Maximum, Minimum, Steps) : ProgressLabel;
+    internal string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? StepLabel(Value, Maximum, Minimum, Steps) : ProgressLabel;
 
     /// <summary>A part of the current template by its Base Web name (the first, for a part it makes many of), for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
@@ -169,11 +174,11 @@ public class ProgressBar : RangeBase
     }
 
     /// <summary>Base Web's default label: <c>`${Math.round((value - minValue) / (maxValue - minValue) * 100)}% Complete`</c>.</summary>
-    public static string DefaultLabel(double value, double maxValue, double minValue) =>
+    internal static string DefaultLabel(double value, double maxValue, double minValue) =>
         $"{Js(JsRound((value - minValue) / (maxValue - minValue) * 100))}% Complete";
 
     /// <summary>Base Web's step label: <c>`Step ${Math.ceil((value - minValue) / (maxValue - minValue) * steps)} of ${steps}`</c>.</summary>
-    public static string StepLabel(double value, double maxValue, double minValue, int steps) =>
+    internal static string StepLabel(double value, double maxValue, double minValue, int steps) =>
         $"Step {Js(Math.Ceiling((value - minValue) / (maxValue - minValue) * steps))} of {steps.ToString(CultureInfo.InvariantCulture)}";
 
     /// <summary>
@@ -204,14 +209,27 @@ public class ProgressBar : RangeBase
         return x - f >= 0.5 ? f + 1 : f;
     }
 
-    /// <summary>A number as JavaScript writes an integer, a NaN or an infinity in a template literal (−0 as 0).</summary>
-    private static string Js(double x) => double.IsNaN(x) ? "NaN" : (x + 0.0).ToString(CultureInfo.InvariantCulture);
+    /// <summary>
+    /// An integer, a NaN or an infinity as JavaScript writes it in a template literal: every digit below 10²¹, then the
+    /// shortest exponent form ("1e+21"); −0 as 0.
+    /// </summary>
+    private static string Js(double x) =>
+        double.IsNaN(x) ? "NaN"
+        : double.IsInfinity(x) ? (x > 0 ? "Infinity" : "-Infinity")
+        : Math.Abs(x) < 1e21 ? (x + 0.0).ToString("F0", CultureInfo.InvariantCulture)
+        : x.ToString("R", CultureInfo.InvariantCulture).ToLowerInvariant();
 
-    /// <summary>The bars Base Web renders: a Bar and its BarProgress for each step, or the two InfiniteBars.</summary>
+    /// <summary>
+    /// The bars Base Web renders: a Bar and its BarProgress for each step, or the two InfiniteBars. Each new element has
+    /// its state, its offset and its theme before it joins the tree, so its first look isn't transitioned to, as a
+    /// browser doesn't transition an element's first style.
+    /// </summary>
     private void Build()
     {
         if (_parts[BarContainerPart] is not Panel container) return;
         container.Children.Clear();
+        _offset?.Dispose();
+        _offset = null;
         var bars = new List<StyledElement>();
         var fills = new List<StyledElement>();
         var infinite = new List<StyledElement>();
@@ -222,7 +240,6 @@ public class ProgressBar : RangeBase
                 var half = new ProgressBarInfiniteBar();
                 ((IPseudoClasses)half.Classes).Set(":is-left", i == 0);
                 infinite.Add(half);
-                container.Children.Add(half);
             }
         }
         else
@@ -230,38 +247,46 @@ public class ProgressBar : RangeBase
             for (var i = 0; i < Steps; i++)
             {
                 var fill = new ProgressBarFill();
-                var bar = new Border { Child = fill };
-                bars.Add(bar);
+                UpdateFill(fill, i);
+                bars.Add(new Border { Child = fill });
                 fills.Add(fill);
-                container.Children.Add(bar);
             }
         }
 
-        _parts.Place(BarPart, bars);
-        _parts.Place(BarProgressPart, fills);
-        _parts.Place(InfiniteBarPart, infinite);
-        UpdateFills();
+        _parts.Place((BarPart, bars), (BarProgressPart, fills), (InfiniteBarPart, infinite));
+        foreach (var element in bars.Concat(infinite)) container.Children.Add((Control)element);
     }
 
     /// <summary>Each fill's step state, or in a bar of one step its offset from the value.</summary>
     private void UpdateFills()
     {
         var fills = _parts.All(BarProgressPart);
-        for (var i = 0; i < fills.Count; i++)
-        {
-            var fill = fills[i];
-            var classes = (IPseudoClasses)fill.Classes;
-            var state = Steps > 1 ? StepState(Value, Minimum, Maximum, Steps, i) : null;
-            foreach (var s in new[] { ":step-completed", ":step-in-progress", ":step-awaits" }) classes.Set(s, s == state);
-            // A step's fill is made for its steps (Build): only a bar of one step has the value's offset.
-            if (state is null) fill.SetValue(ProgressBarFill.OffsetProperty, Offset(Value, Minimum, Maximum), BindingPriority.Template);
-        }
+        for (var i = 0; i < fills.Count; i++) UpdateFill(fills[i], i);
     }
 
+    private void UpdateFill(StyledElement fill, int index)
+    {
+        var classes = (IPseudoClasses)fill.Classes;
+        var state = Steps > 1 ? StepState(Value, Minimum, Maximum, Steps, index) : null;
+        foreach (var s in StepStates) classes.Set(s, s == state);
+        if (state is not null) return;
+
+        // A bar of one step: the value's offset. Set before the last is let go, so the fill never sees the theme's own
+        // in between (its transition runs from the last value to this one); kept, a frame each would pile up.
+        var next = fill.SetValue(ProgressBarFill.OffsetProperty, Offset(Value, Minimum, Maximum), BindingPriority.Template);
+        _offset?.Dispose();
+        _offset = next;
+    }
+
+    /// <summary>
+    /// Base Web renders the label only with showLabel: without it, nothing shows it; with it, the part's theme and its
+    /// override decide, as an override's style does on Base Web's.
+    /// </summary>
     private void UpdateLabel()
     {
         if (_parts[LabelPart] is not TextBlock label) return;
-        label.IsVisible = ShowLabel;
+        if (ShowLabel) label.ClearValue(Visual.IsVisibleProperty);
+        else label.IsVisible = false;
         label.Text = ShowLabel ? ProgressLabel : null;
     }
 
@@ -291,8 +316,32 @@ public class ProgressBar : RangeBase
 /// The ProgressBar's automation peer: Avalonia's progress bar peer (role progressbar, its range read only), named as
 /// Base Web names it when the app gives no name: "Loading", "Step 3 of 4" or the label.
 /// </summary>
-internal sealed class MeteredProgressBarAutomationPeer(ProgressBar owner) : Avalonia.Controls.Automation.Peers.ProgressBarAutomationPeer(owner)
+internal sealed class MeteredProgressBarAutomationPeer : Avalonia.Controls.Automation.Peers.ProgressBarAutomationPeer
 {
+    private string? _name;
+
+    public MeteredProgressBarAutomationPeer(ProgressBar owner)
+        : base(owner)
+    {
+        _name = GetName();
+        owner.PropertyChanged += OnOwnerPropertyChanged;
+    }
+
+    /// <summary>
+    /// Base Web's <c>aria-label</c> changes with the value, and its <c>aria-live="polite"</c> region says it: the name's
+    /// change is raised whenever what it is made of changes.
+    /// </summary>
+    private void OnOwnerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        var p = e.Property;
+        if (p != RangeBase.ValueProperty && p != RangeBase.MinimumProperty && p != RangeBase.MaximumProperty && p != ProgressBar.StepsProperty
+            && p != ProgressBar.InfiniteProperty && p != ProgressBar.GetProgressLabelProperty && p != AutomationProperties.NameProperty) return;
+        var name = GetName();
+        if (name == _name) return;
+        RaisePropertyChangedEvent(AutomationElementIdentifiers.NameProperty, _name, name);
+        _name = name;
+    }
+
     protected override string? GetNameCore()
     {
         var name = base.GetNameCore();

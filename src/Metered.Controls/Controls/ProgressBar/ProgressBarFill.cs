@@ -44,12 +44,6 @@ public class ProgressBarFill : Control
         if (Background is not { } background) return;
         var size = Bounds.Size;
         var box = new Rect(new Point(Offset / 100 * size.Width, 0), size);
-        context.DrawRectangle(background, null, new RoundedRect(box, Clamp(CornerRadius, size)));
-    }
-
-    internal static CornerRadius Clamp(CornerRadius r, Size size)
-    {
-        var most = Math.Max(0, Math.Min(size.Width, size.Height) / 2);
-        return new CornerRadius(Math.Min(r.TopLeft, most), Math.Min(r.TopRight, most), Math.Min(r.BottomRight, most), Math.Min(r.BottomLeft, most));
+        context.DrawRectangle(background, null, new RoundedRect(box, RadioMark.Clamp(CornerRadius, size)));
     }
 }

@@ -954,6 +954,44 @@
    "infiniteBars": 0
   },
   {
+   "value": 1000000000000000,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "1000000000000000% Complete",
+   "busy": false,
+   "label": "1000000000000000% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": 0
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 1e+21,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "1e+21% Complete",
+   "busy": false,
+   "label": "1e+21% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": 0
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
    "value": 0,
    "minValue": 0,
    "maxValue": 100,

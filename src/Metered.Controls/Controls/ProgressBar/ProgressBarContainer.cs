@@ -14,13 +14,13 @@ public class ProgressBarContainer : Panel
 {
     protected override Size MeasureOverride(Size availableSize)
     {
-        var children = Children.Where(c => c.IsVisible).ToList();
-        var share = Share(availableSize.Width, children);
+        var share = Share(availableSize.Width);
         double width = 0, height = 0;
-        foreach (var child in children)
+        foreach (var child in Children)
         {
+            if (!child.IsVisible) continue;
             var m = child.Margin;
-            child.Measure(new Size(double.IsInfinity(share) ? share : share + m.Left + m.Right, availableSize.Height));
+            child.Measure(new Size(share + m.Left + m.Right, availableSize.Height));
             width += child.DesiredSize.Width;
             height = Math.Max(height, child.DesiredSize.Height);
         }
@@ -30,15 +30,15 @@ public class ProgressBarContainer : Panel
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var children = Children.Where(c => c.IsVisible).ToList();
-        var share = Share(finalSize.Width, children);
+        var share = Share(finalSize.Width);
         // With layout rounding, each edge is rounded where it falls, so the children fill the row exactly, each within
         // a device pixel of its share, as a browser snaps a fraction it lays out to the pixels it paints.
         var scale = UseLayoutRounding ? LayoutHelper.GetLayoutScale(this) : 0;
         double Edge(double at) => scale > 0 ? Math.Round(at * scale) / scale : at;
         double x = 0;
-        foreach (var child in children)
+        foreach (var child in Children)
         {
+            if (!child.IsVisible) continue;
             var m = child.Margin;
             var slot = share + m.Left + m.Right;
             var left = Edge(x);
@@ -50,11 +50,18 @@ public class ProgressBarContainer : Panel
     }
 
     /// <summary>Each child's width inside its margins: the row's width less the margins, in equal parts, none below 0.</summary>
-    private static double Share(double width, IReadOnlyList<Control> children)
+    private double Share(double width)
     {
-        if (children.Count == 0) return 0;
-        if (double.IsInfinity(width)) return double.PositiveInfinity;
-        var margins = children.Sum(c => c.Margin.Left + c.Margin.Right);
-        return Math.Max(0, (width - margins) / children.Count);
+        double margins = 0;
+        var count = 0;
+        foreach (var child in Children)
+        {
+            if (!child.IsVisible) continue;
+            margins += child.Margin.Left + child.Margin.Right;
+            count++;
+        }
+
+        if (count == 0) return 0;
+        return double.IsInfinity(width) ? width : Math.Max(0, (width - margins) / count);
     }
 }

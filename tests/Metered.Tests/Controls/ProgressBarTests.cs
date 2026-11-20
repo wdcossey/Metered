@@ -390,6 +390,95 @@ public class ProgressBarTests
         Assert.All(pb.Elements(part), e => Assert.Equal(1, ((Visual)e).Opacity));
     }
 
+    // The value's offset is set at Template priority on every change: each replaces the last, so a bar updated many
+    // times holds no more values than after its first change (Avalonia keeps a frame for each value set at that priority).
+    [AvaloniaFact]
+    public void A_bar_updated_many_times_holds_one_offset()
+    {
+        var pb = new ProgressBar { Value = 1 };
+        using var scene = new Scene(pb);
+        var fill = (ProgressBarFill)pb.Part(ProgressBar.BarProgressPart)!;
+        pb.Value = 2;
+        scene.Pump();
+        var once = ValueFrames(fill);
+        for (var v = 3; v <= 50; v++) pb.Value = v;
+        scene.Pump();
+        Assert.Equal(once, ValueFrames(fill));
+        Assert.Equal(ProgressBar.Offset(50, 0, 100), fill.GetBaseValue(ProgressBarFill.OffsetProperty).GetValueOrDefault());
+    }
+
+    // A bar made while the page is up (steps or infinite changed) has its look at once, as a browser gives a new element
+    // its first style without a transition; the fill doesn't slide in from empty.
+    [AvaloniaFact]
+    public void A_new_bar_has_its_value_at_once()
+    {
+        var c = ProgressBarOracle.Data.Values.First(v => v.Value == 40 && v.AriaLabel is not null);
+        var pb = new ProgressBar { Value = c.Value, Infinite = true };
+        using var scene = new Scene(pb);
+        pb.Infinite = false;
+        scene.Pump();
+        var fill = (ProgressBarFill)pb.Part(ProgressBar.BarProgressPart)!;
+        Assert.Contains(":loaded", fill.Classes);
+        Assert.NotEqual(BindingPriority.Animation, fill.GetDiagnostic(ProgressBarFill.OffsetProperty).Priority);
+        Assert.Equal(c.Bars[0].Offset, fill.Offset);
+
+        pb.Steps = 3;
+        scene.Pump();
+        var first = (ProgressBarFill)pb.Elements(ProgressBar.BarProgressPart)[0];
+        Assert.NotEqual(BindingPriority.Animation, first.GetDiagnostic(ProgressBarFill.OffsetProperty).Priority);
+    }
+
+    // aria-live="polite" says a changed aria-label: the peer raises the name's change as the value moves it.
+    [AvaloniaFact]
+    public void The_name_changes_with_the_value()
+    {
+        var from = ProgressBarOracle.Data.Values.First(v => v.Value == 20 && v.Steps == 1 && v.AriaLabel is null);
+        var to = ProgressBarOracle.Data.Values.First(v => v.Value == 100 && v.Steps == 1);
+        var pb = new ProgressBar { Value = from.Value };
+        using var scene = new Scene(pb);
+        var peer = ControlAutomationPeer.CreatePeerForElement(pb);
+        var changes = new List<AutomationPropertyChangedEventArgs>();
+        peer.PropertyChanged += (_, e) => { if (e.Property == AutomationElementIdentifiers.NameProperty) changes.Add(e); };
+        pb.Value = to.Value;
+        var change = Assert.Single(changes);
+        Assert.Equal(from.Name, change.OldValue);
+        Assert.Equal(to.Name, change.NewValue);
+
+        // An app's own name is the name, and changes with it.
+        AutomationProperties.SetName(pb, "Uploading");
+        Assert.Equal("Uploading", changes.Last().NewValue);
+        pb.Value = from.Value;
+        Assert.Equal(2, changes.Count);
+    }
+
+    // showLabel renders the label or not; rendered, an override's style can still hide it, as on Base Web's.
+    [AvaloniaFact]
+    public void Only_ShowLabel_shows_the_label_and_an_override_may_hide_it()
+    {
+        var hide = new ControlTheme(typeof(TextBlock));
+        hide.Setters.Add(new Setter(Visual.IsVisibleProperty, false));
+        var show = new ControlTheme(typeof(TextBlock));
+        show.Setters.Add(new Setter(Visual.IsVisibleProperty, true));
+        var hidden = new ProgressBar { Value = 20, ShowLabel = true, Overrides = [new Override { Part = ProgressBar.LabelPart, Style = hide }] };
+        var none = new ProgressBar { Value = 20, Overrides = [new Override { Part = ProgressBar.LabelPart, Style = show }] };
+        using var scene = new Scene(new StackPanel { Children = { hidden, none } });
+        Assert.False(((Visual)hidden.Part(ProgressBar.LabelPart)!).IsVisible);
+        Assert.False(((Visual)none.Part(ProgressBar.LabelPart)!).IsVisible);
+        none.ShowLabel = true;
+        Assert.True(((Visual)none.Part(ProgressBar.LabelPart)!).IsVisible);
+        none.ShowLabel = false;
+        Assert.False(((Visual)none.Part(ProgressBar.LabelPart)!).IsVisible);
+    }
+
+    /// <summary>The frames in an element's value store: Avalonia keeps one for each value set at a priority other than local.</summary>
+    private static int ValueFrames(AvaloniaObject o)
+    {
+        const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var store = typeof(AvaloniaObject).GetField("_values", Private)!.GetValue(o)!;
+        var frames = store.GetType().GetField("_frames", Private)!.GetValue(store)!;
+        return ((System.Collections.ICollection)frames).Count;
+    }
+
     // errorMessage is deprecated and ignored in 18.2.0 (types.d.ts, progressbar.js): Metered has no such property.
     [AvaloniaFact]
     public void It_has_no_error_message()

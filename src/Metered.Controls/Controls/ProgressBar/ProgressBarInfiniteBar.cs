@@ -84,6 +84,6 @@ public class ProgressBarInfiniteBar : Control
             startPoint: new RelativePoint(left, 0, RelativeUnit.Absolute),
             endPoint: new RelativePoint(left + ImageWidth, 0, RelativeUnit.Absolute));
         var size = Bounds.Size;
-        context.DrawRectangle(brush, null, new RoundedRect(new Rect(size), ProgressBarFill.Clamp(CornerRadius, size)));
+        context.DrawRectangle(brush, null, new RoundedRect(new Rect(size), RadioMark.Clamp(CornerRadius, size)));
     }
 }

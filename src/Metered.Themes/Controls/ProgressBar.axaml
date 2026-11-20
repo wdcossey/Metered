@@ -25,8 +25,8 @@
       <ControlTemplate>
         <StackPanel Name="Root" Theme="{DynamicResource ProgressBar.StyledRoot}">
           <b:ProgressBarContainer Name="BarContainer" Theme="{DynamicResource ProgressBar.StyledBarContainer}" />
-          <!-- Shown only with ShowLabel (Metered.Controls.ProgressBar). -->
-          <TextBlock Name="Label" Theme="{DynamicResource ProgressBar.StyledLabel}" IsVisible="False" />
+          <!-- Hidden without ShowLabel (Metered.Controls.ProgressBar). -->
+          <TextBlock Name="Label" Theme="{DynamicResource ProgressBar.StyledLabel}" />
         </StackPanel>
       </ControlTemplate>
     </Setter>

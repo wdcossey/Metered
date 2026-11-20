@@ -64,8 +64,10 @@ Avalonia's progress bar automation peer.
   each side. Base Web's default: `${Math.round(percent)}% Complete`, JavaScript's rounding (a half up) and numbers kept.
 - The accessible name: the app's, or Base Web's: "Loading" when infinite, "Step 3 of 4" with steps
   (`Math.ceil` of the steps reached), otherwise the label. Its role is a progress bar, its range read only, and it is
-  a polite live region (`aria-live="polite"`).
+  a polite live region (`aria-live="polite"`), whose name's change is raised as the value, the steps or the label move it.
 - Not focusable, nothing to press: there's nothing to touch, so no touch target.
+- A bar made while the page is up (steps or infinite changed) is drawn at its value at once: a browser doesn't
+  transition a new element's first style.
 
 ## Motion
 
@@ -88,11 +90,12 @@ the pictures. An app never sets it.
 - `Controls/ProgressBarLayoutTests`: 6 cases (three sizes, of one step and of three): the root's gap, the bars' height,
   corners, margins and shares of the row, the fill's box, the label's place, padding and type, the infinite halves;
   and the steps sharing a row of three widths (9 in all).
-- `Controls/ProgressBarTests`: 23 values Base Web's scenarios, unit tests and examples use, rendered by Base Web
-  itself (the bars, each step's state and fill, the label, the name); `GetProgressLabel`; the range for assistive
+- `Controls/ProgressBarTests`: 25 values Base Web's scenarios, unit tests and examples use, and the ends, rendered by
+  Base Web itself (the bars, each step's state and fill, the label, the name); `GetProgressLabel`; the range for assistive
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions, the fill and the steps drawn; overrides on every part
-  (and over the value's offset); no `ErrorMessage`: 44 in all.
+  (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 50 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with
@@ -125,6 +128,9 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
    pattern: it still reports the value.
 7. **Right to left isn't done**: Base Web's `translateX` doesn't turn for `rtl` either, and Metered's themes are left
    to right; a `FlowDirection` of `RightToLeft` hasn't been tried.
-8. **`borders.useRoundedCorners`** false (square bars) isn't followed: the themes are generated from Base Web's light
+8. **No width of its own.** Base Web's `width: 100%` is its parent's; where a parent gives no width (a horizontal
+   `StackPanel`), the bars have none either and the bar is 0 wide, as an empty block is in a shrink-to-fit box. Give
+   it a width or a parent that stretches it.
+9. **`borders.useRoundedCorners`** false (square bars) isn't followed: the themes are generated from Base Web's light
    theme, where it is true.
-9. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+10. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).

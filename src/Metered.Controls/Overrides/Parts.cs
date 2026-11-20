@@ -75,24 +75,27 @@ internal sealed class Parts
     }
 
     /// <summary>
-    /// The elements the control makes of a part, in place of the ones it gave before: each takes the control's states
-    /// and its theme, <c>{Component}.Styled{Part}</c> (a dynamic resource, as the template's parts take theirs), with the
-    /// part's override merged over it.
+    /// The elements the control makes of parts, each part's in place of the ones it gave before: each takes the
+    /// control's states and its theme, <c>{Component}.Styled{Part}</c> (a dynamic resource, as the template's parts
+    /// take theirs), with the part's override merged over it.
     /// </summary>
-    public void Place(string name, IReadOnlyList<StyledElement> elements)
+    public void Place(params (string Name, IReadOnlyList<StyledElement> Elements)[] parts)
     {
-        foreach (var old in All(name))
+        foreach (var (name, elements) in parts)
         {
-            if (_themed.Remove(old)) old.ClearValue(StyledElement.ThemeProperty);
-            if (_placed.Remove(old, out var binding)) binding.Dispose();
-        }
+            foreach (var old in All(name))
+            {
+                if (_themed.Remove(old)) old.ClearValue(StyledElement.ThemeProperty);
+                if (_placed.Remove(old, out var binding)) binding.Dispose();
+            }
 
-        _found[name] = [.. elements];
-        foreach (var element in elements)
-        {
-            _placed[element] = element.Bind(StyledElement.ThemeProperty,
-                _owner.GetResourceObservable(ThemeKey(name), value => value as ControlTheme), BindingPriority.Template);
-            foreach (var (pseudo, on) in _states) Set(element, pseudo, on);
+            _found[name] = [.. elements];
+            foreach (var element in elements)
+            {
+                _placed[element] = element.Bind(StyledElement.ThemeProperty,
+                    _owner.GetResourceObservable(ThemeKey(name), value => value as ControlTheme), BindingPriority.Template);
+                foreach (var (pseudo, on) in _states) Set(element, pseudo, on);
+            }
         }
 
         ApplyOverrides();

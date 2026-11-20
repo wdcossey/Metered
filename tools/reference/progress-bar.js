@@ -70,7 +70,7 @@ function stepState(style, steps) {
 /**
  * The values the tests build, from Base Web's scenarios (progressbar.scenario.tsx, progressbar-intent.scenario.tsx),
  * its unit tests (progressbar.test.tsx), its examples (steps.tsx: 50 of 5 steps) and the ends: empty, full, over and
- * under the range, and halves that round.
+ * under the range, halves that round, and numbers JavaScript writes whole and in its exponent form.
  */
 const VALUES = [
   { value: 20 },
@@ -91,6 +91,8 @@ const VALUES = [
   { value: 12.5, showLabel: true },
   { value: 2.5, minValue: 0, maxValue: 50, showLabel: true },
   { value: 33.3, steps: 3 },
+  { value: 1e15, showLabel: true },
+  { value: 1e21, showLabel: true },
   { infinite: true },
   { infinite: true, steps: 3 },
   { infinite: true, showLabel: true },
