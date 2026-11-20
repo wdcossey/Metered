@@ -33,7 +33,7 @@ internal static class ShellFrames
         shell.FindControl<StackPanel>("PageList")!.Children.OfType<Metered.Controls.Button>().ToList();
 
     /// <summary>A named control in the shell: in its bar, or its footer.</summary>
-    public static T InBar<T>(SampleShell shell, string name)
+    public static T InShell<T>(SampleShell shell, string name)
         where T : Control =>
         shell.FindControl<T>(name) ?? throw new InvalidOperationException($"The shell has no '{name}'.");
 }

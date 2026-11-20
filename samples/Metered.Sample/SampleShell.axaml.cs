@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Reactive;
 using Avalonia.Styling;
@@ -24,7 +25,7 @@ namespace Metered.Sample;
 /// knows a frame it takes after it is the page at rest. A page has no timing code of its own. In a Debug build it also
 /// writes what the page cost to open, a <c>METERED cost</c> line, and shows it in a footer over the page's foot, wrapped
 /// to the view's width (<see cref="PerformanceMonitor"/>). The footer takes nothing from the page's size, which is the
-/// same in every build and doesn't change when the line appears, and takes no input, so the page under it has it.
+/// same in every build and doesn't change when the line appears; a tap on it hides it until the next page.
 /// </para>
 /// </summary>
 public partial class SampleShell : UserControl
@@ -192,15 +193,16 @@ public partial class SampleShell : UserControl
         try
         {
             var opened = Stopwatch.GetElapsedTime(opening.Started);
-            Report(ReadyLine(opened, DeviceFacts.Of(top, opening.Page), opening.Title));
+            var ready = ReadyLine(opened, DeviceFacts.Of(top, opening.Page), opening.Title);
 #if DEBUG
             var cost = opening.Cost(opened);
-            Report($"{CostMarker} {cost}");
+            // Shown before either line is written, so that a frame a tool takes after the ready line has it.
             if (ShowsCost)
-            {
-                PerformanceLine.Text = cost;
-                Footer.IsVisible = true;
-            }
+                ShowCost(cost);
+            Report(ready);
+            Report($"{CostMarker} {cost}");
+#else
+            Report(ready);
 #endif
         }
         finally
@@ -214,6 +216,23 @@ public partial class SampleShell : UserControl
     /// posted jobs can't be cancelled, and a page left, or a shell that has left its window since, says nothing.
     /// </summary>
     private bool IsCurrent(Opening opening, TopLevel top) => ReferenceEquals(opening, _opening) && ReferenceEquals(top, _top);
+
+    /// <summary>
+    /// Shows <paramref name="cost"/> in the footer over the page's foot, as a Debug build does once the page is ready;
+    /// a test shows one in any build. Hidden again by a tap on it, or as the page is left.
+    /// </summary>
+    internal void ShowCost(string cost)
+    {
+        PerformanceLine.Text = cost;
+        Footer.IsVisible = true;
+    }
+
+    /// <summary>A tap on the footer hides it, so that what it covers can be seen and pressed, until the next page.</summary>
+    private void OnFooterTapped(object? sender, TappedEventArgs e)
+    {
+        Footer.IsVisible = false;
+        e.Handled = true;
+    }
 
     private void OnBack(object? sender, RoutedEventArgs e) => ShowIndex();
 

@@ -57,9 +57,10 @@
       <!--
         What the page cost to open, in a Debug build (PerformanceMonitor); also on standard output. Over the page's
         foot, the view's whole width, wrapped: shown only once a Debug page's line is, and never in Release, so it takes
-        nothing from the page's size. It takes no input, so a press on it is the page's under it, as in Release.
+        nothing from the page's size. A tap on it hides it until the next page, uncovering what is under it; a press on
+        it never reaches a control it hides.
       -->
-      <Border x:Name="Footer" VerticalAlignment="Bottom" IsVisible="False" IsHitTestVisible="False" Padding="16,8"
+      <Border x:Name="Footer" VerticalAlignment="Bottom" IsVisible="False" Padding="16,8" Tapped="OnFooterTapped"
               Background="{DynamicResource colors.backgroundPrimary}"
               BorderBrush="{DynamicResource colors.borderOpaque}" BorderThickness="0,1,0,0">
         <TextBlock x:Name="PerformanceLine" TextWrapping="Wrap"

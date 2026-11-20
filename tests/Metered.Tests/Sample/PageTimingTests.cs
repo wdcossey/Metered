@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -221,15 +222,22 @@ public class PageTimingTests
     }
 
     // A Debug build writes what the page cost to open after its ready line, with the shell's time, so the two agree, and
-    // shows it in a footer over the page's foot, the view's whole width; a Release build has neither.
+    // shows it in its footer, already shown as the ready line is written, so that a frame taken after that line has it;
+    // a Release build has neither.
     [AvaloniaFact]
-    public void The_Debug_Line_Reads_The_Shells_Time_And_Is_Shown_In_The_Footer()
+    public void The_Debug_Line_Reads_The_Shells_Time_And_Is_Shown_In_The_Footer_Before_The_Ready_Line()
     {
         var lines = new List<string>();
+        var shownAsWritten = new List<bool>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
         var footer = Footer(shell);
-        var shown = InBar<TextBlock>(shell, "PerformanceLine");
+        var shown = InShell<TextBlock>(shell, "PerformanceLine");
+        shell.Report = line =>
+        {
+            lines.Add(line);
+            shownAsWritten.Add(footer.IsVisible);
+        };
+        using var scene = new Scene(shell);
 
         shell.Open("plain");
         Draw();
@@ -240,37 +248,54 @@ public class PageTimingTests
         Assert.Collection(lines,
             line => Assert.StartsWith(SampleShell.ReadyMarker, line, StringComparison.Ordinal),
             line => Assert.StartsWith($"{SampleShell.CostMarker} {cost}", line, StringComparison.Ordinal));
+        Assert.Equal([true, true], shownAsWritten);
         Assert.True(shown.IsEffectivelyVisible);
         Assert.Equal(lines[1][(SampleShell.CostMarker.Length + 1)..], shown.Text);
         Assert.True(shown.Bounds.Height > 0);
-
-        // At the foot of the view, across it, over the page.
-        var page = shell.Shown!;
-        Assert.True(footer.Bounds.Height > 0);
-        Assert.Equal(new Rect(0, Scene.Height - footer.Bounds.Height, Scene.Width, footer.Bounds.Height), InWindow(footer, scene));
-        Assert.Equal(InWindow(page, scene).Bottom, InWindow(footer, scene).Bottom);
-        Assert.True(InWindow(footer, scene).Top > InWindow(page, scene).Top);
-
-        shell.ShowIndex();
-        Assert.False(footer.IsVisible);
-        Assert.False(shown.IsEffectivelyVisible);
 #else
         Assert.False(footer.IsVisible);
         Assert.False(shown.IsEffectivelyVisible);
+        Assert.Equal([false], shownAsWritten);
         Assert.DoesNotContain(lines, line => line.StartsWith(SampleShell.CostMarker, StringComparison.Ordinal));
 #endif
     }
 
-    // The page has the view under the bar in every build, as it's shown and once its line is: the footer is laid over
-    // it, not beside it, and the bar no longer holds the line (docs/performance/README.md).
+    // The footer lies over the page's foot, the view's whole width: the page and the bar keep their sizes as it's shown,
+    // as they do in every build (docs/performance/README.md). Shown by hand, so that a Release build checks it too.
+    [AvaloniaFact]
+    public void The_Footer_Lies_Over_The_Pages_Foot_Across_The_View_And_Takes_Nothing_From_It()
+    {
+        var shell = ShellOf([]);
+        using var scene = new Scene(shell);
+        var page = new Border();
+        shell.ShowPage(page, "a page");
+        scene.Pump();
+        var bar = Bar(shell).Bounds.Height;
+        var before = InWindow(page, scene);
+        Assert.Equal(new Rect(0, bar, Scene.Width, Scene.Height - bar), before);
+
+        var footer = Footer(shell);
+        shell.ShowCost("a page: 12 ms, 34 elements, 3 rules (3), layout 5.6, render 7.8");
+        scene.Pump();
+
+        Assert.True(footer.IsEffectivelyVisible);
+        Assert.True(footer.Bounds.Height > 0);
+        Assert.Equal(new Rect(0, Scene.Height - footer.Bounds.Height, Scene.Width, footer.Bounds.Height), InWindow(footer, scene));
+        Assert.True(InWindow(footer, scene).Top > before.Top);
+        Assert.Equal(before, InWindow(page, scene));
+        Assert.Equal(bar, Bar(shell).Bounds.Height);
+    }
+
+    // The page has the view under the bar as it's shown and once its line is, in every build: the footer is laid over
+    // it, not beside it, and the bar keeps its height.
     [AvaloniaFact]
     public void A_Page_Is_The_View_Under_The_Bar_Before_And_After_Its_Line_In_Every_Build()
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
         using var scene = new Scene(shell);
-        var bar = Bar(shell);
-        var under = new Rect(0, bar.Bounds.Height, Scene.Width, Scene.Height - bar.Bounds.Height);
+        var bar = Bar(shell).Bounds.Height;
+        var under = new Rect(0, bar, Scene.Width, Scene.Height - bar);
 
         shell.Open("plain");
         scene.Window.UpdateLayout();
@@ -282,7 +307,7 @@ public class PageTimingTests
         scene.Pump();
         Assert.NotEmpty(Ready(lines));
         Assert.Equal(under, InWindow(page, scene));
-        Assert.Equal(under.Top, bar.Bounds.Height);
+        Assert.Equal(bar, Bar(shell).Bounds.Height);
 #if DEBUG
         Assert.True(Footer(shell).IsEffectivelyVisible);
 #else
@@ -290,27 +315,24 @@ public class PageTimingTests
 #endif
     }
 
-#if DEBUG
-    // On a phone's width a line is longer than the view: it wraps onto as many lines as it needs, never trimmed, and the
-    // footer grows over the page to hold them, the page's size as it was.
+    // On a phone's width a line can be longer than the view: it wraps onto as many lines as it needs, never trimmed, and
+    // the footer grows over the page to hold them, the page's size as it was.
     [AvaloniaFact]
-    public void A_Long_Debug_Line_Wraps_In_The_Footer_Rather_Than_Being_Cut()
+    public void A_Long_Line_Wraps_In_The_Footer_Rather_Than_Being_Cut()
     {
         const string Title = "a page whose title alone is longer than a phone's view is wide, so its line must wrap";
-        var lines = new List<string>();
-        var shell = ShellOf(lines);
+        var shell = ShellOf([]);
         using var scene = new Scene(shell);
         var footer = Footer(shell);
-        var shown = InBar<TextBlock>(shell, "PerformanceLine");
+        var shown = InShell<TextBlock>(shell, "PerformanceLine");
         var page = new Border();
-
         shell.ShowPage(page, Title);
-        scene.Window.UpdateLayout();
+        scene.Pump();
         var before = InWindow(page, scene);
-        Draw();
+
+        shell.ShowCost($"{Title}: 196 ms, 326 elements, 3 rules (3), layout 61.0, render 29.8");
         scene.Pump();
 
-        Assert.StartsWith(Title + ": ", shown.Text, StringComparison.Ordinal);
         Assert.Equal(TextTrimming.None, shown.TextTrimming);
         Assert.True(shown.TextLayout.TextLines.Count >= 2, $"{shown.TextLayout.TextLines.Count} line(s)");
         Assert.True(shown.Bounds.Height >= shown.TextLayout.Height, $"{shown.Bounds.Height} against {shown.TextLayout.Height}");
@@ -321,28 +343,52 @@ public class PageTimingTests
         Assert.Equal(before, InWindow(page, scene));
     }
 
-    // The footer takes no input: a press on it is the page's under it, as it would be in a Release build.
+    // A press on the footer never reaches a control it hides; a tap hides it, and then what was under it has the press.
     [AvaloniaFact]
-    public void A_Press_On_The_Footer_Is_The_Pages()
+    public void A_Tap_On_The_Footer_Hides_It_And_Uncovers_The_Page()
     {
-        var lines = new List<string>();
-        var shell = ShellOf(lines);
+        var shell = ShellOf([]);
         using var scene = new Scene(shell);
-        shell.Open("plain");
-        Draw();
-        scene.Pump();
-        var page = shell.Shown!;
-        var footer = Footer(shell);
-        Assert.True(footer.IsEffectivelyVisible);
-
+        var page = new Border { Background = Brushes.Transparent };
         var pressed = 0;
         page.PointerPressed += (_, _) => pressed++;
-        scene.Click(footer);
+        shell.ShowPage(page, "a page");
+        shell.ShowCost("a page: 12 ms, 34 elements, 3 rules (3), layout 5.6, render 7.8");
+        scene.Pump();
+        var footer = Footer(shell);
+        var at = scene.CentreOf(footer);
 
-        Assert.Same(page, scene.Window.InputHitTest(scene.CentreOf(footer)));
+        scene.Click(footer);
+        Assert.False(footer.IsVisible);
+        Assert.Equal(0, pressed);
+        Assert.True(shell.IsShowingPage);
+
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
         Assert.Equal(1, pressed);
     }
 
+    // The footer is the page's: leaving the page hides it and its line, and the next page has none until its own.
+    [AvaloniaFact]
+    public void Leaving_A_Page_Hides_Its_Footer()
+    {
+        var shell = ShellOf([]);
+        using var scene = new Scene(shell);
+        var footer = Footer(shell);
+
+        shell.ShowPage(new Border(), "a page");
+        shell.ShowCost("a page: 12 ms");
+        shell.ShowIndex();
+        Assert.False(footer.IsVisible);
+        Assert.Null(InShell<TextBlock>(shell, "PerformanceLine").Text);
+
+        shell.ShowCost("a page: 12 ms");
+        shell.ShowPage(new Border(), "another page");
+        Assert.False(footer.IsVisible);
+    }
+
+#if DEBUG
     // The preview turns the shown line off, as its times would change every picture; the line is still written.
     [AvaloniaFact]
     public void A_Shell_That_Shows_No_Cost_Still_Writes_It()
@@ -398,9 +444,9 @@ public class PageTimingTests
     private static List<string> Ready(List<string> lines) =>
         lines.Where(line => line.StartsWith(SampleShell.ReadyMarker, StringComparison.Ordinal)).ToList();
 
-    private static Border Bar(SampleShell shell) => InBar<Border>(shell, "Bar");
+    private static Border Bar(SampleShell shell) => InShell<Border>(shell, "Bar");
 
-    private static Border Footer(SampleShell shell) => InBar<Border>(shell, "Footer");
+    private static Border Footer(SampleShell shell) => InShell<Border>(shell, "Footer");
 
     /// <summary>Where <paramref name="visual"/> is in the scene's window.</summary>
     private static Rect InWindow(Visual visual, Scene scene) =>
