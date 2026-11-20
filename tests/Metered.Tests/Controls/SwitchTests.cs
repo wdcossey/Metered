@@ -144,6 +144,35 @@ public class SwitchTests
         Assert.False(sw.IsChecked);
     }
 
+    // #49: an Enter held on the switch as it leaves the tree is let go without it: put back, a later Enter pressed
+    // elsewhere and let go on the switch still doesn't toggle it.
+    [AvaloniaFact]
+    public void An_Enter_held_as_it_leaves_the_tree_isnt_the_switchs()
+    {
+        var sw = new Switch { Content = "Label" };
+        var other = new TextBox { Text = "Name" };
+        var panel = new StackPanel { Children = { sw } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { panel, other } });
+
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.Children.Remove(sw);
+        scene.Pump();
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.Children.Add(sw);
+        scene.Pump();
+        Assert.False(sw.IsChecked);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+
+        other.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsFocused);
+        Assert.False(sw.IsChecked);
+    }
+
     // #49: an Enter pressed on the switch toggles it when let go (Base Web's onKeyUp), and the switch takes both its press
     // and its release: neither reaches a parent.
     [AvaloniaFact]
