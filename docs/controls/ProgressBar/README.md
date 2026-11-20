@@ -94,12 +94,12 @@ the pictures. An app never sets it.
   clamped bar shows, rendered by Base Web itself (the bars, each step's state and fill, the label, the name), each
   built as given and expected to render Base Web's case for its clamped value; the 7 past the range, Base Web's own
   output for them still what its formulas give; the value clamped again as the range moves, set in any order with its range (and a
-  minimum over the maximum standing, which throws in `RangeBase`), a new data context's clamped to its range, and
-  given to `GetProgressLabel` clamped; `GetProgressLabel`; the range for assistive
+  minimum over the maximum standing, which throws in `RangeBase`), a new data context's clamped to its range (a two-way view model's value
+  left as it was), and given to `GetProgressLabel` clamped; `GetProgressLabel`; the range for assistive
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions and in a new colour, the fill and the steps drawn; overrides on every part
   (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
-  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 81 in all.
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 82 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with
@@ -150,9 +150,10 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
       in XAML's order or code's): before the bar is initialized `RangeBase` doesn't raise the maximum to the minimum,
       and its `MathUtilities.Clamp(160, 150, 100)` throws. Metered clamps to the maximum `RangeBase` makes of it, at
       least the minimum, so nothing throws, and the value is clamped again once the bar is initialized;
-    - **a new data context**: `RangeBase` clamps nothing again while a data context changes, nor once it has, so bound
-      ends that arrive after the value leave it clamped to the old range or outside the new one. Metered clamps the
-      maximum and the value again once the change is over.
+    - **a new data context**: `RangeBase` clamps the value as each binding arrives, to a range that may still be the
+      old one (a two-way binding writes that into the new view model), and clamps nothing again once the change is
+      over, so bound ends that arrive after the value leave it clamped to the old range or outside the new one.
+      Metered doesn't clamp the value while the change lasts, and clamps the maximum and the value once it's over.
 
     The label (the default and `GetProgressLabel`'s), the fill, the step states, the infinite bar's label,
     the accessible name and the range assistive technology reads all take the clamped value: 150 reads "100% Complete",

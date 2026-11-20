@@ -48,11 +48,11 @@ const one = (list, what) => {
 /**
  * 'translateX(-80%)' to -80, a percentage of the element's own width, as a browser applies it. Over the maximum,
  * progressbar's `translateX(-${width})` with a negative width is 'translateX(--50%)', and over an empty range (the
- * maximum at the minimum) it is 'translateX(-NaN%)': neither is CSS, so a browser drops the declaration and draws no
- * transform, 0.
+ * maximum at the minimum) it is 'translateX(-NaN%)', or 'translateX(--Infinity%)' and 'translateX(-Infinity%)' for a
+ * value off it: none is CSS, so a browser drops the declaration and draws no transform, 0.
  */
 function translate(v) {
-  if (/^translateX\(--[\d.]+(e[+-]?\d+)?%\)$/.test(v) || v === 'translateX(-NaN%)') return 0;
+  if (/^translateX\(--[\d.]+(e[+-]?\d+)?%\)$/.test(v) || /^translateX\(-(NaN|-?Infinity)%\)$/.test(v)) return 0;
   const m = /^translateX\((-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)%\)$/.exec(v);
   if (!m) throw new Error(`transform ${v}`);
   return Number(m[1]);

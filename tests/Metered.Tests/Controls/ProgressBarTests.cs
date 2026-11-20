@@ -215,8 +215,39 @@ public class ProgressBarTests
         AssertRenders(Case(20, 0, 100), pb);
     }
 
+    // A two-way binding, the app's own choice (Value binds one way by default), with its value bound first: the value
+    // isn't clamped to the old range while the context changes, so nothing clamped is written into the new view model,
+    // which keeps its value; the bar clamps it once the change is over.
+    [AvaloniaFact]
+    public void A_new_data_context_keeps_its_two_way_value()
+    {
+        var pb = new ProgressBar { ShowLabel = true };
+        pb.Bind(RangeBase.ValueProperty, new ReflectionBinding(nameof(Model.Value)) { Mode = BindingMode.TwoWay });
+        pb.Bind(RangeBase.MinimumProperty, new ReflectionBinding(nameof(Model.Minimum)));
+        pb.Bind(RangeBase.MaximumProperty, new ReflectionBinding(nameof(Model.Maximum)));
+        pb.DataContext = new Progress { Value = 20, Minimum = 0, Maximum = 100 };
+        using var scene = new Scene(pb);
+        AssertRenders(Case(20, 0, 100), pb);
+
+        var next = new Progress { Value = 120, Minimum = 100, Maximum = 200 };
+        pb.DataContext = next;
+        Assert.Equal(120, next.Value);
+        Assert.Equal((120.0, 100.0, 200.0), (pb.Value, pb.Minimum, pb.Maximum));
+        AssertRenders(Case(120, 100, 200), pb);
+    }
+
     /// <summary>A view model's progress: a value and its range.</summary>
     public sealed record Model(double Value, double Minimum, double Maximum);
+
+    /// <summary>A view model's progress whose value a two-way binding can write.</summary>
+    public sealed class Progress
+    {
+        public double Value { get; set; }
+
+        public double Minimum { get; init; }
+
+        public double Maximum { get; init; }
+    }
 
     // GetProgressLabel is given the clamped value, as the default label reads it.
     [AvaloniaFact]
@@ -242,8 +273,10 @@ public class ProgressBarTests
         var max = Math.Max(c.MaxValue, c.MinValue);
         var value = Math.Clamp(c.Value, c.MinValue, max);
         if (value == c.Value && max == c.MaxValue) return c;
-        return ProgressBarOracle.Data.Values.Single(v => v.Value == value && v.MinValue == c.MinValue && v.MaxValue == max
-            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel);
+        var found = ProgressBarOracle.Data.Values.Where(v => v.Value == value && v.MinValue == c.MinValue && v.MaxValue == max
+            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel).ToList();
+        return found.Count == 1 ? found[0] : throw new InvalidOperationException(
+            $"The oracle has {found.Count} cases for {c} clamped to {value} of {c.MinValue} to {max}: add one to tools/reference/progress-bar.js's VALUES.");
     }
 
     /// <summary>The oracle's labelled bar of one step, with no name given, for a value and a range.</summary>

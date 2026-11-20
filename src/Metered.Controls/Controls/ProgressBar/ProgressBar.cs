@@ -76,11 +76,15 @@ public class ProgressBar : RangeBase
     /// <summary>The value's offset on the fill of a bar of one step, at Template priority: replaced, never stacked.</summary>
     private IDisposable? _offset;
 
+    /// <summary>A new data context is arriving: the value isn't clamped until it has, to a range that may be the old one.</summary>
+    private bool _dataContextChanging;
+
     static ProgressBar()
     {
         // A progress bar shows its value: one way by default. Base Web clamps nothing; the developer chose RangeBase's
         // clamp (#67): RangeBase's own coercion of the minimum and the maximum is kept (the maximum at or above the
-        // minimum, a number that isn't finite refused), and the value's is RangeBase's but for one case, ClampValue.
+        // minimum, a number that isn't finite refused). The value's is RangeBase's but where RangeBase's goes wrong:
+        // ClampValue, and the clamp again after a new data context (OnDataContextBeginUpdate and EndUpdate).
         ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay, coerce: ClampValue));
     }
 
@@ -157,13 +161,22 @@ public class ProgressBar : RangeBase
     }
 
     /// <summary>
-    /// RangeBase clamps nothing again while the data context changes, nor once it has, so bound ends that arrive after
-    /// the value would leave it clamped to the old range, or outside the new one. Once the change is over, the maximum
-    /// and the value are clamped again, from the values as they were given, as RangeBase does once initialized.
+    /// RangeBase clamps the value as each binding of a new data context arrives, to a range that may still be the old
+    /// one (and a two-way binding writes that into the new view model), and clamps nothing again once the change is
+    /// over, so bound ends that arrive after the value would leave it clamped to the old range, or outside the new one.
+    /// Here the value isn't clamped while the change lasts.
     /// </summary>
+    protected override void OnDataContextBeginUpdate()
+    {
+        _dataContextChanging = true;
+        base.OnDataContextBeginUpdate();
+    }
+
+    /// <summary>Once a new data context is in, the maximum and the value are clamped again, as RangeBase does once initialized.</summary>
     protected override void OnDataContextEndUpdate()
     {
         base.OnDataContextEndUpdate();
+        _dataContextChanging = false;
         CoerceValue(MaximumProperty);
         CoerceValue(ValueProperty);
     }
@@ -334,10 +347,12 @@ public class ProgressBar : RangeBase
     /// (CoerceMaximum: at least the minimum). RangeBase's own clamps to the maximum as it stands, which before the bar
     /// is initialized, or while its data context changes, can be under a minimum just set: its MathUtilities.Clamp then
     /// throws (<c>Minimum="150" Value="160" Maximum="200"</c>). A number that isn't finite is refused, as RangeBase's is.
+    /// Nothing is clamped while a new data context arrives (<see cref="OnDataContextBeginUpdate"/>).
     /// </summary>
     private static double ClampValue(AvaloniaObject sender, double value)
     {
         if (!double.IsFinite(value)) return sender.GetValue(ValueProperty);
+        if (sender is ProgressBar { _dataContextChanging: true }) return value;
         var minimum = sender.GetValue(MinimumProperty);
         return Math.Clamp(value, minimum, Math.Max(minimum, sender.GetValue(MaximumProperty)));
     }
