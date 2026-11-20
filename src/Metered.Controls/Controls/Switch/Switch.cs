@@ -216,6 +216,8 @@ public class Switch : ToggleButton
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         base.OnLostFocus(e);
+        // Only the switch's own focus, as in OnGotFocus: LostFocus also bubbles from a control in its label.
+        if (e.Source != this) return;
         SetState(":focus-visible", false);
         SetKeyPressed(false);
         // An Enter held as the focus left is never let go here: its release, wherever it lands, isn't the switch's.
