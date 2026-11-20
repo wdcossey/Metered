@@ -47,11 +47,12 @@ const one = (list, what) => {
 
 /**
  * 'translateX(-80%)' to -80, a percentage of the element's own width, as a browser applies it. Over the maximum,
- * progressbar's `translateX(-${width})` with a negative width is 'translateX(--50%)', which isn't CSS: a browser drops
- * the declaration and draws no transform, 0.
+ * progressbar's `translateX(-${width})` with a negative width is 'translateX(--50%)', and over an empty range (the
+ * maximum at the minimum) it is 'translateX(-NaN%)', or 'translateX(--Infinity%)' and 'translateX(-Infinity%)' for a
+ * value off it: none is CSS, so a browser drops the declaration and draws no transform, 0.
  */
 function translate(v) {
-  if (/^translateX\(--[\d.]+(e[+-]?\d+)?%\)$/.test(v)) return 0;
+  if (/^translateX\(--[\d.]+(e[+-]?\d+)?%\)$/.test(v) || /^translateX\(-(NaN|-?Infinity)%\)$/.test(v)) return 0;
   const m = /^translateX\((-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)%\)$/.exec(v);
   if (!m) throw new Error(`transform ${v}`);
   return Number(m[1]);
@@ -70,7 +71,9 @@ function stepState(style, steps) {
 /**
  * The values the tests build, from Base Web's scenarios (progressbar.scenario.tsx, progressbar-intent.scenario.tsx),
  * its unit tests (progressbar.test.tsx), its examples (steps.tsx: 50 of 5 steps) and the ends: empty, full, over and
- * under the range, halves that round, and numbers JavaScript writes whole and in its exponent form.
+ * under the range, halves that round, and numbers JavaScript writes whole and in its exponent form. Then the values a
+ * bar clamped as Avalonia's RangeBase clamps shows for those past the range (#67), an empty range (where RangeBase
+ * puts a maximum under the minimum), and the infinite bar's label past the range and clamped.
  */
 const VALUES = [
   { value: 20 },
@@ -100,6 +103,14 @@ const VALUES = [
   { infinite: true, showLabel: true },
   { value: 75, 'aria-label': 'test', steps: 2 },
   { value: 40, 'aria-label': 'Uploading' },
+  { value: 100, showLabel: true },
+  { value: 0, showLabel: true },
+  { value: 0, steps: 4 },
+  { value: 100, minValue: 100, maxValue: 200, showLabel: true },
+  { value: 50, minValue: 50, maxValue: 50, showLabel: true },
+  { value: 50, minValue: 50, maxValue: 50, steps: 3 },
+  { value: 150, infinite: true, showLabel: true },
+  { value: 100, infinite: true, showLabel: true },
 ];
 
 function values() {
