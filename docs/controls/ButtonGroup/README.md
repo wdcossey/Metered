@@ -28,10 +28,13 @@ gallery for two groups: radio, and checkbox with the outline kind.
   `React.Children.map`'s index: when a button comes or goes before another, that one is selected,
   and a tab stop, by its new place (#70).
 - A button that leaves, however it leaves (removed, the items cleared, or its `ItemsSource` reset,
-  as an `ObservableCollection`'s `Clear` does, naming no old items: #45), has its own values back
-  as they were when it joined, as Base Web's `cloneElement` leaves the child unchanged: its kind,
-  size, shape, selection, tab stop and role, each one it had set, and the control's defaults for
-  the rest (#70). The group no longer listens to its clicks.
+  as an `ObservableCollection`'s `Clear` does, naming no old items: #45), has its own values back,
+  as Base Web's `cloneElement` replaces a child's props without changing the child (#70). The group
+  holds its kind, size, shape, selection, tab stop and role over the button's own, at Avalonia's
+  `Animation` priority, the one above a local value, and lets go of them when the button leaves.
+  So the button's own values stay beneath, local, styled or bound, including those set on it while
+  it was in the group, and the control's defaults where it has none. The group no longer listens
+  to its clicks.
 - Radio: only the selected button (or the first, with none) is a tab stop; the arrow keys move the
   selection and the focus, wrapping; the buttons are announced as radio buttons (checkbox mode: as
   check boxes).
@@ -48,6 +51,10 @@ wrap (36 cases), and each behaviour above.
 
 1. Base Web's controlled and stateful groups are one: `Selected` is set by a click whatever bound it.
 2. `aria-checked` has no Avalonia equivalent on a Button's automation peer; the role is set.
-3. A button's own values are those it had when it joined. A value set on the button while it is in
-   the group isn't recorded: when it leaves, it gets back what it had when it joined. In Base Web a
-   child re-rendered with new props has those outside the group. `RadioGroup` does the same.
+3. Base Web reads a child's own `isSelected` of true on every render. Here the group reads the
+   button's own `IsSelected` each time it applies (a change to the group, or the button's place),
+   and when the button's own value changes while the group isn't holding one over it. Avalonia
+   raises no change for a value beneath a held one, so an own `IsSelected` that turns true while
+   the group holds false shows at the group's next change.
+4. A button's `IsAnimating` is true for the properties the group holds, as they are held at the
+   `Animation` priority.
