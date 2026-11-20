@@ -164,4 +164,4 @@ dark themes, and calls react-range's own `normalizeValue`.
 13. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
 14. **Not tried on a device yet**: the touch tests are headless (Avalonia's headless touch through its real input
     pipeline, and Avalonia's own ScrollViewer with the Simple theme's gesture recogniser). The real-window run and a
-    Pixel run are owed (hands-on).
+    Pixel run are owed (hands-on: #64; the real-window section is proposed in #55's PR).
