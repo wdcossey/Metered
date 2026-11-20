@@ -149,7 +149,7 @@ foreach ($section in (Calls $ast 'Section')) {
     $files = @($shellFiles)
     if ($page.Count -and $pageFile.ContainsKey($page[0])) { $files += $pageFile[$page[0]] }
     $ids = XNames $files
-    foreach ($call in @(@(Calls $body 'ById') + @(Calls $body 'ReadOut'))) {
+    foreach ($call in @(@(Calls $body 'ById') + @(Calls $body 'RawById') + @(Calls $body 'ReadOut'))) {
         $id = Literally $call 1
         if ($id) { $found++; Check "'$title' finds '$id', an x:Name on its page or the shell" ($ids -ccontains $id) ($files -join ', ') }
     }
@@ -167,12 +167,12 @@ Check 'it finds controls by name' ($found -gt 0)
 # Every call outside the two functions' own definitions names its control in single quotes, so the checks above see it.
 function InsideFinder($node) {
     for ($up = $node.Parent; $up; $up = $up.Parent) {
-        if ($up -is [System.Management.Automation.Language.FunctionDefinitionAst]) { return $up.Name -in 'ById', 'ReadOut' }
+        if ($up -is [System.Management.Automation.Language.FunctionDefinitionAst]) { return $up.Name -in 'ById', 'RawById', 'ReadOut' }
     }
     $false
 }
 $unquoted = @($ast.FindAll({ param($n)
-            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'ById', 'ReadOut' -and
+            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'ById', 'RawById', 'ReadOut' -and
             -not ($n.CommandElements[1] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
                 $n.CommandElements[1].StringConstantType -eq 'SingleQuoted') -and -not (InsideFinder $n)
         }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })

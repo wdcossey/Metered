@@ -201,6 +201,27 @@ function ById($id) {
     if (-not $el) { throw "Nothing on the page has the AutomationId $id" }
     $el
 }
+# A container by its x:Name that isn't in UI Automation's control view, as a slider's root isn't (its thumbs are the
+# controls, as Base Web's are): searched in the raw view. Only for a container whose bounds a section aims along; a
+# control is found by ById, which would miss one left out of the control view, as it caught #56.
+function RawById($id) {
+    $request = New-Object Windows.Automation.CacheRequest
+    $request.TreeFilter = [Windows.Automation.Automation]::RawViewCondition
+    $request.Push()
+    try { $el = $win.FindFirst($TS::Descendants, (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)) }
+    finally { $request.Pop() }
+    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
+    $el
+}
+# Scrolls the page's scroll viewer to its end through UI Automation's scroll pattern, which sends no input, so that a
+# control below the fold can be pressed inside the window.
+function ScrollToEnd {
+    $cond = New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true
+    $viewer = $win.FindFirst($TS::Descendants, $cond)
+    if (-not $viewer) { throw 'The page has no scroll viewer UI Automation can scroll' }
+    $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern).SetScrollPercent(-1, 100)
+    Start-Sleep -Milliseconds 400
+}
 # A TextBlock on the page that a section reads, by its x:Name: UI Automation's name for it is its text, read live from
 # .Current.Name. ById by another name, so that selftest.ps1 can tell the two apart; a section finds it once, as a search
 # of the whole tree takes long enough to shift a timed read.
@@ -692,6 +713,8 @@ try {
         Check 'the stepped bar starts at 40' ($range.Current.Value -eq 40) $range.Current.Value
         Check 'and is named as Base Web names it' ($steps.Current.Name -ceq 'Step 2 of 5') $steps.Current.Name
         Check 'and its range is read only' ($range.Current.IsReadOnly)
+        # At the foot of the page, below the fold of a phone's window.
+        ScrollToEnd
         Click (ById 'Next')
         Check 'a click on Next moves it a step' ($range.Current.Value -eq 60) $range.Current.Value
         Away
@@ -705,7 +728,8 @@ try {
     # (PreventGestureRecognition, docs/controls/Slider). The page's first slider, its value said under it.
     Section 'slider: a drag in the page''s ScrollViewer moves the thumb, not the page' {
         Open 'Slider'
-        $basic = ById 'Basic'
+        # The slider's root, to aim along its track: its thumbs are what UI Automation lists as controls.
+        $basic = RawById 'Basic'
         $b = $basic.Current.BoundingRectangle
         $state = ReadOut 'State'
         function Value { $v = After $state.Current.Name 'Value'; if ("$v" -match '^-?\d+$') { [int]$v } }
