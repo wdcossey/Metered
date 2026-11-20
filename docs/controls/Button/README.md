@@ -36,7 +36,7 @@ substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
 - `ButtonLayoutTests`: 40 cases (each size × shape × width type): padding, radius, sizes, type,
   and the laid-out height.
 - `ButtonPartsTests`: the spinner (112 cases), loading, that the loading ring turns (also when its
-  at-rest look lands before its theme) and that `:metered-still` holds it at 0°, the enhancers, `artworkSize`, touch not hovering, the tap band,
+  look at rest lands before its theme), that it sets no transform at rest, and that `:metered-still` holds it at 0°, the enhancers, `artworkSize`, touch not hovering, the tap band,
   and the parts' mirrored state.
 - `ButtonFrames`: the hover overlay's and the focus ring's pixels.
 
@@ -56,7 +56,9 @@ substitute for Uber Move Text ([ADR 0003](../../decisions/0003-font.md)).
    ([`docs/controls/Spinner/`](../Spinner/README.md)). Like Base Web's, the ring sets no transform
    at rest: Avalonia 12.1.4's `TransformAnimator` ignores a turn whose `RenderTransform` is a
    `TransformOperations` (a `rotate(0deg)` setter's value). It puts its own group of transforms
-   there, as a local value, which holds 0° while the ring doesn't turn (#77).
+   there, as a local value, which holds 0° while the ring doesn't turn (#77). That local value
+   outranks any style, so an override's `RenderTransform` on the ring does nothing; in CSS a
+   `transform` on the ring would apply while it doesn't turn.
 6. **`round`** (deprecated) is drawn with a 999 radius: Base Web's 50% makes an ellipse of a
    button that isn't square.
 7. **`minHitArea="tap"`** widens the Button's bounds to the 48 px band after layout (spikes);
