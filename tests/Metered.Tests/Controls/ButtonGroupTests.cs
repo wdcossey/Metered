@@ -243,4 +243,46 @@ public class ButtonGroupTests
         Assert.False(first.IsSelected);
         Assert.True(first.IsTabStop);
     }
+
+    // However they leave: removed, the group's items cleared, or the source cleared, a reset that names no old items
+    // (#45). Each button has its own values back and no longer answers to the group.
+    [AvaloniaTheory]
+    [InlineData("remove")]
+    [InlineData("clear")]
+    [InlineData("source")]
+    public void Buttons_leaving_the_group_are_let_go_however_they_leave(string leave)
+    {
+        var buttons = new[] { new Button { Content = "Item 0" }, new Button { Content = "Item 1" } };
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [0], Kind = ButtonKind.Tertiary };
+        var source = new System.Collections.ObjectModel.ObservableCollection<Button>(buttons);
+        if (leave == "source") group.ItemsSource = source;
+        else foreach (var button in buttons) group.Items.Add(button);
+        var clicks = new List<int>();
+        group.Click += (_, e) => clicks.Add(e.Index);
+        var elsewhere = new StackPanel();
+        using var scene = new Scene(new StackPanel { Children = { group, elsewhere } });
+        Assert.All(buttons, b => Assert.Equal(ButtonKind.Tertiary, b.Kind));
+        Assert.True(buttons[0].IsSelected);
+        Assert.False(buttons[1].IsTabStop);
+
+        if (leave == "remove") { group.Items.RemoveAt(1); group.Items.RemoveAt(0); }
+        else if (leave == "clear") group.Items.Clear();
+        else source.Clear();
+        scene.Pump();
+
+        foreach (var button in buttons)
+        {
+            Assert.Equal(ButtonKind.Primary, button.Kind);
+            Assert.False(button.IsSet(Button.IsSelectedProperty));
+            Assert.True(button.IsTabStop);
+            Assert.False(button.IsSet(AutomationProperties.ControlTypeOverrideProperty));
+        }
+
+        // Clicked where it now is, it changes nothing in the group.
+        foreach (var button in buttons) elsewhere.Children.Add(button);
+        scene.Pump();
+        foreach (var button in buttons) scene.Click(button);
+        Assert.Empty(clicks);
+        Assert.Equal([0], group.Selected!);
+    }
 }
