@@ -17,11 +17,12 @@ public class SliderThumbAutomationPeer : ControlAutomationPeer, IRangeValueProvi
     private double _value;
     private double _minimum;
     private double _maximum;
+    private bool _readOnly;
 
     public SliderThumbAutomationPeer(SliderThumb owner)
         : base(owner)
     {
-        (_value, _minimum, _maximum) = (Value, Minimum, Maximum);
+        (_value, _minimum, _maximum, _readOnly) = (Value, Minimum, Maximum, IsReadOnly);
     }
 
     private new SliderThumb Owner => (SliderThumb)base.Owner;
@@ -55,9 +56,15 @@ public class SliderThumbAutomationPeer : ControlAutomationPeer, IRangeValueProvi
     protected override string? GetNameCore() => base.GetNameCore() is { Length: > 0 } own ? own
         : Slider is { } s ? AutomationProperties.GetName(s) : null;
 
-    /// <summary>Raises the value's and the range's changes since they were last read.</summary>
+    /// <summary>Raises the value's, the range's and read-only's changes since they were last read.</summary>
     internal void Update()
     {
+        if (IsReadOnly != _readOnly)
+        {
+            RaisePropertyChangedEvent(RangeValuePatternIdentifiers.IsReadOnlyProperty, _readOnly, IsReadOnly);
+            _readOnly = IsReadOnly;
+        }
+
         Raise(RangeValuePatternIdentifiers.ValueProperty, ref _value, Value);
         Raise(RangeValuePatternIdentifiers.MinimumProperty, ref _minimum, Minimum);
         Raise(RangeValuePatternIdentifiers.MaximumProperty, ref _maximum, Maximum);

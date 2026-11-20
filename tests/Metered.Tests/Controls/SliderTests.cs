@@ -281,9 +281,9 @@ public class SliderTests
     }
 
     /// <summary>A slider in a page that scrolls, as the sample's: a ScrollViewer from Avalonia's Simple theme, which pans by touch.</summary>
-    private static (Slider Slider, ScrollViewer Page, Scene Scene) InAPage()
+    private static (Slider Slider, ScrollViewer Page, Scene Scene) InAPage(Slider? given = null)
     {
-        var slider = new Slider { Value = [20] };
+        var slider = given ?? new Slider { Value = [20] };
         var page = new ScrollViewer
         {
             Content = new StackPanel { Margin = new Thickness(20, 200, 20, 1600), Children = { slider } },
@@ -328,6 +328,45 @@ public class SliderTests
         TouchDrag(scene, off, new Point(off.X, off.Y - 150));
         Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
         Assert.Equal([50.0], slider.Value);
+    }
+
+    // A press the slider doesn't take (here, a slider with no range: its minimum above its maximum) leaves the page its pan.
+    [AvaloniaFact]
+    public void A_touch_the_slider_doesnt_take_still_pans_the_page()
+    {
+        var (slider, page, scene) = InAPage(new Slider { Value = [50], Min = 100, Max = 0 });
+        using var _ = scene;
+        var on = scene.CentreOf((Visual)slider.Part(Slider.TrackPart)!);
+        TouchDrag(scene, on, new Point(on.X, on.Y - 150));
+        Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
+    }
+
+    // The thumb a finger drags taken away (two values become one): its drag ends, final, and the next press is taken.
+    [AvaloniaFact]
+    public void Taking_away_the_dragged_thumb_ends_its_drag()
+    {
+        var (slider, scene) = Show(new Slider { Value = [20, 70] });
+        using var _ = scene;
+        var events = new Events(slider);
+        var touch = scene.Window.TouchBegin(scene.CentreOf(slider.Thumbs[1]), RawInputModifiers.None);
+        scene.Pump();
+        Assert.Equal(1, slider.DraggedThumb);
+        slider.Value = [40];
+        scene.Pump();
+        Assert.Equal(-1, slider.DraggedThumb);
+        Assert.Equal([[40.0]], events.Finals);
+        scene.Window.TouchEnd(touch, scene.CentreOf(slider), RawInputModifiers.None);
+        scene.Pump();
+        Drag(scene, At(scene, slider, 0.9));
+        Assert.Equal([90.0], slider.Value);
+    }
+
+    // react-range makes a mark for each step, however many; past what a count can hold, none rather than a wrong count.
+    [AvaloniaFact]
+    public void Steps_past_counting_make_no_marks()
+    {
+        var slider = new Slider { Min = 0, Max = 1e12, Step = 1e-3, Value = [0], Marks = true };
+        Assert.Empty(slider.Elements(Slider.MarkPart));
     }
 
     // The mouse's hover shows a thumb's label; a disabled slider shows none, unless persistentThumb.
@@ -758,7 +797,9 @@ public class SliderTests
         Assert.Contains((first, Avalonia.Automation.RangeValuePatternIdentifiers.ValueProperty), raised);
         Assert.Contains((second, Avalonia.Automation.RangeValuePatternIdentifiers.MinimumProperty), raised);
         Assert.Single(events.Finals);
+        raised.Clear();
         slider.IsEnabled = false;
         Assert.True(a.IsReadOnly);
+        Assert.Contains((first, Avalonia.Automation.RangeValuePatternIdentifiers.IsReadOnlyProperty), raised);
     }
 }

@@ -77,7 +77,8 @@ thumbs and labels; `Parts` holds them beside the template's.
 - **Touch first**: a touch that starts on the track (the line, its 16 px band, a thumb or its label) is the slider's.
   Base Web's `touchmove` handler prevents the page's scrolling; here the press skips Avalonia's gesture recognisers
   (`PreventGestureRecognition`, as Cornflower's `PhoneNoManipulation`), so a drag across, or mostly up the page, moves
-  the thumb and never pans a `ScrollViewer`; the same drag off the slider pans it.
+  the thumb and never pans a `ScrollViewer`; the same drag off the slider pans it, as does one the slider doesn't take
+  (a second finger, or a slider with no range).
 - **Keys** on a focused thumb (react-range's `onKeyDown`): ArrowRight, ArrowUp, `k` and PageUp up a step (PageUp ten),
   ArrowLeft, ArrowDown, `j` and PageDown down; `Change` each time, even at an end; the thumb is dragged (its label shows)
   until the key's release, which makes the change final. `K` (Shift) isn't `k`. Tab, or any other key, makes a change the
@@ -103,13 +104,13 @@ thumbs and labels; `Parts` holds them beside the template's.
 - `Controls/SliderLayoutTests`: 12: the track's padding and the line, the tick bar and the ticks, each thumb on its value
   (six values), the label above its thumb, the marks for three steps (one fractional), and marks turned on and off, the
   ones there kept.
-- `Controls/SliderTests`: 255: react-range's `normalizeValue` on 198 cases from the oracle; a number as JavaScript writes it
+- `Controls/SliderTests`: 258: react-range's `normalizeValue` on 198 cases from the oracle; a number as JavaScript writes it
   (18 cases, `String(n)`, for the labels and a step's decimals); a click, a press on a thumb,
   a drag off the slider, a right press, two thumbs (the closer, the one pressed, never crossing), a touch drag and a touch
   on the track, a touch drag in a ScrollViewer across, mostly up, and off the slider; two thumbs on one value; a finger
   never hovering; the eight keys, Shift+K, another key and Tab, a step past the end, Tab between thumbs, the ring for a
   keyboard's focus only and through a drag, a key's drag ended by disabling, the focused thumb taken away; the label under
-  a mouse and on it, `PersistentThumb`, disabled; a minimum not below the maximum; the value's start, its checks, a second thumb; `ValueToLabel`; the parts' states;
+  a mouse and on it, `PersistentThumb`, disabled; a minimum not below the maximum, and a touch it doesn't take still panning the page; the dragged thumb taken away; steps past counting; the value's start, its checks, a second thumb; `ValueToLabel`; the parts' states;
   overrides on every element of a part; UI Automation.
 - `Controls/SliderFrames`: the drawn line, two thumbs' selection, the marks' gaps, the round thumb over its shadow, the
   ring, and the gallery above: 7.
@@ -154,7 +155,8 @@ dark themes, and calls react-range's own `normalizeValue`.
    are set one at a time.
 10. **A key's drag ends with the slider's focus or its use.** react-range ends a held key's drag on its release, on the
     thumb; if the thumb loses the focus first, or the slider is disabled, that release never comes and Base Web's label
-    stays shown. Here the drag ends then, and its change is final.
+    stays shown. Here the drag ends then, and its change is final. So does a pointer's drag of a thumb the app takes
+    away (two values become one), whose index react-range would go on reading.
 11. **Right to left isn't done**, as for Switch: react-range inverts the keys and mirrors the gradient for `rtl`; the
     themes are generated left to right, and a `FlowDirection` of `RightToLeft` hasn't been tried.
 12. **Accessibility**: react-range labels every thumb "Accessibility label" (Base Web passes no `label`); here a thumb

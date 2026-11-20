@@ -215,7 +215,11 @@ public class Slider : TemplatedControl
     {
         base.OnPropertyChanged(change);
         var p = change.Property;
-        if (p == ValueProperty) Sync();
+        if (p == ValueProperty)
+        {
+            if (Value.Count == _thumbs.Count) Moved();
+            else Sync();
+        }
         else if (p == MinProperty || p == MaxProperty)
         {
             CoerceValue(ValueProperty);
@@ -230,6 +234,7 @@ public class Slider : TemplatedControl
         {
             if (!IsEffectivelyEnabled) EndAll();
             UpdateLabels();
+            foreach (var thumb in _thumbs) thumb.Peer?.Update();
         }
     }
 
@@ -306,14 +311,22 @@ public class Slider : TemplatedControl
 
     // --- The pointer: react-range's onMouseDownTrack and onTouchStartTrack, then onMouseOrTouchStart, onMove and onEnd.
 
-    private void OnTrackPressing(object? sender, PointerPressedEventArgs e) => e.PreventGestureRecognition();
+    // Only a press the slider takes: one it ignores (a second finger, a slider with no range) can still pan the page.
+    private void OnTrackPressing(object? sender, PointerPressedEventArgs e)
+    {
+        if (Takes(e)) e.PreventGestureRecognition();
+    }
+
+    /// <summary>Whether the slider takes a press on its track: react-range's onMouseDownTrack and onTouchStartTrack.</summary>
+    private bool Takes(PointerPressedEventArgs e) =>
+        IsEffectivelyEnabled && _inner is not null && _track is not null && _pointer is null && _thumbs.Count > 0 && HasRange
+        // A mouse's primary button (react-range ignores the others), a finger or a pen's tip.
+        && e.GetCurrentPoint(_inner).Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed;
 
     private void OnTrackPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!IsEffectivelyEnabled || _inner is null || _track is null || _pointer is not null || _thumbs.Count == 0 || !HasRange) return;
+        if (!Takes(e) || _inner is null || _track is null) return;
         var point = e.GetCurrentPoint(_inner);
-        // A mouse's primary button (react-range ignores the others), a finger or a pen's tip.
-        if (point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed) return;
         e.Handled = true;
         var x = point.Position.X;
 
@@ -465,12 +478,8 @@ public class Slider : TemplatedControl
         if (value == 0) return "0";
         if (double.IsNaN(value)) return "NaN";
         if (double.IsInfinity(value)) return value > 0 ? "Infinity" : "-Infinity";
-        // .NET's shortest round-trip digits, in exponent form: d.dddE+xx.
-        var shortest = Math.Abs(value).ToString("E" + Precision(value), CultureInfo.InvariantCulture);
-        var at = shortest.IndexOf('E');
-        var digits = shortest[..at].Replace(".", "").TrimEnd('0');
-        // ECMAScript's n: where the point goes after the first digit's place; k: how many digits.
-        var n = 1 + int.Parse(shortest[(at + 1)..], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        // .NET's shortest round-trip digits ("R"), as ECMAScript's digits and n, where the point goes after them.
+        var (digits, n) = Digits(Math.Abs(value).ToString("R", CultureInfo.InvariantCulture));
         var k = digits.Length;
         string text;
         if (k <= n && n <= 21) text = digits + new string('0', n - k);
@@ -485,15 +494,19 @@ public class Slider : TemplatedControl
         return value < 0 ? "-" + text : text;
     }
 
-    /// <summary>The fewest digits after the first that read back as the same number: .NET's shortest round trip.</summary>
-    private static int Precision(double value)
+    /// <summary>A shortest round-trip text, plain (<c>0.00123</c>, <c>4500</c>) or with an exponent (<c>1.5E-07</c>), as its significant digits and ECMAScript's n.</summary>
+    private static (string Digits, int N) Digits(string text)
     {
-        for (var p = 0; p < 17; p++)
-        {
-            if (double.Parse(value.ToString("E" + p, CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) == value) return p;
-        }
-
-        return 16;
+        var at = text.IndexOf('E');
+        var mantissa = at < 0 ? text : text[..at];
+        var exponent = at < 0 ? 0 : int.Parse(text[(at + 1)..], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        var dot = mantissa.IndexOf('.');
+        var whole = dot < 0 ? mantissa : mantissa[..dot];
+        var all = whole + (dot < 0 ? "" : mantissa[(dot + 1)..]);
+        var n = whole.Length + exponent;
+        var trimmed = all.TrimStart('0');
+        n -= all.Length - trimmed.Length;
+        return (trimmed.TrimEnd('0'), n);
     }
 
     /// <summary>react-range's getClosestThumbIndex: the thumb whose centre is nearest along the line, the first on a tie.</summary>
@@ -548,17 +561,33 @@ public class Slider : TemplatedControl
     private void Sync()
     {
         var count = Value.Count;
+        // The dragged thumb taken away: its drag ends, final, and the pointer is let go.
+        if (_dragged >= count)
+        {
+            if (_pointer is not null) End();
+            else Drag(-1);
+        }
+
         while (_thumbs.Count > count) RemoveThumb();
         while (_thumbs.Count < count) AddThumb();
-        if (_dragged >= count) Drag(-1);
         if (_focused >= count) _focused = -1;
-        var range = Max - Min;
-        if (_inner is not null) _inner.Positions = Value.Select(v => range == 0 ? 0 : (v - Min) / range).ToArray();
         SetState(":range", count == 2);
         UpdateText();
         UpdateDragged();
         UpdateFocus();
         UpdateLabels();
+        Moved();
+    }
+
+    /// <summary>
+    /// The thumbs' places, their labels' text and their peers: all a change of value moves when the thumbs stay the same,
+    /// as on each step of a drag.
+    /// </summary>
+    private void Moved()
+    {
+        var range = Max - Min;
+        if (_inner is not null) _inner.Positions = Value.Select(v => range == 0 ? 0 : (v - Min) / range).ToArray();
+        for (var i = 0; i < _labels.Count && i < Value.Count; i++) _labels[i].Value.Content = Label(Value[i]);
         foreach (var thumb in _thumbs) thumb.Peer?.Update();
     }
 
@@ -618,7 +647,7 @@ public class Slider : TemplatedControl
     private void RebuildMarks()
     {
         var steps = (Max - Min) / Step;
-        var count = Marks && steps > 0 && double.IsFinite(steps) ? (int)Math.Ceiling(steps + 1) : 0;
+        var count = Marks && steps > 0 && steps < int.MaxValue - 1 ? (int)Math.Ceiling(steps + 1) : 0;
         while (_marks.Count > count)
         {
             var mark = _marks[^1];
