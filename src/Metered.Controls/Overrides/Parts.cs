@@ -12,6 +12,10 @@ namespace Metered.Controls;
 /// subcomponent), and gives each part its theme, <c>{Component}.Styled{Part}</c>, with the
 /// control's <see cref="Override"/> for that part merged over it.
 /// </summary>
+/// <remarks>
+/// A part Base Web renders more than once (the slider's thumbs, ticks and marks) is held as elements the control adds
+/// (<see cref="Add"/>) beside its template's: each takes the states and the theme its part's name gives.
+/// </remarks>
 internal sealed class Parts
 {
     private readonly TemplatedControl _owner;
@@ -19,6 +23,7 @@ internal sealed class Parts
     private readonly string[] _names;
     private readonly IReadOnlyDictionary<string, string> _aliases;
     private readonly Dictionary<string, StyledElement> _found = new(StringComparer.Ordinal);
+    private readonly List<(string Part, StyledElement Element)> _added = [];
     private readonly Dictionary<string, bool> _states = new(StringComparer.Ordinal);
     private readonly HashSet<StyledElement> _themed = [];
     private OverrideCollection? _overrides;
@@ -38,14 +43,53 @@ internal sealed class Parts
 
     public IReadOnlyList<string> Names => _names;
 
-    /// <summary>The part of that name in the current template, if there is one.</summary>
-    public StyledElement? this[string name] => _found.GetValueOrDefault(name);
+    /// <summary>The part of that name in the current template, or else the first the control added, if there is one.</summary>
+    public StyledElement? this[string name] =>
+        _found.GetValueOrDefault(name) ?? _added.FirstOrDefault(a => a.Part == name).Element;
+
+    /// <summary>Every element of the part: the template's, then those the control added, in their order.</summary>
+    public IEnumerable<StyledElement> Elements(string name)
+    {
+        if (_found.TryGetValue(name, out var found)) yield return found;
+        foreach (var (part, element) in _added)
+        {
+            if (part == name) yield return element;
+        }
+    }
+
+    /// <summary>
+    /// An element the control made for a part, outside its template's names: it takes the part's states and theme, and
+    /// keeps them over a new template, until <see cref="Remove"/>.
+    /// </summary>
+    public void Add(string part, StyledElement element)
+    {
+        if (!_names.Contains(part)) throw new ArgumentException($"{_component} has no part {part}", nameof(part));
+        _added.Add((part, element));
+        foreach (var (pseudo, on) in _states) Set(element, pseudo, on);
+        Apply(part, element);
+    }
+
+    /// <summary>Lets go of an element <see cref="Add"/> took, and of the theme it gave it.</summary>
+    public void Remove(StyledElement element)
+    {
+        if (_added.RemoveAll(a => a.Element == element) == 0) return;
+        if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
+    }
+
+    private IEnumerable<(string Part, StyledElement Element)> All()
+    {
+        foreach (var (name, element) in _found) yield return (name, element);
+        foreach (var added in _added) yield return added;
+    }
 
     /// <summary>Takes the parts of a newly applied template.</summary>
     public void Attach(INameScope scope)
     {
-        foreach (var element in _themed) element.ClearValue(StyledElement.ThemeProperty);
-        _themed.Clear();
+        foreach (var element in _found.Values)
+        {
+            if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
+        }
+
         _found.Clear();
         foreach (var name in _names)
         {
@@ -64,7 +108,7 @@ internal sealed class Parts
     public void SetState(string pseudoClass, bool on)
     {
         _states[pseudoClass] = on;
-        foreach (var element in _found.Values) Set(element, pseudoClass, on);
+        foreach (var (_, element) in All()) Set(element, pseudoClass, on);
     }
 
     /// <summary>Uses a new overrides collection, following its changes.</summary>
@@ -81,24 +125,26 @@ internal sealed class Parts
     /// <summary>Gives each part its theme, with its override merged over it.</summary>
     public void ApplyOverrides()
     {
-        foreach (var (name, element) in _found)
+        foreach (var (name, element) in All()) Apply(name, element);
+    }
+
+    private void Apply(string name, StyledElement element)
+    {
+        var entry = Find(name);
+        if (entry is null || (entry.Component is null && entry.Style is null && entry.Props is null))
         {
-            var entry = Find(name);
-            if (entry is null || (entry.Component is null && entry.Style is null && entry.Props is null))
-            {
-                if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
-                continue;
-            }
-
-            var head = entry.Component ?? DefaultTheme(name, element);
-            foreach (var layer in new[] { entry.Style, entry.Props })
-            {
-                if (layer is not null) head = Derive(layer, head);
-            }
-
-            element.Theme = head;
-            _themed.Add(element);
+            if (_themed.Remove(element)) element.ClearValue(StyledElement.ThemeProperty);
+            return;
         }
+
+        var head = entry.Component ?? DefaultTheme(name, element);
+        foreach (var layer in new[] { entry.Style, entry.Props })
+        {
+            if (layer is not null) head = Derive(layer, head);
+        }
+
+        element.Theme = head;
+        _themed.Add(element);
     }
 
     /// <summary>The theme key of a part: <c>Button.StyledBaseButton</c>.</summary>
