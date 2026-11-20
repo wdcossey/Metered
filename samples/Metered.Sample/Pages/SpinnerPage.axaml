@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.SpinnerPage">
+  <!-- Base Web's spinner, as its documentation's examples and its scenario show it: basic, the three sizes, border
+       widths and lengths, colours, and a customised one. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic" />
+      <b:Spinner x:Name="Basic" />
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <StackPanel Spacing="8">
+        <b:Spinner x:Name="Small" Size="Small" />
+        <b:Spinner Size="Medium" />
+        <b:Spinner x:Name="Large" Size="Large" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Border widths and lengths" />
+      <StackPanel Spacing="8">
+        <b:Spinner x:Name="Length" Size="60" BorderWidth="Small" />
+        <b:Spinner Size="Small" BorderWidth="20" />
+        <b:Spinner x:Name="Token" Size="scale1000" BorderWidth="scale300" />
+        <b:Spinner Size="40px" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Colours" />
+      <StackPanel Spacing="8">
+        <b:Spinner x:Name="Negative" Color="{DynamicResource colors.negative}" />
+        <b:Spinner Color="{DynamicResource colors.positive}" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Customizing" />
+      <!-- The documentation's withStyle example: a 96 box, a 12 border, the top in another colour. -->
+      <b:Spinner x:Name="Custom">
+        <b:Spinner.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="Spinner">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:SpinnerRing">
+                  <Setter Property="BoxSize" Value="96" />
+                  <Setter Property="Thickness" Value="12" />
+                  <Setter Property="Foreground" Value="{DynamicResource colors.magenta400}" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Spinner.Overrides>
+      </b:Spinner>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
