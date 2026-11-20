@@ -137,22 +137,81 @@ public class ProgressBarTests
         AssertRenders(Case(20, 0, 100), pb);
     }
 
-    // XAML sets the properties in the order written, inside BeginInit and EndInit: RangeBase clamps the value again
-    // once initialized, so a value set before its range isn't lost.
-    [AvaloniaFact]
-    public void A_value_set_before_its_range_is_kept()
+    // XAML sets the properties in the order written, inside BeginInit and EndInit, and code in any order: the value is
+    // clamped again once the bar is initialized, so a value set before its range isn't lost, and a minimum set over the
+    // maximum still standing (100) before the value is no trouble.
+    [AvaloniaTheory]
+    [InlineData("Value Minimum Maximum", true)]
+    [InlineData("Value Maximum Minimum", true)]
+    [InlineData("Minimum Value Maximum", true)]
+    [InlineData("Minimum Maximum Value", true)]
+    [InlineData("Maximum Value Minimum", true)]
+    [InlineData("Maximum Minimum Value", true)]
+    [InlineData("Minimum Value Maximum", false)]
+    [InlineData("Value Minimum Maximum", false)]
+    public void A_value_set_in_any_order_with_its_range_is_kept(string order, bool init)
     {
-        var pb = new ProgressBar();
-        pb.BeginInit();
-        pb.ShowLabel = true;
-        pb.Value = 120;
-        pb.Maximum = 200;
-        pb.Minimum = 100;
-        pb.EndInit();
+        var pb = new ProgressBar { ShowLabel = true };
+        if (init) pb.BeginInit();
+        foreach (var name in order.Split(' '))
+        {
+            if (name == "Value") pb.Value = 120;
+            else if (name == "Minimum") pb.Minimum = 100;
+            else pb.Maximum = 200;
+        }
+
+        if (init) pb.EndInit();
         using var scene = new Scene(pb);
-        Assert.Equal(120, pb.Value);
+        Assert.Equal((120.0, 100.0, 200.0), (pb.Value, pb.Minimum, pb.Maximum));
         AssertRenders(Case(120, 100, 200), pb);
     }
+
+    // A minimum over the maximum still standing, set before the value: RangeBase's own clamp throws here
+    // (MathUtilities.Clamp(160, 150, 100)), in XAML's order as in code's. The bar takes the value and its range as set.
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_minimum_over_the_maximum_standing_doesnt_throw(bool init)
+    {
+        var pb = new ProgressBar();
+        if (init) pb.BeginInit();
+        pb.Minimum = 150;
+        pb.Value = 160;
+        pb.Maximum = 200;
+        if (init) pb.EndInit();
+        using var scene = new Scene(pb);
+        Assert.Equal((160.0, 150.0, 200.0), (pb.Value, pb.Minimum, pb.Maximum));
+    }
+
+    // A new data context brings a value and its range by bindings, which RangeBase doesn't clamp again while the
+    // context changes, nor once it has: the value is clamped to the new range once the change is over, from the value
+    // as the binding gave it. Each look is Base Web's for the clamped case.
+    [AvaloniaFact]
+    public void A_new_data_context_is_clamped_to_its_own_range()
+    {
+        var pb = new ProgressBar { ShowLabel = true };
+        pb.Bind(RangeBase.ValueProperty, new ReflectionBinding(nameof(Model.Value)));
+        pb.Bind(RangeBase.MinimumProperty, new ReflectionBinding(nameof(Model.Minimum)));
+        pb.Bind(RangeBase.MaximumProperty, new ReflectionBinding(nameof(Model.Maximum)));
+        pb.DataContext = new Model(20, 0, 100);
+        using var scene = new Scene(pb);
+        AssertRenders(Case(20, 0, 100), pb);
+
+        pb.DataContext = new Model(120, 100, 200);
+        Assert.Equal((120.0, 100.0, 200.0), (pb.Value, pb.Minimum, pb.Maximum));
+        AssertRenders(Case(120, 100, 200), pb);
+
+        pb.DataContext = new Model(150, 0, 100);
+        Assert.Equal((100.0, 0.0, 100.0), (pb.Value, pb.Minimum, pb.Maximum));
+        AssertRenders(Case(100, 0, 100), pb);
+
+        pb.DataContext = new Model(20, 0, 100);
+        Assert.Equal(20, pb.Value);
+        AssertRenders(Case(20, 0, 100), pb);
+    }
+
+    /// <summary>A view model's progress: a value and its range.</summary>
+    public sealed record Model(double Value, double Minimum, double Maximum);
 
     // GetProgressLabel is given the clamped value, as the default label reads it.
     [AvaloniaFact]

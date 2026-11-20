@@ -93,12 +93,13 @@ the pictures. An app never sets it.
 - `Controls/ProgressBarTests`: 35 values Base Web's scenarios, unit tests and examples use, the ends, and the values a
   clamped bar shows, rendered by Base Web itself (the bars, each step's state and fill, the label, the name), each
   built as given and expected to render Base Web's case for its clamped value; the 7 past the range, Base Web's own
-  output for them still what its formulas give; the value clamped again as the range moves, set before its range,
-  and given to `GetProgressLabel` clamped; `GetProgressLabel`; the range for assistive
+  output for them still what its formulas give; the value clamped again as the range moves, set in any order with its range (and a
+  minimum over the maximum standing, which throws in `RangeBase`), a new data context's clamped to its range, and
+  given to `GetProgressLabel` clamped; `GetProgressLabel`; the range for assistive
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions and in a new colour, the fill and the steps drawn; overrides on every part
   (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
-  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 71 in all.
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 81 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with
@@ -142,12 +143,22 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
     value of 150 on a bar of 0 to 100 reads "150% Complete" and `aria-valuenow` 150, a fill whose
     `translateX(--50%)` a browser drops (a full bar), and a value under the minimum leaves every step awaiting (−10 of
     4 steps: no step in progress, "Step 0 of 4"); a maximum under the minimum is kept, and the arithmetic runs
-    backwards. Here `RangeBase`'s own coercion is kept (its metadata isn't replaced, only `Value`'s binding mode): the
-    value is clamped to `[Minimum, Maximum]`, the maximum kept at or above the minimum, a value that isn't finite
-    refused. The label (the default and `GetProgressLabel`'s), the fill, the step states, the infinite bar's label,
+    backwards. Here `RangeBase`'s own coercion of `Minimum` and `Maximum` is kept: the maximum at or above the
+    minimum, a number that isn't finite refused. `Value`'s is `RangeBase`'s clamp to `[Minimum, Maximum]` but for
+    two cases where `RangeBase`'s goes wrong, both measured (Avalonia 12.1.4, `RangeBase.cs`):
+    - **a minimum set over the maximum still standing, before the value** (`Minimum="150" Value="160" Maximum="200"`,
+      in XAML's order or code's): before the bar is initialized `RangeBase` doesn't raise the maximum to the minimum,
+      and its `MathUtilities.Clamp(160, 150, 100)` throws. Metered clamps to the maximum `RangeBase` makes of it, at
+      least the minimum, so nothing throws, and the value is clamped again once the bar is initialized;
+    - **a new data context**: `RangeBase` clamps nothing again while a data context changes, nor once it has, so bound
+      ends that arrive after the value leave it clamped to the old range or outside the new one. Metered clamps the
+      maximum and the value again once the change is over.
+
+    The label (the default and `GetProgressLabel`'s), the fill, the step states, the infinite bar's label,
     the accessible name and the range assistive technology reads all take the clamped value: 150 reads "100% Complete",
     −10 of 4 steps has its first step in progress. When `Minimum` or `Maximum` changes, `RangeBase` clamps again from
-    the value as it was set, so a range that grows back gives the value back, and so does XAML's order (once the bar is
-    initialized). A maximum under the minimum makes an empty range, which reads, as Base Web's does, "NaN% Complete".
+    the value as it was set, so a range that grows back gives the value back, and XAML's order doesn't matter (the
+    value is clamped again once the bar is initialized). `Value` still binds one way by default; a two-way binding,
+    the app's own choice, is `RangeBase`'s. A maximum under the minimum makes an empty range, which reads, as Base Web's does, "NaN% Complete".
     The tests keep Base Web's output for a value past the range as it recorded it, beside the clamped bar's, which is
     Base Web's own for the clamped value.

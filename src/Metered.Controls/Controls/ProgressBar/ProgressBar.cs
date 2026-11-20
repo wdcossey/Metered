@@ -19,7 +19,9 @@ namespace Metered.Controls;
 /// <c>Maximum</c> (0, 0 and 100 by default, as Base Web's), coerced as <see cref="RangeBase"/> coerces them, against
 /// Base Web, which clamps nothing: the value is kept in the range and the maximum at or above the minimum, so a value
 /// of 150 on a bar of 0 to 100 is drawn and said as 100 ("100% Complete"), and is 150 again once the maximum is 200.
-/// The label, the fill, the step states and the accessible name all read the coerced value.</para>
+/// The label, the fill, the step states and the accessible name all read the coerced value. Unlike RangeBase's, the
+/// clamp doesn't throw for a minimum set over the maximum before the value, and is done again after a new data
+/// context.</para>
 /// <para>The template has <c>Root</c>, <c>BarContainer</c> and <c>Label</c>; the bar makes the parts Base Web renders
 /// some number of times: a <c>Bar</c> with its <c>BarProgress</c> for each of <see cref="Steps"/>, or, when
 /// <see cref="Infinite"/>, two <c>InfiniteBar</c>s, the first <c>:is-left</c>.</para>
@@ -76,10 +78,10 @@ public class ProgressBar : RangeBase
 
     static ProgressBar()
     {
-        // A progress bar shows its value: one way by default. No coercion is given, so RangeBase's own is kept (the
-        // metadata's merge takes the base's): the value clamped to the range, the maximum kept at or above the minimum,
-        // a value that isn't finite refused. Base Web clamps nothing; the developer chose RangeBase's clamp (#67).
-        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay));
+        // A progress bar shows its value: one way by default. Base Web clamps nothing; the developer chose RangeBase's
+        // clamp (#67): RangeBase's own coercion of the minimum and the maximum is kept (the maximum at or above the
+        // minimum, a number that isn't finite refused), and the value's is RangeBase's but for one case, ClampValue.
+        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay, coerce: ClampValue));
     }
 
     public ProgressBar()
@@ -152,6 +154,18 @@ public class ProgressBar : RangeBase
     {
         base.OnUnloaded(e);
         SetState(":loaded", false);
+    }
+
+    /// <summary>
+    /// RangeBase clamps nothing again while the data context changes, nor once it has, so bound ends that arrive after
+    /// the value would leave it clamped to the old range, or outside the new one. Once the change is over, the maximum
+    /// and the value are clamped again, from the values as they were given, as RangeBase does once initialized.
+    /// </summary>
+    protected override void OnDataContextEndUpdate()
+    {
+        base.OnDataContextEndUpdate();
+        CoerceValue(MaximumProperty);
+        CoerceValue(ValueProperty);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -313,6 +327,19 @@ public class ProgressBar : RangeBase
     private void UpdateIntent()
     {
         for (var i = 0; i < Intents.Length; i++) SetState(Intents[i], Intent is { } intent && (int)intent == i);
+    }
+
+    /// <summary>
+    /// RangeBase's clamp of the value (RangeBase.CoerceValue, Avalonia 12.1.4), to the maximum RangeBase makes it
+    /// (CoerceMaximum: at least the minimum). RangeBase's own clamps to the maximum as it stands, which before the bar
+    /// is initialized, or while its data context changes, can be under a minimum just set: its MathUtilities.Clamp then
+    /// throws (<c>Minimum="150" Value="160" Maximum="200"</c>). A number that isn't finite is refused, as RangeBase's is.
+    /// </summary>
+    private static double ClampValue(AvaloniaObject sender, double value)
+    {
+        if (!double.IsFinite(value)) return sender.GetValue(ValueProperty);
+        var minimum = sender.GetValue(MinimumProperty);
+        return Math.Clamp(value, minimum, Math.Max(minimum, sender.GetValue(MaximumProperty)));
     }
 
     private void SetState(string pseudoClass, bool on)
