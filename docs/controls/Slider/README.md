@@ -85,12 +85,14 @@ thumbs and labels; `Parts` holds them beside the template's.
 - **Focus**: a keyboard's focus rings its thumb with Base Web's `0 0 0 3px borderAccent` in place of the shadow; a
   pointer's doesn't. A keyboard's ring stays through a drag of the thumb it's on, as react-range's focus of a focused
   thumb raises nothing.
-- **Hover is a mouse's** (ADR 0001): a finger shows a thumb's label while it drags it, and not after.
+- **Hover is a mouse's** (ADR 0001): a finger shows a thumb's label while it drags it, and not after. A mouse over the
+  label is over its thumb (the label is the thumb's child, as `mouseenter` counts it).
 - **`:range`** (two values), **`:is-dragged`** (the track and line for any thumb; a thumb, its value and its stem for
   their own) and **`:focus-visible`** (a thumb for its own keyboard focus, the other parts for the slider's) are the
   parts' states, from Base Web's `$` props.
 - **UI Automation**: each thumb is a `Slider` with a range value: its value, bounded by its neighbours or the ends
-  (`aria-valuemin`, `aria-valuemax`), a step small and ten large; named by the slider's `AutomationProperties.Name`.
+  (`aria-valuemin`, `aria-valuemax`), a step small and ten large; named by the slider's `AutomationProperties.Name`. A
+  change of its value, or of a neighbour's that bounds it, is raised.
 
 ## Held by
 
@@ -99,12 +101,15 @@ thumbs and labels; `Parts` holds them beside the template's.
   shadow or ring, whether its label shows and its colours, and the ticks, against Base Web's style functions. The states
   are real input.
 - `Controls/SliderLayoutTests`: 12: the track's padding and the line, the tick bar and the ticks, each thumb on its value
-  (six values), the label above its thumb, the marks for three steps (one fractional), and marks turned on and off.
-- `Controls/SliderTests`: 209: react-range's `normalizeValue` on 176 cases from the oracle; a click, a press on a thumb,
+  (six values), the label above its thumb, the marks for three steps (one fractional), and marks turned on and off, the
+  ones there kept.
+- `Controls/SliderTests`: 255: react-range's `normalizeValue` on 198 cases from the oracle; a number as JavaScript writes it
+  (18 cases, `String(n)`, for the labels and a step's decimals); a click, a press on a thumb,
   a drag off the slider, a right press, two thumbs (the closer, the one pressed, never crossing), a touch drag and a touch
-  on the track, a touch drag in a ScrollViewer across, mostly up, and off the slider; the eight keys, Shift+K and another
-  key, a step past the end, Tab between thumbs, the ring for a keyboard's focus only and through a drag; the label under a
-  mouse, `PersistentThumb`, disabled; the value's start, its checks, a second thumb; `ValueToLabel`; the parts' states;
+  on the track, a touch drag in a ScrollViewer across, mostly up, and off the slider; two thumbs on one value; a finger
+  never hovering; the eight keys, Shift+K, another key and Tab, a step past the end, Tab between thumbs, the ring for a
+  keyboard's focus only and through a drag, a key's drag ended by disabling, the focused thumb taken away; the label under
+  a mouse and on it, `PersistentThumb`, disabled; a minimum not below the maximum; the value's start, its checks, a second thumb; `ValueToLabel`; the parts' states;
   overrides on every element of a part; UI Automation.
 - `Controls/SliderFrames`: the drawn line, two thumbs' selection, the marks' gaps, the round thumb over its shadow, the
   ring, and the gallery above: 7.
@@ -143,13 +148,18 @@ dark themes, and calls react-range's own `normalizeValue`.
 8. **A component override that renders something else** (Base Web's `InnerThumb: () => null`, or a `TickBar` of six
    ticks) has no equivalent: an override here is a theme for the part's element, which can hide it or restyle it.
 9. **The value's checks**: Base Web throws for more than two values, and react-range for a value outside the ends, two out
-   of order, or a step of 0. Here more than two and a step of 0 or less are refused (`ArgumentException`); a value outside
-   the ends is held at the nearer, two out of order are put in order, as Avalonia's `RangeBase` coerces.
-10. **Right to left isn't done**, as for Switch: react-range inverts the keys and mirrors the gradient for `rtl`; the
+   of order, a step of 0, or a minimum not below the maximum. Here more than two and a step of 0 or less are refused
+   (`ArgumentException`); a value outside the ends is held at the nearer, two out of order are put in order, as Avalonia's
+   `RangeBase` coerces; and a slider whose minimum isn't below its maximum is drawn and takes no input, as `Min` and `Max`
+   are set one at a time.
+10. **A key's drag ends with the slider's focus or its use.** react-range ends a held key's drag on its release, on the
+    thumb; if the thumb loses the focus first, or the slider is disabled, that release never comes and Base Web's label
+    stays shown. Here the drag ends then, and its change is final.
+11. **Right to left isn't done**, as for Switch: react-range inverts the keys and mirrors the gradient for `rtl`; the
     themes are generated left to right, and a `FlowDirection` of `RightToLeft` hasn't been tried.
-11. **Accessibility**: react-range labels every thumb "Accessibility label" (Base Web passes no `label`); here a thumb
+12. **Accessibility**: react-range labels every thumb "Accessibility label" (Base Web passes no `label`); here a thumb
     takes the slider's `AutomationProperties.Name`.
-12. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
-13. **Not tried on a device yet**: the touch tests are headless (Avalonia's headless touch through its real input
+13. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+14. **Not tried on a device yet**: the touch tests are headless (Avalonia's headless touch through its real input
     pipeline, and Avalonia's own ScrollViewer with the Simple theme's gesture recogniser). The real-window run and a
     Pixel run are owed (hands-on).

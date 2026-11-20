@@ -42,10 +42,10 @@ public class SliderInnerTrack : Control
         AffectsRender<SliderInnerTrack>(BackgroundProperty, FillProperty, CornerRadiusProperty);
     }
 
-    /// <summary>The marks and thumbs (the line's), or the label's parts (a thumb's), in the order they are drawn.</summary>
+    /// <summary>The slider's marks and then its thumbs, in the order they are drawn.</summary>
     public Avalonia.Controls.Controls Children { get; } = new();
 
-    /// <summary>The fill: the line's rest, or the handle's.</summary>
+    /// <summary>The line's colour outside the selection.</summary>
     public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
     /// <summary>The selection's colour.</summary>

@@ -78,6 +78,18 @@ public class SliderTests
         Assert.Equal(c.Expected, Slider.Normalize(c.Value, c.Index, c.Min, c.Max, c.Step, c.Values));
     }
 
+    public static TheoryData<int> NumberCases => new(Enumerable.Range(0, SliderOracle.Data.Numbers.Length));
+
+    // A label with no valueToLabel is the number as JavaScript writes it (String(n)), which react-range's getStepDecimals
+    // also reads a step's decimals from: plain from 1e-6 to 1e21, an exponent beyond.
+    [AvaloniaTheory]
+    [MemberData(nameof(NumberCases))]
+    public void A_number_is_written_as_JavaScript_writes_it(int index)
+    {
+        var c = SliderOracle.Data.Numbers[index];
+        Assert.Equal(c.Text, Slider.JsNumber(c.Value));
+    }
+
     // react-range's normalizeValue holds a thumb at a neighbour only when that neighbour is truthy: a neighbour at 0 lets
     // it pass. Here a neighbour at 0 holds it as one at 10 does (docs/controls/Slider/, known differences).
     [AvaloniaFact]
@@ -333,6 +345,25 @@ public class SliderTests
         Assert.Empty(slider.Thumbs[1].Children);
     }
 
+    // slider.js's onMouseEnter and onMouseLeave on the Thumb: its label is its child, so a mouse moved up onto the label is
+    // still over the thumb, and the label stays.
+    [AvaloniaFact]
+    public void A_mouse_moved_onto_the_label_keeps_it()
+    {
+        var (slider, scene) = Show(new Slider { Value = [50] });
+        using var _ = scene;
+        var thumb = slider.Thumbs[0];
+        scene.Hover(thumb);
+        var label = (Visual)thumb.Children[0];
+        scene.Window.MouseMove(scene.CentreOf(thumb) - new Point(0, 2));
+        scene.Window.MouseMove(scene.CentreOf(label));
+        scene.Pump();
+        Assert.Equal(2, thumb.Children.Count);
+        scene.Window.MouseMove(new Point(5, 5));
+        scene.Pump();
+        Assert.Empty(thumb.Children);
+    }
+
     [AvaloniaFact]
     public void PersistentThumb_shows_every_label_disabled_too()
     {
@@ -521,6 +552,61 @@ public class SliderTests
         Assert.Contains(":focus-visible", thumb.Classes);
     }
 
+    // A thumb dragged by a held key whose release won't come to it (the slider disabled, or its focus gone): the drag ends,
+    // and the change is final.
+    [AvaloniaFact]
+    public void A_held_key_drag_ends_when_the_slider_is_disabled()
+    {
+        var (slider, scene) = Show(new Slider { Value = [50] });
+        using var _ = scene;
+        var events = new Events(slider);
+        scene.Key(Key.Tab);
+        Down(scene, Key.Right);
+        Assert.Equal(0, slider.DraggedThumb);
+        slider.IsEnabled = false;
+        scene.Pump();
+        Assert.Equal(-1, slider.DraggedThumb);
+        Assert.DoesNotContain(":is-dragged", slider.Part(Slider.TrackPart)!.Classes);
+        Assert.Equal([[51.0]], events.Finals);
+        slider.IsEnabled = true;
+        scene.Pump();
+        Assert.Empty(slider.Thumbs[0].Children);
+    }
+
+    // The focused thumb taken away (two values become one): no ring is left on the slider's parts.
+    [AvaloniaFact]
+    public void Taking_away_the_focused_thumb_takes_its_ring()
+    {
+        var (slider, scene) = Show(new Slider { Value = [20, 70] });
+        using var _ = scene;
+        scene.Key(Key.Tab);
+        scene.Key(Key.Tab);
+        Assert.True(slider.Thumbs[1].IsFocused);
+        Assert.Contains(":focus-visible", slider.Part(Slider.TrackPart)!.Classes);
+        slider.Value = [40];
+        scene.Pump();
+        Assert.DoesNotContain(":focus-visible", slider.Classes);
+        Assert.DoesNotContain(":focus-visible", slider.Part(Slider.TrackPart)!.Classes);
+        Assert.DoesNotContain(":focus-visible", slider.Thumbs[0].Classes);
+    }
+
+    // react-range throws for a minimum not below the maximum; set one at a time, such a slider takes no input.
+    [AvaloniaFact]
+    public void A_minimum_not_below_the_maximum_takes_no_input()
+    {
+        var (slider, scene) = Show(new Slider { Value = [50] });
+        using var _ = scene;
+        var events = new Events(slider);
+        slider.Min = 100;
+        slider.Max = 0;
+        scene.Pump();
+        Drag(scene, At(scene, slider, 0.2), At(scene, slider, 0.8));
+        scene.Key(Key.Tab);
+        scene.Key(Key.Right);
+        Assert.Empty(events.Changes);
+        Assert.Empty(events.Finals);
+    }
+
     // --- The value.
 
     [AvaloniaFact]
@@ -661,9 +747,16 @@ public class SliderTests
         Assert.Equal((20.0, 100.0, 70.0), (b.Minimum, b.Maximum, b.Value));
 
         var events = new Events(slider);
+        var raised = new List<(AutomationPeer, Avalonia.Automation.AutomationProperty)>();
+        second.PropertyChanged += (_, e) => raised.Add((second, e.Property));
+        first.PropertyChanged += (_, e) => raised.Add((first, e.Property));
         a.SetValue(33);
         Assert.Equal([35.0, 70.0], slider.Value);
         Assert.Equal(35, a.Value);
+        Assert.Equal(35, b.Minimum);
+        // Its value, and the neighbour's range, which it bounds.
+        Assert.Contains((first, Avalonia.Automation.RangeValuePatternIdentifiers.ValueProperty), raised);
+        Assert.Contains((second, Avalonia.Automation.RangeValuePatternIdentifiers.MinimumProperty), raised);
         Assert.Single(events.Finals);
         slider.IsEnabled = false;
         Assert.True(a.IsReadOnly);

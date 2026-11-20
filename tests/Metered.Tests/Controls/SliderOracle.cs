@@ -19,7 +19,10 @@ internal static class SliderOracle
     }
 }
 
-internal sealed record SliderReference(string Baseui, SliderColourCase[] Colours, SliderLayout Layout, SliderNormalizeCase[] Normalize);
+internal sealed record SliderReference(string Baseui, SliderColourCase[] Colours, SliderLayout Layout, SliderNormalizeCase[] Normalize, SliderNumber[] Numbers);
+
+/// <summary>A number, and JavaScript's String(n) of it.</summary>
+internal sealed record SliderNumber(double Value, string Text);
 
 /// <summary>
 /// A slider of one thumb or two in one state, on its first thumb: the parts' colours; the inner track's runs, each

@@ -151,6 +151,11 @@ public class SliderLayoutTests
         Assert.Equal(11, slider.Elements(Slider.MarkPart).Count);
         slider.Step = 25;
         Assert.Equal(5, slider.Elements(Slider.MarkPart).Count);
+        // The marks there are kept; only the difference is made.
+        var kept = slider.Elements(Slider.MarkPart).ToList();
+        slider.Max = 125;
+        Assert.Equal(6, slider.Elements(Slider.MarkPart).Count);
+        Assert.Equal(kept, slider.Elements(Slider.MarkPart).Take(5));
         slider.Marks = false;
         Assert.Empty(slider.Elements(Slider.MarkPart));
         Assert.Single(((SliderInnerTrack)slider.Part(Slider.InnerTrackPart)!).Children);

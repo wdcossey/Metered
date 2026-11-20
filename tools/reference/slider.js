@@ -133,6 +133,8 @@ function normalize() {
     { min: 0, max: 1, step: 0.1, values: [[0.3], [0.2, 0.7]] },
     { min: 0, max: 10, step: 0.25, values: [[2.5]] },
     { min: 0, max: 95, step: 1, values: [[10, 70]] },
+    { min: 0, max: 0.001, step: 0.00001, values: [[0.0005]] },
+    { min: 0, max: 0.0001, step: 0.0000025, values: [[0.00005]] },
   ];
   for (const { min, max, step, values: list } of sets) {
     for (const values of list) {
@@ -151,8 +153,17 @@ function normalize() {
   return cases;
 }
 
+/**
+ * How JavaScript writes a number (String(n)), which a label shows for valueToLabel's default (label => label, rendered by
+ * React) and react-range's getStepDecimals reads a step's decimals from.
+ */
+function numbers() {
+  return [0, 1, -300, 0.1, 0.3, 4500, 45.5, 1 / 3, 0.00001, 0.0000025, 0.000001, 1e-7, 1.5e-7, 123456789012, 1e20, 1e21, 1.5e21,
+    -0.00025].map((value) => ({ value, text: String(value) }));
+}
+
 function oracle(version) {
-  return { baseui: version, colours: colours(), layout: layout(), normalize: normalize() };
+  return { baseui: version, colours: colours(), layout: layout(), normalize: normalize(), numbers: numbers() };
 }
 
 module.exports = { oracle };

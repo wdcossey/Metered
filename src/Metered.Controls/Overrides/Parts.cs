@@ -24,7 +24,7 @@ internal sealed class Parts
     private readonly IReadOnlyDictionary<string, string> _aliases;
     private readonly Dictionary<string, StyledElement> _found = new(StringComparer.Ordinal);
     private readonly List<(string Part, StyledElement Element)> _added = [];
-    private readonly Dictionary<string, bool> _states = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (bool On, string? Except)> _states = new(StringComparer.Ordinal);
     private readonly HashSet<StyledElement> _themed = [];
     private OverrideCollection? _overrides;
 
@@ -65,7 +65,11 @@ internal sealed class Parts
     {
         if (!_names.Contains(part)) throw new ArgumentException($"{_component} has no part {part}", nameof(part));
         _added.Add((part, element));
-        foreach (var (pseudo, on) in _states) Set(element, pseudo, on);
+        foreach (var (pseudo, (on, except)) in _states)
+        {
+            if (part != except) Set(element, pseudo, on);
+        }
+
         Apply(part, element);
     }
 
@@ -96,19 +100,28 @@ internal sealed class Parts
             if (scope.Find(name) is StyledElement element) _found[name] = element;
         }
 
-        foreach (var (pseudo, on) in _states)
+        foreach (var (pseudo, (on, except)) in _states)
         {
-            foreach (var element in _found.Values) Set(element, pseudo, on);
+            foreach (var (name, element) in _found)
+            {
+                if (name != except) Set(element, pseudo, on);
+            }
         }
 
         ApplyOverrides();
     }
 
-    /// <summary>Sets a state pseudoclass on every part (the control sets its own).</summary>
-    public void SetState(string pseudoClass, bool on)
+    /// <summary>
+    /// Sets a state pseudoclass on every part (the control sets its own), but those of <paramref name="except"/>, which the
+    /// control sets each of itself (a slider's thumb, whose <c>$isFocusVisible</c> is its own).
+    /// </summary>
+    public void SetState(string pseudoClass, bool on, string? except = null)
     {
-        _states[pseudoClass] = on;
-        foreach (var (_, element) in All()) Set(element, pseudoClass, on);
+        _states[pseudoClass] = (on, except);
+        foreach (var (name, element) in All())
+        {
+            if (name != except) Set(element, pseudoClass, on);
+        }
     }
 
     /// <summary>Uses a new overrides collection, following its changes.</summary>

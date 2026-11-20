@@ -244,7 +244,7 @@ public class Slider : TemplatedControl
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (IndexOf(e.Source) is not (>= 0 and var index) || index >= Value.Count) return;
+        if (IndexOf(e.Source) is not (>= 0 and var index) || index >= Value.Count || !HasRange) return;
         var step = Step;
         if (Increases(e))
         {
@@ -310,7 +310,7 @@ public class Slider : TemplatedControl
 
     private void OnTrackPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!IsEffectivelyEnabled || _inner is null || _track is null || _pointer is not null || _thumbs.Count == 0) return;
+        if (!IsEffectivelyEnabled || _inner is null || _track is null || _pointer is not null || _thumbs.Count == 0 || !HasRange) return;
         var point = e.GetCurrentPoint(_inner);
         // A mouse's primary button (react-range ignores the others), a finger or a pen's tip.
         if (point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed) return;
@@ -362,10 +362,14 @@ public class Slider : TemplatedControl
         FireFinalChange();
     }
 
-    /// <summary>The slider is disabled or leaves the tree: a drag ends, and no thumb is hovered.</summary>
+    /// <summary>
+    /// The slider is disabled or leaves the tree: a drag ends, a pointer's or a held key's, whose release it won't see,
+    /// and no thumb is hovered.
+    /// </summary>
     private void EndAll()
     {
         if (_pointer is not null) End();
+        EndKeyDrag();
         for (var i = 0; i < _hovered.Count; i++) _hovered[i] = false;
         UpdateLabels();
     }
@@ -393,12 +397,27 @@ public class Slider : TemplatedControl
         RaiseEvent(new SliderChangeEventArgs(ChangeEvent, Value));
     }
 
+    /// <summary>
+    /// Whether the minimum is below the maximum. react-range throws otherwise (checkBoundaries); here, as Min and Max are
+    /// set one at a time, such a slider is drawn and takes no input until they are in order.
+    /// </summary>
+    private bool HasRange => Min < Max;
+
     /// <summary>Automation's set: the value normalised, as a step's, and final at once.</summary>
     internal void SetFromAutomation(int index, double value)
     {
-        if (index < 0 || index >= Value.Count) return;
+        if (index < 0 || index >= Value.Count || !HasRange) return;
         Move(index, value);
         FireFinalChange();
+    }
+
+    /// <summary>A drag a held key started ends, and its change is final: the key's release won't come to the thumb.</summary>
+    private void EndKeyDrag()
+    {
+        if (_pointer is not null || _dragged < 0) return;
+        var changed = _isChanged;
+        Drag(-1);
+        if (changed) FireFinalChange();
     }
 
     /// <summary>react-range's fireOnFinalChange.</summary>
@@ -437,8 +456,45 @@ public class Slider : TemplatedControl
         return dot < 0 ? 0 : text.Length - dot - 1;
     }
 
-    /// <summary>A number as JavaScript writes it (<c>String(n)</c>): the shortest that reads back, with no group separators.</summary>
-    internal static string JsNumber(double value) => value == 0 ? "0" : value.ToString("R", CultureInfo.InvariantCulture);
+    /// <summary>
+    /// A number as JavaScript writes it (<c>String(n)</c>, ECMAScript's Number::toString): the shortest digits that read
+    /// back, in plain notation from 1e-6 up to 1e21, and as <c>1.5e-7</c> or <c>1e+21</c> beyond.
+    /// </summary>
+    internal static string JsNumber(double value)
+    {
+        if (value == 0) return "0";
+        if (double.IsNaN(value)) return "NaN";
+        if (double.IsInfinity(value)) return value > 0 ? "Infinity" : "-Infinity";
+        // .NET's shortest round-trip digits, in exponent form: d.dddE+xx.
+        var shortest = Math.Abs(value).ToString("E" + Precision(value), CultureInfo.InvariantCulture);
+        var at = shortest.IndexOf('E');
+        var digits = shortest[..at].Replace(".", "").TrimEnd('0');
+        // ECMAScript's n: where the point goes after the first digit's place; k: how many digits.
+        var n = 1 + int.Parse(shortest[(at + 1)..], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        var k = digits.Length;
+        string text;
+        if (k <= n && n <= 21) text = digits + new string('0', n - k);
+        else if (0 < n && n <= 21) text = digits[..n] + "." + digits[n..];
+        else if (-6 < n && n <= 0) text = "0." + new string('0', -n) + digits;
+        else
+        {
+            var exponent = n - 1;
+            text = digits[..1] + (k > 1 ? "." + digits[1..] : "") + "e" + (exponent < 0 ? "-" : "+") + Math.Abs(exponent).ToString(CultureInfo.InvariantCulture);
+        }
+
+        return value < 0 ? "-" + text : text;
+    }
+
+    /// <summary>The fewest digits after the first that read back as the same number: .NET's shortest round trip.</summary>
+    private static int Precision(double value)
+    {
+        for (var p = 0; p < 17; p++)
+        {
+            if (double.Parse(value.ToString("E" + p, CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) == value) return p;
+        }
+
+        return 16;
+    }
 
     /// <summary>react-range's getClosestThumbIndex: the thumb whose centre is nearest along the line, the first on a tie.</summary>
     private int Closest(double x)
@@ -503,6 +559,7 @@ public class Slider : TemplatedControl
         UpdateDragged();
         UpdateFocus();
         UpdateLabels();
+        foreach (var thumb in _thumbs) thumb.Peer?.Update();
     }
 
     private void AddThumb()
@@ -533,7 +590,11 @@ public class Slider : TemplatedControl
         var index = _thumbs.Count - 1;
         var thumb = _thumbs[index];
         var (value, inner) = _labels[index];
-        if (thumb.IsFocused) _focused = -1;
+        if (_focused == index)
+        {
+            _focused = -1;
+            _focusVisible = false;
+        }
         thumb.PointerEntered -= OnThumbPointer;
         thumb.PointerMoved -= OnThumbPointer;
         thumb.PointerExited -= OnThumbExited;
@@ -550,25 +611,29 @@ public class Slider : TemplatedControl
         _hovered.RemoveAt(index);
     }
 
-    /// <summary>A mark at each step (react-range's numOfMarks + 1), when <see cref="Marks"/> is on.</summary>
+    /// <summary>
+    /// A mark at each step (react-range's numOfMarks + 1), when <see cref="Marks"/> is on: the marks there are kept, and
+    /// only the difference made or let go.
+    /// </summary>
     private void RebuildMarks()
     {
-        foreach (var mark in _marks)
+        var steps = (Max - Min) / Step;
+        var count = Marks && steps > 0 && double.IsFinite(steps) ? (int)Math.Ceiling(steps + 1) : 0;
+        while (_marks.Count > count)
         {
+            var mark = _marks[^1];
+            _marks.RemoveAt(_marks.Count - 1);
             _inner?.Children.Remove(mark);
             _parts.Remove(mark);
         }
 
-        _marks.Clear();
-        var steps = (Max - Min) / Step;
-        var count = Marks && steps > 0 && double.IsFinite(steps) ? (int)Math.Ceiling(steps + 1) : 0;
-        for (var i = 0; i < count; i++)
+        while (_marks.Count < count)
         {
             var mark = new Border();
             Themed(mark, MarkPart);
+            _inner?.Children.Insert(_marks.Count, mark);
             _marks.Add(mark);
             _parts.Add(MarkPart, mark);
-            _inner?.Children.Insert(i, mark);
         }
 
         _inner?.SetMarks(count, steps);
@@ -624,7 +689,8 @@ public class Slider : TemplatedControl
     /// <summary>$isFocusVisible: the slider's on every part, and on each thumb, its own (slider.js's Thumb props).</summary>
     private void UpdateFocus()
     {
-        SetState(":focus-visible", _focusVisible);
+        PseudoClasses.Set(":focus-visible", _focusVisible);
+        _parts.SetState(":focus-visible", _focusVisible, except: ThumbPart);
         for (var i = 0; i < _thumbs.Count; i++) Set(_thumbs[i], ":focus-visible", _focusVisible && _focused == i);
     }
 
@@ -632,7 +698,8 @@ public class Slider : TemplatedControl
     private void OnThumbPointer(object? sender, PointerEventArgs e)
     {
         if (sender is not SliderThumb thumb || e.Pointer.Type != PointerType.Mouse || thumb.Index >= _hovered.Count) return;
-        var over = IsEffectivelyEnabled && new Rect(thumb.Bounds.Size).Contains(e.GetPosition(thumb));
+        // Over the thumb or its label, which overflows it: mouseenter and mouseleave count a thumb's children as the thumb.
+        var over = IsEffectivelyEnabled && thumb.InputHitTest(e.GetPosition(thumb)) is not null;
         SetHovered(thumb.Index, over);
     }
 
@@ -663,14 +730,17 @@ public class Slider : TemplatedControl
         _focusVisible = false;
         _focused = -1;
         UpdateFocus();
+        // A key held on the thumb: its release goes elsewhere now.
+        if (_dragged == thumb.Index) EndKeyDrag();
     }
 
     /// <summary>
     /// The part's own theme for an element the slider makes, as a template's <c>{DynamicResource}</c> gives one, beneath
     /// an override's (<see cref="Parts"/>).
     /// </summary>
+    /// <remarks>The element's own resource lookup, as a template's is, so that an element let go of holds nothing of the slider's.</remarks>
     private void Themed(StyledElement element, string part) =>
-        element.Bind(ThemeProperty, this.GetResourceObservable(_parts.ThemeKey(part)), BindingPriority.Template);
+        element.Bind(ThemeProperty, element.GetResourceObservable(_parts.ThemeKey(part)), BindingPriority.Template);
 
     private void Detach()
     {

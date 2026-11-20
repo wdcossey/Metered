@@ -9,17 +9,19 @@ namespace Metered.Controls;
 /// A slider thumb's automation peer: react-range's <c>role="slider"</c> on each thumb, with its value
 /// (<c>aria-valuenow</c>) and its range, which a neighbour bounds (<c>aria-valuemin</c> is the thumb before's value or the
 /// minimum, <c>aria-valuemax</c> the thumb after's or the maximum). A step is the slider's <c>step</c>, a large change
-/// ten (react-range's PageUp and PageDown). Its name is the slider's own.
+/// ten (react-range's PageUp and PageDown). Its name is the slider's own. The slider tells it when its value or a
+/// neighbour's moves (<see cref="Update"/>), so that it holds nothing of the slider's once its thumb is let go.
 /// </summary>
 public class SliderThumbAutomationPeer : ControlAutomationPeer, IRangeValueProvider
 {
     private double _value;
+    private double _minimum;
+    private double _maximum;
 
     public SliderThumbAutomationPeer(SliderThumb owner)
         : base(owner)
     {
-        _value = Value;
-        if (owner.Owner is { } slider) slider.PropertyChanged += OnSliderPropertyChanged;
+        (_value, _minimum, _maximum) = (Value, Minimum, Maximum);
     }
 
     private new SliderThumb Owner => (SliderThumb)base.Owner;
@@ -53,12 +55,18 @@ public class SliderThumbAutomationPeer : ControlAutomationPeer, IRangeValueProvi
     protected override string? GetNameCore() => base.GetNameCore() is { Length: > 0 } own ? own
         : Slider is { } s ? AutomationProperties.GetName(s) : null;
 
-    private void OnSliderPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    /// <summary>Raises the value's and the range's changes since they were last read.</summary>
+    internal void Update()
     {
-        if (e.Property != Slider.ValueProperty) return;
-        var value = Value;
-        if (value == _value) return;
-        RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty, _value, value);
-        _value = value;
+        Raise(RangeValuePatternIdentifiers.ValueProperty, ref _value, Value);
+        Raise(RangeValuePatternIdentifiers.MinimumProperty, ref _minimum, Minimum);
+        Raise(RangeValuePatternIdentifiers.MaximumProperty, ref _maximum, Maximum);
+    }
+
+    private void Raise(AutomationProperty property, ref double was, double now)
+    {
+        if (now == was) return;
+        RaisePropertyChangedEvent(property, was, now);
+        was = now;
     }
 }

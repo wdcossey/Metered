@@ -38,8 +38,6 @@ public class SliderThumb : Control
     public static readonly StyledProperty<double> OutlineOffsetProperty =
         AvaloniaProperty.Register<SliderThumb, double>(nameof(OutlineOffset));
 
-    private ImmutablePen? _outlinePen;
-
     public SliderThumb()
     {
         SliderChildren.Follow(Children, LogicalChildren, VisualChildren, InvalidateMeasure);
@@ -51,10 +49,10 @@ public class SliderThumb : Control
         AffectsRender<SliderThumb>(BackgroundProperty, CornerRadiusProperty, BoxShadowProperty, OutlineBrushProperty, OutlineThicknessProperty, OutlineOffsetProperty);
     }
 
-    /// <summary>The marks and thumbs (the line's), or the label's parts (a thumb's), in the order they are drawn.</summary>
+    /// <summary>The thumb's label, its ThumbValue and then its InnerThumb, while it shows.</summary>
     public Avalonia.Controls.Controls Children { get; } = new();
 
-    /// <summary>The fill: the line's rest, or the handle's.</summary>
+    /// <summary>The handle's fill.</summary>
     public IBrush? Background { get => GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
     /// <summary>The slider whose thumb this is, and the value it holds.</summary>
@@ -78,13 +76,10 @@ public class SliderThumb : Control
     /// <summary>The gap between the box and its ring.</summary>
     public double OutlineOffset { get => GetValue(OutlineOffsetProperty); set => SetValue(OutlineOffsetProperty, value); }
 
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-        if (change.Property == OutlineBrushProperty || change.Property == OutlineThicknessProperty) _outlinePen = null;
-    }
+    /// <summary>The thumb's automation peer, once UI Automation has asked for it.</summary>
+    internal SliderThumbAutomationPeer? Peer { get; private set; }
 
-    protected override AutomationPeer OnCreateAutomationPeer() => new SliderThumbAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer() => Peer = new SliderThumbAutomationPeer(this);
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -119,8 +114,8 @@ public class SliderThumb : Control
             // The line's centre: past the offset and half the line's width, its corners grown as much.
             var grow = OutlineOffset + OutlineThickness / 2;
             var radii = new CornerRadius(c.TopLeft + grow, c.TopRight + grow, c.BottomRight + grow, c.BottomLeft + grow);
-            _outlinePen ??= new ImmutablePen(brush.ToImmutable(), OutlineThickness);
-            context.DrawRectangle(null, _outlinePen, new RoundedRect(box.Inflate(grow), radii));
+            // A pen for each frame the ring is drawn: a brush whose colour moves is drawn as it is now.
+            context.DrawRectangle(null, new ImmutablePen(brush.ToImmutable(), OutlineThickness), new RoundedRect(box.Inflate(grow), radii));
         }
     }
 }
