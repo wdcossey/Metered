@@ -116,6 +116,36 @@ public class ButtonPartsTests
         Assert.Equal(from, Angle(ring, scene));
     }
 
+    // Base Web's LoadingSpinner (button/styled-components.js) sets no transform at rest, only its animation's (#77). Avalonia
+    // 12.1.4's TransformAnimator ignores a turn when the RenderTransform is a TransformOperations, as a setter's
+    // rotate(0deg) is. Within the theme, both attach in one styling batch, before any value is set, so the turn always
+    // wins there. Here the theme's at-rest setters land first, in a style of their own, and the theme comes after:
+    // the ring must still turn.
+    [AvaloniaFact]
+    public void The_loading_ring_turns_when_its_at_rest_look_lands_first()
+    {
+        var ring = new ButtonLoadingSpinner();
+        foreach (var state in new[] { ":is-loading", ":size-medium", ":kind-primary" }) ((IPseudoClasses)ring.Classes).Set(state, true);
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { ring } });
+        Assert.True(scene.Window.TryFindResource("Button.StyledLoadingSpinner", out var found));
+        var theme = Assert.IsType<ControlTheme>(found);
+        var rest = new Style(x => x.OfType<ButtonLoadingSpinner>());
+        foreach (var setter in theme.Setters.OfType<Setter>()) rest.Setters.Add(new Setter(setter.Property!, setter.Value!));
+        scene.Window.Styles.Add(rest);
+        scene.Pump();
+
+        ring.Theme = theme;
+        var first = Angle(ring, scene);
+        var moved = false;
+        for (var i = 0; i < 5 && !moved; i++)
+        {
+            Thread.Sleep(150);
+            moved = Angle(ring, scene) != first;
+        }
+
+        Assert.True(moved, $"the ring stayed at {first} degrees");
+    }
+
     private static (ButtonLoadingSpinner Ring, Scene Scene) Loading()
     {
         var button = new Button { Content = "Button", IsLoading = true };

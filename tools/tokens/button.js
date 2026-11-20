@@ -212,6 +212,10 @@ function spinnerThemes() {
   const keyframes = evaluate(button.LoadingSpinner, L, props({})).animationName;
   same(keyframes.from.transform, 'rotate(0deg)', 'spin from');
   same(keyframes.to.transform, 'rotate(360deg)', 'spin to');
+  // No transform at rest, only the animation's: Base Web's ring has none, and Avalonia 12.1.4's TransformAnimator returns
+  // Disposable.Empty for a RenderTransform that is a TransformOperations (rotate(0deg) as a setter's value), so a setter
+  // that had landed before the turn was applied would hold the ring still (#77).
+  same(spin.transform, undefined, 'spin at rest');
   // Every turn is the same: a picture of the page can't wait for it to end. So it runs unless :metered-still, which only
   // the tests' PreviewGallery sets (Avalonia 12's animation clock is internal: #13); the ring then stands at 0deg, as
   // Spinner's does (tools/tokens/spinner.js).
@@ -242,7 +246,6 @@ ${containers.join('\n')}
   </ControlTheme>
   <!-- LoadingSpinner: the ring, turning once each 700 ms. -->
   <ControlTheme x:Key="Button.StyledLoadingSpinner" TargetType="b:ButtonLoadingSpinner">
-    <Setter Property="RenderTransform" Value="rotate(0deg)" />
 ${blocks.join('\n')}
   </ControlTheme>`;
 }
