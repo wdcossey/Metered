@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
@@ -7,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Metered.Sample;
 using Button = Metered.Controls.Button;
 
@@ -145,6 +147,8 @@ public class PreviewGallery
     private static void Shoot(Window window, ScrollViewer scroller, string folder, string name)
     {
         Draw(window).Dispose();
+        // Once laid out, so the page's templates have made the parts that move.
+        HoldStill(scroller);
         var viewport = scroller.Viewport.Height;
         if (viewport <= 0)
             throw new InvalidOperationException($"The page has no viewport ({scroller.Viewport}).");
@@ -165,6 +169,20 @@ public class PreviewGallery
 
             frame.Save(Path.Combine(folder, $"{name}-{n + 1}.png"), PngBitmapEncoderOptions.Default);
         }
+    }
+
+    /// <summary>What a theme's motion that never ends (a spinner's turn) runs without: <see cref="HoldStill"/> sets it.</summary>
+    internal const string Still = ":metered-still";
+
+    /// <summary>
+    /// Stops the motion that never ends, so a picture can be at rest: <see cref="Still"/> on every element of the screen.
+    /// A theme runs such motion only while its element isn't <c>:metered-still</c> (the Spinner's ring then stands at
+    /// 0deg, Base Web's <c>from</c>), as Avalonia 12's animation clock is internal and can't be held (#13).
+    /// </summary>
+    private static void HoldStill(Visual root)
+    {
+        foreach (var element in root.GetSelfAndVisualDescendants().OfType<StyledElement>())
+            ((IPseudoClasses)element.Classes).Set(Still, true);
     }
 
     /// <summary>

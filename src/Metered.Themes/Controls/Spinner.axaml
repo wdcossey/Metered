@@ -1,0 +1,23 @@
+<!--
+  Base Web's Spinner (baseui 18.2.0, spinner/), as a template of its one named part. The part's look is its own
+  theme, Spinner.StyledSpinner (Spinner.Parts.g.axaml), which the spinner's Overrides merge over: this file holds
+  only the structure.
+
+  Spinner                    (Base Web's StyledSpinner, the <i>: the ring)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Spinner}" TargetType="b:Spinner">
+    <!-- display: block with a width of its own: at the start of its line, as wide as the ring. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:SpinnerRing Name="Spinner" Theme="{DynamicResource Spinner.StyledSpinner}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>
