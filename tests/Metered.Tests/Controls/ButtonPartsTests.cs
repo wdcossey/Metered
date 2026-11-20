@@ -116,6 +116,60 @@ public class ButtonPartsTests
         Assert.Equal(from, Angle(ring, scene));
     }
 
+    // Base Web's LoadingSpinner (button/styled-components.js) sets no transform at rest, only its animation's (#77), in
+    // none of its sizes, kinds or states.
+    [AvaloniaFact]
+    public void The_loading_ring_sets_no_transform_at_rest()
+    {
+        using var scene = new Scene(new StackPanel());
+        var theme = RingTheme(scene);
+        Assert.DoesNotContain(Setters(theme.Setters, theme.Children), s => s.Property == Visual.RenderTransformProperty);
+    }
+
+    // Avalonia 12.1.4's TransformAnimator ignores a turn when the RenderTransform is a TransformOperations, as a setter's
+    // rotate(0deg) is. Within the theme, the look and the turn attach in one styling batch, before any value is set, so
+    // the turn wins there whatever the theme sets. Here the ring's look at rest (the theme's setters for its state)
+    // lands first, in a style of its own, and the theme with its turn comes after: the ring must still turn.
+    [AvaloniaFact]
+    public void The_loading_ring_turns_when_its_at_rest_look_lands_first()
+    {
+        string[] states = [":is-loading", ":size-medium", ":kind-primary"];
+        var ring = new ButtonLoadingSpinner();
+        foreach (var state in states) ((IPseudoClasses)ring.Classes).Set(state, true);
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { ring } });
+        var theme = RingTheme(scene);
+        // The root's setters and those of each nested style that only asks for some of the ring's states and turns nothing.
+        var rest = new Style(x => x.OfType<ButtonLoadingSpinner>());
+        var matching = theme.Children.OfType<Style>().Where(s => s.Animations.Count == 0
+            && System.Text.RegularExpressions.Regex.Match(s.Selector?.ToString() ?? "", @"^\^((?::[a-z-]+)+)$") is { Success: true } m
+            && m.Groups[1].Value.Split(':', StringSplitOptions.RemoveEmptyEntries).All(p => states.Contains(":" + p)));
+        foreach (var setter in Setters(theme.Setters, matching)) rest.Setters.Add(new Setter(setter.Property!, setter.Value!));
+        Assert.NotEmpty(rest.Setters);
+        scene.Window.Styles.Add(rest);
+        scene.Pump();
+
+        ring.Theme = theme;
+        var first = Angle(ring, scene);
+        var moved = false;
+        for (var i = 0; i < 5 && !moved; i++)
+        {
+            Thread.Sleep(150);
+            moved = Angle(ring, scene) != first;
+        }
+
+        Assert.True(moved, $"the ring stayed at {first} degrees");
+    }
+
+    private static ControlTheme RingTheme(Scene scene)
+    {
+        Assert.True(scene.Window.TryFindResource("Button.StyledLoadingSpinner", out var found));
+        return Assert.IsType<ControlTheme>(found);
+    }
+
+    /// <summary>The setters given, and those of the styles given and of every style nested in them.</summary>
+    private static IEnumerable<Setter> Setters(IEnumerable<SetterBase> setters, IEnumerable<IStyle> styles) =>
+        setters.OfType<Setter>().Concat(styles.OfType<StyleBase>().SelectMany(s => Setters(s.Setters, s.Children)));
+
     private static (ButtonLoadingSpinner Ring, Scene Scene) Loading()
     {
         var button = new Button { Content = "Button", IsLoading = true };

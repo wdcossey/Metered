@@ -422,7 +422,6 @@
   </ControlTheme>
   <!-- LoadingSpinner: the ring, turning once each 700 ms. -->
   <ControlTheme x:Key="Button.StyledLoadingSpinner" TargetType="b:ButtonLoadingSpinner">
-    <Setter Property="RenderTransform" Value="rotate(0deg)" />
     <Style Selector="^:size-xsmall">
       <Setter Property="Width" Value="12" />
       <Setter Property="Height" Value="12" />
