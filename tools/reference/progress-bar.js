@@ -79,6 +79,7 @@ const VALUES = [
   { value: 20, steps: 5 },
   { value: 120, minValue: 100, maxValue: 200, steps: 10 },
   { value: 75, steps: 4 },
+  { value: 75, steps: 2 },
   { value: 50, steps: 5 },
   { value: 60, steps: 5 },
   { value: 0, steps: 3 },

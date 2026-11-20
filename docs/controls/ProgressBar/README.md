@@ -90,12 +90,12 @@ the pictures. An app never sets it.
 - `Controls/ProgressBarLayoutTests`: 6 cases (three sizes, of one step and of three): the root's gap, the bars' height,
   corners, margins and shares of the row, the fill's box, the label's place, padding and type, the infinite halves;
   the steps sharing a row of three widths, and a negative margin (10 in all).
-- `Controls/ProgressBarTests`: 26 values Base Web's scenarios, unit tests and examples use, and the ends, rendered by
+- `Controls/ProgressBarTests`: 27 values Base Web's scenarios, unit tests and examples use, and the ends, rendered by
   Base Web itself (the bars, each step's state and fill, the label, the name); `GetProgressLabel`; the range for assistive
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions, the fill and the steps drawn; overrides on every part
   (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
-  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 51 in all.
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 52 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with

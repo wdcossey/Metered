@@ -658,6 +658,29 @@
    "infiniteBars": 0
   },
   {
+   "value": 75,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 2,
+   "infinite": false,
+   "showLabel": false,
+   "ariaLabel": null,
+   "name": "Step 2 of 2",
+   "busy": false,
+   "label": null,
+   "bars": [
+    {
+     "state": "completed",
+     "offset": 0
+    },
+    {
+     "state": "inProgress",
+     "offset": -102
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
    "value": 50,
    "minValue": 0,
    "maxValue": 100,
