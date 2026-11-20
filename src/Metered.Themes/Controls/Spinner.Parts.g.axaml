@@ -10,6 +10,9 @@
                     xmlns:b="https://github.com/wdcossey/Metered">
   <!-- Spinner: the ring, its border outside its box (CSS's content box: Base Web sets no box-sizing), turning once a second. -->
   <ControlTheme x:Key="Spinner.StyledSpinner" TargetType="b:SpinnerRing">
+    <!-- display: block with a width of its own: at the start of the spinner's box, however the spinner is aligned. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="BoxSize" Value="32" />
     <Setter Property="Thickness" Value="4" />
     <Setter Property="Foreground" Value="{DynamicResource colors.contentAccent}" />
@@ -29,71 +32,8 @@
     <Style Selector="^:size-large">
       <Setter Property="BoxSize" Value="40" />
     </Style>
-    <Style Selector="^:size-scale0">
-      <Setter Property="BoxSize" Value="2" />
-    </Style>
-    <Style Selector="^:size-scale100">
-      <Setter Property="BoxSize" Value="4" />
-    </Style>
-    <Style Selector="^:size-scale200">
-      <Setter Property="BoxSize" Value="6" />
-    </Style>
-    <Style Selector="^:size-scale300">
-      <Setter Property="BoxSize" Value="8" />
-    </Style>
-    <Style Selector="^:size-scale400">
-      <Setter Property="BoxSize" Value="10" />
-    </Style>
-    <Style Selector="^:size-scale500">
-      <Setter Property="BoxSize" Value="12" />
-    </Style>
-    <Style Selector="^:size-scale550">
-      <Setter Property="BoxSize" Value="14" />
-    </Style>
-    <Style Selector="^:size-scale600">
-      <Setter Property="BoxSize" Value="16" />
-    </Style>
-    <Style Selector="^:size-scale650">
-      <Setter Property="BoxSize" Value="18" />
-    </Style>
-    <Style Selector="^:size-scale700">
-      <Setter Property="BoxSize" Value="20" />
-    </Style>
-    <Style Selector="^:size-scale750">
-      <Setter Property="BoxSize" Value="22" />
-    </Style>
-    <Style Selector="^:size-scale800">
-      <Setter Property="BoxSize" Value="24" />
-    </Style>
-    <Style Selector="^:size-scale850">
-      <Setter Property="BoxSize" Value="28" />
-    </Style>
-    <Style Selector="^:size-scale950">
-      <Setter Property="BoxSize" Value="36" />
-    </Style>
-    <Style Selector="^:size-scale1000">
-      <Setter Property="BoxSize" Value="40" />
-    </Style>
-    <Style Selector="^:size-scale1200">
-      <Setter Property="BoxSize" Value="48" />
-    </Style>
-    <Style Selector="^:size-scale1400">
-      <Setter Property="BoxSize" Value="56" />
-    </Style>
-    <Style Selector="^:size-scale1600">
-      <Setter Property="BoxSize" Value="64" />
-    </Style>
-    <Style Selector="^:size-scale2400">
-      <Setter Property="BoxSize" Value="96" />
-    </Style>
-    <Style Selector="^:size-scale3200">
-      <Setter Property="BoxSize" Value="128" />
-    </Style>
-    <Style Selector="^:size-scale4800">
-      <Setter Property="BoxSize" Value="192" />
-    </Style>
-    <Style Selector="^:size-pixels">
-      <Setter Property="BoxSize" Value="{Binding $parent[b:Spinner].Size.Pixels}" />
+    <Style Selector="^:size-custom">
+      <Setter Property="BoxSize" Value="{Binding $parent[b:Spinner].CustomBoxSize}" />
     </Style>
     <Style Selector="^:size-invalid">
       <Setter Property="BoxSize" Value="NaN" />
@@ -104,71 +44,8 @@
     <Style Selector="^:border-width-large">
       <Setter Property="Thickness" Value="8" />
     </Style>
-    <Style Selector="^:border-width-scale0">
-      <Setter Property="Thickness" Value="2" />
-    </Style>
-    <Style Selector="^:border-width-scale200">
-      <Setter Property="Thickness" Value="6" />
-    </Style>
-    <Style Selector="^:border-width-scale300">
-      <Setter Property="Thickness" Value="8" />
-    </Style>
-    <Style Selector="^:border-width-scale400">
-      <Setter Property="Thickness" Value="10" />
-    </Style>
-    <Style Selector="^:border-width-scale500">
-      <Setter Property="Thickness" Value="12" />
-    </Style>
-    <Style Selector="^:border-width-scale550">
-      <Setter Property="Thickness" Value="14" />
-    </Style>
-    <Style Selector="^:border-width-scale600">
-      <Setter Property="Thickness" Value="16" />
-    </Style>
-    <Style Selector="^:border-width-scale650">
-      <Setter Property="Thickness" Value="18" />
-    </Style>
-    <Style Selector="^:border-width-scale700">
-      <Setter Property="Thickness" Value="20" />
-    </Style>
-    <Style Selector="^:border-width-scale750">
-      <Setter Property="Thickness" Value="22" />
-    </Style>
-    <Style Selector="^:border-width-scale800">
-      <Setter Property="Thickness" Value="24" />
-    </Style>
-    <Style Selector="^:border-width-scale850">
-      <Setter Property="Thickness" Value="28" />
-    </Style>
-    <Style Selector="^:border-width-scale900">
-      <Setter Property="Thickness" Value="32" />
-    </Style>
-    <Style Selector="^:border-width-scale950">
-      <Setter Property="Thickness" Value="36" />
-    </Style>
-    <Style Selector="^:border-width-scale1000">
-      <Setter Property="Thickness" Value="40" />
-    </Style>
-    <Style Selector="^:border-width-scale1200">
-      <Setter Property="Thickness" Value="48" />
-    </Style>
-    <Style Selector="^:border-width-scale1400">
-      <Setter Property="Thickness" Value="56" />
-    </Style>
-    <Style Selector="^:border-width-scale1600">
-      <Setter Property="Thickness" Value="64" />
-    </Style>
-    <Style Selector="^:border-width-scale2400">
-      <Setter Property="Thickness" Value="96" />
-    </Style>
-    <Style Selector="^:border-width-scale3200">
-      <Setter Property="Thickness" Value="128" />
-    </Style>
-    <Style Selector="^:border-width-scale4800">
-      <Setter Property="Thickness" Value="192" />
-    </Style>
-    <Style Selector="^:border-width-pixels">
-      <Setter Property="Thickness" Value="{Binding $parent[b:Spinner].BorderWidth.Pixels}" />
+    <Style Selector="^:border-width-custom">
+      <Setter Property="Thickness" Value="{Binding $parent[b:Spinner].CustomBorderSize}" />
     </Style>
     <Style Selector="^:border-width-invalid">
       <Setter Property="Thickness" Value="3" />

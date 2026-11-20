@@ -45,10 +45,21 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
         _number = pixels;
     }
 
-    /// <summary>Text, Base Web's <c>string</c>: a sizing token's name or a length such as <c>60px</c>. Empty text is unset.</summary>
+    /// <summary>
+    /// Text, Base Web's <c>string</c>: <c>SIZE</c>'s own strings (<c>"small"</c>, <c>"medium"</c>, <c>"large"</c>) are the
+    /// sizes, as Base Web's lookup finds them; other text is a sizing token's name or a length such as <c>60px</c>. Empty
+    /// text is unset.
+    /// </summary>
     public SpinnerLength(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
+        if (Named(text, StringComparison.Ordinal) is { } size)
+        {
+            _kind = Kind.Named;
+            _size = size;
+            return;
+        }
+
         _kind = text.Length == 0 ? Kind.Unset : Kind.Text;
         _text = text.Length == 0 ? null : text;
     }
@@ -96,13 +107,27 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
     {
         ArgumentNullException.ThrowIfNull(text);
         if (text.Length == 0) return default;
-        if (Enum.TryParse<SpinnerSize>(text, ignoreCase: true, out var size) && Enum.IsDefined(size) && !char.IsDigit(text[0]) && text[0] != '-')
-            return new SpinnerLength(size);
-        if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)) return new SpinnerLength(number);
+        if (Named(text, StringComparison.OrdinalIgnoreCase) is { } size) return new SpinnerLength(size);
+        if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number))
+            return new SpinnerLength(number);
         return new SpinnerLength(text);
     }
 
-    /// <summary>JavaScript's <c>parseInt(text)</c>: leading white space, a sign, then the digits up to the first that isn't one.</summary>
+    /// <summary>A size by Base Web's <c>SIZE</c> string (<c>small</c>), the whole text and nothing else; in any case for XAML.</summary>
+    private static SpinnerSize? Named(string text, StringComparison comparison)
+    {
+        foreach (var size in Enum.GetValues<SpinnerSize>())
+        {
+            if (string.Equals(text, size.ToString().ToLowerInvariant(), comparison)) return size;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// JavaScript's <c>parseInt(text)</c>: leading white space, a sign, then the digits up to the first that isn't one,
+    /// in hexadecimal after <c>0x</c>.
+    /// </summary>
     private static double ParseInt(string text)
     {
         var i = 0;
@@ -114,17 +139,32 @@ public readonly struct SpinnerLength : IEquatable<SpinnerLength>
             i++;
         }
 
+        var radix = 10;
+        if (i + 1 < text.Length && text[i] == '0' && text[i + 1] is 'x' or 'X')
+        {
+            radix = 16;
+            i += 2;
+        }
+
         var start = i;
         double value = 0;
-        while (i < text.Length && text[i] is >= '0' and <= '9')
+        while (i < text.Length && Digit(text[i]) is { } digit && digit < radix)
         {
-            value = value * 10 + (text[i] - '0');
+            value = value * radix + digit;
             i++;
         }
 
         if (i == start) return double.NaN;
         return negative ? -value : value;
     }
+
+    private static int? Digit(char c) => c switch
+    {
+        >= '0' and <= '9' => c - '0',
+        >= 'a' and <= 'f' => c - 'a' + 10,
+        >= 'A' and <= 'F' => c - 'A' + 10,
+        _ => null,
+    };
 
     public bool Equals(SpinnerLength other) =>
         _kind == other._kind && _size == other._size && _text == other._text && _number.Equals(other._number);

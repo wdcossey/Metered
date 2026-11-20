@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Metered.Controls;
 using Spinner = Metered.Controls.Spinner;
@@ -25,8 +24,13 @@ public class SpinnerColourTests
         var spinner = new Spinner();
         using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { spinner } },
             c.Theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light);
-        // $color={theme.colors.negative}, as the scenario gives it: the app's brush, here the colour the oracle read.
-        if (c.Color is not null) spinner.Color = new ImmutableSolidColorBrush(Color.Parse(c.Foreground));
+        // $color={theme.colors.negative}, as the scenario gives it: the theme's own brush of that name.
+        if (c.Color is not null)
+        {
+            Assert.True(scene.Window.TryFindResource("colors." + c.Color, scene.Window.ActualThemeVariant, out var brush));
+            spinner.Color = (IBrush)brush!;
+        }
+
         scene.Pump();
         var ring = Ring(spinner);
 
@@ -48,7 +52,7 @@ public class SpinnerColourTests
     internal static SpinnerRing Ring(Spinner spinner) => (SpinnerRing)spinner.Part(Spinner.SpinnerPart)!;
 
     /// <summary>What PreviewGallery does before a picture: the turn stops, and the ring stands at 0deg.</summary>
-    internal static void Still(StyledElement ring, bool still = true) => ((IPseudoClasses)ring.Classes).Set(":metered-still", still);
+    internal static void Still(StyledElement ring, bool still = true) => ((IPseudoClasses)ring.Classes).Set(Sample.PreviewGallery.Still, still);
 
     internal static string Colour(IBrush? brush) => RadioColourTests.Colour(brush);
 }

@@ -28,12 +28,15 @@ Base Web's spinner is one styled component, `StyledSpinner`, an `<i>` with `role
 | `$size` (`SIZE.small`, `.medium`, `.large`, a sizing token's name, a number or a length) | `Size`, a `SpinnerLength` (`SpinnerSize.Small`, `.Medium`, `.Large`, `"scale1000"`, `60`, `"60px"`); medium by default |
 | `$borderWidth` (the same) | `BorderWidth`, a `SpinnerLength`; unset by default |
 | `$color` | `Color`, an `IBrush`; null for `colors.contentAccent` |
+| the style function's `boxSize` and `borderSize` for a value that isn't a name | `CustomBoxSize`, `CustomBorderSize` (read-only), which the theme binds to |
 | `withStyle(Spinner, {…})`, `$style` | `Overrides`: `Spinner` |
 | `$as` | not mapped: the element's type only matters to HTML's flow |
 | `role`, `aria-label` | `SpinnerAutomationPeer`: a progress bar, named "loading" unless the app names it (`AutomationProperties.Name`) |
 
 In XAML, `Size` and `BorderWidth` read `Small`, `Medium` or `Large` (in any case) as the size, text that is a number
-(`60`, `0`) as that number, as JSX's `{60}`, and anything else as text, as Base Web's string: `scale1000`, `60px`.
+(`60`, `0`) as that number, as JSX's `{60}`, and anything else as text, as Base Web's string: `scale1000`, `60px`. In
+C#, `new SpinnerLength("medium")` is the size, as Base Web's `SIZE.medium` is that string; its lookup is
+case-sensitive, so `"Medium"` there is text.
 
 ## Behaviour, as Base Web's
 
@@ -42,7 +45,8 @@ From its style function:
 - The ring: a round box whose top border is `$color` (`contentAccent`) and whose other three are `backgroundTertiary`,
   the colours meeting on the diagonals.
 - The box: `small`, `medium`, `large` are `sizing.scale800`, `scale900`, `scale1000` (24, 32, 40); another value is a
-  sizing token's name (`$theme.sizing[$size]`), else `parseInt($size)` pixels (`60`, `"60px"` and `"60.7px"` are 60).
+  sizing token's name (`$theme.sizing[$size]`), else `parseInt($size)` pixels (`60`, `"60px"` and `"60.7px"` are 60;
+  `"0x10px"` is 16, as `parseInt` reads hexadecimal).
 - The border: looked up by `$borderWidth || $size` among the names: `sizing.scale0`, `scale100`, `scale300` (2, 4, 8),
   so an unset border follows a named size; else `$theme.sizing[$borderWidth]`, else `parseInt($borderWidth)` pixels.
   JavaScript's truth decides: a `BorderWidth` of `0` (a number) with a named size takes the size's border, as
@@ -51,14 +55,16 @@ From its style function:
   large one 56, a small one 28.
 - A value a browser drops: with no `$borderWidth` and a size that isn't a name, Base Web writes `border-width: NaNpx`,
   which a browser drops for CSS's initial `medium`, 3 px; so does a negative border. Metered draws 3.
-- `display: block`: at the start of its line, as wide as the ring. `cursor: wait` over it.
+- `display: block`: at the start of its line, as wide as the ring; stretched by an app, the ring stays at the start of
+  the spinner's box. `cursor: wait` over all of the round box, its hollow middle too.
 - The turn: `rotate(0deg)` to `rotate(360deg)`, once each `animation.timing1000` (1 s), linear, without end.
 
 The Spinner reads `$size` and `$borderWidth` into its state pseudoclasses, set on it and on its part:
-`:size-small|medium|large`, `:size-<token>` (`:size-scale1000`) for a sizing token the theme has, `:size-pixels` for a
-length, `:size-invalid` for none of these; the same for `:border-width-…`; and `:has-color`. The generated theme sets
-the box and the border for each name and token, binds a length to the spinner's own (`Size.Pixels`,
-`BorderWidth.Pixels`) and the colour to `Color`, so an override's setters still win over all of them (ADR 0001).
+`:size-small|medium|large` for a name; `:size-custom` for a sizing token the theme has or a length, whose value it
+reads into `CustomBoxSize` (the token from the resources it sees, so a theme's own sizing reaches it, as Base Web's
+`$theme.sizing` does); `:size-invalid` for none of these; the same for `:border-width-…` and `CustomBorderSize`; and
+`:has-color`. The generated theme sets the box and the border for each name, binds the custom ones to the spinner's
+and the colour to `Color`, so an override's setters still win over all of them (ADR 0001).
 
 ## The turn
 
@@ -90,10 +96,11 @@ leaves unset), coloured by `$color`, 1 s.
   and the rest against Base Web's, and the pixels the ring draws at rest.
 - `Controls/SpinnerLayoutTests`: 168 cases (`$size` × `$borderWidth`: unset, the three names, sizing tokens, lengths,
   numbers, 0, negatives, text that is none of these; the scenario's among them): the box, the border and the size layout
-  gives the spinner; and its place in a wider parent (169 in all).
-- `Controls/SpinnerTests`: the turn's end values, that it turns, that `:metered-still` holds it at 0°, the cursor, the
-  colour following `Color`, the states moving with the lengths, the text the lengths are read from, an override over
-  the props, the automation peer, and Button's ring keeping its border box: 10 in all.
+  gives the spinner; and its place in a wider parent, stretched or not (169 in all).
+- `Controls/SpinnerTests`: the turn's end values, that it turns, that `:metered-still` holds it at 0°, the cursor over
+  the whole disc, the colour following `Color`, the states moving with the lengths, a sizing token the theme holds (one
+  Base Web lacks, another value for one it has), the text the lengths are read from, an override over the props, the
+  automation peer, and Button's ring keeping its border box: 11 in all.
 - `Sample/SpinnerPageTests`: the sample's page, 3.
 
 The part theme is generated (`tools/tokens/spinner.js`): the style function evaluated on Base Web's theme with each
@@ -111,8 +118,10 @@ colour replaced by its own name, for each value of each prop, checked to move on
 3. **A box a browser drops draws nothing.** With `$size` neither a name, a sizing token nor a length (`"abc"`), or a
    negative one, Base Web writes `NaNpx` or a negative width, which a browser drops: the `<i>` is then a block as wide
    as its container and as high as its borders. Metered draws no ring (`BoxSize` NaN).
-4. **Sizing tokens are the theme's numbers.** As every part theme's lengths (ADR 0001, item 8): a theme built with
-   other sizing doesn't reach them, and text naming a token the theme doesn't have is read as text (`parseInt`).
+4. **The names' lengths are numbers.** As every part theme's (ADR 0001, item 8), the boxes and borders of `small`,
+   `medium` and `large` are written in the theme, so a theme built with other `scale800` to `scale1000` doesn't reach
+   them. A sizing token named by text is read from the theme, so it does; text naming a token the theme doesn't have is
+   read by `parseInt`, as Base Web's.
 5. **A number in XAML is a number.** XAML has only text; `BorderWidth="0"` is `$borderWidth={0}`, not `"0"`.
 6. **The arc ends square**: a CSS border's colour changes on a diagonal mitre, as Button's ring.
 7. **Accessibility**: a progress bar named "loading", with no value, as Base Web's has none; `aria-busy` has no Avalonia

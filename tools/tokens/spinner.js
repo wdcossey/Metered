@@ -4,9 +4,9 @@
 // Base Web's style function reads three props, each into one property: $size into the box (width and height),
 // $borderWidth into the border's width, $color into the top border's colour. So the theme is a plain setter for the
 // default, and a state style for each value of each prop the Spinner sets as a pseudoclass (Metered.Controls.Spinner):
-// a size, a sizing token, a length (bound to the spinner's own value), and a value a browser drops. The style function
-// is evaluated on Base Web's light theme with its colours replaced by their own names ('@contentAccent', radio.js's
-// NAMED), so the theme refers to them by token, and each state style's value is read from it.
+// a size's name, a sizing token or a length (bound to the length the spinner reads), and a value a browser drops. The
+// style function is evaluated on Base Web's light theme with its colours replaced by their own names ('@contentAccent',
+// radio.js's NAMED), so the theme refers to them by token, and each state style's value is read from it.
 'use strict';
 
 const css = require('../reference/css');
@@ -41,17 +41,20 @@ const block = (selector, prop, value) => `    <Style Selector="${selector}">\n${
 
 /**
  * Each state of one prop: [pseudoclass, value]. `read` gives the style's value for the prop's value; `bound` the binding
- * for a length; `dropped` the value for one a browser drops; `invalid` a value of the prop the style function makes so.
+ * to the length the Spinner resolves for a value that isn't a size's name; `dropped` the value for one a browser drops;
+ * `invalid` a value of the prop the style function makes so.
  */
 function states(axis, read, bound, dropped, invalid) {
   const out = [];
   for (const name of [SIZE.small, SIZE.medium, SIZE.large]) out.push([`:${axis}-${name}`, length(read(name), dropped)]);
+  // Not a name: a sizing token's value from the theme ($theme.sizing[value]), else parseInt's length. The Spinner reads
+  // both, the token from the theme it sees, so the theme binds to what it reads.
   for (const token of Object.keys(L.sizing)) {
     if (Object.values(SIZE).includes(token)) throw new Error(`a sizing token named as a size: ${token}`);
-    out.push([`:${axis}-${token}`, length(read(token), dropped)]);
+    if (read(token) !== L.sizing[token]) throw new Error(`${axis}: ${token} isn't the theme's sizing.${token}`);
   }
   if (read(PROBE) !== `${PROBE}px`) throw new Error(`${axis}: a length isn't passed through: ${read(PROBE)}`);
-  out.push([`:${axis}-pixels`, bound]);
+  out.push([`:${axis}-custom`, bound]);
   const bad = read(invalid);
   if (bad !== 'NaNpx') throw new Error(`${axis}: ${JSON.stringify(invalid)} gives ${bad}, not NaNpx`);
   out.push([`:${axis}-invalid`, dropped]);
@@ -101,8 +104,8 @@ function file(version) {
   if (s.cursor !== 'wait') throw new Error(`cursor ${s.cursor}`);
   if (style({ $color: '@negative' }).borderTopColor !== '@negative') throw new Error('$color isn\'t the top border');
 
-  const box = states('size', Box, '{Binding $parent[b:Spinner].Size.Pixels}', 'NaN', 'invalid');
-  const border = states('border-width', Border, '{Binding $parent[b:Spinner].BorderWidth.Pixels}', String(MEDIUM), 'invalid');
+  const box = states('size', Box, '{Binding $parent[b:Spinner].CustomBoxSize}', 'NaN', 'invalid');
+  const border = states('border-width', Border, '{Binding $parent[b:Spinner].CustomBorderSize}', String(MEDIUM), 'invalid');
   const plainBox = length(s.width), plainBorder = length(s.borderTopWidth);
   const blocks = [
     ...box.filter(([, v]) => v !== plainBox).map(([sel, v]) => block('^' + sel, 'BoxSize', v)),
@@ -122,6 +125,9 @@ function file(version) {
                     xmlns:b="https://github.com/wdcossey/Metered">
   <!-- Spinner: the ring, its border outside its box (CSS's content box: Base Web sets no box-sizing), turning once a second. -->
   <ControlTheme x:Key="Spinner.StyledSpinner" TargetType="b:SpinnerRing">
+    <!-- display: block with a width of its own: at the start of the spinner's box, however the spinner is aligned. -->
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="BoxSize" Value="${plainBox}" />
     <Setter Property="Thickness" Value="${plainBorder}" />
     <Setter Property="Foreground" Value="${colour(s.borderTopColor, 'top')}" />

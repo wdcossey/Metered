@@ -17,9 +17,9 @@ namespace Metered.Controls;
 /// <c>$color</c> <see cref="Color"/>. The spinner reads them as Base Web's style function does into state
 /// pseudoclasses, set on the spinner and on its part, which the part's theme (<c>Spinner.StyledSpinner</c>) reads:</para>
 /// <list type="bullet">
-/// <item><c>:size-small</c>, <c>:size-medium</c>, <c>:size-large</c> for a size; <c>:size-&lt;token&gt;</c>
-/// (<c>:size-scale1000</c>) for a sizing token's name the theme has; <c>:size-pixels</c> for a length, which the theme
-/// takes from <see cref="SpinnerLength.Pixels"/>; <c>:size-invalid</c> for none of these (<c>NaNpx</c>, or a negative
+/// <item><c>:size-small</c>, <c>:size-medium</c>, <c>:size-large</c> for a size's name; <c>:size-custom</c> for a sizing
+/// token's name the theme has (<c>$theme.sizing[$size]</c>) or a length (<c>parseInt</c>'s), which the spinner reads into
+/// <see cref="CustomBoxSize"/> for the theme; <c>:size-invalid</c> for none of these (<c>NaNpx</c>, or a negative
 /// length), which a browser drops.</item>
 /// <item><c>:border-width-…</c> the same for the border. Base Web looks the border up by <c>$borderWidth || $size</c>,
 /// so an unset or zero <see cref="BorderWidth"/> takes a named <see cref="Size"/>'s border; with a size that isn't a
@@ -28,8 +28,8 @@ namespace Metered.Controls;
 /// </list>
 /// </remarks>
 [TemplatePart(SpinnerPart, typeof(StyledElement))]
-[PseudoClasses(":size-small", ":size-medium", ":size-large", ":size-pixels", ":size-invalid",
-    ":border-width-small", ":border-width-medium", ":border-width-large", ":border-width-pixels", ":border-width-invalid",
+[PseudoClasses(":size-small", ":size-medium", ":size-large", ":size-custom", ":size-invalid",
+    ":border-width-small", ":border-width-medium", ":border-width-large", ":border-width-custom", ":border-width-invalid",
     ":has-color")]
 public class Spinner : TemplatedControl
 {
@@ -47,17 +47,27 @@ public class Spinner : TemplatedControl
     public static readonly StyledProperty<OverrideCollection?> OverridesProperty =
         AvaloniaProperty.Register<Spinner, OverrideCollection?>(nameof(Overrides));
 
+    public static readonly DirectProperty<Spinner, double> CustomBoxSizeProperty =
+        AvaloniaProperty.RegisterDirect<Spinner, double>(nameof(CustomBoxSize), s => s.CustomBoxSize);
+
+    public static readonly DirectProperty<Spinner, double> CustomBorderSizeProperty =
+        AvaloniaProperty.RegisterDirect<Spinner, double>(nameof(CustomBorderSize), s => s.CustomBorderSize);
+
     private readonly Parts _parts;
     private string? _sizeState;
     private string? _borderState;
+    private double _customBoxSize = double.NaN;
+    private double _customBorderSize = double.NaN;
 
     public Spinner()
     {
         _parts = new Parts(this, "Spinner", [SpinnerPart]);
         UpdateLengths();
         SetState(":has-color", Color is not null);
-        // Whether text is a sizing token is the theme's to say: read again when the resources the spinner sees change.
+        // A sizing token is the theme's: read again when the resources the spinner sees change, and on a variant switch
+        // between a ThemeProvider's Theme and DarkTheme, which Avalonia doesn't report as a change of resources.
         ResourcesChanged += (_, _) => UpdateLengths();
+        ActualThemeVariantChanged += (_, _) => UpdateLengths();
     }
 
     /// <summary>Base Web's <c>$size</c>: the box inside the ring's border. Medium by default.</summary>
@@ -74,6 +84,16 @@ public class Spinner : TemplatedControl
     /// <c>$style</c>; here by part, <c>Spinner</c>.
     /// </summary>
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
+
+    /// <summary>
+    /// The box Base Web's style function gives a <see cref="Size"/> that isn't a size's name (<c>:size-custom</c>): the
+    /// theme's sizing token of that name, else <c>parseInt</c>'s length. NaN for a name, whose box is the theme's, and for
+    /// a value a browser drops.
+    /// </summary>
+    public double CustomBoxSize { get => _customBoxSize; private set => SetAndRaise(CustomBoxSizeProperty, ref _customBoxSize, value); }
+
+    /// <summary>The border's width the same way, for <see cref="BorderWidth"/> (<c>:border-width-custom</c>).</summary>
+    public double CustomBorderSize { get => _customBorderSize; private set => SetAndRaise(CustomBorderSizeProperty, ref _customBorderSize, value); }
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
@@ -108,20 +128,25 @@ public class Spinner : TemplatedControl
         // $size = SIZE.medium: JavaScript's default for an undefined parameter.
         var size = Size.IsSet ? Size : SpinnerSize.Medium;
         var border = !BorderWidth.IsTruthy && size.Size is { } named ? new SpinnerLength(named) : BorderWidth;
-        Swap(ref _sizeState, ":size-" + Kind(size));
-        Swap(ref _borderState, ":border-width-" + Kind(border));
+        var (sizeKind, box) = Read(size);
+        var (borderKind, width) = Read(border);
+        CustomBoxSize = box;
+        CustomBorderSize = width;
+        Swap(ref _sizeState, ":size-" + sizeKind);
+        Swap(ref _borderState, ":border-width-" + borderKind);
     }
 
     /// <summary>
-    /// A size's name; else a sizing token's name the theme has (<c>$theme.sizing[value]</c>); else <c>pixels</c> for
+    /// A size's name; else <c>custom</c>, with the theme's sizing token of that name (<c>$theme.sizing[value]</c>) or
     /// <c>parseInt</c>'s length; else <c>invalid</c>, for <c>NaNpx</c> or a negative length, which a browser drops.
     /// </summary>
-    private string Kind(SpinnerLength value)
+    private (string Kind, double Length) Read(SpinnerLength value)
     {
-        if (value.Size is { } size) return size.ToString().ToLowerInvariant();
-        if (value.Text is { } text && this.TryFindResource("sizing." + text, ActualThemeVariant, out var token) && token is double) return text;
+        if (value.Size is { } size) return (size.ToString().ToLowerInvariant(), double.NaN);
+        if (value.Text is { } text && this.TryFindResource("sizing." + text, ActualThemeVariant, out var token) && token is double length)
+            return length >= 0 ? ("custom", length) : ("invalid", double.NaN);
         var pixels = value.Pixels;
-        return double.IsFinite(pixels) && pixels >= 0 ? "pixels" : "invalid";
+        return double.IsFinite(pixels) && pixels >= 0 ? ("custom", pixels) : ("invalid", double.NaN);
     }
 
     private void Swap(ref string? current, string next)

@@ -66,9 +66,15 @@ public class SpinnerTests
         var (_, ring, scene) = Make(new Spinner());
         using var _ = scene;
         var first = Angle(ring, scene);
-        Thread.Sleep(150);
-        var second = Angle(ring, scene);
-        Assert.NotEqual(first, second);
+        // A few tries, so a slow runner's frame can't make it flaky: a turn that never runs stays at its first angle.
+        var moved = false;
+        for (var i = 0; i < 5 && !moved; i++)
+        {
+            Thread.Sleep(150);
+            moved = Angle(ring, scene) != first;
+        }
+
+        Assert.True(moved, $"the ring stayed at {first} degrees");
     }
 
     // :metered-still, which PreviewGallery sets before a picture: the turn stops, the ring at 0deg, Base Web's from.
@@ -92,6 +98,8 @@ public class SpinnerTests
         var (spinner, ring, scene) = Make(new Spinner());
         using var _ = scene;
         Assert.Equal(new Cursor(StandardCursorType.Wait).ToString(), ring.Cursor?.ToString());
+        // Over all of the round box, as the browser's: its hollow middle takes the pointer too.
+        Assert.Same(ring, scene.Window.InputHitTest(scene.CentreOf(ring)));
     }
 
     // $color: the top of the ring is the app's brush while it is given, and contentAccent again when it isn't.
@@ -120,21 +128,36 @@ public class SpinnerTests
         Assert.Contains(":size-large", ring.Classes);
         Assert.Contains(":border-width-large", ring.Classes);
         spinner.Size = new SpinnerLength("scale1000");
-        Assert.Contains(":size-scale1000", ring.Classes);
+        Assert.Contains(":size-custom", ring.Classes);
         Assert.DoesNotContain(":size-large", ring.Classes);
+        Assert.Equal(Token("scale1000", scene), ring.BoxSize);
         // A size that isn't a name: an unset border is NaNpx, which a browser drops.
         Assert.Contains(":border-width-invalid", ring.Classes);
         Assert.DoesNotContain(":border-width-large", ring.Classes);
         spinner.Size = new SpinnerLength("scale9999");
         Assert.Contains(":size-invalid", ring.Classes);
-        Assert.DoesNotContain(":size-scale1000", ring.Classes);
+        Assert.DoesNotContain(":size-custom", ring.Classes);
         spinner.Size = 50;
         spinner.BorderWidth = 6;
         scene.Pump();
         Assert.Equal((50d, 6d), (ring.BoxSize, ring.Thickness));
-        Assert.Equal(new Size(62, 62), ring.Bounds.Size);
+        Assert.Equal(new Size(50 + 2 * 6, 50 + 2 * 6), ring.Bounds.Size);
         Assert.Single(ring.Classes, c => c.StartsWith(":size-"));
         Assert.Single(ring.Classes, c => c.StartsWith(":border-width-"));
+    }
+
+    // $theme.sizing[$size]: the theme's token, whatever the theme holds: one Base Web lacks, or another value for one it has.
+    [AvaloniaFact]
+    public void A_sizing_token_is_the_themes()
+    {
+        var (_, ring, scene) = Make(new Spinner { Size = new SpinnerLength("scale9999"), BorderWidth = new SpinnerLength("scale1000") });
+        using var _ = scene;
+        Assert.Contains(":size-invalid", ring.Classes);
+        scene.Window.Resources["sizing.scale9999"] = 50d;
+        scene.Window.Resources["sizing.scale1000"] = 7d;
+        scene.Pump();
+        Assert.Contains(":size-custom", ring.Classes);
+        Assert.Equal((50d, 7d), (ring.BoxSize, ring.Thickness));
     }
 
     // The text XAML gives, read as Base Web reads $size: a size by its name, a number, text (parseInt's length), unset.
@@ -143,6 +166,12 @@ public class SpinnerTests
     {
         Assert.Equal(SpinnerSize.Large, SpinnerLength.Parse("Large").Size);
         Assert.Equal(SpinnerSize.Small, SpinnerLength.Parse("small").Size);
+        // Base Web's SIZE.medium is the string 'medium', which its lookup finds; its lookup is case-sensitive.
+        Assert.Equal(SpinnerSize.Medium, new SpinnerLength("medium").Size);
+        Assert.Null(new SpinnerLength("Medium").Size);
+        Assert.Equal(1, SpinnerLength.Parse("+1").Number);
+        Assert.True(double.IsNaN(SpinnerLength.Parse("Small,Large").Pixels));
+        Assert.Equal(16, SpinnerLength.Parse("0x10px").Pixels);
         Assert.Equal(60, SpinnerLength.Parse("60").Number);
         Assert.Equal(0, SpinnerLength.Parse("0").Number);
         Assert.Equal("60px", SpinnerLength.Parse("60px").Text);
@@ -213,6 +242,9 @@ public class SpinnerTests
         Assert.True(double.IsNaN(ring.BoxSize));
         Assert.Equal(new Size(ring.Width, ring.Height), ring.Bounds.Size);
     }
+
+    private static double Token(string name, Scene scene) =>
+        scene.Window.TryFindResource("sizing." + name, scene.Window.ActualThemeVariant, out var value) ? (double)value! : double.NaN;
 
     /// <summary>The ring's angle, as the turn's animation sets it on the rotation Avalonia puts in its render transform.</summary>
     private static double Angle(SpinnerRing ring, Scene scene)

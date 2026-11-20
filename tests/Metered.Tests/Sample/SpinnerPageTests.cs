@@ -52,11 +52,21 @@ public class SpinnerPageTests
         Assert.Equal(SpinnerSize.Small, Named("Small").Size.Size);
         Assert.Equal(SpinnerSize.Large, Named("Large").Size.Size);
         Assert.Equal(60, Named("Length").Size.Number);
-        Assert.Equal(new Size(64, 64), Named("Length").Bounds.Size);
-        Assert.Contains(":size-scale1000", Named("Token").Classes);
-        Assert.Equal(new Size(56, 56), Named("Token").Bounds.Size);
+        Assert.Equal(Across(c => c.Size is { Kind: "number" } s && s.Value.GetDouble() == 60 && c.BorderWidth is { Kind: "size" } b && b.Value.GetString() == "small"),
+            Named("Length").Bounds.Size);
+        Assert.Contains(":size-custom", Named("Token").Classes);
+        Assert.Equal(Across(c => c.Size is { Kind: "text" } s && s.Value.GetString() == "scale1000" && c.BorderWidth is { Kind: "text" } b && b.Value.GetString() == "scale300"),
+            Named("Token").Bounds.Size);
         Assert.Contains(":has-color", Named("Negative").Classes);
-        // The documentation's withStyle example: a 96 box and a 12 border, 120 across.
-        Assert.Equal(new Size(120, 120), Named("Custom").Bounds.Size);
+        // documentation-site/examples/spinner/custom.tsx: width 96px, border widths 12px; the border outside, 120 across.
+        Assert.Equal(new Size(96 + 2 * 12, 96 + 2 * 12), Named("Custom").Bounds.Size);
+    }
+
+    /// <summary>The size across of the oracle's one case that matches: its box and a border each side.</summary>
+    private static Size Across(Func<SpinnerLayoutCase, bool> which)
+    {
+        var c = SpinnerOracle.Data.Layout.Single(which);
+        var side = c.Box!.Value + 2 * c.Border;
+        return new Size(side, side);
     }
 }

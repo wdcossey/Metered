@@ -48,10 +48,16 @@ public class SpinnerLayoutTests
     public void It_sits_at_the_start_of_its_line_as_wide_as_its_ring()
     {
         Assert.Equal("block", SpinnerOracle.Data.Display);
+        var medium = SpinnerOracle.Data.Layout.Single(c => c.Size.Kind == "unset" && c.BorderWidth.Kind == "unset");
+        var side = medium.Box!.Value + 2 * medium.Border;
         var spinner = new Spinner();
-        var holder = new Border { Width = 300, Child = spinner };
-        using var scene = new Scene(new StackPanel { Children = { holder } });
-        Assert.Equal(40, spinner.Bounds.Width);
+        var stretched = new Spinner { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+        using var scene = new Scene(new StackPanel { Width = 300, Children = { spinner, stretched } });
+        Assert.Equal(side, spinner.Bounds.Width);
         Assert.Equal(0, spinner.Bounds.X);
+        // Stretched by the app, the spinner's box is wider, but the ring stays at its start, at its own size.
+        var ring = SpinnerColourTests.Ring(stretched);
+        Assert.Equal(300, stretched.Bounds.Width);
+        Assert.Equal(new Rect(0, 0, side, side), ring.Bounds);
     }
 }
