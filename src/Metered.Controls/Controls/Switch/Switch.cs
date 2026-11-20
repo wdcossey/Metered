@@ -17,9 +17,11 @@ namespace Metered.Controls;
 /// is <c>IsEnabled</c>; <c>children</c> is <c>Content</c>, the label.</para>
 /// <para>The state pseudoclasses, set on the switch and on each part, are Base Web's <c>$</c> props: <c>:checked</c>,
 /// <c>:size-default</c> and <c>:size-small</c>, <c>:label-placement-left</c> and <c>:label-placement-right</c>,
-/// <c>:show-icon</c>, <c>:is-hovered</c> (a mouse over the switch), <c>:is-active</c> (pressed by any pointer, or Space
-/// or Enter held: no style of Base Web's reads it, an override may), <c>:focus-visible</c> (focused by keyboard), and
-/// <c>:pointer-coarse</c> (Base Web's <c>@media (pointer: coarse)</c>: a phone's touch screen). <c>:disabled</c> is
+/// <c>:show-icon</c>, <c>:is-hovered</c> (a mouse over the switch), <c>:is-active</c> (pressed by any pointer until it is
+/// let go or the pointer leaves, or Space or Enter held, as the checkbox's: no style of Base Web's reads it; Metered's
+/// pressed tint does, #68), <c>:focus-visible</c> (focused by keyboard), and <c>:pointer-coarse</c> (Base Web's
+/// <c>@media (pointer: coarse)</c>: a phone's touch screen). The pointer states are <see cref="BackplatePointer"/>'s, as
+/// the checkbox's are, with no backplate. <c>:disabled</c> is
 /// Avalonia's own. <c>:loaded</c> is set once the switch is loaded, so the knob's transition doesn't run on its first
 /// appearance, as CSS's doesn't.</para>
 /// <para>Base Web's <c>Input</c> part, the hidden <c>input</c>, is the switch itself.</para>
@@ -50,12 +52,9 @@ public class Switch : ToggleButton
         AvaloniaProperty.Register<Switch, OverrideCollection?>(nameof(Overrides));
 
     private readonly Parts _parts;
-    private bool? _coarsePointer;
-    private bool _mouseOver;
-    private bool _pointerPressed;
-    private bool _keyPressed;
+    private readonly BackplatePointer _pointer;
     private bool _enterDown;
-    private bool _active;
+    private bool _keyDown;
 
     static Switch()
     {
@@ -67,11 +66,13 @@ public class Switch : ToggleButton
     public Switch()
     {
         _parts = new Parts(this, "Switch", [RootPart, ToggleTrackPart, TogglePart, LabelPart]);
+        // switch.js's mouse handlers are checkbox.js's: onMouseLeave ends isActive too. The switch has no backplate.
+        _pointer = new BackplatePointer(this, () => null, SetState, leaveEndsPress: true);
         SetState(":checked", IsChecked == true);
         UpdateSize();
         UpdatePlacement();
         SetState(":show-icon", ShowIcon);
-        SetState(":pointer-coarse", CoarsePointer);
+        _pointer.UpdateCoarse();
     }
 
     /// <summary>Base Web's <c>size</c>: the track, the knob and the label's type. Default by default.</summary>
@@ -88,16 +89,12 @@ public class Switch : ToggleButton
 
     /// <summary>
     /// Base Web's <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where the root gets the
-    /// padding that makes a 48 px target. Null follows the platform; tests set it.
+    /// padding that makes a 48 px target: the platform's until set; tests set it.
     /// </summary>
     internal bool CoarsePointer
     {
-        get => _coarsePointer ?? (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS());
-        set
-        {
-            _coarsePointer = value;
-            SetState(":pointer-coarse", CoarsePointer);
-        }
+        get => _pointer.Coarse;
+        set => _pointer.Coarse = value;
     }
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
@@ -124,6 +121,12 @@ public class Switch : ToggleButton
         SetState(":loaded", false);
     }
 
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        EndPress();
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -134,6 +137,8 @@ public class Switch : ToggleButton
         else if (p == ShowIconProperty) SetState(":show-icon", ShowIcon);
         else if (p == ContentProperty) UpdateLabel();
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
+        // A disabled switch takes no pointer or key: a hover or a press it had would come back stale when it is enabled.
+        else if (p == IsEffectivelyEnabledProperty && !IsEffectivelyEnabled) EndPress();
     }
 
     // Base Web's onKeyDown: Enter and Space make the switch active. Enter toggles it on its release (onKeyUp), not here
@@ -143,7 +148,12 @@ public class Switch : ToggleButton
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Source != this) return;
-        if (e.Key is Key.Enter or Key.Space) SetKeyPressed(true);
+        if (e.Key is Key.Enter or Key.Space)
+        {
+            _keyDown = true;
+            _pointer.SetPressed(true);
+        }
+
         if (e.Key == Key.Enter)
         {
             _enterDown = true;
@@ -159,7 +169,12 @@ public class Switch : ToggleButton
     protected override void OnKeyUp(KeyEventArgs e)
     {
         if (e.Source != this) return;
-        if (e.Key is Key.Enter or Key.Space) SetKeyPressed(false);
+        if (e.Key is Key.Enter or Key.Space)
+        {
+            _keyDown = false;
+            _pointer.SetPressed(false);
+        }
+
         if (e.Key == Key.Enter)
         {
             if (!_enterDown) return;
@@ -172,37 +187,36 @@ public class Switch : ToggleButton
         base.OnKeyUp(e);
     }
 
-    // Base Web's $isHovered: onMouseEnter and onMouseLeave on the root. Metered's hover is a mouse's (ADR 0001).
+    // Base Web's $isHovered (onMouseEnter and onMouseLeave on the root: a mouse's here, ADR 0001) and $isActive
+    // (onMouseDown, any button or a finger; onMouseUp and onMouseLeave end it), as the checkbox's (BackplatePointer).
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);
-        TrackMouse(e);
+        _pointer.Entered(e);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        TrackMouse(e);
+        _pointer.Moved(e);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
-        if (e.Pointer.Type == PointerType.Mouse) LeaveMouse();
+        _pointer.Exited();
     }
 
-    // Base Web's $isActive: onMouseDown on the root, any button or a finger; onMouseUp and onMouseLeave end it.
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        SetPointerPressed(true);
+        _pointer.Pressed(e);
     }
 
-    // Avalonia captures the pointer on any press and lets it go on the release, wherever it is: the press ends there.
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        SetPointerPressed(false);
+        _pointer.CaptureLost();
     }
 
     // Base Web's onFocus: isFocusVisible when the focus came by keyboard; onBlur ends it.
@@ -219,57 +233,17 @@ public class Switch : ToggleButton
         // Only the switch's own focus, as in OnGotFocus: LostFocus also bubbles from a control in its label.
         if (e.Source != this) return;
         SetState(":focus-visible", false);
-        SetKeyPressed(false);
-        // An Enter held as the focus left is never let go here: its release, wherever it lands, isn't the switch's.
-        _enterDown = false;
+        // A key held as the focus left is never let go here: its release, wherever it lands, isn't the switch's. A
+        // pointer's press goes on.
+        if (_keyDown) _pointer.SetPressed(false);
+        _keyDown = _enterDown = false;
     }
 
-    private void TrackMouse(PointerEventArgs e)
+    /// <summary>Every press ends, a key's too: the switch left the tree or was disabled.</summary>
+    private void EndPress()
     {
-        if (e.Pointer.Type != PointerType.Mouse) return;
-        // Only a mouse over the switch: one that captured the pointer on a press sees it move outside too, and a
-        // disabled one can still see a pointer it captured before.
-        if (IsEffectivelyEnabled && new Rect(Bounds.Size).Contains(e.GetPosition(this))) SetMouseOver(true);
-        else LeaveMouse();
-    }
-
-    /// <summary>
-    /// Base Web's onMouseLeave: the hover ends, and so does a press. A mouse press always follows a hover here: Avalonia
-    /// raises PointerEntered again when a switch under the mouse is enabled.
-    /// </summary>
-    private void LeaveMouse()
-    {
-        if (!_mouseOver) return;
-        SetMouseOver(false);
-        SetPointerPressed(false);
-    }
-
-    private void SetMouseOver(bool over)
-    {
-        if (_mouseOver == over) return;
-        _mouseOver = over;
-        SetState(":is-hovered", over);
-    }
-
-    private void SetPointerPressed(bool pressed)
-    {
-        _pointerPressed = pressed;
-        UpdateActive();
-    }
-
-    private void SetKeyPressed(bool pressed)
-    {
-        _keyPressed = pressed;
-        UpdateActive();
-    }
-
-    /// <summary>Base Web's $isActive: a pointer's press or a key's.</summary>
-    private void UpdateActive()
-    {
-        var active = _pointerPressed || _keyPressed;
-        if (_active == active) return;
-        _active = active;
-        SetState(":is-active", active);
+        _pointer.End();
+        _keyDown = _enterDown = false;
     }
 
     private void UpdateSize()

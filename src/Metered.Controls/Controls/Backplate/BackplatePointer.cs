@@ -7,7 +7,8 @@ namespace Metered.Controls;
 
 /// <summary>
 /// The pointer states of Base Web's v2 controls with a backplate (radio-v2's <c>Radio</c>, checkbox-v2's
-/// <c>Checkbox</c>): <c>:is-hovered</c>, Base Web's <c>$isHovered</c> (<c>onMouseEnter</c> on the root, a mouse's
+/// <c>Checkbox</c>), and of its <c>Switch</c>, whose handlers are checkbox-v2's and which has no backplate:
+/// <c>:is-hovered</c>, Base Web's <c>$isHovered</c> (<c>onMouseEnter</c> on the root, a mouse's
 /// only here: ADR 0001); <c>:is-active</c>, its <c>$isActive</c> (<c>onMouseDown</c>, any button or a finger, ended by
 /// <c>onMouseUp</c>); and the backplate's own CSS <c>:hover</c> (a mouse over it, inside <c>@media (hover: hover)</c>)
 /// and <c>:active</c> (the primary button or a finger pressed on it), which Base Web styles on that element alone; and
@@ -18,7 +19,7 @@ namespace Metered.Controls;
 /// <param name="backplate">The backplate part, when the template has one.</param>
 /// <param name="setState">Sets a pseudoclass on the control and its parts.</param>
 /// <param name="leaveEndsPress">Whether the pointer leaving ends <c>$isActive</c>: checkbox-v2's <c>onMouseLeave</c>
-/// clears it, radio-v2's doesn't.</param>
+/// clears it (and the switch's), radio-v2's doesn't.</param>
 internal sealed class BackplatePointer(Control owner, Func<StyledElement?> backplate, Action<string, bool> setState, bool leaveEndsPress)
 {
     private bool _mouseOver;
