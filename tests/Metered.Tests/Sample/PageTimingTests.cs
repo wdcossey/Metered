@@ -265,10 +265,11 @@ public class PageTimingTests
     [AvaloniaFact]
     public void The_Footer_Lies_Over_The_Pages_Foot_Across_The_View_And_Takes_Nothing_From_It()
     {
-        var shell = ShellOf([]);
+        var shell = HandShown();
         using var scene = new Scene(shell);
         var page = new Border();
         shell.ShowPage(page, "a page");
+        Draw();
         scene.Pump();
         var bar = Bar(shell).Bounds.Height;
         var before = InWindow(page, scene);
@@ -321,12 +322,13 @@ public class PageTimingTests
     public void A_Long_Line_Wraps_In_The_Footer_Rather_Than_Being_Cut()
     {
         const string Title = "a page whose title alone is longer than a phone's view is wide, so its line must wrap";
-        var shell = ShellOf([]);
+        var shell = HandShown();
         using var scene = new Scene(shell);
         var footer = Footer(shell);
         var shown = InShell<TextBlock>(shell, "PerformanceLine");
         var page = new Border();
         shell.ShowPage(page, Title);
+        Draw();
         scene.Pump();
         var before = InWindow(page, scene);
 
@@ -347,12 +349,13 @@ public class PageTimingTests
     [AvaloniaFact]
     public void A_Tap_On_The_Footer_Hides_It_And_Uncovers_The_Page()
     {
-        var shell = ShellOf([]);
+        var shell = HandShown();
         using var scene = new Scene(shell);
         var page = new Border { Background = Brushes.Transparent };
         var pressed = 0;
         page.PointerPressed += (_, _) => pressed++;
         shell.ShowPage(page, "a page");
+        Draw();
         shell.ShowCost("a page: 12 ms, 34 elements, 3 rules (3), layout 5.6, render 7.8");
         scene.Pump();
         var footer = Footer(shell);
@@ -362,6 +365,10 @@ public class PageTimingTests
         Assert.False(footer.IsVisible);
         Assert.Equal(0, pressed);
         Assert.True(shell.IsShowingPage);
+
+        // Hidden until the next page: the frames after the tap don't bring it back.
+        Draw();
+        Assert.False(footer.IsVisible);
 
         scene.Window.MouseDown(at, MouseButton.Left);
         scene.Window.MouseUp(at, MouseButton.Left);
@@ -436,6 +443,12 @@ public class PageTimingTests
         Assert.Equal(before, PerformanceMonitor.Listening);
     }
 #endif
+
+    /// <summary>
+    /// A shell whose footer shows only what a test gives <see cref="SampleShell.ShowCost"/>, in any build: a Debug build's
+    /// own line, once a page is ready, isn't shown.
+    /// </summary>
+    private static SampleShell HandShown() => new(SamplePageCatalog.Discover([typeof(Plain), typeof(Slow)])) { Report = _ => { }, ShowsCost = false };
 
     private static SampleShell ShellOf(List<string> lines) =>
         new(SamplePageCatalog.Discover([typeof(Plain), typeof(Slow)])) { Report = lines.Add };
