@@ -88,6 +88,9 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
 - [x] Switch (#43): Base Web's `baseui/switch`, its v2 toggle; parts, overrides, the two sizes and label placements,
       the checkmark, Enter on its release (only one pressed on it, the checkbox's rule: #49), the touch padding
       (`docs/controls/Switch/`)
+- [x] ProgressBar (#53): Base Web's `ProgressBar`; parts, overrides, sizes, intents, steps, infinite, the label and its
+      accessible name, its motion tested at its end values (`docs/controls/ProgressBar/`). `ProgressBarRounded` is a
+      follow-up
 - [x] Spinner (#54): Base Web's `baseui/spinner`; its one part and overrides, `$size` and `$borderWidth` by name, sizing
       token or length as its style function reads them, `$color`, the turn (at its end values: #13), a progress bar for
       automation; its ring's drawing shared with Button's (`docs/controls/Spinner/`)
