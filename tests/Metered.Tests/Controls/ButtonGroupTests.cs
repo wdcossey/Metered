@@ -145,6 +145,8 @@ public class ButtonGroupTests
         Assert.Null(group.Selected);
         Assert.False(At(group, 1).IsSet(Button.IsSelectedProperty));
         Assert.Equal([1], clicks);
+        // button-group.js: role is undefined for a simple clickable group's child with none of its own.
+        Assert.All(group.Items.Cast<Button>(), b => Assert.False(b.IsSet(AutomationProperties.ControlTypeOverrideProperty)));
     }
 
     [AvaloniaFact]
