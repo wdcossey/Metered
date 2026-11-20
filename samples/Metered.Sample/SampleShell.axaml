@@ -8,8 +8,8 @@
     MainWindow holds it on desktop, and App shows it as a phone's whole view. The bar is the sample's
     chrome, made of Metered's own Buttons: Back, the page's title, and the Light/Dark switch. Back is
     also Avalonia's own back request (Alt+Left on desktop, the back button or gesture on a phone).
-    The bar has one height in every build, so a page's size doesn't change with the Debug line under
-    its title (docs/performance/README.md).
+    The bar has one height in every build, and a Debug build's cost line is laid over the page's foot,
+    not beside it, so a page's size doesn't change with the build or with the line (docs/performance/README.md).
   -->
   <UserControl.Styles>
     <!-- The pages' headings and labels, from Base Web's type ramp. -->
@@ -39,24 +39,34 @@
                   AutomationProperties.Name="Back" Click="OnBack" />
         <b:Button x:Name="Variant" DockPanel.Dock="Right" VerticalAlignment="Center"
                   Kind="Secondary" Size="Compact" Content="Dark" Click="OnVariant" />
-        <StackPanel VerticalAlignment="Center" Margin="8,0">
-          <TextBlock x:Name="PageTitle" TextTrimming="CharacterEllipsis"
-                     FontSize="{DynamicResource typography.HeadingXSmall.fontSize}"
-                     FontWeight="{DynamicResource typography.HeadingXSmall.fontWeight}"
-                     Foreground="{DynamicResource colors.contentPrimary}" />
-          <!-- What the page cost to open, in a Debug build (PerformanceMonitor); also on standard output. -->
-          <TextBlock x:Name="PerformanceLine" IsVisible="False" TextTrimming="CharacterEllipsis"
-                     FontSize="{DynamicResource typography.ParagraphXSmall.fontSize}"
-                     Foreground="{DynamicResource colors.contentTertiary}" />
-        </StackPanel>
+        <TextBlock x:Name="PageTitle" VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis"
+                   FontSize="{DynamicResource typography.HeadingXSmall.fontSize}"
+                   FontWeight="{DynamicResource typography.HeadingXSmall.fontWeight}"
+                   Foreground="{DynamicResource colors.contentPrimary}" />
       </DockPanel>
     </Border>
 
-    <!-- The list, or the page shown in its place. -->
-    <Border x:Name="Host">
-      <ScrollViewer x:Name="Index" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel x:Name="PageList" Margin="16" Spacing="8" />
-      </ScrollViewer>
-    </Border>
+    <Panel>
+      <!-- The list, or the page shown in its place. -->
+      <Border x:Name="Host">
+        <ScrollViewer x:Name="Index" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="PageList" Margin="16" Spacing="8" />
+        </ScrollViewer>
+      </Border>
+
+      <!--
+        What the page cost to open, in a Debug build (PerformanceMonitor); also on standard output. Over the page's
+        foot, the view's whole width, wrapped: shown only once a Debug page's line is, and never in Release, so it takes
+        nothing from the page's size. It takes no input, so a press on it is the page's under it, as in Release.
+      -->
+      <Border x:Name="Footer" VerticalAlignment="Bottom" IsVisible="False" IsHitTestVisible="False" Padding="16,8"
+              Background="{DynamicResource colors.backgroundPrimary}"
+              BorderBrush="{DynamicResource colors.borderOpaque}" BorderThickness="0,1,0,0">
+        <TextBlock x:Name="PerformanceLine" TextWrapping="Wrap"
+                   FontSize="{DynamicResource typography.ParagraphXSmall.fontSize}"
+                   LineHeight="{DynamicResource typography.ParagraphXSmall.lineHeight}"
+                   Foreground="{DynamicResource colors.contentTertiary}" />
+      </Border>
+    </Panel>
   </DockPanel>
 </UserControl>

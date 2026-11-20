@@ -22,8 +22,9 @@ namespace Metered.Sample;
 /// The shell times every page it opens, from before the page is made to its first drawn frame, and writes the page's
 /// <c>METERED ready</c> line to standard output (logcat's <c>DOTNET</c> tag on Android), so that a tool which reads it
 /// knows a frame it takes after it is the page at rest. A page has no timing code of its own. In a Debug build it also
-/// writes what the page cost to open, a <c>METERED cost</c> line, and shows it under the title
-/// (<see cref="PerformanceMonitor"/>).
+/// writes what the page cost to open, a <c>METERED cost</c> line, and shows it in a footer over the page's foot, wrapped
+/// to the view's width (<see cref="PerformanceMonitor"/>). The footer takes nothing from the page's size, which is the
+/// same in every build and doesn't change when the line appears, and takes no input, so the page under it has it.
 /// </para>
 /// </summary>
 public partial class SampleShell : UserControl
@@ -81,7 +82,7 @@ public partial class SampleShell : UserControl
     internal Action<string> Report { get; set; } = Console.WriteLine;
 
     /// <summary>
-    /// Whether a Debug build shows the cost line under the title; on by default. The preview turns it off, so that its
+    /// Whether a Debug build shows the cost line in its footer; on by default. The preview turns it off, so that its
     /// pictures don't change with each run's times. It is still written to <see cref="Report"/>.
     /// </summary>
     internal bool ShowsCost { get; set; } = true;
@@ -144,7 +145,7 @@ public partial class SampleShell : UserControl
     {
         _opening?.Dispose();
         _opening = null;
-        PerformanceLine.IsVisible = false;
+        Footer.IsVisible = false;
         PerformanceLine.Text = null;
         BackButton.IsVisible = toPage;
     }
@@ -198,7 +199,7 @@ public partial class SampleShell : UserControl
             if (ShowsCost)
             {
                 PerformanceLine.Text = cost;
-                PerformanceLine.IsVisible = true;
+                Footer.IsVisible = true;
             }
 #endif
         }

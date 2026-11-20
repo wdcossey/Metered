@@ -8,7 +8,7 @@ using Avalonia.VisualTree;
 namespace Metered.Sample.Diagnostics;
 
 /// <summary>
-/// The sample's line in a Debug build, under the page's title and on standard output: what a page cost to open, from
+/// The sample's line in a Debug build, in the shell's footer and on standard output: what a page cost to open, from
 /// <see cref="SampleShell"/>'s time and Avalonia's own meter. It adds nothing to the library, and it doesn't trace,
 /// because tracing would cost more than what it measures. See docs/performance/README.md. From Cornflower's.
 /// </summary>
