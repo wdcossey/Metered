@@ -285,4 +285,38 @@ public class ButtonGroupTests
         Assert.Empty(clicks);
         Assert.Equal([0], group.Selected!);
     }
+
+    // A reset lets go only of the buttons that are gone: one still in the source stays the group's.
+    [AvaloniaFact]
+    public void A_reset_keeps_the_buttons_still_in_the_group()
+    {
+        var gone = new Button { Content = "Item 0" };
+        var kept = new Button { Content = "Item 1" };
+        var source = new ResettingCollection { gone, kept };
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Kind = ButtonKind.Tertiary, ItemsSource = source };
+        var clicks = new List<int>();
+        group.Click += (_, e) => clicks.Add(e.Index);
+        using var scene = new Scene(group);
+
+        source.RemoveFirstAndReset();
+        scene.Pump();
+        Assert.Equal(ButtonKind.Primary, gone.Kind);
+        Assert.Equal(ButtonKind.Tertiary, kept.Kind);
+
+        scene.Click(kept);
+        Assert.Equal([0], clicks);
+        Assert.Equal([0], group.Selected!);
+        Assert.True(kept.IsSelected);
+    }
+
+    /// <summary>A source that tells of a removal only as a reset, as a collection that rebuilds itself does.</summary>
+    private sealed class ResettingCollection : System.Collections.ObjectModel.ObservableCollection<Button>
+    {
+        public void RemoveFirstAndReset()
+        {
+            Items.RemoveAt(0);
+            OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(
+                System.Collections.Specialized.NotifyCollectionChangedAction.Reset));
+        }
+    }
 }

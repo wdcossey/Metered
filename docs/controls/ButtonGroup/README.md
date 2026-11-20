@@ -25,8 +25,9 @@ gallery for two groups: radio, and checkbox with the outline kind.
 - A button's own `IsSelected` of true is kept; otherwise the group sets it from `Selected`, and
   takes it back when the button leaves.
 - A button that leaves, however it leaves (removed, the items cleared, or its `ItemsSource` reset,
-  as an `ObservableCollection`'s `Clear` does, naming no old items: #45), has its own kind, size,
-  shape, selection, tab stop and role back, and the group no longer listens to its clicks.
+  as an `ObservableCollection`'s `Clear` does, naming no old items: #45), has what the group set
+  taken back (kind, size, shape, selection, tab stop and role) and the group no longer listens to
+  its clicks. The button's own values come back as the control's defaults, not as they were (#70).
 - Radio: only the selected button (or the first, with none) is a tab stop; the arrow keys move the
   selection and the focus, wrapping; the buttons are announced as radio buttons (checkbox mode: as
   check boxes).
