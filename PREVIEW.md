@@ -84,6 +84,22 @@ disabled off and on, the label left and right, the two sizes, and the checkmark.
 <img src="docs/preview/dark__switch-2.png" width="270" alt="Switch, dark, scrolled: sizes and the checkmark">
 </p>
 
+## ProgressBar
+
+Base Web's progress bar, as its documentation's examples: basic, a negative fill by override, the intents with their
+labels, the label and a custom one, the three sizes, five steps with their buttons, and infinite. The endless motion
+stands still for the pictures at its first keyframe (`:metered-still`), where the step in progress and the infinite
+bar's halves haven't come in yet, so they draw nothing here.
+
+<p>
+<img src="docs/preview/light__progressbar-1.png" width="270" alt="ProgressBar, light: basic, negative, intents, labels and sizes">
+<img src="docs/preview/dark__progressbar-1.png" width="270" alt="ProgressBar, dark: basic, negative, intents, labels and sizes">
+</p>
+<p>
+<img src="docs/preview/light__progressbar-2.png" width="270" alt="ProgressBar, light, scrolled: sizes, steps and infinite">
+<img src="docs/preview/dark__progressbar-2.png" width="270" alt="ProgressBar, dark, scrolled: sizes, steps and infinite">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

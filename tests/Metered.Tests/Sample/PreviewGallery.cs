@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
@@ -7,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Metered.Sample;
 using Button = Metered.Controls.Button;
 
@@ -154,6 +156,7 @@ public class PreviewGallery
         for (var n = 0; n < screens; n++)
         {
             scroller.Offset = new Vector(0, Math.Min(n * viewport, end));
+            Still(scroller);
             Settle(window);
             using var frame = Draw(window);
 
@@ -165,6 +168,16 @@ public class PreviewGallery
 
             frame.Save(Path.Combine(folder, $"{name}-{n + 1}.png"), PngBitmapEncoderOptions.Default);
         }
+    }
+
+    /// <summary>
+    /// Every element of the page <c>:metered-still</c>: a theme runs an endless animation only while its element isn't
+    /// (<c>^:not(:metered-still)</c>), so the picture stands at the animation's first keyframe, the same on every run.
+    /// </summary>
+    private static void Still(Visual page)
+    {
+        foreach (var element in page.GetSelfAndVisualDescendants().OfType<StyledElement>())
+            ((IPseudoClasses)element.Classes).Set(":metered-still", true);
     }
 
     /// <summary>
