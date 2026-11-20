@@ -32,8 +32,8 @@ internal static class ShellFrames
     public static IReadOnlyList<Metered.Controls.Button> ListButtons(SampleShell shell) =>
         shell.FindControl<StackPanel>("PageList")!.Children.OfType<Metered.Controls.Button>().ToList();
 
-    /// <summary>A named control in the shell's bar.</summary>
-    public static T InBar<T>(SampleShell shell, string name)
+    /// <summary>A named control in the shell: in its bar, or its footer.</summary>
+    public static T InShell<T>(SampleShell shell, string name)
         where T : Control =>
         shell.FindControl<T>(name) ?? throw new InvalidOperationException($"The shell has no '{name}'.");
 }

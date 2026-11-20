@@ -38,7 +38,7 @@ an error leaves held, the mouse button or a touch, it lets go of.
 
 - **Every page on the list,** with nothing to add for a new control: opens it with a real click, checks that the shell
   writes the page's ready line under its title, saves a frame, fails on a button, check box or radio with no size and, in a Debug build, on
-  a missing cost line under the title, then clicks Back and checks the list is back. A page that throws fails on its own, and the pages after it still run. A page below the fold of a long list
+  a missing cost line in the shell's footer, then clicks Back and checks the list is back. A page that throws fails on its own, and the pages after it still run. A page below the fold of a long list
   is opened through UI Automation instead: a click never goes outside the window. Titles are matched exactly, case and
   all, from each page's `[SamplePage]`.
 - **The phone's view:** the Theme page's ready line,
