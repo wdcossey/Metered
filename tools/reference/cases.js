@@ -146,6 +146,8 @@ const files = {
   'spinner.oracle.json': require('./spinner').oracle(version),
   // Base Web's checkbox-v2 Checkbox (checkbox.js).
   'checkbox.oracle.json': require('./checkbox').oracle(version),
+  // Base Web's Slider, and react-range's normalizeValue, which it drags and steps through (slider.js).
+  'slider.oracle.json': require('./slider').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

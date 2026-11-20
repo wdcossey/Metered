@@ -116,6 +116,20 @@ rings turn; the pictures hold them still at 0°, Base Web's `from`.
 <img src="docs/preview/dark__spinner-2.png" width="270" alt="Spinner, dark, scrolled: colours and the customised spinner">
 </p>
 
+## Slider
+
+Base Web's slider, as its documentation's examples: basic with its value under it, marks every ten, a range, disabled,
+a custom min, max and step, a custom label, and its scenario's labels always shown.
+
+<p>
+<img src="docs/preview/light__slider-1.png" width="270" alt="Slider, light: basic, marks, range, disabled, custom min, max and step">
+<img src="docs/preview/dark__slider-1.png" width="270" alt="Slider, dark: basic, marks, range, disabled, custom min, max and step">
+</p>
+<p>
+<img src="docs/preview/light__slider-2.png" width="270" alt="Slider, light, scrolled: a custom label and labels always shown">
+<img src="docs/preview/dark__slider-2.png" width="270" alt="Slider, dark, scrolled: a custom label and labels always shown">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

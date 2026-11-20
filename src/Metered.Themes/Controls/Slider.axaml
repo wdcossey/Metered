@@ -1,0 +1,42 @@
+<!--
+  Base Web's Slider (baseui 18.2.0, slider/slider.js), as a template of named parts. Each part's look is its own theme,
+  Slider.Styled<Part> (Slider.Parts.g.axaml), which the slider's Overrides merge over: this file holds only the
+  structure.
+
+  Root                       (the track, then the tick bar)
+    Track                    (the band a press starts on)
+      InnerTrack             (the line; it places the slider's marks and thumbs, which Metered.Controls.Slider makes:)
+        Mark                 (one at each step, with Marks)
+        Thumb                (one for each value)
+          ThumbValue         (while the thumb's label shows)
+          InnerThumb
+    TickBar
+      Tick                   (MinTick: the minimum)
+      Tick                   (MaxTick: the maximum)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Slider}" TargetType="b:Slider">
+    <!-- A thumb's label and focus ring overflow the slider, as Base Web's do. -->
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Name="Root" Theme="{DynamicResource Slider.StyledRoot}">
+          <Border Name="Track" Theme="{DynamicResource Slider.StyledTrack}">
+            <b:SliderInnerTrack Name="InnerTrack" Theme="{DynamicResource Slider.StyledInnerTrack}" />
+          </Border>
+          <!-- justify-content: space-between: the first tick at the start, the last at the end. -->
+          <Border Name="TickBar" Theme="{DynamicResource Slider.StyledTickBar}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <ContentPresenter Name="MinTick" Grid.Column="0" Theme="{DynamicResource Slider.StyledTick}" />
+              <ContentPresenter Name="MaxTick" Grid.Column="2" Theme="{DynamicResource Slider.StyledTick}" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

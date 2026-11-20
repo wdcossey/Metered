@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.SliderPage">
+  <!-- Base Web's slider, as its documentation's examples show it: basic, marks, a range, disabled, a custom min, max and
+       step, a custom label, and its scenario of labels always shown. Headings are the shell's. The values are set in
+       the code-behind. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic usage" />
+      <b:Slider x:Name="Basic" AutomationProperties.Name="Basic" />
+      <TextBlock Classes="label" x:Name="State" />
+
+      <TextBlock Classes="heading" Text="Marks" />
+      <b:Slider x:Name="Marks" Step="10" Marks="True" />
+
+      <TextBlock Classes="heading" Text="Range" />
+      <b:Slider x:Name="Range" />
+
+      <TextBlock Classes="heading" Text="Disabled state" />
+      <b:Slider x:Name="Disabled" IsEnabled="False" />
+
+      <TextBlock Classes="heading" Text="Custom min, max and step" />
+      <b:Slider x:Name="Stepped" Min="-300" Max="300" Step="10" />
+
+      <TextBlock Classes="heading" Text="Custom label" />
+      <b:Slider x:Name="Distance" Min="1000" Max="8000" Step="100" />
+
+      <!-- The label is drawn 51 above the slider: room for it under the heading. -->
+      <TextBlock Classes="heading" Text="Always show the label" />
+      <b:Slider x:Name="Persistent" PersistentThumb="True" Margin="0,48,0,0" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

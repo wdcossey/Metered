@@ -145,6 +145,12 @@ files['../Controls/ProgressBar.Parts.g.axaml'] = require('./progress-bar').file(
 // The theme of Spinner's part, from Base Web's spinner (spinner.js).
 files['../Controls/Spinner.Parts.g.axaml'] = require('./spinner').file(version);
 
+// The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
+const slider = require('./slider');
+files['../Controls/Slider.Parts.g.axaml'] = slider.file(version);
+files['SliderBoxShadows.g.axaml'] = dictionary(
+  `The thumb's box-shadow in Base Web's Slider, a literal in its style function: ${slider.SHADOW_KEY}.`, slider.shadows);
+
 // What createTheme and createDarkTheme derive, for Metered.Themes.Theme (theme.js).
 files['../Theming/ThemeDerivation.g.cs'] = require('./theme').file(version);
 

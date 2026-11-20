@@ -94,3 +94,5 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
 - [x] Spinner (#54): Base Web's `baseui/spinner`; its one part and overrides, `$size` and `$borderWidth` by name, sizing
       token or length as its style function reads them, `$color`, the turn (at its end values: #13), a progress bar for
       automation; its ring's drawing shared with Button's (`docs/controls/Spinner/`)
+- [x] Slider (#55): Base Web's `baseui/slider` (no v2), dragged and stepped as react-range does it; one thumb or a range,
+      marks, labels, parts and overrides, a touch drag that never pans the page (`docs/controls/Slider/`)
