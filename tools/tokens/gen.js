@@ -142,6 +142,8 @@ files['../Controls/Switch.Parts.g.axaml'] = require('./switch').file(version);
 
 // The themes of ProgressBar's parts, from Base Web's progress bar (progress-bar.js).
 files['../Controls/ProgressBar.Parts.g.axaml'] = require('./progress-bar').file(version);
+// The theme of Spinner's part, from Base Web's spinner (spinner.js).
+files['../Controls/Spinner.Parts.g.axaml'] = require('./spinner').file(version);
 
 // What createTheme and createDarkTheme derive, for Metered.Themes.Theme (theme.js).
 files['../Theming/ThemeDerivation.g.cs'] = require('./theme').file(version);

@@ -13,7 +13,8 @@ namespace Metered.Controls;
 /// </summary>
 /// <remarks>
 /// <para>Base Web's <c>checked</c> is <c>IsChecked</c>, which a click, Space, or Enter on its release toggles (Base
-/// Web's <c>onKeyUp</c>); <c>disabled</c> is <c>IsEnabled</c>; <c>children</c> is <c>Content</c>, the label.</para>
+/// Web's <c>onKeyUp</c>): here only an Enter pressed on the switch, which it takes, as the checkbox does; <c>disabled</c>
+/// is <c>IsEnabled</c>; <c>children</c> is <c>Content</c>, the label.</para>
 /// <para>The state pseudoclasses, set on the switch and on each part, are Base Web's <c>$</c> props: <c>:checked</c>,
 /// <c>:size-default</c> and <c>:size-small</c>, <c>:label-placement-left</c> and <c>:label-placement-right</c>,
 /// <c>:show-icon</c>, <c>:is-hovered</c> (a mouse over the switch), <c>:is-active</c> (pressed by any pointer, or Space
@@ -53,6 +54,7 @@ public class Switch : ToggleButton
     private bool _mouseOver;
     private bool _pointerPressed;
     private bool _keyPressed;
+    private bool _enterDown;
     private bool _active;
 
     static Switch()
@@ -136,13 +138,15 @@ public class Switch : ToggleButton
 
     // Base Web's onKeyDown: Enter and Space make the switch active. Enter toggles it on its release (onKeyUp), not here
     // as an Avalonia button's does; Space is a checkbox's, which toggles on its release too. Only the switch's own keys:
-    // a key in a control in its label bubbles here, which Base Web's input never sees.
+    // a key in a control in its label bubbles here, which Base Web's input never sees. The switch takes the Enter it
+    // acts on, as the checkbox does: it doesn't reach a default button too.
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Source != this) return;
         if (e.Key is Key.Enter or Key.Space) SetKeyPressed(true);
         if (e.Key == Key.Enter)
         {
+            _enterDown = true;
             e.Handled = true;
             return;
         }
@@ -150,12 +154,16 @@ public class Switch : ToggleButton
         base.OnKeyDown(e);
     }
 
+    // Base Web's onKeyUp: Space or Enter ends isActive, and Enter toggles, as onChange with !checked: here only an Enter
+    // pressed on the switch, not one pressed elsewhere whose release finds it focused (the checkbox's rule, #49).
     protected override void OnKeyUp(KeyEventArgs e)
     {
         if (e.Source != this) return;
         if (e.Key is Key.Enter or Key.Space) SetKeyPressed(false);
         if (e.Key == Key.Enter)
         {
+            if (!_enterDown) return;
+            _enterDown = false;
             e.Handled = true;
             OnClick();
             return;
@@ -208,8 +216,12 @@ public class Switch : ToggleButton
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         base.OnLostFocus(e);
+        // Only the switch's own focus, as in OnGotFocus: LostFocus also bubbles from a control in its label.
+        if (e.Source != this) return;
         SetState(":focus-visible", false);
         SetKeyPressed(false);
+        // An Enter held as the focus left is never let go here: its release, wherever it lands, isn't the switch's.
+        _enterDown = false;
     }
 
     private void TrackMouse(PointerEventArgs e)

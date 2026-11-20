@@ -224,7 +224,7 @@ public class ProgressBarTests
 
         // Running: the offset is the animation's. Still: the plain values, which are its first keyframe.
         Assert.Equal(BindingPriority.Animation, fill.GetDiagnostic(ProgressBarFill.OffsetProperty).Priority);
-        ((IPseudoClasses)fill.Classes).Set(":metered-still", true);
+        ((IPseudoClasses)fill.Classes).Set(Metered.Tests.Sample.PreviewGallery.Still, true);
         scene.Pump();
         Assert.NotEqual(BindingPriority.Animation, fill.GetDiagnostic(ProgressBarFill.OffsetProperty).Priority);
         Assert.Equal(a.Frames[0].Offset, fill.Offset);
@@ -261,7 +261,7 @@ public class ProgressBarTests
             Assert.Equal(s.Frames.Select(f => f.Position), animation.Children.Select(k => Setter(k, ProgressBarInfiniteBar.PositionProperty)));
 
             Assert.Equal(BindingPriority.Animation, half.GetDiagnostic(ProgressBarInfiniteBar.PositionProperty).Priority);
-            ((IPseudoClasses)half.Classes).Set(":metered-still", true);
+            ((IPseudoClasses)half.Classes).Set(Metered.Tests.Sample.PreviewGallery.Still, true);
             scene.Pump();
             Assert.Equal(s.Position, half.Position);
             Assert.Equal(s.Frames[0].Position, half.Position);

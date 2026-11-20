@@ -147,6 +147,8 @@ public class PreviewGallery
     private static void Shoot(Window window, ScrollViewer scroller, string folder, string name)
     {
         Draw(window).Dispose();
+        // Once laid out, so the page's templates have made the parts that move.
+        HoldStill(scroller);
         var viewport = scroller.Viewport.Height;
         if (viewport <= 0)
             throw new InvalidOperationException($"The page has no viewport ({scroller.Viewport}).");
@@ -156,7 +158,6 @@ public class PreviewGallery
         for (var n = 0; n < screens; n++)
         {
             scroller.Offset = new Vector(0, Math.Min(n * viewport, end));
-            Still(scroller);
             Settle(window);
             using var frame = Draw(window);
 
@@ -170,14 +171,18 @@ public class PreviewGallery
         }
     }
 
+    /// <summary>What a theme's motion that never ends (a spinner's turn) runs without: <see cref="HoldStill"/> sets it.</summary>
+    internal const string Still = ":metered-still";
+
     /// <summary>
-    /// Every element of the page <c>:metered-still</c>: a theme runs an endless animation only while its element isn't
-    /// (<c>^:not(:metered-still)</c>), so the picture stands at the animation's first keyframe, the same on every run.
+    /// Stops the motion that never ends, so a picture can be at rest: <see cref="Still"/> on every element of the screen.
+    /// A theme runs such motion only while its element isn't <c>:metered-still</c> (the Spinner's ring then stands at
+    /// 0deg, Base Web's <c>from</c>), as Avalonia 12's animation clock is internal and can't be held (#13).
     /// </summary>
-    private static void Still(Visual page)
+    private static void HoldStill(Visual root)
     {
-        foreach (var element in page.GetSelfAndVisualDescendants().OfType<StyledElement>())
-            ((IPseudoClasses)element.Classes).Set(":metered-still", true);
+        foreach (var element in root.GetSelfAndVisualDescendants().OfType<StyledElement>())
+            ((IPseudoClasses)element.Classes).Set(Still, true);
     }
 
     /// <summary>
