@@ -116,15 +116,20 @@ as Base Web's if-chains decide) and checked against Base Web's for every combina
    browser fires on a tap and keeps until the next tap elsewhere; here a finger never hovers (ADR 0001). Its
    `$isActive` comes from `mousedown`, which a phone's browser sends with the `mouseup` after the finger lifts, so a
    finger held on a Base Web checkbox never shows the box's pressed tint (the container's CSS `:active` is the browser's); here it shows
-   both while held, as the radio does (`BackplatePointer`).
+   both while held, as the radio does (`BackplatePointer`). Kept on purpose (the developer's decision of 2026-11-18,
+   #49): Metered is mobile first, and a finger held on a control should see it pressed, as it sees a Button pressed.
+   The real-window run (`tools/real-window/`) draws the backplate's tint under a held touch.
 3. **`@media (pointer: coarse)` is the platform**: Android and iOS are coarse, desktops fine, whatever pointer a
    touch-screen laptop has.
 4. **The root is radio-v2's panel** (`RadioRootPanel`): Base Web orders the label before the container in its markup for
    the left placement; here the panel's `LabelFirst` lays it out first.
-5. **Enter is the checkbox's.** Base Web toggles on any Enter let go on its input, one pressed on another control
-   whose release finds the checkbox focused included, and lets the press go on to the page. Here only an Enter pressed
-   on the checkbox toggles it, and the checkbox takes it, so a default button doesn't act on it too. A key held as the
-   focus leaves ends the press, which Base Web's `isActive` keeps until a key goes up on its input.
+5. **Enter is the checkbox's** (the developer's decision of 2026-11-18, #49: this rule for the checkbox and the
+   switch). Base Web toggles on any Enter let go on its input, one pressed on another control whose release finds the
+   checkbox focused included, and lets the press go on to the page. Here only an Enter pressed on the checkbox toggles
+   it, and the checkbox takes it, so a default button doesn't act on it too. Why: in a window one Enter has one
+   effect, not a toggle and a default button's click, and an Enter whose press went to another control isn't the
+   checkbox's. A key held as the focus leaves ends the press, which Base Web's `isActive` keeps until a key goes up on
+   its input.
 6. **The container's hover is its rectangle**; a browser's follows its rounded corners.
 7. **`containsInteractiveElement`**: Avalonia's controls take their own press, so a control in a label never toggles
    the checkbox; Base Web's does unless the prop is set.

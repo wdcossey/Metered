@@ -68,6 +68,162 @@ public class SwitchTests
         Assert.DoesNotContain(":is-active", sw.Classes);
     }
 
+    // #49: the checkbox's rule, not Base Web's onKeyUp, which toggles on any Enter let go on its input. An Enter pressed
+    // on another control and let go once the switch has the focus isn't the switch's: it doesn't toggle it, and goes on.
+    [AvaloniaFact]
+    public void An_Enter_pressed_elsewhere_doesnt_toggle_it()
+    {
+        var before = new Avalonia.Controls.Button { Content = "Before" };
+        var sw = new Switch { Content = "Label" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { before, sw } });
+        var released = 0;
+        ((Control)sw.Parent!).AddHandler(InputElement.KeyUpEvent, (_, e) => { if (e.Key == Key.Enter) released++; });
+
+        before.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsFocused);
+        Assert.False(sw.IsChecked);
+        Assert.Equal(1, released);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+    }
+
+    // #49: an Enter pressed on the switch whose focus then left is let go elsewhere, so it isn't the switch's any more: a
+    // later Enter pressed elsewhere and let go on the switch still doesn't toggle it.
+    [AvaloniaFact]
+    public void An_Enter_held_as_the_focus_leaves_isnt_the_switchs()
+    {
+        var sw = new Switch { Content = "Label" };
+        var other = new TextBox { Text = "Name" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { sw, other } });
+
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        other.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.False(sw.IsChecked);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsFocused);
+        Assert.False(sw.IsChecked);
+    }
+
+    // #49: an Enter held on the switch as its panel is disabled is let go where the switch can't take it: once enabled,
+    // a later Enter pressed elsewhere and let go on the switch still doesn't toggle it.
+    [AvaloniaFact]
+    public void An_Enter_held_as_its_panel_is_disabled_isnt_the_switchs()
+    {
+        var sw = new Switch { Content = "Label" };
+        var other = new TextBox { Text = "Name" };
+        var panel = new StackPanel { Children = { sw } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { panel, other } });
+
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.IsEnabled = false;
+        scene.Pump();
+        Assert.DoesNotContain(":is-active", sw.Classes);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.IsEnabled = true;
+        scene.Pump();
+        Assert.False(sw.IsChecked);
+
+        other.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsFocused);
+        Assert.False(sw.IsChecked);
+    }
+
+    // #49: an Enter held on the switch as it leaves the tree is let go without it: put back, a later Enter pressed
+    // elsewhere and let go on the switch still doesn't toggle it.
+    [AvaloniaFact]
+    public void An_Enter_held_as_it_leaves_the_tree_isnt_the_switchs()
+    {
+        var sw = new Switch { Content = "Label" };
+        var other = new TextBox { Text = "Name" };
+        var panel = new StackPanel { Children = { sw } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { panel, other } });
+
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.Children.Remove(sw);
+        scene.Pump();
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        panel.Children.Add(sw);
+        scene.Pump();
+        Assert.False(sw.IsChecked);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+
+        other.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsFocused);
+        Assert.False(sw.IsChecked);
+    }
+
+    // #49: an Enter pressed on the switch toggles it when let go (Base Web's onKeyUp), and the switch takes both its press
+    // and its release: neither reaches a parent.
+    [AvaloniaFact]
+    public void An_Enter_pressed_on_it_toggles_it_on_release_and_is_taken()
+    {
+        var (sw, scene) = Make(new Switch { Content = "Label" });
+        using var _ = scene;
+        var pressed = 0;
+        var released = 0;
+        var parent = (Control)sw.Parent!;
+        parent.AddHandler(InputElement.KeyDownEvent, (_, e) => { if (e.Key == Key.Enter) pressed++; });
+        parent.AddHandler(InputElement.KeyUpEvent, (_, e) => { if (e.Key == Key.Enter) released++; });
+        scene.Key(Key.Tab);
+        Assert.True(sw.IsFocused);
+
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.False(sw.IsChecked);
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsChecked);
+        Assert.Equal(0, pressed);
+        Assert.Equal(0, released);
+    }
+
+    // #49: the Enter the switch acts on is its own, so a window's default button (IsDefault, which Avalonia clicks on an
+    // Enter's press that reaches the window unhandled) doesn't fire as well. With the focus elsewhere it does.
+    [AvaloniaFact]
+    public void A_default_button_doesnt_fire_on_the_switchs_Enter()
+    {
+        var sw = new Switch { Content = "Label" };
+        var text = new TextBox { Text = "Name" };
+        var ok = new Avalonia.Controls.Button { Content = "OK", IsDefault = true };
+        var clicks = 0;
+        ok.Click += (_, _) => clicks++;
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { sw, text, ok } });
+
+        text.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.Equal(1, clicks);
+
+        sw.Focus(NavigationMethod.Tab);
+        scene.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+        scene.Pump();
+        Assert.True(sw.IsChecked);
+        Assert.Equal(1, clicks);
+    }
+
     [AvaloniaFact]
     public void Every_part_takes_the_switchs_state()
     {
