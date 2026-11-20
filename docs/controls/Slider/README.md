@@ -48,7 +48,7 @@ The parts: `Root` (a column) holds the `Track` (the band a press starts on, padd
 `TickBar`. The `Track` holds the `InnerTrack` (`SliderInnerTrack`), the line, which holds a `Mark` at each step and a
 `Thumb` (`SliderThumb`) for each value, each with its `ThumbValue` and `InnerThumb` while its label shows. The `TickBar`
 holds two `Tick`s, the minimum and the maximum (`MinTick` and `MaxTick` in the template). The slider makes the marks,
-thumbs and labels; `Parts` holds them beside the template's.
+thumbs and labels, and places them, and the two ticks, as their parts (`Parts.Place`).
 
 ## Behaviour, as Base Web's
 

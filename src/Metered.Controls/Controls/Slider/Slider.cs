@@ -170,7 +170,7 @@ public class Slider : TemplatedControl
     internal StyledElement? Part(string name) => _parts[name];
 
     /// <summary>Every element of a part, for tests and tools.</summary>
-    internal IReadOnlyList<StyledElement> Elements(string name) => _parts.Elements(name).ToList();
+    internal IReadOnlyList<StyledElement> Elements(string name) => _parts.All(name);
 
     /// <summary>The thumbs, in the values' order.</summary>
     internal IReadOnlyList<SliderThumb> Thumbs => _thumbs;
@@ -189,8 +189,7 @@ public class Slider : TemplatedControl
         _inner = e.NameScope.Find<SliderInnerTrack>(InnerTrackPart);
         _minTick = e.NameScope.Find<ContentPresenter>(MinTickName);
         _maxTick = e.NameScope.Find<ContentPresenter>(MaxTickName);
-        if (_minTick is not null) _parts.Add(TickPart, _minTick);
-        if (_maxTick is not null) _parts.Add(TickPart, _maxTick);
+        _parts.Place((TickPart, new StyledElement?[] { _minTick, _maxTick }.OfType<StyledElement>().ToArray()));
         if (_track is not null)
         {
             // Before any gesture recogniser sees the press: a touch that starts on the track is the slider's.
@@ -207,6 +206,9 @@ public class Slider : TemplatedControl
             foreach (var thumb in _thumbs) _inner.Children.Add(thumb);
         }
 
+        // Attach let go of the parts the slider makes: they are placed again, as the new template's.
+        PlaceThumbs();
+        PlaceMarks();
         Sync();
         RebuildMarks();
     }
@@ -568,8 +570,12 @@ public class Slider : TemplatedControl
             else Drag(-1);
         }
 
-        while (_thumbs.Count > count) RemoveThumb();
-        while (_thumbs.Count < count) AddThumb();
+        if (_thumbs.Count != count)
+        {
+            while (_thumbs.Count > count) RemoveThumb();
+            while (_thumbs.Count < count) AddThumb();
+            PlaceThumbs();
+        }
         if (_focused >= count) _focused = -1;
         SetState(":range", count == 2);
         UpdateText();
@@ -595,22 +601,16 @@ public class Slider : TemplatedControl
     {
         var index = _thumbs.Count;
         var thumb = new SliderThumb { Owner = this, Index = index };
-        Themed(thumb, ThumbPart);
         thumb.PointerEntered += OnThumbPointer;
         thumb.PointerMoved += OnThumbPointer;
         thumb.PointerExited += OnThumbExited;
         thumb.GotFocus += OnThumbGotFocus;
         thumb.LostFocus += OnThumbLostFocus;
         var value = new ContentPresenter();
-        Themed(value, ThumbValuePart);
         var inner = new Border();
-        Themed(inner, InnerThumbPart);
         _thumbs.Add(thumb);
         _labels.Add((value, inner));
         _hovered.Add(false);
-        _parts.Add(ThumbPart, thumb);
-        _parts.Add(ThumbValuePart, value);
-        _parts.Add(InnerThumbPart, inner);
         _inner?.Children.Add(thumb);
     }
 
@@ -631,9 +631,6 @@ public class Slider : TemplatedControl
         thumb.LostFocus -= OnThumbLostFocus;
         thumb.Children.Clear();
         _inner?.Children.Remove(thumb);
-        _parts.Remove(thumb);
-        _parts.Remove(value);
-        _parts.Remove(inner);
         thumb.Owner = null;
         _thumbs.RemoveAt(index);
         _labels.RemoveAt(index);
@@ -653,18 +650,16 @@ public class Slider : TemplatedControl
             var mark = _marks[^1];
             _marks.RemoveAt(_marks.Count - 1);
             _inner?.Children.Remove(mark);
-            _parts.Remove(mark);
         }
 
         while (_marks.Count < count)
         {
             var mark = new Border();
-            Themed(mark, MarkPart);
             _inner?.Children.Insert(_marks.Count, mark);
             _marks.Add(mark);
-            _parts.Add(MarkPart, mark);
         }
 
+        if (_marks.Count != _parts.All(MarkPart).Count) PlaceMarks();
         _inner?.SetMarks(count, steps);
     }
 
@@ -719,7 +714,8 @@ public class Slider : TemplatedControl
     private void UpdateFocus()
     {
         PseudoClasses.Set(":focus-visible", _focusVisible);
-        _parts.SetState(":focus-visible", _focusVisible, except: ThumbPart);
+        // Every part's, then each thumb's own over it (slider.js passes the Thumb its own $isFocusVisible).
+        _parts.SetState(":focus-visible", _focusVisible);
         for (var i = 0; i < _thumbs.Count; i++) Set(_thumbs[i], ":focus-visible", _focusVisible && _focused == i);
     }
 
@@ -763,13 +759,14 @@ public class Slider : TemplatedControl
         if (_dragged == thumb.Index) EndKeyDrag();
     }
 
-    /// <summary>
-    /// The part's own theme for an element the slider makes, as a template's <c>{DynamicResource}</c> gives one, beneath
-    /// an override's (<see cref="Parts"/>).
-    /// </summary>
-    /// <remarks>The element's own resource lookup, as a template's is, so that an element let go of holds nothing of the slider's.</remarks>
-    private void Themed(StyledElement element, string part) =>
-        element.Bind(ThemeProperty, element.GetResourceObservable(_parts.ThemeKey(part)), BindingPriority.Template);
+    /// <summary>The thumbs and their labels' parts, as the parts they are (Parts.Place: their states, theme and override).</summary>
+    private void PlaceThumbs() => _parts.Place(
+        (ThumbPart, _thumbs.ToArray()),
+        (ThumbValuePart, _labels.Select(l => (StyledElement)l.Value).ToArray()),
+        (InnerThumbPart, _labels.Select(l => (StyledElement)l.Inner).ToArray()));
+
+    /// <summary>The marks, as the Mark part.</summary>
+    private void PlaceMarks() => _parts.Place((MarkPart, _marks.ToArray()));
 
     private void Detach()
     {
@@ -784,8 +781,6 @@ public class Slider : TemplatedControl
 
         if (_pointer is not null) End();
         _inner?.Children.Clear();
-        if (_minTick is not null) _parts.Remove(_minTick);
-        if (_maxTick is not null) _parts.Remove(_maxTick);
         _track = null;
         _inner = null;
         _minTick = _maxTick = null;
