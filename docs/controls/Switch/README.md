@@ -64,19 +64,19 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   padding toggles it.
 - Enter toggles on its release (Base Web's `onKeyUp`), Space as a checkbox's; an Enter only when it was pressed on the
   switch (difference 11). `:is-active` (Base Web's `$isActive`) is set while any pointer presses the switch or Space or
-  Enter is held, and ends on the release or when the mouse leaves; no style of Base Web's reads it, an override may.
-  Keys in a control in the label are that control's: they neither toggle the switch nor make it active, as Base Web's
-  handlers are its hidden input's.
-- No pressed tint, under a mouse or a finger: no style in `switch/styled-components.js` reads `$isActive` or CSS's
-  `:active`, so a press draws what the switch drew before it (the colour cases' finger-pressed state is held to that).
-  Radio and Checkbox draw their pressed tints under a held finger, where Base Web's `$isActive` tint never shows on a
-  phone (their difference 3 and 2, kept: #49); the switch has no pressed tint, and so nothing of that to differ in.
+  Enter is held. As in Base Web, where switch.js's handlers are checkbox.js's, it is one state: whichever ends first
+  ends it, a button's release, a key's release, or any pointer leaving the switch (a finger dragged off too); and so it
+  is the checkbox's, by the same `BackplatePointer`. Keys in a control in the label are that control's: they neither
+  toggle the switch nor make it active, as Base Web's handlers are its hidden input's.
+- While it is active and no mouse is over it, the track and the knob take the pressed tint, `pressedOverlayAlpha`,
+  over their fills: Metered's, not Base Web's (difference 12).
 
 ## Held by
 
 - `Controls/SwitchColourTests`: 40 cases (on and off × enabled and disabled × the checkmark or not × rest, mouse over,
   finger pressed, keyboard focus; light and dark): the track's fill, border and its width, the overlays, the outline,
-  the knob's fill and the checkmark against Base Web's style functions. The states are real input.
+  the knob's fill and the checkmark against Base Web's style functions (and, finger pressed, the pressed tint of
+  difference 12, from Base Web's `getOverlayColor`). The states are real input.
 - `Controls/SwitchLayoutTests`: 32 cases (size × placement × pointer × on and off × enabled and disabled): the parts'
   lengths and type, and where layout puts the track, the knob and the label; and a long label that wraps (33 in all).
 - `Controls/SwitchTests`: toggling by click, Space and Enter (Base Web's browser test), an Enter pressed elsewhere,
@@ -84,13 +84,18 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   firing on it (#49), the parts' state, hover and press by mouse and finger, keyboard focus, keys in a control in the
   label, the label only with content, no third state, hover and press ending on disabling and on leaving the window,
   the coarse pointer, the transition, overrides, and the drawn checkmark (and its clip to the knob's circle), outline
-  and overlay: 30 in all.
+  and overlay; and the pressed tint (#68): drawn under a real held touch and gone when it lifts, never by a mouse (and
+  under a mouse's press the hover overlay stays), drawn by a held key, the same brush as Radio's backplate's and
+  Checkbox's container's under a finger, light and dark, and a press and a key ending as on the checkbox (3 sequences):
+  38 in all.
 - `Sample/SwitchPageTests`: the sample's page, 3.
 
 The part themes are generated (`tools/tokens/switch.js`): the switch's style functions evaluated on Base Web's theme
 with each colour replaced by its own name, for every combination of the states, written by `radio.js`'s theme writer,
-which checks its state styles reproduce Base Web's for each combination. The oracle (`tools/reference/switch.js`)
-evaluates the same functions on the real light and dark themes.
+which checks its state styles reproduce Base Web's for each combination. The pressed tint (difference 12) is added to
+Base Web's declarations there, and the generator checks that a press changes nothing else. The oracle
+(`tools/reference/switch.js`) evaluates the same functions on the real light and dark themes, and adds the tint on
+its own.
 
 ## Known differences
 
@@ -122,3 +127,20 @@ evaluates the same functions on the real light and dark themes.
     pressed elsewhere is let go unhandled. Why: in a window one Enter has one effect, not a toggle and a default
     button's click, and an Enter whose press went to another control (which may have moved the focus) isn't the
     switch's; and the checkbox and the switch keep one rule.
+12. **A press draws the pressed tint** (the developer's decision of 2026-11-20, #68: the tint Radio and Checkbox have).
+    Base Web's switch has none: no style in `switch/styled-components.js` reads `$isActive` or CSS's `:active`. Radio
+    and Checkbox draw radio-v2's and checkbox-v2's pressed tint while a finger is held (their differences 3 and 2), so
+    here the switch does too: while it is active and Base Web draws no overlay (no mouse over it), the track and the
+    knob each take Base Web's `getOverlayColor`'s `pressedColor` (`utils/get-shared-styles.js`, the function radio-v2's
+    and checkbox-v2's style functions take theirs from, whose comment names the switch among its users), which is
+    `pressedOverlayAlpha`, as an `inset 0 0 0 999px` overlay over the fill, as Base Web's hover overlay is drawn. Why:
+    one look under a finger across Metered's three v2 toggles, and touch feedback on a mobile-first library, where a
+    held finger on Base Web's switch shows nothing. The trigger is the checkbox's box's: `:is-active` without
+    `:is-hovered`, so a held finger and a held Space or Enter draw it, a mouse over the switch never does (pressed, it
+    keeps the hover overlay, as radio-v2's inner disc and checkbox-v2's box keep theirs), and disabled draws none.
+    Where: Base Web's switch has no backplate, the plate Radio's and Checkbox's `:active` tints, so the tint goes on
+    the overlay the track and the knob already draw for the hover, with no part or template added. It is the one token
+    on both parts, on or off, as Radio and Checkbox use one: on a checked track, filled `backgroundInversePrimary`, it
+    doesn't show in the light theme (black on black) and is faint in the dark one, and there the knob shows it. Base Web's hover takes
+    `hoverOverlayInverseAlpha` on the parts filled with an inverse colour; the press's counterpart,
+    `pressedOverlayInverseAlpha`, isn't used.

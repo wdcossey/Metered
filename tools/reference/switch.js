@@ -1,12 +1,16 @@
 // The oracle for Switch: what Base Web's own style functions give (baseui/switch/styled-components), for the cases the
 // tests build, in Avalonia's units. Kept apart from tools/tokens/switch.js, which writes the themes: the tests compare
 // one with the other. Read by cases.js, which writes tests/Metered.Tests/Reference/switch.oracle.json.
+//
+// One difference, Metered's own (#68, docs/controls/Switch/): a press draws the pressed tint Radio and Checkbox draw
+// (`tint` below), which Base Web's switch doesn't.
 'use strict';
 
 const css = require('./css');
 const { THEMES, evaluate } = require('./oracle');
 const sw = require('baseui/switch/styled-components');
 const { SIZE, LABEL_PLACEMENT } = require('baseui/switch/constants');
+const { getOverlayColor } = require('baseui/utils/get-shared-styles');
 
 /** switch.js's sharedProps (and the root's and label's $labelPlacement). */
 const props = (s) => ({
@@ -32,6 +36,18 @@ function overlay(boxShadow) {
   return css.color(m[1]);
 }
 
+/**
+ * Metered's pressed tint (#68): the overlay of the track or the knob, pressed. Base Web's own where it draws one (a
+ * mouse's hover); otherwise, pressed, radio-v2's and checkbox-v2's pressed colour, Base Web's getOverlayColor's
+ * (utils/get-shared-styles.js), which is none disabled.
+ */
+function tint(boxShadow, theme, s) {
+  const own = overlay(boxShadow);
+  if (own !== null || !s.isActive) return own;
+  const { pressedColor } = getOverlayColor({ $theme: theme, $disabled: !!s.disabled, $error: false });
+  return pressedColor === 'transparent' ? null : css.color(pressedColor);
+}
+
 /** '2px solid <colour>' and its offset, or null for none. */
 function outline(s) {
   if (s.outline === 'none') return null;
@@ -53,7 +69,7 @@ function icon(s) {
 
 /**
  * The states the tests drive with real input: rest; hover, a mouse over the switch; touch, a finger pressed on it,
- * which doesn't hover (Metered's hover is a mouse's); focusVisible, focused by keyboard.
+ * which doesn't hover (Metered's hover is a mouse's) and draws the pressed tint; focusVisible, focused by keyboard.
  */
 const STATES = [
   ['rest', {}],
@@ -80,10 +96,10 @@ function colours() {
               trackBackground: css.color(track.backgroundColor),
               trackBorder: css.color(track.borderColor),
               trackBorderWidth: track.borderStyle === 'none' ? 0 : css.px(track.borderWidth),
-              trackOverlay: overlay(track.boxShadow),
+              trackOverlay: tint(track.boxShadow, t, s),
               outline: outline(track),
               toggleBackground: css.color(toggle.backgroundColor),
-              toggleOverlay: overlay(toggle.boxShadow),
+              toggleOverlay: tint(toggle.boxShadow, t, s),
               icon: icon(toggle),
               label: css.color(part(sw.Label, t, s).color),
             });

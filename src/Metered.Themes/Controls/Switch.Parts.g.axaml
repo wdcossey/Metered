@@ -3,7 +3,7 @@
   (© Uber Technologies, Inc., MIT). Do not edit.
   The themes of Switch's parts, Switch.Styled<Part>, from Base Web's switch: each part's look by the
   state pseudoclasses the Switch mirrors onto it (Metered.Controls.Switch), the colours by token, the
-  lengths read from Base Web's own style functions.
+  lengths read from Base Web's own style functions, and Metered's pressed tint (#68).
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -30,7 +30,7 @@
       <Setter Property="Cursor" Value="No" />
     </Style>
   </ControlTheme>
-  <!-- ToggleTrack: the rounded track: its fill, its border (none when checked and enabled), the hover overlay and the focus outline. -->
+  <!-- ToggleTrack: the rounded track: its fill, its border (none when checked and enabled), the hover and press overlays and the focus outline. -->
   <ControlTheme x:Key="Switch.StyledToggleTrack" TargetType="b:RadioMark">
     <Setter Property="Width" Value="52" />
     <Setter Property="Height" Value="32" />
@@ -60,10 +60,34 @@
       <Setter Property="Background" Value="{DynamicResource colors.backgroundStateDisabled}" />
       <Setter Property="BorderBrush" Value="{DynamicResource colors.borderStateDisabled}" />
     </Style>
-    <Style Selector="^:not(:checked):is-hovered">
+    <Style Selector="^:not(:checked):not(:disabled):not(:is-hovered):is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):not(:disabled):is-hovered:not(:is-active)">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
     </Style>
-    <Style Selector="^:checked:is-hovered">
+    <Style Selector="^:not(:checked):not(:disabled):is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):disabled:is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):disabled:is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):not(:is-hovered):is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:checked:disabled:is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:checked:disabled:is-hovered:is-active">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
     </Style>
     <Style Selector="^:not(:disabled):focus-visible">
@@ -72,7 +96,7 @@
       <Setter Property="OutlineOffset" Value="2" />
     </Style>
   </ControlTheme>
-  <!-- Toggle: the knob: its size and fill by state, moved along the track when checked, the hover overlay, and the checkmark with showIcon. -->
+  <!-- Toggle: the knob: its size and fill by state, moved along the track when checked, the hover and press overlays, and the checkmark with showIcon. -->
   <ControlTheme x:Key="Switch.StyledToggle" TargetType="b:SwitchToggle">
     <Setter Property="HorizontalAlignment" Value="Left" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -112,10 +136,34 @@
     <Style Selector="^:checked:disabled">
       <Setter Property="Background" Value="{DynamicResource colors.contentStateDisabled}" />
     </Style>
-    <Style Selector="^:not(:checked):is-hovered">
+    <Style Selector="^:not(:checked):not(:disabled):not(:is-hovered):is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):not(:disabled):is-hovered:not(:is-active)">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
     </Style>
-    <Style Selector="^:checked:is-hovered">
+    <Style Selector="^:not(:checked):not(:disabled):is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):disabled:is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:not(:checked):disabled:is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayInverseAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):not(:is-hovered):is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.pressedOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:not(:disabled):is-hovered:is-active">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:disabled:is-hovered:not(:is-active)">
+      <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
+    </Style>
+    <Style Selector="^:checked:disabled:is-hovered:is-active">
       <Setter Property="Overlay" Value="{DynamicResource colors.hoverOverlayAlpha}" />
     </Style>
     <Style Selector="^:checked:size-small">

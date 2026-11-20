@@ -6,11 +6,15 @@
 // states, so that the themes refer to the colours by token and read every length; each property is a plain setter
 // for the default state and a state style for each combination it differs in, checked against Base Web's for every
 // combination.
+//
+// One difference, Metered's own (#68, docs/controls/Switch/): a press draws the pressed tint Radio and Checkbox draw,
+// which Base Web's switch doesn't (`pressed` below).
 'use strict';
 
 const css = require('../reference/css');
 const { THEMES, evaluate } = require('../reference/oracle');
 const sw = require('baseui/switch/styled-components');
+const { getOverlayColor } = require('baseui/utils/get-shared-styles');
 const { SIZE, LABEL_PLACEMENT } = require('baseui/switch/constants');
 const { theme, combinations, NAMED, colour, px, cursor, check, font, TEXT, RADII, half } = require('./radio');
 
@@ -18,13 +22,14 @@ const L = THEMES.Light;
 
 /**
  * The switch's states, each with its values (the default first) and the pseudoclass that carries it: Base Web's $ props,
- * which the Switch mirrors onto every part, and `coarse`, `@media (pointer: coarse)`. $isActive is left out: no style
- * function reads it (checked below).
+ * which the Switch mirrors onto every part, and `coarse`, `@media (pointer: coarse)`. No style function of Base Web's
+ * reads $isActive (checked below); Metered's pressed tint does.
  */
 const AXES = [
   { name: 'checked', values: [false, true], pseudo: () => ':checked' },
   { name: 'disabled', values: [false, true], pseudo: () => ':disabled' },
   { name: 'isHovered', values: [false, true], pseudo: () => ':is-hovered' },
+  { name: 'isActive', values: [false, true], pseudo: () => ':is-active' },
   { name: 'isFocusVisible', values: [false, true], pseudo: () => ':focus-visible' },
   { name: 'size', values: [SIZE.default, SIZE.small], pseudo: (v) => `:size-${v}` },
   { name: 'labelPlacement', values: [LABEL_PLACEMENT.right, LABEL_PLACEMENT.left], pseudo: (v) => `:label-placement-${v}` },
@@ -39,8 +44,8 @@ const props = (c) => ({
   $size: c.size ?? SIZE.default, $labelPlacement: c.labelPlacement ?? LABEL_PLACEMENT.right,
 });
 
-/** The declarations a browser applies to the part in that combination. */
-function declarations(styled, t, c) {
+/** The declarations a browser applies to Base Web's part in that combination. */
+function baseWeb(styled, t, c) {
   const style = evaluate(styled, t, props(c));
   const self = {};
   for (const [k, v] of Object.entries(style)) {
@@ -51,6 +56,25 @@ function declarations(styled, t, c) {
   if (c.coarse) Object.assign(self, style['@media (pointer: coarse)'] || {});
   return self;
 }
+
+const TINTED = new Set([sw.ToggleTrack, sw.Toggle]);
+
+/**
+ * Metered's pressed tint (#68): Radio and Checkbox draw radio-v2's and checkbox-v2's pressed tint while a finger is held
+ * (their `$isActive` overlay and their backplate's `:active`), and the switch draws the same, for one look under a
+ * finger across the three. On the track and the knob, where Base Web draws no overlay (so a mouse's hover overlay wins,
+ * as it does on radio-v2's inner disc and checkbox-v2's box), `$isActive` draws Base Web's own `getOverlayColor`'s
+ * `pressedColor` (utils/get-shared-styles.js, which radio-v2's and checkbox-v2's style functions call):
+ * pressedOverlayAlpha, and none disabled. As Base Web's hover overlay is, an `inset 0 0 0 999px` shadow over the fill.
+ */
+function pressed(styled, t, c, s) {
+  if (!c.isActive || !TINTED.has(styled) || s.boxShadow !== 'none') return s;
+  const { pressedColor } = getOverlayColor({ $theme: t, $disabled: !!c.disabled, $error: false });
+  return pressedColor === 'transparent' ? s : { ...s, boxShadow: `inset 0 0 0 999px ${pressedColor}` };
+}
+
+/** The declarations the part takes in that combination: Base Web's, and Metered's pressed tint. */
+const declarations = (styled, t, c) => pressed(styled, t, c, baseWeb(styled, t, c));
 
 /** 'inset 0 0 0 999px <colour>', Base Web's hover overlay, to its colour (as written), or null for none. */
 function overlay(boxShadow, what) {
@@ -194,27 +218,34 @@ function transition() {
     </Style>`;
 }
 
-/** Base Web passes $isActive to every part, but none reads it: in no combination of the states does a press change a style. */
-function activeChangesNothing() {
+/**
+ * Base Web passes $isActive to every part, but none reads it: in no combination of the states does a press change one
+ * of its styles. So a press changes only what Metered's pressed tint adds, the track's and the knob's overlay.
+ */
+function activeIsOnlyTheTint() {
   for (const p of PARTS) {
     for (const c of combinations(AXES)) {
-      const at = JSON.stringify(declarations(p.styled, NAMED, c));
-      if (at !== JSON.stringify(declarations(p.styled, NAMED, { ...c, isActive: true }))) {
-        throw new Error(`${p.part} reads $isActive in ${JSON.stringify(c)}: add it to the states`);
+      if (c.isActive) continue;
+      const on = { ...c, isActive: true };
+      if (JSON.stringify(baseWeb(p.styled, NAMED, c)) !== JSON.stringify(baseWeb(p.styled, NAMED, on))) {
+        throw new Error(`${p.part} reads $isActive in ${JSON.stringify(c)}: Metered's pressed tint has to be read again`);
       }
+      const { boxShadow: _tinted, ...rest } = declarations(p.styled, NAMED, on);
+      const { boxShadow: _was, ...was } = baseWeb(p.styled, NAMED, c);
+      if (JSON.stringify(rest) !== JSON.stringify(was)) throw new Error(`${p.part}: the pressed tint changes more than the overlay`);
     }
   }
 }
 
 const DESCRIBE = {
   Root: 'the label element: a row, the label before the track for the left placement; on a coarse pointer, padding for a 48 px target.',
-  ToggleTrack: 'the rounded track: its fill, its border (none when checked and enabled), the hover overlay and the focus outline.',
-  Toggle: 'the knob: its size and fill by state, moved along the track when checked, the hover overlay, and the checkmark with showIcon.',
+  ToggleTrack: 'the rounded track: its fill, its border (none when checked and enabled), the hover and press overlays and the focus outline.',
+  Toggle: 'the knob: its size and fill by state, moved along the track when checked, the hover and press overlays, and the checkmark with showIcon.',
   Label: 'the switch\'s content, beside the track.',
 };
 
 function file(version) {
-  activeChangesNothing();
+  activeIsOnlyTheTint();
   const themes = PARTS.map((p) => {
     const { plain, blocks } = theme(p, AXES, declarations);
     const extra = p.part === 'Toggle' ? '\n' + transition() : '';
@@ -230,7 +261,7 @@ ${blocks.join('\n')}
   (© Uber Technologies, Inc., MIT). Do not edit.
   The themes of Switch's parts, Switch.Styled<Part>, from Base Web's switch: each part's look by the
   state pseudoclasses the Switch mirrors onto it (Metered.Controls.Switch), the colours by token, the
-  lengths read from Base Web's own style functions.
+  lengths read from Base Web's own style functions, and Metered's pressed tint (#68).
 -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
