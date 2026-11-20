@@ -456,9 +456,9 @@ try {
             } | ForEach-Object { $_.Current.Name })
             Check "$title has no button, check box or radio without a size" ($empty.Count -eq 0) ($empty -join ', ')
             if ($debugBuild) {
-                # The shell's Debug line under the title (PerformanceMonitor): '<title>: <ms> ms, <elements> elements, ...'.
+                # The shell's Debug line, in its footer over the page's foot (PerformanceMonitor): '<title>: <ms> ms, <elements> elements, ...'.
                 $line = WaitForText "$(Literal $title): * ms, *"
-                Check "$title shows its cost under its title" ([bool]$line) ''
+                Check "$title shows its cost in the footer" ([bool]$line) ''
                 if ($line) { "        $line" }
             }
             Click (Named $CT::Button 'Back')

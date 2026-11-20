@@ -27,7 +27,7 @@ namespace Metered.Tests.Sample;
 /// Each picture is <c>&lt;variant&gt;__&lt;page&gt;-&lt;n&gt;.png</c>, 780 × 1688, where the page is its catalogue title
 /// in lower case, or <c>list</c>: a screen each rather than one tall picture, so they sit side by side in Markdown at a
 /// phone's proportions, light beside dark, and a reader sees each at the size a phone shows it. The shell's Debug line
-/// under the title is turned off, as its times would change every picture on every run.
+/// in its footer is turned off, as its times would change every picture on every run.
 /// </summary>
 public class PreviewGallery
 {

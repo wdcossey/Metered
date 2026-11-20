@@ -141,8 +141,9 @@ machine's.
 
 The sample's shell (`SampleShell`) writes a line for each page it opens, of what it cost to its first
 drawn frame, so a control's page has no code for it: on standard output after the page's ready line,
-as `METERED cost <line>`, and under the page's title in the shell's bar, which has one height in
-every build, so a page's size doesn't change with it:
+as `METERED cost <line>`, and in a footer laid over the page's foot, wrapped to the view's width. The
+footer takes nothing from the page's size, and the bar has one height in every build, so a page's size
+doesn't change with the build or with the line. A tap on the footer hides it, until the next page:
 
 ```
 METERED cost Button: 196 ms, 326 elements, 3 rules (3), layout 61.0, render 29.8

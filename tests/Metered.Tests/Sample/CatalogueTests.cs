@@ -192,7 +192,7 @@ public class CatalogueTests
     {
         var shell = new SampleShell { Report = _ => { } };
         using var scene = new Scene(shell);
-        var title = InBar<TextBlock>(shell, "PageTitle");
+        var title = InShell<TextBlock>(shell, "PageTitle");
 
         foreach (var page in SampleShell.Pages)
         {
@@ -223,8 +223,8 @@ public class CatalogueTests
         var shell = new SampleShell { Report = _ => { } };
         using var scene = new Scene(shell);
         var index = shell.Shown;
-        var back = InBar<Metered.Controls.Button>(shell, "BackButton");
-        var title = InBar<TextBlock>(shell, "PageTitle");
+        var back = InShell<Metered.Controls.Button>(shell, "BackButton");
+        var title = InShell<TextBlock>(shell, "PageTitle");
         Assert.False(back.IsVisible);
         Assert.Equal(SampleShell.IndexTitle, title.Text);
 
@@ -251,7 +251,7 @@ public class CatalogueTests
         shell.ShowPage(page, "a page");
         scene.Pump();
 
-        var bar = InBar<Border>(shell, "Bar");
+        var bar = InShell<Border>(shell, "Bar");
         Assert.True(bar.Bounds.Height > 0);
         Assert.Equal(new Rect(0, bar.Bounds.Height, Scene.Width, Scene.Height - bar.Bounds.Height),
             new Rect(page.TranslatePoint(default, scene.Window)!.Value, page.Bounds.Size));
@@ -286,7 +286,7 @@ public class CatalogueTests
         var shell = new SampleShell { Report = _ => { } };
         using var scene = new Scene(shell);
         shell.ShowPage(new Border(), "a page");
-        InBar<Metered.Controls.Button>(shell, "BackButton").IsVisible = false;
+        InShell<Metered.Controls.Button>(shell, "BackButton").IsVisible = false;
 
         Assert.True(shell.IsShowingPage);
         Assert.True(Back(scene.Window));
@@ -375,7 +375,7 @@ public class CatalogueTests
         using var scene = new Scene(shell);
         shell.Open("Button");
         scene.Pump();
-        var variant = InBar<Metered.Controls.Button>(shell, "Variant");
+        var variant = InShell<Metered.Controls.Button>(shell, "Variant");
         Assert.Equal("Dark", variant.Content);
 
         scene.Click(variant);
@@ -394,7 +394,7 @@ public class CatalogueTests
     {
         var shell = new SampleShell();
         using var scene = new Scene(shell, ThemeVariant.Dark);
-        var variant = InBar<Metered.Controls.Button>(shell, "Variant");
+        var variant = InShell<Metered.Controls.Button>(shell, "Variant");
         Assert.Equal("Light", variant.Content);
 
         scene.Window.RequestedThemeVariant = ThemeVariant.Light;
@@ -412,7 +412,7 @@ public class CatalogueTests
         shell.Report = _ => { };
         Assert.IsType<ButtonGroupPage>(shell.Shown);
         using var scene = new Scene(shell);
-        Assert.Equal("ButtonGroup", InBar<TextBlock>(shell, "PageTitle").Text);
+        Assert.Equal("ButtonGroup", InShell<TextBlock>(shell, "PageTitle").Text);
     }
 
     [AvaloniaFact]
