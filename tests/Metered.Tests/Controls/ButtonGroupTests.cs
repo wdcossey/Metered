@@ -297,11 +297,15 @@ public class ButtonGroupTests
         var clicks = new List<int>();
         group.Click += (_, e) => clicks.Add(e.Index);
         using var scene = new Scene(group);
+        Assert.False(kept.IsTabStop);
 
         source.RemoveFirstAndReset();
         scene.Pump();
         Assert.Equal(ButtonKind.Primary, gone.Kind);
         Assert.Equal(ButtonKind.Tertiary, kept.Kind);
+        // Now the first, with none selected: the radio group's one tab stop, before any click applies it again.
+        Assert.True(kept.IsTabStop);
+        Assert.Equal(AutomationControlType.RadioButton, AutomationProperties.GetControlTypeOverride(kept));
 
         scene.Click(kept);
         Assert.Equal([0], clicks);
