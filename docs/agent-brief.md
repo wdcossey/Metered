@@ -31,7 +31,8 @@ You're building one Metered issue while one or two other agents build others. Re
   change. Change only your own rows and paragraphs, in their natural place, never appended at the end of a
   table or list, where two agents collide; the coordinator folds the rest at merge.
 - **Temp files** in your own temp folder, never in the repo or a shared scratchpad.
-- **Processes:** don't stop anything you didn't start. Other projects run on this machine.
+- **Processes:** don't stop anything you didn't start. Other projects run on this machine. That includes
+  `dotnet build-server shutdown`, which stops every session's build servers, not only yours (#55 ran it).
 - **Never** do anything on the ask-first list (PROCESS §2): no real window, no phone, no publishing. If your
   issue needs it, stop that part, file a `hands-on` follow-up with what's needed, and finish the rest.
 - **Never run git in the main clone,** only in your worktree.

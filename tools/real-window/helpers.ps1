@@ -47,6 +47,24 @@ function WholeLines([string]$text) {
 # 'Clicked' and '1, 2' for 'selected' (the ButtonGroup page). Nothing if the label isn't there.
 function After($text, $label) { if ("$text" -cmatch "(?:^|; )$([regex]::Escape($label)): ([^;]*)") { $Matches[1].Trim() } }
 
+# A drag's points after its start, evenly along it, in whole screen pixels. From Cornflower's.
+function DragPath([double]$x, [double]$y, [double]$dx, [double]$dy, [int]$steps) {
+    for ($i = 1; $i -le $steps; $i++) {
+        [pscustomobject]@{ X = [int][math]::Round($x + $dx * $i / $steps); Y = [int][math]::Round($y + $dy * $i / $steps) }
+    }
+}
+
+# Where a value is on a Slider's line, in screen pixels, from the slider's left, top and width on the screen: Base Web's
+# line is inside its track's 16 view px padding (scale600), 2 high (slider.oracle.json's layout), and react-range puts a
+# value at its share of the line's length.
+$SliderPadding = 16
+$SliderLine = 2
+function SliderAt([double]$left, [double]$top, [double]$width, [double]$scale, [double]$value, [double]$minimum = 0, [double]$maximum = 100) {
+    $line = $width / $scale - 2 * $SliderPadding
+    $x = $left + ($SliderPadding + ($value - $minimum) / ($maximum - $minimum) * $line) * $scale
+    [int][math]::Round($x), [int][math]::Round($top + ($SliderPadding + $SliderLine / 2) * $scale)
+}
+
 # Whether a region looks as it did, as how many of its sampled pixels differ: under 5 is the same, as a frame's
 # anti-aliasing can move a pixel or two; over 20 is a change a check can stand on. Between is neither.
 $Same = 5

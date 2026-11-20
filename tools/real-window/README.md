@@ -68,7 +68,14 @@ many of a region's sampled pixels differ: under 5 is the same, over 20 a change 
 - **radio:** the mouse hovers a radio; a held touch draws the pressed tint and leaves the checked one checked; a tap and a
   click select; Down and Up move the selection, wrapping.
 - **switch:** a tap on its track, a click, Space and an Enter on it each toggle it, read from the page's `State` line and
-  through UI Automation.
+  through UI Automation; an Enter pressed on the next switch, then let go once the
+  focus is back on the first, toggles neither (#49).
+- **progress bar:** the stepped bar's Next (a click) and Previous (a tap) move it a step; UI Automation reads its range,
+  read only, and Base Web's name for it, "Step 2 of 5" (#53).
+- **slider:** in the page's ScrollViewer, a touch drag across the first slider moves its thumb from 60 to 80 and leaves the
+  page; a tap on its line puts it at 30; a drag mostly up the page, 150 view px up and a fifth of the line across, still
+  moves it, to 50, and still leaves the page; a mouse drag moves it back to 20; and a touch drag up off the slider, on its
+  heading, does scroll the page, so the first two prove something. Read from the page's `State` line (`Value: 60`).
 
 **Look at the frames as well.** Most of what's wrong with a page isn't something it checks.
 

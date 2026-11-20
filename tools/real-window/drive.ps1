@@ -116,6 +116,12 @@ public static class RealInput {
   public static void TouchDown(int x, int y) { Send(x, y, 0x10000 | 2 | 4); }
   public static void TouchMove(int x, int y) { Send(x, y, 0x20000 | 2 | 4); }
   public static void TouchUp(int x, int y) { Send(x, y, 0x40000); }
+
+  // Enter held and let go on its own, so that the focus can move between its press and its release (#49): SendKeys
+  // can only send a whole key.
+  [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+  public static void EnterDown() { keybd_event(0x0D, 0, 0, UIntPtr.Zero); }
+  public static void EnterUp() { keybd_event(0x0D, 0, 2, UIntPtr.Zero); }
 }
 '@
 # Under PowerShell 7, System.Drawing is a facade that forwards Bitmap to System.Drawing.Common.
@@ -195,6 +201,27 @@ function ById($id) {
     if (-not $el) { throw "Nothing on the page has the AutomationId $id" }
     $el
 }
+# A container by its x:Name that isn't in UI Automation's control view, as a slider's root isn't (its thumbs are the
+# controls, as Base Web's are): searched in the raw view. Only for a container whose bounds a section aims along; a
+# control is found by ById, which would miss one left out of the control view, as it caught #56.
+function RawById($id) {
+    $request = New-Object Windows.Automation.CacheRequest
+    $request.TreeFilter = [Windows.Automation.Automation]::RawViewCondition
+    $request.Push()
+    try { $el = $win.FindFirst($TS::Descendants, (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)) }
+    finally { $request.Pop() }
+    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
+    $el
+}
+# Scrolls the page's scroll viewer to its end through UI Automation's scroll pattern, which sends no input, so that a
+# control below the fold can be pressed inside the window.
+function ScrollToEnd {
+    $cond = New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true
+    $viewer = $win.FindFirst($TS::Descendants, $cond)
+    if (-not $viewer) { throw 'The page has no scroll viewer UI Automation can scroll' }
+    $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern).SetScrollPercent(-1, 100)
+    Start-Sleep -Milliseconds 400
+}
 # A TextBlock on the page that a section reads, by its x:Name: UI Automation's name for it is its text, read live from
 # .Current.Name. ById by another name, so that selftest.ps1 can tell the two apart; a section finds it once, as a search
 # of the whole tree takes long enough to shift a timed read.
@@ -263,6 +290,7 @@ function Release { [RealInput]::Up(); $script:held = $false }
 # last was, as Windows refuses a lift anywhere else.
 function LetGo {
     if ($script:held) { Release }
+    if ($script:enterHeld) { $script:enterHeld = $false; try { [RealInput]::EnterUp() } catch { } }
     if ($script:touching) {
         $script:touching = $false
         try { [RealInput]::TouchUp($script:touchX, $script:touchY) } catch { }
@@ -283,6 +311,29 @@ function Tap($x, $y) {
     TouchDown $x $y; Start-Sleep -Milliseconds 40
     TouchMove $x $y; Start-Sleep -Milliseconds 40
     TouchUp; Start-Sleep -Milliseconds 400
+}
+# A touch slid to a point in steps, reported every $ms, as a finger moves. From Cornflower's.
+function Slide($x, $y, $steps = 10, $ms = 16) {
+    foreach ($at in DragPath $script:touchX $script:touchY ($x - $script:touchX) ($y - $script:touchY) $steps) {
+        Start-Sleep -Milliseconds $ms; TouchMove $at.X $at.Y
+    }
+}
+# A drag in any direction, in screen pixels, by touch and by the mouse. From Cornflower's.
+function TouchDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16) {
+    # Windows refuses a touch off the screen (87) partway through.
+    OnScreen ($x + $dx) ($y + $dy)
+    TouchDown $x $y
+    Slide ($x + $dx) ($y + $dy) $steps $ms
+    TouchUp
+}
+function MouseDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16) {
+    Guard
+    Within $x $y; OnScreen ($x + $dx) ($y + $dy)
+    [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120
+    Press
+    foreach ($at in DragPath $x $y $dx $dy $steps) { Start-Sleep -Milliseconds $ms; [void][RealInput]::SetCursorPos($at.X, $at.Y) }
+    Start-Sleep -Milliseconds 60
+    Release
 }
 function ClickAt($x, $y) {
     Within $x $y
@@ -638,6 +689,89 @@ try {
         Check 'Space on it turns it on' ((State) -ceq 'On') (State)
         Key '{ENTER}'
         Check 'an Enter on it turns it off' ((State) -ceq 'Off') (State)
+
+        # #49: an Enter pressed on the next switch and let go once Basic has the focus is neither's: Basic stays off,
+        # and the switch it was pressed on is as it was.
+        $multiline = ById 'Multiline'
+        $before = Toggled $multiline
+        Key '{TAB}'
+        Check 'Tab moves the focus to the next switch' (IsFocused $multiline) "$($AE::FocusedElement.Current.Name)"
+        Guard; $script:enterHeld = $true; [RealInput]::EnterDown(); Start-Sleep -Milliseconds 200
+        Key '+{TAB}'
+        [RealInput]::EnterUp(); $script:enterHeld = $false; Start-Sleep -Milliseconds 400
+        Check 'Shift+Tab with Enter held brings the focus back' (IsFocused $basic) "$($AE::FocusedElement.Current.Name)"
+        Check 'an Enter pressed elsewhere and let go on it leaves it off' ((State) -ceq 'Off') (State)
+        Check 'and leaves the switch it was pressed on as it was' ((Toggled $multiline) -ceq $before) (Toggled $multiline)
+    }
+
+    # Base Web's stepped bar (steps.tsx): Next and Previous move it a step; UI Automation reads its range, read only,
+    # and the name Base Web gives it (#53).
+    Section 'progress bar: the steps buttons and its name' {
+        Open 'ProgressBar'
+        $steps = ById 'Steps'
+        $range = $steps.GetCurrentPattern([Windows.Automation.RangeValuePattern]::Pattern)
+        Check 'the stepped bar starts at 40' ($range.Current.Value -eq 40) $range.Current.Value
+        Check 'and is named as Base Web names it' ($steps.Current.Name -ceq 'Step 2 of 5') $steps.Current.Name
+        Check 'and its range is read only' ($range.Current.IsReadOnly)
+        # At the foot of the page, below the fold of a phone's window.
+        ScrollToEnd
+        Click (ById 'Next')
+        Check 'a click on Next moves it a step' ($range.Current.Value -eq 60) $range.Current.Value
+        Away
+        $px, $py = Centre (ById 'Previous')
+        Tap $px $py
+        Check 'a tap on Previous moves it back' ($range.Current.Value -eq 40) $range.Current.Value
+        Away
+    }
+
+    # Base Web's touchmove handler prevents the page's scrolling: a touch that starts on the slider's track is the slider's
+    # (PreventGestureRecognition, docs/controls/Slider). The page's first slider, its value said under it.
+    Section 'slider: a drag in the page''s ScrollViewer moves the thumb, not the page' {
+        Open 'Slider'
+        # The slider's root, to aim along its track: its thumbs are what UI Automation lists as controls.
+        $basic = RawById 'Basic'
+        $b = $basic.Current.BoundingRectangle
+        $state = ReadOut 'State'
+        function Value { $v = After $state.Current.Name 'Value'; if ("$v" -match '^-?\d+$') { [int]$v } }
+        function Top { $basic.Current.BoundingRectangle.Y }
+        function Near($want) { $v = Value; ($null -ne $v) -and [math]::Abs($v - $want) -le 2 }
+        function At($value) { SliderAt $b.X $b.Y $b.Width $script:scale $value }
+        $top = Top
+        Away
+        Check 'the first slider starts at 60' (Near 60) ($state.Current.Name)
+
+        $x60, $y = At 60
+        $x80, $null = At 80
+        TouchDrag $x60 $y ($x80 - $x60) 0
+        Start-Sleep -Milliseconds 400
+        Shot 'slider-touch-drag'
+        Check 'a touch drag across moves the thumb with the finger, from 60 to 80' (Near 80) ($state.Current.Name)
+        Check 'and leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
+
+        # A touch on the line moves the closest thumb there (react-range's onTouchStartTrack).
+        $x30, $null = At 30
+        $x50, $null = At 50
+        Tap $x30 $y
+        Check 'a tap on the line moves the thumb there, to 30' (Near 30) ($state.Current.Name)
+        TouchDrag $x30 $y ($x50 - $x30) (-(Px 150)) 20
+        Start-Sleep -Milliseconds 1200
+        Shot 'slider-touch-drag-up'
+        Check 'a drag mostly up the page still moves the thumb across, from 30 to 50' (Near 50) ($state.Current.Name)
+        Check 'and still leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
+
+        $x20, $null = At 20
+        MouseDrag $x50 $y ($x20 - $x50) 0
+        Start-Sleep -Milliseconds 400
+        Check 'a mouse drag moves it back, to 20' (Near 20) ($state.Current.Name)
+        Away
+
+        # Off the slider, on the heading above it, the same drag up pans the page, so the two above prove something.
+        $hx, $hy = Centre (Named $CT::Text 'Basic usage')
+        TouchDrag $hx $hy 0 (-(Px 150)) 20
+        Start-Sleep -Milliseconds 1500
+        Shot 'slider-page-panned'
+        Check 'a touch drag up off the slider scrolls the page' ((Top) -lt ($top - (Px 60))) "$(Top) against $top"
+        Check 'and leaves the value' (Near 20) ($state.Current.Name)
     }
 
     Section 'The window can be resized' {

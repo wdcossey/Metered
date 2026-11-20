@@ -46,6 +46,14 @@ Check 'After reads each of two, by its label, case and all' (((After $group 'Cli
 Check 'After is nothing for a label not there' (($null -eq (After $group 'Selected')) -and ($null -eq (After 'Clicked: none' 'selected')))
 Check 'After reads an empty selection as empty' ((After 'Clicked: 0; selected: ' 'selected') -ceq '') "'$(After 'Clicked: 0; selected: ' 'selected')'"
 
+$path = @(DragPath 10 20 30 -60 3)
+Check 'DragPath ends where the drag does, in even steps' (($path.Count -eq 3) -and ($path[0].X -eq 20) -and ($path[0].Y -eq 0) -and ($path[2].X -eq 40) -and ($path[2].Y -eq -40)) (($path | ForEach-Object { "$($_.X),$($_.Y)" }) -join ' ')
+$sx, $sy = SliderAt 100 200 350 1 50
+Check 'SliderAt puts 50 in the middle of the line, on it' (($sx -eq 275) -and ($sy -eq 217)) "$sx, $sy"
+$sx, $sy = SliderAt 100 200 700 2 0
+Check 'SliderAt puts the minimum at the line''s start, at a scaling of 2' (($sx -eq 132) -and ($sy -eq 234)) "$sx, $sy"
+$sx, $null = SliderAt 0 0 350 1 300 -300 300
+Check 'SliderAt reads a custom minimum and maximum' ($sx -eq 334) "$sx"
 Check 'TapVerdict: a look back at its rest is at rest' (((TapVerdict 100 0 $false) -eq 'at rest') -and ((TapVerdict 100 ($Same - 1) $true) -eq 'at rest'))
 Check 'TapVerdict: still drawn, the cursor off it, is left drawn' ((TapVerdict 100 50 $false) -eq 'left drawn')
 Check 'TapVerdict: between the same and the moved settles nothing' (((TapVerdict 100 $Same $false) -eq 'unsettled') -and ((TapVerdict 100 $Moved $false) -eq 'unsettled'))
@@ -141,7 +149,7 @@ foreach ($section in (Calls $ast 'Section')) {
     $files = @($shellFiles)
     if ($page.Count -and $pageFile.ContainsKey($page[0])) { $files += $pageFile[$page[0]] }
     $ids = XNames $files
-    foreach ($call in @(@(Calls $body 'ById') + @(Calls $body 'ReadOut'))) {
+    foreach ($call in @(@(Calls $body 'ById') + @(Calls $body 'RawById') + @(Calls $body 'ReadOut'))) {
         $id = Literally $call 1
         if ($id) { $found++; Check "'$title' finds '$id', an x:Name on its page or the shell" ($ids -ccontains $id) ($files -join ', ') }
     }
@@ -159,12 +167,12 @@ Check 'it finds controls by name' ($found -gt 0)
 # Every call outside the two functions' own definitions names its control in single quotes, so the checks above see it.
 function InsideFinder($node) {
     for ($up = $node.Parent; $up; $up = $up.Parent) {
-        if ($up -is [System.Management.Automation.Language.FunctionDefinitionAst]) { return $up.Name -in 'ById', 'ReadOut' }
+        if ($up -is [System.Management.Automation.Language.FunctionDefinitionAst]) { return $up.Name -in 'ById', 'RawById', 'ReadOut' }
     }
     $false
 }
 $unquoted = @($ast.FindAll({ param($n)
-            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'ById', 'ReadOut' -and
+            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'ById', 'RawById', 'ReadOut' -and
             -not ($n.CommandElements[1] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
                 $n.CommandElements[1].StringConstantType -eq 'SingleQuoted') -and -not (InsideFinder $n)
         }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
