@@ -1,0 +1,35 @@
+<!--
+  Base Web's ProgressBar (baseui 18.2.0, progress-bar/progressbar.js), as a template of named parts. Each part's look
+  is its own theme, ProgressBar.Styled<Part> (ProgressBar.Parts.g.axaml), which the bar's Overrides merge over: this
+  file holds only the structure.
+
+  Root                       (a column)
+    BarContainer             (a row: the bar makes its children)
+      Bar                    (one for each step)
+        BarProgress
+      InfiniteBar            (two, when infinite: the first :is-left)
+    Label                    (only with ShowLabel)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:ProgressBar}" TargetType="b:ProgressBar">
+    <!-- width: 100%: the bar stretches across its parent. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Focusable" Value="False" />
+    <!-- aria-live="polite". -->
+    <Setter Property="AutomationProperties.LiveSetting" Value="Polite" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Name="Root" Theme="{DynamicResource ProgressBar.StyledRoot}">
+          <b:ProgressBarContainer Name="BarContainer" Theme="{DynamicResource ProgressBar.StyledBarContainer}" />
+          <!-- Shown only with ShowLabel (Metered.Controls.ProgressBar). -->
+          <TextBlock Name="Label" Theme="{DynamicResource ProgressBar.StyledLabel}" IsVisible="False" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

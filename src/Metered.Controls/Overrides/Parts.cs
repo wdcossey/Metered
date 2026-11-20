@@ -2,6 +2,7 @@ using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Styling;
 
 namespace Metered.Controls;
@@ -12,13 +13,19 @@ namespace Metered.Controls;
 /// subcomponent), and gives each part its theme, <c>{Component}.Styled{Part}</c>, with the
 /// control's <see cref="Override"/> for that part merged over it.
 /// </summary>
+/// <remarks>
+/// A part is an element of the template by its name, or the elements the control makes of a part that Base Web
+/// renders some number of times (a progress bar's <c>Bar</c> for each step), given by <see cref="Place"/>: every one
+/// takes the states, the theme and the override.
+/// </remarks>
 internal sealed class Parts
 {
     private readonly TemplatedControl _owner;
     private readonly string _component;
     private readonly string[] _names;
     private readonly IReadOnlyDictionary<string, string> _aliases;
-    private readonly Dictionary<string, StyledElement> _found = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<StyledElement>> _found = new(StringComparer.Ordinal);
+    private readonly Dictionary<StyledElement, IDisposable> _placed = [];
     private readonly Dictionary<string, bool> _states = new(StringComparer.Ordinal);
     private readonly HashSet<StyledElement> _themed = [];
     private OverrideCollection? _overrides;
@@ -39,22 +46,53 @@ internal sealed class Parts
     public IReadOnlyList<string> Names => _names;
 
     /// <summary>The part of that name in the current template, if there is one.</summary>
-    public StyledElement? this[string name] => _found.GetValueOrDefault(name);
+    public StyledElement? this[string name] => _found.TryGetValue(name, out var list) && list.Count > 0 ? list[0] : null;
+
+    /// <summary>Every element of the part of that name: the template's one, or the ones <see cref="Place"/> gave.</summary>
+    public IReadOnlyList<StyledElement> All(string name) => _found.TryGetValue(name, out var list) ? list : [];
+
+    private IEnumerable<StyledElement> Elements => _found.Values.SelectMany(list => list);
 
     /// <summary>Takes the parts of a newly applied template.</summary>
     public void Attach(INameScope scope)
     {
         foreach (var element in _themed) element.ClearValue(StyledElement.ThemeProperty);
         _themed.Clear();
+        foreach (var binding in _placed.Values) binding.Dispose();
+        _placed.Clear();
         _found.Clear();
         foreach (var name in _names)
         {
-            if (scope.Find(name) is StyledElement element) _found[name] = element;
+            if (scope.Find(name) is StyledElement element) _found[name] = [element];
         }
 
         foreach (var (pseudo, on) in _states)
         {
-            foreach (var element in _found.Values) Set(element, pseudo, on);
+            foreach (var element in Elements) Set(element, pseudo, on);
+        }
+
+        ApplyOverrides();
+    }
+
+    /// <summary>
+    /// The elements the control makes of a part, in place of the ones it gave before: each takes the control's states
+    /// and its theme, <c>{Component}.Styled{Part}</c> (a dynamic resource, as the template's parts take theirs), with the
+    /// part's override merged over it.
+    /// </summary>
+    public void Place(string name, IReadOnlyList<StyledElement> elements)
+    {
+        foreach (var old in All(name))
+        {
+            if (_themed.Remove(old)) old.ClearValue(StyledElement.ThemeProperty);
+            if (_placed.Remove(old, out var binding)) binding.Dispose();
+        }
+
+        _found[name] = [.. elements];
+        foreach (var element in elements)
+        {
+            _placed[element] = element.Bind(StyledElement.ThemeProperty,
+                _owner.GetResourceObservable(ThemeKey(name), value => value as ControlTheme), BindingPriority.Template);
+            foreach (var (pseudo, on) in _states) Set(element, pseudo, on);
         }
 
         ApplyOverrides();
@@ -64,7 +102,7 @@ internal sealed class Parts
     public void SetState(string pseudoClass, bool on)
     {
         _states[pseudoClass] = on;
-        foreach (var element in _found.Values) Set(element, pseudoClass, on);
+        foreach (var element in Elements) Set(element, pseudoClass, on);
     }
 
     /// <summary>Uses a new overrides collection, following its changes.</summary>
@@ -81,7 +119,7 @@ internal sealed class Parts
     /// <summary>Gives each part its theme, with its override merged over it.</summary>
     public void ApplyOverrides()
     {
-        foreach (var (name, element) in _found)
+        foreach (var (name, element) in _found.SelectMany(pair => pair.Value.Select(element => (pair.Key, element))))
         {
             var entry = Find(name);
             if (entry is null || (entry.Component is null && entry.Style is null && entry.Props is null))

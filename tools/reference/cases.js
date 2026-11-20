@@ -140,6 +140,8 @@ const files = {
   'radio.oracle.json': require('./radio').oracle(version),
   // Base Web's Switch (switch.js).
   'switch.oracle.json': require('./switch').oracle(version),
+  // Base Web's ProgressBar, rendered (progress-bar.js).
+  'progress-bar.oracle.json': require('./progress-bar').oracle(version),
   // Base Web's checkbox-v2 Checkbox (checkbox.js).
   'checkbox.oracle.json': require('./checkbox').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
