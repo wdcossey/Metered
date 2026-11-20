@@ -28,7 +28,7 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
 
 | Base Web | Metered |
 |---|---|
-| `checked` | `IsChecked`, which a click, Space, or Enter on its release toggles |
+| `checked` | `IsChecked`, which a click, Space, or an Enter pressed on it toggles on its release |
 | `disabled` | `IsEnabled` |
 | `children` | `Content`, the label |
 | `size` (`SIZE.default`, `SIZE.small`) | `Size` (`SwitchSize`) |
@@ -62,10 +62,15 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   track, which stays at the top.
 - A coarse pointer (a phone or tablet) pads the switch by 8 all round (12 small), making it 48 high; a tap in the
   padding toggles it.
-- Enter toggles on its release (Base Web's `onKeyUp`), Space as a checkbox's. `:is-active` (Base Web's `$isActive`)
-  is set while any pointer presses the switch or Space or Enter is held, and ends on the release or when the mouse
-  leaves; no style of Base Web's reads it, an override may. Keys in a control in the label are that control's: they
-  neither toggle the switch nor make it active, as Base Web's handlers are its hidden input's.
+- Enter toggles on its release (Base Web's `onKeyUp`), Space as a checkbox's; an Enter only when it was pressed on the
+  switch (difference 11). `:is-active` (Base Web's `$isActive`) is set while any pointer presses the switch or Space or
+  Enter is held, and ends on the release or when the mouse leaves; no style of Base Web's reads it, an override may.
+  Keys in a control in the label are that control's: they neither toggle the switch nor make it active, as Base Web's
+  handlers are its hidden input's.
+- No pressed tint, under a mouse or a finger: no style in `switch/styled-components.js` reads `$isActive` or CSS's
+  `:active`, so a press draws what the switch drew before it (the colour cases' finger-pressed state is held to that).
+  Radio and Checkbox draw their pressed tints under a held finger, where Base Web's `$isActive` tint never shows on a
+  phone (their difference 3 and 2, kept: #49); the switch has no pressed tint, and so nothing of that to differ in.
 
 ## Held by
 
@@ -74,10 +79,11 @@ Avalonia's `ToggleSwitch` brings on and off content and a knob that drags, which
   the knob's fill and the checkmark against Base Web's style functions. The states are real input.
 - `Controls/SwitchLayoutTests`: 32 cases (size × placement × pointer × on and off × enabled and disabled): the parts'
   lengths and type, and where layout puts the track, the knob and the label; and a long label that wraps (33 in all).
-- `Controls/SwitchTests`: toggling by click, Space and Enter (Base Web's browser test), the parts' state, hover and
-  press by mouse and finger, keyboard focus, keys in a control in the label, the label only with content, no third
-  state, hover and press ending on disabling and on leaving the window, the coarse pointer, the transition, overrides,
-  and the drawn checkmark (and its clip to the knob's circle), outline and overlay: 24 in all.
+- `Controls/SwitchTests`: toggling by click, Space and Enter (Base Web's browser test), an Enter pressed elsewhere,
+  an Enter taken and a default button not firing on it (#49), the parts' state, hover and press by mouse and finger,
+  keyboard focus, keys in a control in the label, the label only with content, no third state, hover and press ending
+  on disabling and on leaving the window, the coarse pointer, the transition, overrides, and the drawn checkmark (and
+  its clip to the knob's circle), outline and overlay: 27 in all.
 - `Sample/SwitchPageTests`: the sample's page, 3.
 
 The part themes are generated (`tools/tokens/switch.js`): the switch's style functions evaluated on Base Web's theme
@@ -108,3 +114,10 @@ evaluates the same functions on the real light and dark themes.
    been tried.
 9. **Accessibility is Avalonia's `ToggleButton`'s**: Base Web's `role="switch"` and its `aria-*` props aren't mapped yet.
 10. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+11. **Enter is the switch's** (the developer's decision of 2026-11-18, #49: the checkbox's rule, for both). Base Web's
+    `onKeyUp` toggles on any Enter let go on its input, one pressed on another control whose release finds the switch
+    focused included, and lets the key go on to the page. Here only an Enter pressed on the switch toggles it, and the
+    switch takes it, press and release, so a window's default button (`IsDefault`) doesn't act on it too. An Enter
+    pressed elsewhere is let go unhandled. Why: in a window one Enter has one effect, not a toggle and a default
+    button's click, and an Enter whose press went to another control (which may have moved the focus) isn't the
+    switch's; and the checkbox and the switch keep one rule.

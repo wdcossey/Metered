@@ -65,7 +65,9 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - The group: a column 8 apart, or a row 16 apart that wraps onto lines 8 apart, the radios at the top of a line (at
   its bottom with the label on top, so the marks line up). Only the checked radio (or the first, with none) is a tab
   stop; the arrow keys (with no Alt, Ctrl or Meta) move the selection and the focus to the next or previous enabled
-  radio, wrapping. Space checks the focused radio; Enter doesn't.
+  radio, wrapping. Space checks the focused radio; Enter doesn't, as a browser's radio doesn't (it submits the form;
+  radio-v2 has no key handler of its own). The radio has no Enter rule, so none to differ in (#49): the radio doesn't
+  take the key.
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
   finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
@@ -92,8 +94,13 @@ oracle (`tools/reference/radio.js`) evaluates the same functions on the real lig
 1. **No `Input` part.** Base Web's hidden `input` is the radio itself.
 2. **A radio on its own checks itself on a click**, as an Avalonia radio button does; Base Web's is controlled only.
    In a group, Base Web's controlled and stateful groups are one: `Value` is set by a click whatever bound it.
-3. **Hover is a mouse's.** Base Web's `$isHovered` comes from `mouseenter`, which a phone's browser fires on a tap
-   and keeps until the next tap elsewhere; here a finger never hovers (ADR 0001). A press is any pointer's.
+3. **Hover is a mouse's; a press is any pointer's.** Base Web's `$isHovered` comes from `mouseenter`, which a phone's
+   browser fires on a tap and keeps until the next tap elsewhere; here a finger never hovers (ADR 0001). Its
+   `$isActive` comes from `mousedown`, which a phone's browser sends with the `mouseup` after the finger lifts, so a
+   finger held on a Base Web radio never shows the inner disc's pressed tint (the backplate's CSS `:active` is the
+   browser's); here it shows both while held (`BackplatePointer`). Kept on purpose (the developer's decision of
+   2026-11-18, #49): Metered is mobile first, and a finger held on a control should see it pressed, as it sees a
+   Button pressed. The real-window run (`tools/real-window/`) draws the backplate's tint under a held touch.
 4. **`@media (pointer: coarse)` is the platform**: Android and iOS are coarse, desktops fine, whatever pointer a
    touch-screen laptop has.
 5. **The root is a panel of its own** (`RadioRootPanel`): Base Web orders the label wrapper before the backplate in
