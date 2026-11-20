@@ -85,7 +85,8 @@ public partial class SampleShell : UserControl
     /// <summary>
     /// How long a page whose view has no size yet waits for one before its line is written anyway, with the size it has;
     /// a test shortens it. Ten seconds: a phone's view has its size well within a second of its start, and
-    /// <c>tools/android/run.ps1</c> waits 60 for the line, so a view that never gets one is still reported, as such.
+    /// <c>tools/android/run.ps1</c> waits 60 for the line, so a view that never gets one is still reported, as such. The
+    /// wait itself is the platform's, not the page's, so it is left out of the page's time.
     /// </summary>
     internal TimeSpan SizeWait { get; set; } = TimeSpan.FromSeconds(10);
 
@@ -203,7 +204,8 @@ public partial class SampleShell : UserControl
     /// so on a slow start its frames come and go before then: a line read <c>view=1x1 … page=1x0</c>, render 0.0 (#37).
     /// So a page waits for its top level's size, and then for the frames after it: the resize lays the page out
     /// (<c>TopLevel.HandleResized</c>), and the next frames draw it at that size. A view that gets no size within
-    /// <see cref="SizeWait"/> is reported as it is, its <c>view=</c> and <c>page=</c> saying so.
+    /// <see cref="SizeWait"/> is reported as it is, its <c>view=</c> and <c>page=</c> saying so. Either way the time
+    /// spent waiting is left out of the line's, as the platform's start before the shell is in a window is.
     /// </para>
     /// </summary>
     private void Ready(Opening opening, TopLevel top)
@@ -213,13 +215,7 @@ public partial class SampleShell : UserControl
 
         if (Unsized(top.ClientSize) && !opening.SizeWaitOver)
         {
-            opening.AwaitSize(top, SizeWait,
-                sized: () =>
-                {
-                    if (IsCurrent(opening, top))
-                        AwaitFrames(opening, top);
-                },
-                over: () => Ready(opening, top));
+            opening.AwaitSize(top, SizeWait, sized: () => AwaitFrames(opening, top), over: () => Ready(opening, top));
             return;
         }
 
@@ -338,11 +334,17 @@ public partial class SampleShell : UserControl
         /// <summary>How long the page took to make, if it was shown before its shell was in a window; else null.</summary>
         private long? _making;
 
-        /// <summary>The watch on the view's size, while the page waits for one; else null.</summary>
+        /// <summary>The watch on the view's size, from the page's first wait for one until it's disposed; else null.</summary>
         private IDisposable? _sizeWatch;
 
-        /// <summary>The end of the wait for a size, while it runs; else null.</summary>
+        /// <summary>The end of the wait for a size, while one runs; else null.</summary>
         private IDisposable? _sizeDeadline;
+
+        /// <summary>When the wait for a size began, while one runs; else null.</summary>
+        private long? _waitingSince;
+
+        /// <summary>What's left of the bound on the waits for a size, once one has begun; else null.</summary>
+        private TimeSpan? _waitLeft;
 
         public Control Page { get; } = page;
 
@@ -367,27 +369,45 @@ public partial class SampleShell : UserControl
         public bool SizeWaitOver { get; private set; }
 
         /// <summary>
-        /// Waits for <paramref name="top"/> to have a size: <paramref name="sized"/> each time it gets one, and
-        /// <paramref name="over"/> once, if <paramref name="bound"/> passes first. Started once; a later call is the same
-        /// wait, so its bound is from the first. Both end as the page is disposed.
+        /// Waits for <paramref name="top"/> to have a size: <paramref name="sized"/> once it gets one, or
+        /// <paramref name="over"/> if what's left of <paramref name="bound"/> passes first. A view that loses its size
+        /// again waits again, for what's left. The time waited is left out of the page's (<see cref="Started"/>).
         /// </summary>
         public void AwaitSize(TopLevel top, TimeSpan bound, Action sized, Action over)
         {
-            if (_sizeWatch is not null || SizeWaitOver)
+            if (_waitingSince is not null || SizeWaitOver)
                 return;
 
+            _waitingSince = Stopwatch.GetTimestamp();
+            _waitLeft ??= bound;
             // The observable gives the size it has at once, which is none; only a later one is the view's.
-            _sizeWatch = top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(size =>
+            _sizeWatch ??= top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(size =>
             {
-                if (!Unsized(size))
+                if (!Unsized(size) && EndWait())
                     sized();
             }));
             _sizeDeadline = DispatcherTimer.RunOnce(() =>
             {
-                _sizeDeadline = null;
+                if (!EndWait())
+                    return;
                 SizeWaitOver = true;
                 over();
-            }, bound);
+            }, _waitLeft.Value);
+        }
+
+        /// <summary>Ends the wait for a size, if one runs, its time left out of the page's and taken from the bound.</summary>
+        private bool EndWait()
+        {
+            if (_waitingSince is not { } since)
+                return false;
+
+            var now = Stopwatch.GetTimestamp();
+            Started += now - since;
+            _waitLeft = TimeSpan.FromTicks(Math.Max(0, (_waitLeft!.Value - Stopwatch.GetElapsedTime(since, now)).Ticks));
+            _waitingSince = null;
+            _sizeDeadline?.Dispose();
+            _sizeDeadline = null;
+            return true;
         }
 
         public void Dispose()

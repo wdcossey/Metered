@@ -223,10 +223,13 @@ public class PageTimingTests
 
     // As on a phone's cold start (#37): the start page is opened, and the shell put in its view, while the view is still
     // Android's 1 × 1 placeholder; Avalonia's frames come all the same, as they're the process's, not the view's. The
-    // line waits for the view's size and the frames after it, so the page it reports has been laid out at that size.
+    // line waits for the view's size and the frames after it, so the page it reports has been laid out at that size. The
+    // wait is the platform's, so it's left out of the page's time.
     [AvaloniaFact]
     public void A_Page_Opened_While_The_View_Has_No_Size_Reports_Once_Laid_Out_At_Its_Size()
     {
+        const int WaitMs = 500;
+        var sinceOpen = System.Diagnostics.Stopwatch.StartNew();
         var lines = new List<string>();
         var pageAsWritten = new List<Size>();
         var shell = ShellOf(lines);
@@ -242,6 +245,7 @@ public class PageTimingTests
         Draw();
         Assert.Equal(new Size(1, 1), scene.Window.ClientSize);
         Assert.Empty(lines);
+        Thread.Sleep(WaitMs);
 
         scene.Window.Width = Scene.Width;
         scene.Window.Height = Scene.Height;
@@ -252,9 +256,45 @@ public class PageTimingTests
         var page = PageSize(shell);
         Assert.Matches($"^METERED ready open=[0-9]+ms scaling=1 view=390x844 raw=390x844 safe=0,0,0,0 page={page} title=plain$", line);
         Assert.Equal(new Size(Scene.Width, Scene.Height - Bar(shell).Bounds.Height), pageAsWritten[0]);
+        Assert.InRange(OpenMs(line), 0, sinceOpen.ElapsedMilliseconds - WaitMs + 1);
     }
 
-    // A view that never gets a size still has its line, once the wait is over, as it is: its view= and page= say so.
+    // A view that gets its size and loses it again before the frames after it waits again, for the size it gets next.
+    [AvaloniaFact]
+    public void A_View_That_Loses_Its_Size_Before_The_Frames_After_It_Waits_Again()
+    {
+        var lines = new List<string>();
+        var shell = ShellOf(lines);
+        shell.Open("plain");
+        using var scene = new Scene(shell, width: 1, height: 1);
+        Draw();
+
+        // Only the resizes: a layout pass asks the headless window for its size, which it gives at Send priority; the
+        // frames the first asks for come after both.
+        scene.Window.Width = Scene.Width;
+        scene.Window.Height = Scene.Height;
+        scene.Window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs(DispatcherPriority.Send);
+        Assert.Equal(new Size(Scene.Width, Scene.Height), scene.Window.ClientSize);
+        scene.Window.Width = 1;
+        scene.Window.Height = 1;
+        scene.Window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs(DispatcherPriority.Send);
+        Assert.Equal(new Size(1, 1), scene.Window.ClientSize);
+        Draw();
+        Assert.Empty(lines);
+
+        scene.Window.Width = Scene.Width;
+        scene.Window.Height = Scene.Height;
+        Dispatcher.UIThread.RunJobs();
+        Draw();
+
+        var line = Assert.Single(Ready(lines));
+        Assert.Matches($"^METERED ready open=[0-9]+ms scaling=1 view=390x844 raw=390x844 safe=0,0,0,0 page={PageSize(shell)} title=plain$", line);
+    }
+
+    // A view that never gets a size still has its line, once the wait is over, as it is: its view= and page= say so, and
+    // its time is the page's own, without the wait.
     [AvaloniaFact]
     public void A_Page_Whose_View_Never_Gets_A_Size_Is_Reported_As_It_Is_Once_The_Wait_Is_Over()
     {
@@ -279,7 +319,7 @@ public class PageTimingTests
 
         var line = Assert.Single(Ready(lines));
         Assert.Matches("^METERED ready open=[0-9]+ms scaling=1 view=1x1 raw=1x1 safe=0,0,0,0 page=1x0 title=plain$", line);
-        Assert.InRange(OpenMs(line), 300, sinceOpen.ElapsedMilliseconds + 1);
+        Assert.InRange(OpenMs(line), 0, sinceOpen.ElapsedMilliseconds - 300 + 1);
     }
 
     // A Debug build writes what the page cost to open after its ready line, with the shell's time, so the two agree, and

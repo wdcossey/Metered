@@ -162,5 +162,5 @@ The cold starts were 730 to 783 ms (`am start -W`'s TotalTime). The difference b
 per Button, about seven times the headless cost. In Debug, the Button page's five warm reopens took 223 to 265 ms, with layout 150 to 186 ms of
 that. Once, a cold Debug start's lines came before the view was sized (`view=1x1 scaling=1 page=1x0`, #37): Avalonia's
 frames are the process's, and they ran while the view was still its 1 × 1 placeholder. The shell now waits for the view's
-size, and for the frames after it, before it writes them; a view with no size after 10 s is reported as it is, so a line
-with `view=1x1` says the view never got one.
+size, and for the frames after it, before it writes them, the wait left out of `open=` as the platform's; a view with no
+size after 10 s is reported as it is, so a line with `view=1x1` says the view never got one.
