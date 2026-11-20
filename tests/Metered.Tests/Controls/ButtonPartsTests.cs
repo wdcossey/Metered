@@ -74,6 +74,58 @@ public class ButtonPartsTests
         Assert.Equal(1, clicks);
     }
 
+    // The ring's turn, Base Web's LoadingSpinner (button/styled-components.js): rotate(0deg) to rotate(360deg), on
+    // Avalonia's clock, real time. Its angle moves between two frames 150 ms apart while the button loads.
+    [AvaloniaFact]
+    public void The_loading_ring_turns()
+    {
+        var (ring, scene) = Loading();
+        using var _ = scene;
+        var first = Angle(ring, scene);
+        // A few tries, so a slow runner's frame can't make it flaky: a turn that never runs stays at its first angle.
+        var moved = false;
+        for (var i = 0; i < 5 && !moved; i++)
+        {
+            Thread.Sleep(150);
+            moved = Angle(ring, scene) != first;
+        }
+
+        Assert.True(moved, $"the ring stayed at {first} degrees");
+    }
+
+    // :metered-still, which PreviewGallery sets before a picture: the turn stops, the ring at 0deg, Base Web's from
+    // (button/styled-components.js, LoadingSpinner's animationName).
+    [AvaloniaFact]
+    public void A_still_loading_ring_stands_at_its_start()
+    {
+        const double from = 0;
+        var (ring, scene) = Loading();
+        using var _ = scene;
+        // Turning first (a few tries, for a slow runner), so standing at 0 below is the hold's doing.
+        var turned = false;
+        for (var i = 0; i < 5 && !turned; i++)
+        {
+            Thread.Sleep(150);
+            turned = Angle(ring, scene) != from;
+        }
+
+        Assert.True(turned, "the ring never turned");
+        SpinnerColourTests.Still(ring);
+        Assert.Equal(from, Angle(ring, scene));
+        Thread.Sleep(150);
+        Assert.Equal(from, Angle(ring, scene));
+    }
+
+    private static (ButtonLoadingSpinner Ring, Scene Scene) Loading()
+    {
+        var button = new Button { Content = "Button", IsLoading = true };
+        var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { button } });
+        return ((ButtonLoadingSpinner)button.Part(Button.LoadingSpinnerPart)!, scene);
+    }
+
+    /// <summary>The ring's angle, read as the Spinner's tests read it: its ring is the same <see cref="SpinnerRing"/>.</summary>
+    private static double Angle(ButtonLoadingSpinner ring, Scene scene) => SpinnerTests.Angle(ring, scene);
+
     [AvaloniaFact]
     public void Enhancers_sit_beside_the_content_with_Base_Webs_margins()
     {
