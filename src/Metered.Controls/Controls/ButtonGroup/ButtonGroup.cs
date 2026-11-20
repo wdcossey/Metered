@@ -98,6 +98,9 @@ public class ButtonGroup : ItemsControl
 
     private readonly Parts _parts;
 
+    /// <summary>The buttons the group has taken, so that each is given back when it leaves, however it leaves.</summary>
+    private readonly HashSet<Button> _members = [];
+
     public ButtonGroup()
     {
         _parts = new Parts(this, "ButtonGroup", [RootPart]);
@@ -108,11 +111,13 @@ public class ButtonGroup : ItemsControl
 
     private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // A button that is its own container isn't cleared by ItemsControl when it leaves.
-        foreach (var removed in e.OldItems?.OfType<Button>() ?? [])
-        {
-            if (!Items.Contains(removed)) Release(removed);
-        }
+        // A button that is its own container isn't cleared by ItemsControl when it leaves; nor on a reset (an
+        // ObservableCollection's Clear), which lists no old items, so then every button no longer in the group is given
+        // back.
+        var gone = e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset
+            ? _members.Where(button => !Items.Contains(button)).ToList()
+            : e.OldItems?.OfType<Button>().Where(button => !Items.Contains(button)).ToList() ?? [];
+        foreach (var button in gone) Release(button);
     }
 
     /// <summary>Base Web's <c>mode</c>.</summary>
@@ -170,8 +175,7 @@ public class ButtonGroup : ItemsControl
             button.SetValue(OwnSelectedProperty, true);
         }
 
-        button.Click -= OnButtonClick;
-        button.Click += OnButtonClick;
+        if (_members.Add(button)) button.Click += OnButtonClick;
         Apply(button, index);
     }
 
@@ -184,6 +188,7 @@ public class ButtonGroup : ItemsControl
     /// <summary>Gives a button that leaves the group its own values back.</summary>
     private void Release(Button button)
     {
+        if (!_members.Remove(button)) return;
         button.Click -= OnButtonClick;
         if (button.GetValue(GroupSelectedProperty))
         {
