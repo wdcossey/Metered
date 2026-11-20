@@ -191,8 +191,8 @@ public class ProgressBarTests
     {
         var pb = new ProgressBar { ShowLabel = true };
         pb.Bind(RangeBase.ValueProperty, new ReflectionBinding(nameof(Model.Value)));
-        pb.Bind(RangeBase.MinimumProperty, new ReflectionBinding(nameof(Model.Minimum)));
         pb.Bind(RangeBase.MaximumProperty, new ReflectionBinding(nameof(Model.Maximum)));
+        pb.Bind(RangeBase.MinimumProperty, new ReflectionBinding(nameof(Model.Minimum)));
         pb.DataContext = new Model(20, 0, 100);
         using var scene = new Scene(pb);
         AssertRenders(Case(20, 0, 100), pb);
@@ -204,6 +204,11 @@ public class ProgressBarTests
         pb.DataContext = new Model(150, 0, 100);
         Assert.Equal((100.0, 0.0, 100.0), (pb.Value, pb.Minimum, pb.Maximum));
         AssertRenders(Case(100, 0, 100), pb);
+
+        // A maximum under the minimum, its binding ahead of the minimum's: the maximum is the minimum once it's over.
+        pb.DataContext = new Model(50, 50, 10);
+        Assert.Equal((50.0, 50.0, 50.0), (pb.Value, pb.Minimum, pb.Maximum));
+        AssertRenders(Case(50, 50, 50), pb);
 
         pb.DataContext = new Model(20, 0, 100);
         Assert.Equal(20, pb.Value);
