@@ -16,8 +16,10 @@ namespace Metered.Controls;
 /// </summary>
 /// <remarks>
 /// <para>Base Web's <c>value</c>, <c>minValue</c> and <c>maxValue</c> are <c>Value</c>, <c>Minimum</c> and
-/// <c>Maximum</c> (0, 0 and 100 by default, as Base Web's), which, as Base Web's, aren't clamped: a value past the
-/// range is drawn as Base Web draws it and said as Base Web's label says it ("150% Complete").</para>
+/// <c>Maximum</c> (0, 0 and 100 by default, as Base Web's), coerced as <see cref="RangeBase"/> coerces them, against
+/// Base Web, which clamps nothing: the value is kept in the range and the maximum at or above the minimum, so a value
+/// of 150 on a bar of 0 to 100 is drawn and said as 100 ("100% Complete"), and is 150 again once the maximum is 200.
+/// The label, the fill, the step states and the accessible name all read the coerced value.</para>
 /// <para>The template has <c>Root</c>, <c>BarContainer</c> and <c>Label</c>; the bar makes the parts Base Web renders
 /// some number of times: a <c>Bar</c> with its <c>BarProgress</c> for each of <see cref="Steps"/>, or, when
 /// <see cref="Infinite"/>, two <c>InfiniteBar</c>s, the first <c>:is-left</c>.</para>
@@ -74,10 +76,10 @@ public class ProgressBar : RangeBase
 
     static ProgressBar()
     {
-        // Base Web clamps nothing: a value past the range, or a maximum under the minimum, is kept as given. A value
-        // that isn't finite is refused, as RangeBase refuses it. A progress bar shows its value: one way by default.
-        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay, coerce: KeepFinite(ValueProperty)));
-        MaximumProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(100, coerce: KeepFinite(MaximumProperty)));
+        // A progress bar shows its value: one way by default. No coercion is given, so RangeBase's own is kept (the
+        // metadata's merge takes the base's): the value clamped to the range, the maximum kept at or above the minimum,
+        // a value that isn't finite refused. Base Web clamps nothing; the developer chose RangeBase's clamp (#67).
+        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay));
     }
 
     public ProgressBar()
@@ -184,7 +186,8 @@ public class ProgressBar : RangeBase
     /// <summary>
     /// Base Web's fill in a bar of one step (styled-components.js, StyledBarProgress): <c>translateX(-${100 - (value -
     /// min) * 100 / (max - min)}%)</c>. Past the maximum the width is negative and the text <c>translateX(--50%)</c>
-    /// isn't CSS: a browser drops it and draws no transform, 0; so it does for a width that isn't a number.
+    /// isn't CSS: a browser drops it and draws no transform, 0; so it does for a width that isn't a number (an empty
+    /// range). The bar gives it its coerced value, never one past the range; Base Web's own is kept for the tests.
     /// </summary>
     internal static double Offset(double value, double minValue, double maxValue)
     {
@@ -311,9 +314,6 @@ public class ProgressBar : RangeBase
     {
         for (var i = 0; i < Intents.Length; i++) SetState(Intents[i], Intent is { } intent && (int)intent == i);
     }
-
-    private static Func<AvaloniaObject, double, double> KeepFinite(StyledProperty<double> property) =>
-        (sender, value) => double.IsFinite(value) ? value : sender.GetValue(property);
 
     private void SetState(string pseudoClass, bool on)
     {

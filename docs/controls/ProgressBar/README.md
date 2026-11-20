@@ -31,7 +31,7 @@ Avalonia's progress bar automation peer.
 
 | Base Web | Metered |
 |---|---|
-| `value`, `minValue`, `maxValue` | `Value`, `Minimum`, `Maximum` (0, 0 and 100), not clamped, as Base Web's aren't; `Value` binds one way by default |
+| `value`, `minValue`, `maxValue` | `Value`, `Minimum`, `Maximum` (0, 0 and 100), **clamped as `RangeBase` clamps them**, where Base Web's aren't (known difference 11); `Value` binds one way by default |
 | `size` (`SIZE.small`, `.medium`, `.large`) | `Size` (`ProgressBarSize`), medium by default |
 | `intent` (`INTENT.default`, `.positive`, `.warning`, `.negative`, `.brand`) | `Intent` (`ProgressBarIntent?`): null, Base Web's prop left out, is `backgroundAccent` |
 | `steps` | `Steps`, 1 by default |
@@ -50,9 +50,9 @@ Avalonia's progress bar automation peer.
   (`flex: 1`), 8 apart (`scale300`, the left margin of every bar but the first, by Avalonia's `:nth-child(1)`).
 - The fill: the intent's colour (`contentAccent`, `contentPositive`, `contentWarning`, `contentNegative`,
   `brandBorderAccessible`; `backgroundAccent` with none), the bar's whole box with its own 2 corners, moved along by
-  Base Web's `translateX(-${100 - (value - min) * 100 / (max - min)}%)` and clipped by the bar. Past the maximum
-  Base Web's text is `translateX(--50%)`, which isn't CSS, so a browser draws no transform: the bar is full, here too.
-  Under the minimum the fill is further out of sight.
+  Base Web's `translateX(-${100 - (value - min) * 100 / (max - min)}%)` and clipped by the bar. The value is never
+  past the range here (known difference 11); over an empty range Base Web's text is `translateX(-NaN%)`, which isn't
+  CSS, so a browser draws no transform: the bar is full, here too.
 - Stepped: a step whose share of the range is reached is completed (`translateX(0%)`); the next is in progress, Base
   Web's 2.1 s endless slide in from −102 % and fade out (linear); the rest await (−102 %). Base Web's own arithmetic,
   percentages against shares of the range, is kept: `StepState`.
@@ -90,12 +90,15 @@ the pictures. An app never sets it.
 - `Controls/ProgressBarLayoutTests`: 6 cases (three sizes, of one step and of three): the root's gap, the bars' height,
   corners, margins and shares of the row, the fill's box, the label's place, padding and type, the infinite halves;
   the steps sharing a row of three widths, and a negative margin (10 in all).
-- `Controls/ProgressBarTests`: 27 values Base Web's scenarios, unit tests and examples use, and the ends, rendered by
-  Base Web itself (the bars, each step's state and fill, the label, the name); `GetProgressLabel`; the range for assistive
+- `Controls/ProgressBarTests`: 35 values Base Web's scenarios, unit tests and examples use, the ends, and the values a
+  clamped bar shows, rendered by Base Web itself (the bars, each step's state and fill, the label, the name), each
+  built as given and expected to render Base Web's case for its clamped value; the 7 past the range, Base Web's own
+  output for them still what its formulas give; the value clamped again as the range moves, set before its range,
+  and given to `GetProgressLabel` clamped; `GetProgressLabel`; the range for assistive
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions and in a new colour, the fill and the steps drawn; overrides on every part
   (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
-  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 53 in all.
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`: 71 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with
@@ -134,3 +137,17 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
 9. **`borders.useRoundedCorners`** false (square bars) isn't followed: the themes are generated from Base Web's light
    theme, where it is true.
 10. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+11. **The value is clamped to the range, as Avalonia's `RangeBase` clamps it** (#67; the developer's choice on
+    2026-11-20, against Base Web, because an Avalonia app expects a `RangeBase` to clamp). Base Web clamps nothing: a
+    value of 150 on a bar of 0 to 100 reads "150% Complete" and `aria-valuenow` 150, a fill whose
+    `translateX(--50%)` a browser drops (a full bar), and a value under the minimum leaves every step awaiting (−10 of
+    4 steps: no step in progress, "Step 0 of 4"); a maximum under the minimum is kept, and the arithmetic runs
+    backwards. Here `RangeBase`'s own coercion is kept (its metadata isn't replaced, only `Value`'s binding mode): the
+    value is clamped to `[Minimum, Maximum]`, the maximum kept at or above the minimum, a value that isn't finite
+    refused. The label (the default and `GetProgressLabel`'s), the fill, the step states, the infinite bar's label,
+    the accessible name and the range assistive technology reads all take the clamped value: 150 reads "100% Complete",
+    −10 of 4 steps has its first step in progress. When `Minimum` or `Maximum` changes, `RangeBase` clamps again from
+    the value as it was set, so a range that grows back gives the value back, and so does XAML's order (once the bar is
+    initialized). A maximum under the minimum makes an empty range, which reads, as Base Web's does, "NaN% Complete".
+    The tests keep Base Web's output for a value past the range as it recorded it, beside the clamped bar's, which is
+    Base Web's own for the clamped value.

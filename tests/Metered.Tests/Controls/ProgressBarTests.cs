@@ -40,7 +40,10 @@ public class ProgressBarTests
     }
 
     // Base Web's ProgressBar, rendered: a Bar and a BarProgress for each step, or the two InfiniteBars; each step's
-    // state and its fill's transform; the label; the name assistive technology reads.
+    // state and its fill's transform; the label; the name assistive technology reads. A value past the range is
+    // clamped, as Avalonia's RangeBase clamps it, against Base Web, which keeps it as given (#67; the developer's choice,
+    // docs/controls/ProgressBar/, known difference 11): the bar renders what Base Web renders for the clamped value, a
+    // case of the oracle of its own, and so not what Base Web renders for the value as given, which stays recorded.
     [AvaloniaTheory]
     [MemberData(nameof(Values))]
     public void It_renders_what_Base_Webs_renders_for_the_value(int index)
@@ -49,8 +52,154 @@ public class ProgressBarTests
         var pb = Make(c);
         using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { pb } });
 
-        // Base Web keeps the value as given, past the range too.
-        Assert.Equal(c.Value, pb.Value);
+        var clamped = Clamped(c);
+        Assert.Equal(clamped.Value, pb.Value);
+        Assert.Equal(clamped.MaxValue, pb.Maximum);
+        AssertRenders(clamped, pb);
+        // Past the range, the difference is a real one: Base Web's own output for the value as given isn't the bar's.
+        if (!ReferenceEquals(clamped, c)) Assert.NotEqual(Output(c), Output(clamped));
+    }
+
+    // Base Web's own output past the range, kept beside the clamped bar's: its formulas, as Metered writes them, still
+    // give what Base Web renders for the value as given (JavaScript's digits, the dropped 'translateX(--50%)', the step
+    // states under the minimum).
+    [Theory]
+    [MemberData(nameof(PastTheRange))]
+    public void Base_Webs_own_output_past_the_range_is_its_formulas_for_the_value_as_given(int index)
+    {
+        var c = ProgressBarOracle.Data.Values[index];
+        Assert.NotSame(c, Clamped(c));
+        if (c.Label is not null) Assert.Equal(c.Label, ProgressBar.DefaultLabel(c.Value, c.MaxValue, c.MinValue));
+        if (c.AriaLabel is null && !c.Infinite)
+        {
+            Assert.Equal(c.Name, c.Steps > 1
+                ? ProgressBar.StepLabel(c.Value, c.MaxValue, c.MinValue, c.Steps)
+                : ProgressBar.DefaultLabel(c.Value, c.MaxValue, c.MinValue));
+        }
+
+        for (var i = 0; i < c.Bars.Length; i++)
+        {
+            if (c.Steps > 1) Assert.Equal(StepState(c.Bars[i].State), ProgressBar.StepState(c.Value, c.MinValue, c.MaxValue, c.Steps, i));
+            else Assert.Equal(c.Bars[i].Offset, ProgressBar.Offset(c.Value, c.MinValue, c.MaxValue), 9);
+        }
+    }
+
+    public static TheoryData<int> PastTheRange =>
+        new(Enumerable.Range(0, ProgressBarOracle.Data.Values.Length).Where(i => !ReferenceEquals(ProgressBarOracle.Data.Values[i], Clamped(ProgressBarOracle.Data.Values[i]))));
+
+    // RangeBase's coercion as the range moves under a value (RangeBase.cs, Avalonia 12.1.4): the value is clamped
+    // again whenever the minimum or the maximum changes, from the value as it was set, so a range that grows back
+    // gives it back; a maximum under the minimum is the minimum; a number that isn't finite is refused. Each look is
+    // Base Web's for the clamped case.
+    [AvaloniaFact]
+    public void The_value_is_clamped_again_as_the_range_moves()
+    {
+        var pb = new ProgressBar { Value = 120, ShowLabel = true };
+        using var scene = new Scene(pb);
+        Assert.Equal(100, pb.Value);
+        AssertRenders(Case(100, 0, 100), pb);
+
+        // The range grows to take the value as it was set: 120 of 100 to 200.
+        pb.Maximum = 200;
+        pb.Minimum = 100;
+        Assert.Equal(120, pb.Value);
+        AssertRenders(Case(120, 100, 200), pb);
+
+        // A value under the minimum is the minimum.
+        pb.Value = 20;
+        Assert.Equal(100, pb.Value);
+        AssertRenders(Case(100, 100, 200), pb);
+
+        // The minimum lowered under it gives it back.
+        pb.Minimum = 0;
+        pb.Maximum = 100;
+        Assert.Equal(20, pb.Value);
+        AssertRenders(Case(20, 0, 100), pb);
+
+        // A maximum under the minimum is the minimum: an empty range, the value at it.
+        pb.Minimum = 50;
+        pb.Maximum = 10;
+        Assert.Equal(50, pb.Maximum);
+        Assert.Equal(50, pb.Value);
+        AssertRenders(Case(50, 50, 50), pb);
+
+        // A range again: the value as it was set comes back.
+        pb.Minimum = 0;
+        pb.Maximum = 100;
+        Assert.Equal(20, pb.Value);
+        AssertRenders(Case(20, 0, 100), pb);
+
+        // A value or an end that isn't finite is refused: each keeps what it had.
+        pb.Value = double.NaN;
+        pb.Maximum = double.PositiveInfinity;
+        pb.Minimum = double.NegativeInfinity;
+        Assert.Equal((20.0, 0.0, 100.0), (pb.Value, pb.Minimum, pb.Maximum));
+        AssertRenders(Case(20, 0, 100), pb);
+    }
+
+    // XAML sets the properties in the order written, inside BeginInit and EndInit: RangeBase clamps the value again
+    // once initialized, so a value set before its range isn't lost.
+    [AvaloniaFact]
+    public void A_value_set_before_its_range_is_kept()
+    {
+        var pb = new ProgressBar();
+        pb.BeginInit();
+        pb.ShowLabel = true;
+        pb.Value = 120;
+        pb.Maximum = 200;
+        pb.Minimum = 100;
+        pb.EndInit();
+        using var scene = new Scene(pb);
+        Assert.Equal(120, pb.Value);
+        AssertRenders(Case(120, 100, 200), pb);
+    }
+
+    // GetProgressLabel is given the clamped value, as the default label reads it.
+    [AvaloniaFact]
+    public void GetProgressLabel_is_given_the_clamped_value()
+    {
+        var calls = new List<(double, double, double)>();
+        var pb = new ProgressBar
+        {
+            Minimum = 100, Maximum = 200, Value = 250, ShowLabel = true,
+            GetProgressLabel = (value, max, min) => { calls.Add((value, max, min)); return "label"; },
+        };
+        using var scene = new Scene(pb);
+        Assert.Equal((200.0, 200.0, 100.0), calls.Last());
+        Assert.DoesNotContain(calls, call => call.Item1 > 200);
+    }
+
+    /// <summary>
+    /// The case as RangeBase coerces it (RangeBase.cs, Avalonia 12.1.4: CoerceMaximum, then CoerceValue): the maximum at
+    /// least the minimum, the value in the range; the oracle's own case for that, which Base Web rendered.
+    /// </summary>
+    private static ProgressBarValueCase Clamped(ProgressBarValueCase c)
+    {
+        var max = Math.Max(c.MaxValue, c.MinValue);
+        var value = Math.Clamp(c.Value, c.MinValue, max);
+        if (value == c.Value && max == c.MaxValue) return c;
+        return ProgressBarOracle.Data.Values.Single(v => v.Value == value && v.MinValue == c.MinValue && v.MaxValue == max
+            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel);
+    }
+
+    /// <summary>The oracle's labelled bar of one step, with no name given, for a value and a range.</summary>
+    private static ProgressBarValueCase Case(double value, double min, double max) =>
+        ProgressBarOracle.Data.Values.Single(v => v.Value == value && v.MinValue == min && v.MaxValue == max && v.Steps == 1
+            && !v.Infinite && v.ShowLabel && v.AriaLabel is null);
+
+    /// <summary>What Base Web renders for a case, to tell two apart: the name, the label and each bar's state and offset.</summary>
+    private static string Output(ProgressBarValueCase c) =>
+        $"{c.Name} | {c.Label} | {string.Join(" ", c.Bars.Select(b => $"{b.State}:{b.Offset}"))} | {c.InfiniteBars}";
+
+    private static string? StepState(string? state) => state switch
+    {
+        null => null, "completed" => ":step-completed", "inProgress" => ":step-in-progress", "awaits" => ":step-awaits",
+        _ => throw new InvalidOperationException(state),
+    };
+
+    /// <summary>The bar renders what Base Web renders for the case: its bars, each step's state and fill, the label, the name.</summary>
+    private static void AssertRenders(ProgressBarValueCase c, ProgressBar pb)
+    {
         var fills = pb.Elements(ProgressBar.BarProgressPart).Cast<ProgressBarFill>().ToList();
         Assert.Equal(c.Bars.Length, fills.Count);
         Assert.Equal(c.Bars.Length, pb.Elements(ProgressBar.BarPart).Count);
@@ -58,11 +207,7 @@ public class ProgressBarTests
         for (var i = 0; i < fills.Count; i++)
         {
             var expected = c.Bars[i];
-            var state = expected.State switch
-            {
-                null => null, "completed" => ":step-completed", "inProgress" => ":step-in-progress", "awaits" => ":step-awaits",
-                _ => throw new InvalidOperationException(expected.State),
-            };
+            var state = StepState(expected.State);
             foreach (var s in new[] { ":step-completed", ":step-in-progress", ":step-awaits" })
                 Assert.Equal(s == state, fills[i].Classes.Contains(s));
             // The value the theme and the bar give, under the step in progress's animation.
@@ -76,6 +221,10 @@ public class ProgressBarTests
         var peer = ControlAutomationPeer.CreatePeerForElement(pb);
         Assert.Equal(c.Name, peer.GetName());
         Assert.Equal(AutomationControlType.ProgressBar, peer.GetAutomationControlType());
+        // aria-valuenow and aria-valuemax: the range assistive technology reads is the bar's, clamped.
+        var range = Assert.IsAssignableFrom<IRangeValueProvider>(peer);
+        Assert.Equal(pb.Value, range.Value);
+        Assert.Equal(pb.Maximum, range.Maximum);
     }
 
     // progressbar.test.tsx: 'should render label' with getProgressLabel, called as Base Web calls it: (value, max, min).
