@@ -16,8 +16,12 @@ namespace Metered.Controls;
 /// </summary>
 /// <remarks>
 /// <para>Base Web's <c>value</c>, <c>minValue</c> and <c>maxValue</c> are <c>Value</c>, <c>Minimum</c> and
-/// <c>Maximum</c> (0, 0 and 100 by default, as Base Web's), which, as Base Web's, aren't clamped: a value past the
-/// range is drawn as Base Web draws it and said as Base Web's label says it ("150% Complete").</para>
+/// <c>Maximum</c> (0, 0 and 100 by default, as Base Web's), coerced as <see cref="RangeBase"/> coerces them, against
+/// Base Web, which clamps nothing: the value is kept in the range and the maximum at or above the minimum, so a value
+/// of 150 on a bar of 0 to 100 is drawn and said as 100 ("100% Complete"), and is 150 again once the maximum is 200.
+/// The label, the fill, the step states and the accessible name all read the coerced value. Unlike RangeBase's, the
+/// clamp doesn't throw for a minimum set over the maximum before the value, and is done again after a new data
+/// context.</para>
 /// <para>The template has <c>Root</c>, <c>BarContainer</c> and <c>Label</c>; the bar makes the parts Base Web renders
 /// some number of times: a <c>Bar</c> with its <c>BarProgress</c> for each of <see cref="Steps"/>, or, when
 /// <see cref="Infinite"/>, two <c>InfiniteBar</c>s, the first <c>:is-left</c>.</para>
@@ -72,12 +76,16 @@ public class ProgressBar : RangeBase
     /// <summary>The value's offset on the fill of a bar of one step, at Template priority: replaced, never stacked.</summary>
     private IDisposable? _offset;
 
+    /// <summary>A new data context is arriving: the value isn't clamped until it has, to a range that may be the old one.</summary>
+    private bool _dataContextChanging;
+
     static ProgressBar()
     {
-        // Base Web clamps nothing: a value past the range, or a maximum under the minimum, is kept as given. A value
-        // that isn't finite is refused, as RangeBase refuses it. A progress bar shows its value: one way by default.
-        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay, coerce: KeepFinite(ValueProperty)));
-        MaximumProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(100, coerce: KeepFinite(MaximumProperty)));
+        // A progress bar shows its value: one way by default. Base Web clamps nothing; the developer chose RangeBase's
+        // clamp (#67): RangeBase's own coercion of the minimum and the maximum is kept (the maximum at or above the
+        // minimum, a number that isn't finite refused). The value's is RangeBase's but where RangeBase's goes wrong:
+        // ClampValue, and the clamp again after a new data context (OnDataContextBeginUpdate and EndUpdate).
+        ValueProperty.OverrideMetadata<ProgressBar>(new StyledPropertyMetadata<double>(defaultBindingMode: BindingMode.OneWay, coerce: ClampValue));
     }
 
     public ProgressBar()
@@ -152,6 +160,27 @@ public class ProgressBar : RangeBase
         SetState(":loaded", false);
     }
 
+    /// <summary>
+    /// RangeBase clamps the value as each binding of a new data context arrives, to a range that may still be the old
+    /// one (and a two-way binding writes that into the new view model), and clamps nothing again once the change is
+    /// over, so bound ends that arrive after the value would leave it clamped to the old range, or outside the new one.
+    /// Here the value isn't clamped while the change lasts.
+    /// </summary>
+    protected override void OnDataContextBeginUpdate()
+    {
+        _dataContextChanging = true;
+        base.OnDataContextBeginUpdate();
+    }
+
+    /// <summary>Once a new data context is in, the maximum and the value are clamped again, as RangeBase does once initialized.</summary>
+    protected override void OnDataContextEndUpdate()
+    {
+        base.OnDataContextEndUpdate();
+        _dataContextChanging = false;
+        CoerceValue(MaximumProperty);
+        CoerceValue(ValueProperty);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -184,7 +213,8 @@ public class ProgressBar : RangeBase
     /// <summary>
     /// Base Web's fill in a bar of one step (styled-components.js, StyledBarProgress): <c>translateX(-${100 - (value -
     /// min) * 100 / (max - min)}%)</c>. Past the maximum the width is negative and the text <c>translateX(--50%)</c>
-    /// isn't CSS: a browser drops it and draws no transform, 0; so it does for a width that isn't a number.
+    /// isn't CSS: a browser drops it and draws no transform, 0; so it does for a width that isn't a number (an empty
+    /// range). The bar gives it its coerced value, never one past the range; Base Web's own is kept for the tests.
     /// </summary>
     internal static double Offset(double value, double minValue, double maxValue)
     {
@@ -312,8 +342,20 @@ public class ProgressBar : RangeBase
         for (var i = 0; i < Intents.Length; i++) SetState(Intents[i], Intent is { } intent && (int)intent == i);
     }
 
-    private static Func<AvaloniaObject, double, double> KeepFinite(StyledProperty<double> property) =>
-        (sender, value) => double.IsFinite(value) ? value : sender.GetValue(property);
+    /// <summary>
+    /// RangeBase's clamp of the value (RangeBase.CoerceValue, Avalonia 12.1.4), to the maximum RangeBase makes it
+    /// (CoerceMaximum: at least the minimum). RangeBase's own clamps to the maximum as it stands, which before the bar
+    /// is initialized, or while its data context changes, can be under a minimum just set: its MathUtilities.Clamp then
+    /// throws (<c>Minimum="150" Value="160" Maximum="200"</c>). A number that isn't finite is refused, as RangeBase's is.
+    /// Nothing is clamped while a new data context arrives (<see cref="OnDataContextBeginUpdate"/>).
+    /// </summary>
+    private static double ClampValue(AvaloniaObject sender, double value)
+    {
+        if (!double.IsFinite(value)) return sender.GetValue(ValueProperty);
+        if (sender is ProgressBar { _dataContextChanging: true }) return value;
+        var minimum = sender.GetValue(MinimumProperty);
+        return Math.Clamp(value, minimum, Math.Max(minimum, sender.GetValue(MaximumProperty)));
+    }
 
     private void SetState(string pseudoClass, bool on)
     {

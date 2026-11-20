@@ -1116,6 +1116,168 @@
     }
    ],
    "infiniteBars": 0
+  },
+  {
+   "value": 100,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "100% Complete",
+   "busy": false,
+   "label": "100% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": 0
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 0,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "0% Complete",
+   "busy": false,
+   "label": "0% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": -100
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 0,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 4,
+   "infinite": false,
+   "showLabel": false,
+   "ariaLabel": null,
+   "name": "Step 0 of 4",
+   "busy": false,
+   "label": null,
+   "bars": [
+    {
+     "state": "inProgress",
+     "offset": -102
+    },
+    {
+     "state": "awaits",
+     "offset": -102
+    },
+    {
+     "state": "awaits",
+     "offset": -102
+    },
+    {
+     "state": "awaits",
+     "offset": -102
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 100,
+   "minValue": 100,
+   "maxValue": 200,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "0% Complete",
+   "busy": false,
+   "label": "0% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": -100
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 50,
+   "minValue": 50,
+   "maxValue": 50,
+   "steps": 1,
+   "infinite": false,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "NaN% Complete",
+   "busy": false,
+   "label": "NaN% Complete",
+   "bars": [
+    {
+     "state": null,
+     "offset": 0
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 50,
+   "minValue": 50,
+   "maxValue": 50,
+   "steps": 3,
+   "infinite": false,
+   "showLabel": false,
+   "ariaLabel": null,
+   "name": "Step NaN of 3",
+   "busy": false,
+   "label": null,
+   "bars": [
+    {
+     "state": "awaits",
+     "offset": -102
+    },
+    {
+     "state": "awaits",
+     "offset": -102
+    },
+    {
+     "state": "awaits",
+     "offset": -102
+    }
+   ],
+   "infiniteBars": 0
+  },
+  {
+   "value": 150,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": true,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "Loading",
+   "busy": true,
+   "label": "150% Complete",
+   "bars": [],
+   "infiniteBars": 2
+  },
+  {
+   "value": 100,
+   "minValue": 0,
+   "maxValue": 100,
+   "steps": 1,
+   "infinite": true,
+   "showLabel": true,
+   "ariaLabel": null,
+   "name": "Loading",
+   "busy": true,
+   "label": "100% Complete",
+   "bars": [],
+   "infiniteBars": 2
   }
  ],
  "motion": {
