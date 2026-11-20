@@ -672,7 +672,7 @@ try {
 
     # Base Web's switch: the page's line under the first says whether it is on. Touch, the mouse, Space and an Enter
     # pressed on it each toggle it.
-    Section 'switch: a tap, a click, Space and Enter' {
+    Section 'switch: a tap, a click, Space, Enter and the pressed tint' {
         Open 'Switch'
         $basic = ById 'Basic'
         $state = ReadOut 'State'
@@ -702,6 +702,24 @@ try {
         Check 'Shift+Tab with Enter held brings the focus back' (IsFocused $basic) "$($AE::FocusedElement.Current.Name)"
         Check 'an Enter pressed elsewhere and let go on it leaves it off' ((State) -ceq 'Off') (State)
         Check 'and leaves the switch it was pressed on as it was' ((Toggled $multiline) -ceq $before) (Toggled $multiline)
+
+        # #68: a held touch draws the pressed tint, as on the checkbox and the radio (Metered's: Base Web's switch has none).
+        Away
+        $rest = Look $basic
+        try {
+            $sx, $sy = Mark $basic 20
+            TouchDown $sx $sy
+            Hold 300
+            $tinted = Changed $rest (Look $basic)
+            Shot 'switch-touch-held'
+            TouchUp
+            Start-Sleep -Milliseconds 400
+            Check 'a held touch draws the pressed tint' ($tinted -gt $Moved) "$tinted sampled pixels differ"
+            Check 'and lifted, turns it on' ((State) -ceq 'On') (State)
+            TapMark $basic 20
+            Check 'a second tap turns it off' ((State) -ceq 'Off') (State)
+        }
+        finally { $rest.Dispose() }
     }
 
     # Base Web's stepped bar (steps.tsx): Next and Previous move it a step; UI Automation reads its range, read only,

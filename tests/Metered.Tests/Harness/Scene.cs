@@ -47,6 +47,9 @@ internal sealed class Scene : IDisposable
     /// <summary>Runs the dispatcher's queued jobs, a layout pass and a frame (hit-testing reads the drawn scene).</summary>
     public void Pump()
     {
+        // Avalonia's dispatcher promotes its due timers (the animations' next frame among them) only after it runs a job,
+        // and RunJobs runs none when nothing is queued: a job first, so the clock moves as an app's main loop moves it (#69).
+        Dispatcher.UIThread.Post(static () => { });
         Dispatcher.UIThread.RunJobs();
         Window.UpdateLayout();
         Window.CaptureRenderedFrame();

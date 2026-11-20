@@ -153,7 +153,7 @@ METERED cost Button: 196 ms, 326 elements, 3 rules (3), layout 61.0, render 29.8
 
 The time is the shell's own, from before the page is made to its first drawn frame, the same as its
 ready line's `open=`; for a page shown before the shell is in a window (a phone's start page), the time
-it took to make and then from the shell's joining the window, not the platform's start between. *Elements* is the page's visual tree. *Rules* are the global rules the page is
+it took to make and then from the shell's joining the window, not the platform's start between; nor its wait for the view's size: a page whose view has none yet (Android's 1 × 1 placeholder before its surface) waits for one and for the frames after it, up to 10 s, and is then reported as it is (#37). *Elements* is the page's visual tree. *Rules* are the global rules the page is
 checked against (the application's, and those of the page and its logical ancestors), with their
 alternatives in brackets: the three are the shell's own, its headings, its labels and the margin
 between buttons in a `WrapPanel`, which every element of every page pays; `SimpleTheme` and
