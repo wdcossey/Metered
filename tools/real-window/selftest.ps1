@@ -46,6 +46,14 @@ Check 'After reads each of two, by its label, case and all' (((After $group 'Cli
 Check 'After is nothing for a label not there' (($null -eq (After $group 'Selected')) -and ($null -eq (After 'Clicked: none' 'selected')))
 Check 'After reads an empty selection as empty' ((After 'Clicked: 0; selected: ' 'selected') -ceq '') "'$(After 'Clicked: 0; selected: ' 'selected')'"
 
+$path = @(DragPath 10 20 30 -60 3)
+Check 'DragPath ends where the drag does, in even steps' (($path.Count -eq 3) -and ($path[0].X -eq 20) -and ($path[0].Y -eq 0) -and ($path[2].X -eq 40) -and ($path[2].Y -eq -40)) (($path | ForEach-Object { "$($_.X),$($_.Y)" }) -join ' ')
+$sx, $sy = SliderAt 100 200 350 1 50
+Check 'SliderAt puts 50 in the middle of the line, on it' (($sx -eq 275) -and ($sy -eq 217)) "$sx, $sy"
+$sx, $sy = SliderAt 100 200 700 2 0
+Check 'SliderAt puts the minimum at the line''s start, at a scaling of 2' (($sx -eq 132) -and ($sy -eq 234)) "$sx, $sy"
+$sx, $null = SliderAt 0 0 350 1 300 -300 300
+Check 'SliderAt reads a custom minimum and maximum' ($sx -eq 334) "$sx"
 Check 'TapVerdict: a look back at its rest is at rest' (((TapVerdict 100 0 $false) -eq 'at rest') -and ((TapVerdict 100 ($Same - 1) $true) -eq 'at rest'))
 Check 'TapVerdict: still drawn, the cursor off it, is left drawn' ((TapVerdict 100 50 $false) -eq 'left drawn')
 Check 'TapVerdict: between the same and the moved settles nothing' (((TapVerdict 100 $Same $false) -eq 'unsettled') -and ((TapVerdict 100 $Moved $false) -eq 'unsettled'))
