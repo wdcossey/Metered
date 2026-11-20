@@ -6,6 +6,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Media.Immutable;
 using Avalonia.Styling;
 using Metered.Controls;
@@ -635,18 +636,211 @@ public class SwitchTests
         var (sw, scene) = Make(new Switch());
         using var _ = scene;
         scene.Hover(sw);
-        var frame = scene.Capture();
         var track = (Visual)sw.Part(Switch.ToggleTrackPart)!;
         // Inside the border, right of the knob.
-        var p = track.TranslatePoint(new Point(track.Bounds.Width - 12, track.Bounds.Height / 2), scene.Window)!.Value;
-        var pixel = Frames.PixelAt(frame, (int)p.X, (int)p.Y);
-        var overlay = Color.Parse(c.TrackOverlay!);
-        var under = Color.Parse(c.TrackBackground);
-        var a = overlay.A / 255.0;
-        int Blend(byte top, byte bottom) => (int)Math.Round(top * a + bottom * (1 - a));
-        Assert.InRange(pixel.R, Blend(overlay.R, under.R) - 1, Blend(overlay.R, under.R) + 1);
-        Assert.InRange(pixel.G, Blend(overlay.G, under.G) - 1, Blend(overlay.G, under.G) + 1);
-        Assert.InRange(pixel.B, Blend(overlay.B, under.B) - 1, Blend(overlay.B, under.B) + 1);
-        Assert.NotEqual(under, pixel);
+        var pixel = Pixel(scene, scene.Capture(), track, new Point(track.Bounds.Width - 12, track.Bounds.Height / 2));
+        AssertBlend(pixel, c.TrackOverlay!, c.TrackBackground);
+    }
+
+    // #68, Metered's difference: a real finger held on the switch draws the pressed tint (the oracle's touch case, Base
+    // Web's getOverlayColor's pressedColor) over the track's and the knob's fills, never a hover; lifted, it toggles the
+    // switch and the tint is gone.
+    [AvaloniaFact]
+    public void A_held_touch_draws_the_pressed_tint_and_lifting_it_ends_it()
+    {
+        var held = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "touch");
+        var lifted = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && x.Checked && !x.Disabled && !x.ShowIcon && x.State == "rest");
+        var (sw, scene) = Make(new Switch());
+        using var _ = scene;
+        var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
+        var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
+        // Inside the track's 2 px border at its left end: never under the knob, off, on or sliding between.
+        var edge = new Point(3.5, track.Bounds.Height / 2);
+
+        var touch = scene.Window.TouchBegin(scene.CentreOf(track), RawInputModifiers.None);
+        scene.Pump();
+        Assert.Contains(":is-active", sw.Classes);
+        Assert.DoesNotContain(":is-hovered", sw.Classes);
+        Assert.Equal(held.TrackOverlay, SwitchColourTests.Colour(track.Overlay));
+        Assert.Equal(held.ToggleOverlay, SwitchColourTests.Colour(toggle.Overlay));
+        var frame = scene.Capture();
+        AssertBlend(Pixel(scene, frame, track, edge), held.TrackOverlay!, held.TrackBackground);
+        AssertBlend(Pixel(scene, frame, toggle, new Point(toggle.Bounds.Width / 2, toggle.Bounds.Height / 2)), held.ToggleOverlay!, held.ToggleBackground);
+
+        scene.Window.TouchEnd(touch, scene.CentreOf(track), RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(sw.IsChecked);
+        Assert.DoesNotContain(":is-active", sw.Classes);
+        Assert.Null(lifted.TrackOverlay);
+        Assert.Null(track.Overlay);
+        Assert.Null(toggle.Overlay);
+        Assert.Equal(Color.Parse(lifted.TrackBackground), Pixel(scene, scene.Capture(), track, edge));
+    }
+
+    // The tint is the press's, never the mouse's: a mouse over the switch draws Base Web's hover overlay, and pressed it
+    // still does, as radio-v2's inner disc and checkbox-v2's box decide ($isHovered before $isActive).
+    [AvaloniaFact]
+    public void A_mouse_never_draws_the_pressed_tint()
+    {
+        var hover = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "hover");
+        var touch = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "touch");
+        Assert.NotEqual(hover.TrackOverlay, touch.TrackOverlay);
+        var (sw, scene) = Make(new Switch());
+        using var _ = scene;
+        var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
+        var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
+        var edge = new Point(3.5, track.Bounds.Height / 2);
+
+        scene.Hover(track);
+        Assert.Equal(hover.TrackOverlay, SwitchColourTests.Colour(track.Overlay));
+        Assert.Equal(hover.ToggleOverlay, SwitchColourTests.Colour(toggle.Overlay));
+
+        scene.Press(track);
+        Assert.Contains(":is-active", sw.Classes);
+        Assert.Equal(hover.TrackOverlay, SwitchColourTests.Colour(track.Overlay));
+        Assert.Equal(hover.ToggleOverlay, SwitchColourTests.Colour(toggle.Overlay));
+        AssertBlend(Pixel(scene, scene.Capture(), track, edge), hover.TrackOverlay!, hover.TrackBackground);
+    }
+
+    // As the checkbox's box: Space or Enter held makes the switch active (switch.js's onKeyDown), which draws the tint.
+    [AvaloniaFact]
+    public void A_held_key_draws_the_pressed_tint_as_on_the_checkbox()
+    {
+        var (sw, scene) = Make(new Switch());
+        using var _ = scene;
+        var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
+        var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
+        scene.Key(Key.Tab);
+        // Space held on the switch off, then Enter held on it on (Space's release turned it on).
+        foreach (var (key, physical, on) in new[] { (Key.Space, PhysicalKey.Space, false), (Key.Enter, PhysicalKey.Enter, true) })
+        {
+            Assert.Equal(on, sw.IsChecked);
+            var c = SwitchOracle.Data.Colours.First(x => x.Theme == "Light" && x.Checked == on && !x.Disabled && !x.ShowIcon && x.State == "touch");
+            scene.Window.KeyPress(key, RawInputModifiers.None, physical, null);
+            scene.Pump();
+            Assert.Equal(c.TrackOverlay, SwitchColourTests.Colour(track.Overlay));
+            Assert.Equal(c.ToggleOverlay, SwitchColourTests.Colour(toggle.Overlay));
+            scene.Window.KeyRelease(key, RawInputModifiers.None, physical, null);
+            scene.Pump();
+            Assert.Null(track.Overlay);
+            Assert.Null(toggle.Overlay);
+        }
+    }
+
+    // One tint across the three v2 controls: under a held finger, the switch's track and knob take the brush Radio's
+    // backplate and Checkbox's container take, the theme's pressedOverlayAlpha (radio-v2's and checkbox-v2's
+    // getOverlayColor), light and dark.
+    [AvaloniaTheory]
+    [InlineData("Light")]
+    [InlineData("Dark")]
+    public void The_tint_is_the_one_Radio_and_Checkbox_draw(string theme)
+    {
+        var sw = new Switch { Content = "Switch" };
+        var radio = new Radio { Content = "Radio" };
+        var box = new Checkbox { Content = "Checkbox" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Spacing = 20, Children = { sw, radio, box } },
+            theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light);
+        Assert.True(scene.Window.TryFindResource("colors.pressedOverlayAlpha", scene.Window.ActualThemeVariant, out var token));
+        var expected = SwitchColourTests.Colour((IBrush)token!);
+        Assert.Equal(SwitchOracle.Data.Colours.First(x => x.Theme == theme && !x.Checked && !x.Disabled && !x.ShowIcon && x.State == "touch").TrackOverlay, expected);
+
+        // Each control off when the finger goes down, and read while it is held.
+        string[] Held(Control target, params Func<IBrush?>[] brushes)
+        {
+            var touch = scene.Window.TouchBegin(scene.CentreOf(target), RawInputModifiers.None);
+            scene.Pump();
+            var got = brushes.Select(b => SwitchColourTests.Colour(b())).ToArray();
+            scene.Window.TouchEnd(touch, scene.CentreOf(target), RawInputModifiers.None);
+            scene.Pump();
+            return got;
+        }
+
+        var backplate = (Border)radio.Part(Radio.RadioBackplatePart)!;
+        var container = (Border)box.Part(Checkbox.CheckmarkContainerPart)!;
+        var track = (RadioMark)sw.Part(Switch.ToggleTrackPart)!;
+        var toggle = (SwitchToggle)sw.Part(Switch.TogglePart)!;
+        Assert.Equal([expected], Held(backplate, () => backplate.Background));
+        Assert.Equal([expected], Held(container, () => container.Background));
+        Assert.Equal([expected, expected], Held(track, () => track.Overlay, () => toggle.Overlay));
+    }
+
+    // switch.js's handlers are checkbox.js's: one isActive, set by a press or Space or Enter, and ended by a button's
+    // release, a key's release, or any pointer leaving, whichever comes first. The switch and the checkbox take the same
+    // input to the same states. A key let go is tried under a finger, not a held mouse: its release toggles the switch,
+    // and Avalonia then raises PointerExited for the captured mouse as the scene redraws
+    // (PointerOverPreProcessor.SceneInvalidated), which ends the press whichever rule holds.
+    [AvaloniaTheory]
+    [InlineData("touch, Space, let go of Space, lift", new[] { true, true, false, false })]
+    [InlineData("Space, press, release, let go of Space", new[] { true, true, false, false })]
+    [InlineData("touch, drag off, lift", new[] { true, false, false })]
+    public void A_press_and_a_key_end_as_on_the_checkbox(string sequence, bool[] expected)
+    {
+        Assert.Equal(expected, Steps(new Checkbox { Content = "Label" }, c => c.Part(Checkbox.CheckmarkContainerPart)!, sequence));
+        Assert.Equal(expected, Steps(new Switch { Content = "Label" }, s => s.Part(Switch.ToggleTrackPart)!, sequence));
+    }
+
+    private static bool[] Steps<T>(T control, Func<T, StyledElement> plate, string sequence) where T : Control
+    {
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { control } });
+        scene.Key(Key.Tab);
+        Assert.True(control.IsFocused);
+        var at = scene.CentreOf((Visual)plate(control));
+        var away = new Point(Scene.Width - 1, Scene.Height - 1);
+        IHeadlessTouchPointer? touch = null;
+        var states = new List<bool>();
+        foreach (var step in sequence.Split(", "))
+        {
+            switch (step)
+            {
+                case "press":
+                    scene.Window.MouseMove(at);
+                    scene.Window.MouseDown(at, MouseButton.Left);
+                    break;
+                case "release":
+                    scene.Window.MouseUp(at, MouseButton.Left);
+                    break;
+                case "Space":
+                    scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+                    break;
+                case "let go of Space":
+                    scene.Window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+                    break;
+                case "touch":
+                    touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+                    break;
+                case "drag off":
+                    scene.Window.TouchMove(touch!, away, RawInputModifiers.None);
+                    break;
+                case "lift":
+                    scene.Window.TouchEnd(touch!, away, RawInputModifiers.None);
+                    break;
+                default:
+                    throw new ArgumentException(step);
+            }
+
+            scene.Pump();
+            states.Add(control.Classes.Contains(":is-active"));
+        }
+
+        return [.. states];
+    }
+
+    private static Color Pixel(Scene scene, WriteableBitmap frame, Visual v, Point at)
+    {
+        var p = v.TranslatePoint(at, scene.Window)!.Value;
+        return Frames.PixelAt(frame, (int)Math.Floor(p.X), (int)Math.Floor(p.Y));
+    }
+
+    /// <summary>A pixel of <paramref name="under"/> beneath <paramref name="overlay"/>, blended as its alpha says, within 1.</summary>
+    private static void AssertBlend(Color pixel, string overlay, string under)
+    {
+        var top = Color.Parse(overlay);
+        var bottom = Color.Parse(under);
+        var a = top.A / 255.0;
+        int Blend(byte t, byte b) => (int)Math.Round(t * a + b * (1 - a));
+        Assert.InRange(pixel.R, Blend(top.R, bottom.R) - 1, Blend(top.R, bottom.R) + 1);
+        Assert.InRange(pixel.G, Blend(top.G, bottom.G) - 1, Blend(top.G, bottom.G) + 1);
+        Assert.InRange(pixel.B, Blend(top.B, bottom.B) - 1, Blend(top.B, bottom.B) + 1);
+        Assert.NotEqual(bottom, pixel);
     }
 }
