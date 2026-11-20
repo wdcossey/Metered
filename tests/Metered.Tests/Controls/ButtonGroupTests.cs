@@ -541,6 +541,24 @@ public class ButtonGroupTests
         Assert.True(bound.IsTabStop);
     }
 
+    // When a button's own true goes, the group's selection takes its place, after the change has been told: a listener
+    // that came after the group hears the values in order, the last of them the one the button has.
+    [AvaloniaFact]
+    public void A_listener_hears_the_groups_selection_after_the_buttons_own()
+    {
+        var button = new Button { Content = "Own", IsSelected = true };
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [0] };
+        group.Items.Add(button);
+        using var scene = new Scene(group);
+        var heard = new List<bool>();
+        button.PropertyChanged += (_, e) => { if (e.Property == Button.IsSelectedProperty) heard.Add((bool)e.NewValue!); };
+
+        button.IsSelected = false;
+        scene.Pump();
+        Assert.True(button.IsSelected);
+        Assert.Equal([false, true], heard);
+    }
+
     private sealed class Switchable : System.ComponentModel.INotifyPropertyChanged
     {
         private bool _isOn;
