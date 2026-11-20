@@ -295,18 +295,21 @@ public class ButtonGroupTests
         Assert.Empty(group.Selected!);
     }
 
-    // A reset lets go only of the buttons that are gone: one still in the source stays the group's.
+    // A reset lets go only of the buttons that are gone: those still in the source stay the group's, a button's own
+    // selection kept (a button let go and taken again would lose it, as letting go clears what the group wrote: #70).
     [AvaloniaFact]
     public void A_reset_keeps_the_buttons_still_in_the_group()
     {
         var gone = new Button { Content = "Item 0" };
         var kept = new Button { Content = "Item 1" };
-        var source = new ResettingCollection { gone, kept };
+        var ownSelected = new Button { Content = "Item 2", IsSelected = true };
+        var source = new ResettingCollection { gone, kept, ownSelected };
         var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Kind = ButtonKind.Tertiary, ItemsSource = source };
         var clicks = new List<int>();
         group.Click += (_, e) => clicks.Add(e.Index);
         using var scene = new Scene(group);
         Assert.False(kept.IsTabStop);
+        Assert.True(ownSelected.IsSelected);
 
         source.RemoveFirstAndReset();
         scene.Pump();
@@ -315,6 +318,7 @@ public class ButtonGroupTests
         // Now the first, with none selected: the radio group's one tab stop, before any click applies it again.
         Assert.True(kept.IsTabStop);
         Assert.Equal(AutomationControlType.RadioButton, AutomationProperties.GetControlTypeOverride(kept));
+        Assert.True(ownSelected.IsSelected);
 
         scene.Click(kept);
         Assert.Equal([0], clicks);
