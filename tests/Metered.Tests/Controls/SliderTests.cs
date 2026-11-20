@@ -180,6 +180,17 @@ public class SliderTests
         Assert.True(slider.Thumbs[0].IsFocused);
     }
 
+    // Two thumbs on one value are equally close to a press on the line: the first takes it, and goes below the second.
+    [AvaloniaFact]
+    public void Of_two_thumbs_on_one_value_a_press_off_them_moves_the_first()
+    {
+        var (slider, scene) = Show(new Slider { Value = [50, 50] });
+        using var _ = scene;
+        Drag(scene, At(scene, slider, 0.2));
+        Assert.Equal([20.0, 50.0], slider.Value);
+        Assert.True(slider.Thumbs[0].IsFocused);
+    }
+
     // onMouseOrTouchStart, after onMouseDownTrack: a press on a thumb drags that one, even where another is closer. Two
     // thumbs on one value: the later is drawn on top and takes the press, and the earlier holds it from going below.
     [AvaloniaFact]
@@ -221,6 +232,25 @@ public class SliderTests
         Assert.Empty(thumb.Children);
         Assert.DoesNotContain(":is-dragged", thumb.Classes);
         Assert.Equal([[60.0]], events.Finals);
+    }
+
+    // Metered's hover is a mouse's (ADR 0001): a finger over a thumb, pressing nothing, shows no label.
+    [AvaloniaFact]
+    public void A_finger_never_hovers_a_thumb()
+    {
+        var (slider, scene) = Show(new Slider { Value = [30] });
+        using var _ = scene;
+        var thumb = slider.Thumbs[0];
+        var touch = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+        foreach (var e in new[] { InputElement.PointerEnteredEvent, InputElement.PointerMovedEvent })
+        {
+            thumb.RaiseEvent(new PointerEventArgs(e, thumb, touch, scene.Window, scene.CentreOf(thumb), 0, new PointerPointProperties(), KeyModifiers.None));
+        }
+
+        scene.Pump();
+        Assert.Empty(thumb.Children);
+        scene.Hover(thumb);
+        Assert.NotEmpty(thumb.Children);
     }
 
     // onTouchStartTrack: a touch on the track off the thumb moves the closest thumb to it at once.
@@ -400,6 +430,16 @@ public class SliderTests
         Down(scene, Key.Right);
         Down(scene, Key.A, "a");
         Assert.Equal([[51.0]], events.Finals);
+        Up(scene, Key.A, "a");
+        Up(scene, Key.Right);
+        Assert.Single(events.Finals);
+
+        // Tab, held, ends the drag and makes the change final before the focus moves on.
+        Down(scene, Key.Left);
+        Assert.Equal(0, slider.DraggedThumb);
+        Down(scene, Key.Tab);
+        Assert.Equal(-1, slider.DraggedThumb);
+        Assert.Equal([[51.0], [50.0]], events.Finals);
     }
 
     // onChange is called even where the value can't move: at the maximum, a step up gives the maximum again.
@@ -594,8 +634,9 @@ public class SliderTests
         slider.Value = [10, 20];
         slider.Overrides = null;
         scene.Pump();
-        Assert.All(slider.Thumbs, t => Assert.NotSame(Red, t.Background));
-        Assert.All(slider.Elements(Slider.MarkPart), m => Assert.NotSame(Red, ((Border)m).Background));
+        var rest = SliderOracle.Data.Colours.First(c => c is { Theme: "Light", State: "rest" });
+        Assert.All(slider.Thumbs, t => Assert.Equal(rest.Thumb, SliderColourTests.Colour(t.Background)));
+        Assert.All(slider.Elements(Slider.MarkPart), m => Assert.Equal(rest.Mark, SliderColourTests.Colour(((Border)m).Background)));
     }
 
     private static ControlTheme Theme<T>(AvaloniaProperty property, object value) =>
