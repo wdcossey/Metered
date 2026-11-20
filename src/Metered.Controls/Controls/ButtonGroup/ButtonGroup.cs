@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace Metered.Controls;
 
@@ -128,6 +129,11 @@ public class ButtonGroup : ItemsControl
             if (_held.Remove(property, out var held)) held.Undo?.Dispose();
         }
 
+        public bool Holds(AvaloniaProperty property) => _held.ContainsKey(property);
+
+        /// <summary>The button's IsSelected beneath the group's, as it was once the group last set its own.</summary>
+        public Optional<bool> SelectedBeneath { get; set; }
+
         public void LetAll()
         {
             foreach (var property in _held.Keys.ToList()) Let(property);
@@ -235,16 +241,21 @@ public class ButtonGroup : ItemsControl
     }
 
     /// <summary>
-    /// The button's own IsSelected changed: Base Web keeps an own true, so the button is applied again. Avalonia tells
-    /// of no change to a value beneath one the group holds, so this sees an own value only while the group holds none
-    /// over it (an own true, or a group of plain buttons); otherwise the own value is read at the group's next apply.
+    /// The button's own IsSelected changed: Base Web keeps an own true, so the button is applied again, once the change
+    /// has been told to everything that listens, so that none hears the group's value before the button's. Avalonia
+    /// tells of no change to a value beneath one the group holds, so this hears only an own value the group holds none
+    /// over (an own true, or a group of plain buttons).
     /// </summary>
     private void OnButtonPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property != Button.IsSelectedProperty || e.Priority == BindingPriority.Animation) return;
-        if (sender is not Button button || !_members.ContainsKey(button)) return;
-        var index = IndexFromContainer(button);
-        if (index >= 0) Apply(button, index);
+        if (_applying || e.Property != Button.IsSelectedProperty || e.Priority == BindingPriority.Animation) return;
+        if (sender is not Button button) return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_members.ContainsKey(button)) return;
+            var index = IndexFromContainer(button);
+            if (index >= 0) Apply(button, index);
+        });
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -274,21 +285,47 @@ public class ButtonGroup : ItemsControl
         }
     }
 
+    /// <summary>Whether the group is applying itself to a button, so that the changes it makes aren't taken for the button's own.</summary>
+    private bool _applying;
+
     private void Apply(Button button, int index)
     {
-        var hold = _members[button];
+        _applying = true;
+        try
+        {
+            ApplyHeld(button, _members[button], index);
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    private void ApplyHeld(Button button, Hold hold, int index)
+    {
         // Base Web's cloneElement: the group's kind, shape and size replace the child's.
         hold.Set(Button.KindProperty, Kind);
         hold.Set(Button.ShapeProperty, Shape);
         hold.Set(Button.SizeProperty, Size);
 
-        // child.props.isSelected of true is kept: the button's own, beneath what the group holds.
-        var ownSelected = button.GetBaseValue(Button.IsSelectedProperty) is { HasValue: true, Value: true };
+        // child.props.isSelected of true is kept: the button's own, beneath what the group holds. A TwoWay binding
+        // writes the group's value back beneath it, which isn't the button's own: beneath unchanged since the group
+        // last set its value, it is the group's.
+        var beneath = button.GetBaseValue(Button.IsSelectedProperty);
+        var writtenBack = hold.Holds(Button.IsSelectedProperty) && beneath.Equals(hold.SelectedBeneath);
+        var ownSelected = beneath is { HasValue: true, Value: true } && !writtenBack;
         bool? isSelected = ownSelected ? true
             : IsSimpleClickable ? null
             : Selected?.Contains(index) == true;
-        if (isSelected is { } selected && !ownSelected) hold.Set(Button.IsSelectedProperty, selected);
-        else hold.Let(Button.IsSelectedProperty);
+        if (isSelected is { } selected && !ownSelected)
+        {
+            hold.Set(Button.IsSelectedProperty, selected);
+            hold.SelectedBeneath = button.GetBaseValue(Button.IsSelectedProperty);
+        }
+        else
+        {
+            hold.Let(Button.IsSelectedProperty);
+        }
 
         // Base Web's role and tabIndex.
         var isRadio = Mode == ButtonGroupMode.Radio;

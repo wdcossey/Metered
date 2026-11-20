@@ -53,8 +53,13 @@ wrap (36 cases), and each behaviour above.
 2. `aria-checked` has no Avalonia equivalent on a Button's automation peer; the role is set.
 3. Base Web reads a child's own `isSelected` of true on every render. Here the group reads the
    button's own `IsSelected` each time it applies (a change to the group, or the button's place),
-   and when the button's own value changes while the group isn't holding one over it. Avalonia
-   raises no change for a value beneath a held one, so an own `IsSelected` that turns true while
-   the group holds false shows at the group's next change.
-4. A button's `IsAnimating` is true for the properties the group holds, as they are held at the
-   `Animation` priority.
+   and when the button's own value changes while the group holds none over it. Avalonia raises no
+   change for a value beneath a held one, so an own `IsSelected` that turns true while the group
+   holds false shows at the group's next apply.
+4. A `TwoWay` binding on a button's `IsSelected` writes the group's value back to its source, as
+   Avalonia's bindings write back a value at any priority. The group doesn't take that for the
+   button's own true: it does only when the value beneath has changed since the group last set its
+   own.
+5. The properties the group holds are held at the `Animation` priority, so `IsAnimating` is true
+   for them, and an app's own animation of one of them on a grouped button competes with the
+   group's value.

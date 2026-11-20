@@ -395,6 +395,10 @@ public class ButtonGroupTests
         Assert.Equal(ButtonShape.Circle, button.Shape);
         Assert.True(button.IsTabStop);
         Assert.Equal(AutomationControlType.RadioButton, AutomationProperties.GetControlTypeOverride(button));
+        // The group's kind changed while it holds the button: the new one replaces the old.
+        group.Kind = ButtonKind.Outline;
+        scene.Pump();
+        Assert.Equal(ButtonKind.Outline, button.Kind);
 
         go();
         scene.Pump();
@@ -478,7 +482,7 @@ public class ButtonGroupTests
         Assert.Equal(ButtonKind.Tertiary, button.Kind);
         Assert.False(button.IsSelected);
         Assert.False(button.IsTabStop);
-        // Held at Avalonia's Animation priority, the one above a local value (the README's known difference 4).
+        // Held at Avalonia's Animation priority, the one above a local value (the README's known difference 5).
         Assert.True(button.IsAnimating(Button.KindProperty));
 
         // The own true, read when the group applies (Avalonia tells of no change beneath the group's value), is kept;
@@ -489,6 +493,7 @@ public class ButtonGroupTests
         Assert.True(button.IsSelected);
         Assert.True(button.IsTabStop);
         model.IsOn = false;
+        scene.Pump();
         Assert.False(button.IsSelected);
         Assert.False(button.IsTabStop);
 
@@ -506,6 +511,34 @@ public class ButtonGroupTests
         Assert.Equal(ButtonKind.Primary, button.Kind);
         model.IsOn = true;
         Assert.True(button.IsSelected);
+    }
+
+    // A TwoWay binding writes the group's selection back to its source, beneath the group's value. That isn't the
+    // button's own isSelected: the group still decides. A true the source sets itself is the button's own, kept.
+    [AvaloniaFact]
+    public void A_two_way_bound_selection_follows_the_group_and_keeps_an_own_true()
+    {
+        var model = new Switchable();
+        var bound = new Button { Content = "Bound", DataContext = model };
+        bound.Bind(Button.IsSelectedProperty, new ReflectionBinding(nameof(Switchable.IsOn)) { Mode = BindingMode.TwoWay });
+        var group = new ButtonGroup { Mode = ButtonGroupMode.Radio, Selected = [1] };
+        group.Items.Add(new Button { Content = "First" });
+        group.Items.Add(bound);
+        using var scene = new Scene(group);
+        Assert.True(bound.IsSelected);
+        Assert.True(model.IsOn);
+
+        group.Selected = [0];
+        scene.Pump();
+        Assert.False(bound.IsSelected);
+        Assert.False(bound.IsTabStop);
+        Assert.False(model.IsOn);
+
+        model.IsOn = true;
+        group.Selected = [0];
+        scene.Pump();
+        Assert.True(bound.IsSelected);
+        Assert.True(bound.IsTabStop);
     }
 
     private sealed class Switchable : System.ComponentModel.INotifyPropertyChanged
