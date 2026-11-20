@@ -83,6 +83,13 @@ public partial class SampleShell : UserControl
     internal Action<string> Report { get; set; } = Console.WriteLine;
 
     /// <summary>
+    /// How long a page whose view has no size yet waits for one before its line is written anyway, with the size it has;
+    /// a test shortens it. Ten seconds: a phone's view has its size well within a second of its start, and
+    /// <c>tools/android/run.ps1</c> waits 60 for the line, so a view that never gets one is still reported, as such.
+    /// </summary>
+    internal TimeSpan SizeWait { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// Whether a Debug build shows the cost line in its footer; on by default. The preview turns it off, so that its
     /// pictures don't change with each run's times. It is still written to <see cref="Report"/>.
     /// </summary>
@@ -167,9 +174,12 @@ public partial class SampleShell : UserControl
         // Only now, in a window, so that a shell never shown has no listener; layout and render can't come before.
         opening.Measure();
 #endif
-        // The callback runs before the next frame is drawn; the one it asks for runs after it.
-        top.RequestAnimationFrame(_ => top.RequestAnimationFrame(_ => Drawn(opening, top)));
+        AwaitFrames(opening, top);
     }
+
+    /// <summary>The callback runs before the next frame is drawn; the one it asks for runs after it.</summary>
+    private void AwaitFrames(Opening opening, TopLevel top) =>
+        top.RequestAnimationFrame(_ => top.RequestAnimationFrame(_ => Drawn(opening, top)));
 
     /// <summary>
     /// The page's first frame has drawn. An animation-frame callback runs at the start of a render pass, before that
@@ -183,11 +193,35 @@ public partial class SampleShell : UserControl
             Dispatcher.UIThread.Post(() => Ready(opening, top), DispatcherPriority.Loaded);
     }
 
-    /// <summary>The ready line, with the time to the page's first frame, and in Debug the cost line.</summary>
+    /// <summary>
+    /// The ready line, with the time to the page's first frame, and in Debug the cost line; or, if the view has no size
+    /// yet, a wait for one first.
+    /// <para>
+    /// Avalonia's animation frames are the process's, not the view's: a frame request runs whether or not its top level
+    /// renders or has a size. On Android the view is a 1 × 1 placeholder at scaling 1 until its surface is made and
+    /// changed (Avalonia 12.1.4's <c>InvalidationAwareSurfaceView</c>), and the shell is in it from the activity's start,
+    /// so on a slow start its frames come and go before then: a line read <c>view=1x1 … page=1x0</c>, render 0.0 (#37).
+    /// So a page waits for its top level's size, and then for the frames after it: the resize lays the page out
+    /// (<c>TopLevel.HandleResized</c>), and the next frames draw it at that size. A view that gets no size within
+    /// <see cref="SizeWait"/> is reported as it is, its <c>view=</c> and <c>page=</c> saying so.
+    /// </para>
+    /// </summary>
     private void Ready(Opening opening, TopLevel top)
     {
         if (!IsCurrent(opening, top))
             return;
+
+        if (Unsized(top.ClientSize) && !opening.SizeWaitOver)
+        {
+            opening.AwaitSize(top, SizeWait,
+                sized: () =>
+                {
+                    if (IsCurrent(opening, top))
+                        AwaitFrames(opening, top);
+                },
+                over: () => Ready(opening, top));
+            return;
+        }
 
         _opening = null;
         try
@@ -210,6 +244,12 @@ public partial class SampleShell : UserControl
             opening.Dispose();
         }
     }
+
+    /// <summary>
+    /// Whether a view has no room for a page: Android's placeholder before its surface (1 × 1 at scaling 1), or none.
+    /// No real view is a pixel wide or high.
+    /// </summary>
+    internal static bool Unsized(Size view) => view.Width <= 1 || view.Height <= 1;
 
     /// <summary>
     /// Whether <paramref name="opening"/> is still the page being opened, in <paramref name="top"/>: frame requests and
@@ -289,11 +329,20 @@ public partial class SampleShell : UserControl
         return top;
     }
 
-    /// <summary>A page being opened: what it is, what it's called, when it began, and in Debug its cost.</summary>
+    /// <summary>
+    /// A page being opened: what it is, what it's called, when it began, its wait for its view's size, and in Debug its
+    /// cost.
+    /// </summary>
     private sealed class Opening(Control page, string title, long started) : IDisposable
     {
         /// <summary>How long the page took to make, if it was shown before its shell was in a window; else null.</summary>
         private long? _making;
+
+        /// <summary>The watch on the view's size, while the page waits for one; else null.</summary>
+        private IDisposable? _sizeWatch;
+
+        /// <summary>The end of the wait for a size, while it runs; else null.</summary>
+        private IDisposable? _sizeDeadline;
 
         public Control Page { get; } = page;
 
@@ -314,6 +363,45 @@ public partial class SampleShell : UserControl
             _making = null;
         }
 
+        /// <summary>Whether the wait for a size has run out: the page is reported with the size it has.</summary>
+        public bool SizeWaitOver { get; private set; }
+
+        /// <summary>
+        /// Waits for <paramref name="top"/> to have a size: <paramref name="sized"/> each time it gets one, and
+        /// <paramref name="over"/> once, if <paramref name="bound"/> passes first. Started once; a later call is the same
+        /// wait, so its bound is from the first. Both end as the page is disposed.
+        /// </summary>
+        public void AwaitSize(TopLevel top, TimeSpan bound, Action sized, Action over)
+        {
+            if (_sizeWatch is not null || SizeWaitOver)
+                return;
+
+            // The observable gives the size it has at once, which is none; only a later one is the view's.
+            _sizeWatch = top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(size =>
+            {
+                if (!Unsized(size))
+                    sized();
+            }));
+            _sizeDeadline = DispatcherTimer.RunOnce(() =>
+            {
+                _sizeDeadline = null;
+                SizeWaitOver = true;
+                over();
+            }, bound);
+        }
+
+        public void Dispose()
+        {
+            _sizeWatch?.Dispose();
+            _sizeWatch = null;
+            _sizeDeadline?.Dispose();
+            _sizeDeadline = null;
+#if DEBUG
+            _performance?.Dispose();
+            _performance = null;
+#endif
+        }
+
 #if DEBUG
         /// <summary>Avalonia's layout and render times for this page; a process-wide listener, so disposed with it.</summary>
         private PerformanceMonitor? _performance;
@@ -322,16 +410,6 @@ public partial class SampleShell : UserControl
 
         /// <summary>What the page cost to its first frame. Measured from <see cref="AwaitFirstFrame"/>, which comes first.</summary>
         public string Cost(TimeSpan opened) => _performance!.Read(Title, Page, opened);
-
-        public void Dispose()
-        {
-            _performance?.Dispose();
-            _performance = null;
-        }
-#else
-        public void Dispose()
-        {
-        }
 #endif
     }
 }

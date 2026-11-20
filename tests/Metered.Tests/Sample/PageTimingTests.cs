@@ -221,6 +221,67 @@ public class PageTimingTests
         Assert.InRange(OpenMs(line), SlowMs - 10, WaitMs - 1);
     }
 
+    // As on a phone's cold start (#37): the start page is opened, and the shell put in its view, while the view is still
+    // Android's 1 × 1 placeholder; Avalonia's frames come all the same, as they're the process's, not the view's. The
+    // line waits for the view's size and the frames after it, so the page it reports has been laid out at that size.
+    [AvaloniaFact]
+    public void A_Page_Opened_While_The_View_Has_No_Size_Reports_Once_Laid_Out_At_Its_Size()
+    {
+        var lines = new List<string>();
+        var pageAsWritten = new List<Size>();
+        var shell = ShellOf(lines);
+        shell.Report = line =>
+        {
+            lines.Add(line);
+            pageAsWritten.Add(shell.Shown!.Bounds.Size);
+        };
+        shell.Open("plain");
+        using var scene = new Scene(shell, width: 1, height: 1);
+
+        Draw();
+        Draw();
+        Assert.Equal(new Size(1, 1), scene.Window.ClientSize);
+        Assert.Empty(lines);
+
+        scene.Window.Width = Scene.Width;
+        scene.Window.Height = Scene.Height;
+        Dispatcher.UIThread.RunJobs();
+        Draw();
+
+        var line = Assert.Single(Ready(lines));
+        var page = PageSize(shell);
+        Assert.Matches($"^METERED ready open=[0-9]+ms scaling=1 view=390x844 raw=390x844 safe=0,0,0,0 page={page} title=plain$", line);
+        Assert.Equal(new Size(Scene.Width, Scene.Height - Bar(shell).Bounds.Height), pageAsWritten[0]);
+    }
+
+    // A view that never gets a size still has its line, once the wait is over, as it is: its view= and page= say so.
+    [AvaloniaFact]
+    public void A_Page_Whose_View_Never_Gets_A_Size_Is_Reported_As_It_Is_Once_The_Wait_Is_Over()
+    {
+        var lines = new List<string>();
+        using var written = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var shell = ShellOf(lines);
+        shell.SizeWait = TimeSpan.FromMilliseconds(300);
+        shell.Report = line =>
+        {
+            lines.Add(line);
+            written.Cancel();
+        };
+        using var scene = new Scene(shell, width: 1, height: 1);
+
+        var sinceOpen = System.Diagnostics.Stopwatch.StartNew();
+        shell.Open("plain");
+        Draw();
+        Assert.Empty(lines);
+
+        // The wait's end is a dispatcher timer, which only the dispatcher's own loop runs.
+        Dispatcher.UIThread.MainLoop(written.Token);
+
+        var line = Assert.Single(Ready(lines));
+        Assert.Matches("^METERED ready open=[0-9]+ms scaling=1 view=1x1 raw=1x1 safe=0,0,0,0 page=1x0 title=plain$", line);
+        Assert.InRange(OpenMs(line), 300, sinceOpen.ElapsedMilliseconds + 1);
+    }
+
     // A Debug build writes what the page cost to open after its ready line, with the shell's time, so the two agree, and
     // shows it in its footer, already shown as the ready line is written, so that a frame taken after that line has it;
     // a Release build has neither.
