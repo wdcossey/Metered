@@ -143,7 +143,7 @@ public partial class SampleShell : UserControl
         Leave(toPage: true);
         Host.Child = page;
         PageTitle.Text = title;
-        _opening = new Opening(page, title, started);
+        _opening = new Opening(page, title, started, SizeWait);
         if (_top is null)
             _opening.ShownOutOfWindow();
         AwaitFirstFrame();
@@ -207,6 +207,11 @@ public partial class SampleShell : UserControl
     /// <see cref="SizeWait"/> is reported as it is, its <c>view=</c> and <c>page=</c> saying so. Either way the time
     /// spent waiting is left out of the line's, as the platform's start before the shell is in a window is.
     /// </para>
+    /// <para>
+    /// A size means the view renders: Android's comes only from its surface, whose creation starts the view's rendering
+    /// (<c>AvaloniaView.InternalView_SurfaceWindowCreated</c>) before the surface's change gives the top level its size
+    /// and then its scaling, in one callback (<c>TopLevelImpl.SurfaceViewImpl.SurfaceChanged</c>).
+    /// </para>
     /// </summary>
     private void Ready(Opening opening, TopLevel top)
     {
@@ -215,7 +220,7 @@ public partial class SampleShell : UserControl
 
         if (Unsized(top.ClientSize) && !opening.SizeWaitOver)
         {
-            opening.AwaitSize(top, SizeWait, sized: () => AwaitFrames(opening, top), over: () => Ready(opening, top));
+            opening.AwaitSize(top, sized: () => AwaitFrames(opening, top), over: () => Ready(opening, top));
             return;
         }
 
@@ -329,7 +334,7 @@ public partial class SampleShell : UserControl
     /// A page being opened: what it is, what it's called, when it began, its wait for its view's size, and in Debug its
     /// cost.
     /// </summary>
-    private sealed class Opening(Control page, string title, long started) : IDisposable
+    private sealed class Opening(Control page, string title, long started, TimeSpan sizeWait) : IDisposable
     {
         /// <summary>How long the page took to make, if it was shown before its shell was in a window; else null.</summary>
         private long? _making;
@@ -343,8 +348,8 @@ public partial class SampleShell : UserControl
         /// <summary>When the wait for a size began, while one runs; else null.</summary>
         private long? _waitingSince;
 
-        /// <summary>What's left of the bound on the waits for a size, once one has begun; else null.</summary>
-        private TimeSpan? _waitLeft;
+        /// <summary>What's left of the bound on the waits for a size, the shell's <see cref="SizeWait"/> as the page is shown.</summary>
+        private TimeSpan _waitLeft = sizeWait;
 
         public Control Page { get; } = page;
 
@@ -370,29 +375,29 @@ public partial class SampleShell : UserControl
 
         /// <summary>
         /// Waits for <paramref name="top"/> to have a size: <paramref name="sized"/> once it gets one, or
-        /// <paramref name="over"/> if what's left of <paramref name="bound"/> passes first. A view that loses its size
-        /// again waits again, for what's left. The time waited is left out of the page's (<see cref="Started"/>).
+        /// <paramref name="over"/> if what's left of the bound passes first. A view that loses its size again waits
+        /// again, for what's left. The time waited is left out of the page's (<see cref="Started"/>).
         /// </summary>
-        public void AwaitSize(TopLevel top, TimeSpan bound, Action sized, Action over)
+        public void AwaitSize(TopLevel top, Action sized, Action over)
         {
             if (_waitingSince is not null || SizeWaitOver)
                 return;
 
             _waitingSince = Stopwatch.GetTimestamp();
-            _waitLeft ??= bound;
-            // The observable gives the size it has at once, which is none; only a later one is the view's.
-            _sizeWatch ??= top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(size =>
-            {
-                if (!Unsized(size) && EndWait())
-                    sized();
-            }));
             _sizeDeadline = DispatcherTimer.RunOnce(() =>
             {
                 if (!EndWait())
                     return;
                 SizeWaitOver = true;
                 over();
-            }, _waitLeft.Value);
+            }, _waitLeft);
+            // The observable gives the size it has at once: none, as the shell waits only then; if it had one, that would
+            // end the wait at once, as a later one does.
+            _sizeWatch ??= top.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(size =>
+            {
+                if (!Unsized(size) && EndWait())
+                    sized();
+            }));
         }
 
         /// <summary>Ends the wait for a size, if one runs, its time left out of the page's and taken from the bound.</summary>
@@ -403,7 +408,7 @@ public partial class SampleShell : UserControl
 
             var now = Stopwatch.GetTimestamp();
             Started += now - since;
-            _waitLeft = TimeSpan.FromTicks(Math.Max(0, (_waitLeft!.Value - Stopwatch.GetElapsedTime(since, now)).Ticks));
+            _waitLeft = TimeSpan.FromTicks(Math.Max(0, (_waitLeft - Stopwatch.GetElapsedTime(since, now)).Ticks));
             _waitingSince = null;
             _sizeDeadline?.Dispose();
             _sizeDeadline = null;

@@ -293,6 +293,26 @@ public class PageTimingTests
         Assert.Matches($"^METERED ready open=[0-9]+ms scaling=1 view=390x844 raw=390x844 safe=0,0,0,0 page={PageSize(shell)} title=plain$", line);
     }
 
+    // A page left while it waits for its view's size says nothing, even once its wait would have run out.
+    [AvaloniaFact]
+    public void A_Page_Left_While_It_Waits_For_A_Size_Reports_Nothing()
+    {
+        var lines = new List<string>();
+        var shell = ShellOf(lines);
+        shell.SizeWait = TimeSpan.FromMilliseconds(100);
+        using var scene = new Scene(shell, width: 1, height: 1);
+
+        shell.Open("plain");
+        Draw();
+        shell.ShowIndex();
+        // Past the wait's end, run by the dispatcher's own loop as a timer is.
+        using (var after = new CancellationTokenSource(TimeSpan.FromMilliseconds(400)))
+            Dispatcher.UIThread.MainLoop(after.Token);
+        Draw();
+
+        Assert.Empty(lines);
+    }
+
     // A view that never gets a size still has its line, once the wait is over, as it is: its view= and page= say so, and
     // its time is the page's own, without the wait.
     [AvaloniaFact]
