@@ -284,6 +284,15 @@ public class ButtonGroupTests
         foreach (var button in buttons) scene.Click(button);
         Assert.Empty(clicks);
         Assert.Equal([0], group.Selected!);
+
+        // Back in the group, a click is reported once: the group's old hold on it went when it left.
+        elsewhere.Children.Remove(buttons[0]);
+        if (leave == "source") source.Add(buttons[0]);
+        else group.Items.Add(buttons[0]);
+        scene.Pump();
+        scene.Click(buttons[0]);
+        Assert.Equal([0], clicks);
+        Assert.Empty(group.Selected!);
     }
 
     // A reset lets go only of the buttons that are gone: one still in the source stays the group's.
