@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -149,6 +150,38 @@ public class FormControlLayoutTests
         scene.Pump();
         var facts = FormControlOracle.Value.Layout.Facts;
         Assert.Equal(before - 12 + facts.LabelContainer.Margin[3], InputLayoutTests.At(input, form).Y, 3);
+    }
+
+    // Found on a Pixel 8 (411 dp at 2.625): typing "hey" into the counter's input drew its "3" cut in half. Instrument
+    // Sans' figures are proportional: "1" is narrower than "0", the row shrank to it, and a wider "2" or "3" was clamped to
+    // that width, its desired size unchanged, so the row was never measured again. Each text is at its own min-content
+    // width, at the row's end, and drawn whole.
+    [AvaloniaTheory]
+    [InlineData(1.0)]
+    [InlineData(2.625)]
+    public void The_counter_is_measured_again_as_it_changes(double scaling)
+    {
+        var facts = FormControlOracle.Value.Layout.Facts;
+        var input = new Input { Size = InputSize.Compact };
+        var form = new FormControl { Label = "Enable counter", Caption = "Input caption", Counter = true, Content = input };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(16, 0), Children = { form } }, width: 411);
+        scene.Window.SetRenderScaling(scaling);
+        scene.Pump();
+        var end = (Avalonia.Controls.Presenters.ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        scene.Click(input);
+        foreach (var (key, count) in new[] { ("h", "1"), ("e", "2"), ("y", "3"), ("", "2") })
+        {
+            if (key == "") scene.Key(Avalonia.Input.Key.Back);
+            else scene.Window.KeyTextInput(key);
+            scene.Pump();
+            var text = (TextBlock)end.Child!;
+            Assert.Equal(count, text.Text);
+            var width = Measure(count, facts.LabelEndEnhancer.Font);
+            // Within a pixel: the layout rounds to whole device pixels.
+            Assert.InRange(end.Bounds.Width, width - 1, width + 1);
+            Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace, $"{count}: {text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+            Assert.Equal(form.Bounds.Width, InputLayoutTests.At(end, form).Right, 3);
+        }
     }
 
     [AvaloniaFact]

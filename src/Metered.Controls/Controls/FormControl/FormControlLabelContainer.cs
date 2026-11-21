@@ -13,8 +13,14 @@ namespace Metered.Controls;
 /// run, the label (<c>width: 100%</c>, which flex shrinks) the rest; both as tall as the row, which is as tall as the
 /// taller (<c>align-items: stretch</c>).
 /// </summary>
-/// <remarks>The first child is the label and the second the enhancer, as form-control.js renders them; a hidden one
-/// takes no room.</remarks>
+/// <remarks>
+/// <para>The first child is the label and the second the enhancer, as form-control.js renders them; a hidden one takes no
+/// room.</para>
+/// <para>The enhancer is measured at its min-content width, so a text that grows within it (a counter going from "1" to
+/// "3", a proportional figure wider) is clamped to the old width, its desired size unchanged, and Avalonia's layout would
+/// never measure the row again: the row follows what it measures, the presenter's content and child and the text's
+/// words and font, and measures itself again when one changes.</para>
+/// </remarks>
 public class FormControlLabelContainer : Panel
 {
     private Control? Label => Children.Count > 0 && Children[0].IsVisible ? Children[0] : null;
@@ -51,8 +57,14 @@ public class FormControlLabelContainer : Panel
     /// </summary>
     private (double Width, double Height) MeasureEnd(double available)
     {
-        if (End is not { } end) return (0, 0);
+        if (End is not { } end)
+        {
+            Watch(null, null);
+            return (0, 0);
+        }
+
         end.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Watch(end as ContentPresenter, (end as ContentPresenter)?.Child as TextBlock);
         var width = end.DesiredSize.Width;
         if (end is ContentPresenter { Child: TextBlock { Text: { } content } text } presenter)
         {
@@ -65,6 +77,39 @@ public class FormControlLabelContainer : Panel
         width = Math.Min(Math.Ceiling(width * scale) / scale, available);
         end.Measure(new Size(width, double.PositiveInfinity));
         return (width, end.DesiredSize.Height);
+    }
+
+    private ContentPresenter? _watchedPresenter;
+    private TextBlock? _watchedText;
+
+    /// <summary>Follows the enhancer's presenter and text block, which its min-content width is read from.</summary>
+    private void Watch(ContentPresenter? presenter, TextBlock? text)
+    {
+        if (presenter != _watchedPresenter)
+        {
+            if (_watchedPresenter is not null) _watchedPresenter.PropertyChanged -= OnEndChanged;
+            _watchedPresenter = presenter;
+            if (presenter is not null) presenter.PropertyChanged += OnEndChanged;
+        }
+
+        if (text != _watchedText)
+        {
+            if (_watchedText is not null) _watchedText.PropertyChanged -= OnEndChanged;
+            _watchedText = text;
+            if (text is not null) text.PropertyChanged += OnEndChanged;
+        }
+    }
+
+    private void OnEndChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        var p = e.Property;
+        if (p == ContentPresenter.ContentProperty || p == ContentPresenter.ChildProperty || p == ContentPresenter.PaddingProperty
+            || p == TextBlock.TextProperty || p == TextBlock.FontFamilyProperty || p == TextBlock.FontSizeProperty
+            || p == TextBlock.FontWeightProperty || p == TextBlock.FontStyleProperty || p == TextBlock.FontStretchProperty
+            || p == TextBlock.PaddingProperty || p == MarginProperty)
+        {
+            InvalidateMeasure();
+        }
     }
 
     /// <summary>The white space a line breaks at: all but the no-break spaces (U+00A0, U+2007, U+202F).</summary>
