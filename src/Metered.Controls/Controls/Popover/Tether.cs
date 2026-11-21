@@ -23,9 +23,10 @@ internal readonly record struct TetherResult(PopoverPlacement Placement, Point O
 /// viewport less 5 pixels, then the modifiers before it again). Each quirk is popper.js's, kept: a side read after a
 /// modifier moved the other is the one computed before it, the body's size is its <c>offsetWidth</c> (rounded) plus its
 /// margins, and <c>auto</c>'s areas are the viewport's unpadded width and height.</para>
-/// <para>The boundaries are the window's client area: Base Web's are the document (popper.js's <c>scrollParent</c> of a
-/// layer in the body, the html element) and the viewport, which are one in a page that doesn't scroll, as an app's
-/// window doesn't. tools/reference/tether.js runs popper.js itself on the same boxes; the tests compare.</para>
+/// <para>Two boundaries, as popper.js's: the viewport, which <c>auto</c> and <c>flip</c> keep to (the window's client
+/// area), and <c>preventOverflow</c>'s, the anchor's scroll parent (the box a scroll viewer shows, as popper.js's
+/// scrolling element's), or with none the document, which in an app's window that doesn't scroll is the window.
+/// tools/reference/tether.js runs popper.js itself on the same boxes; the tests compare.</para>
 /// </remarks>
 internal static class Tether
 {
@@ -37,9 +38,11 @@ internal static class Tether
     /// <param name="margin">The body's margins as popper.js reads them (its computed style).</param>
     /// <param name="arrow">The arrow's box size along its side (Base Web's <c>ARROW_WIDTH</c>), or null with none.</param>
     /// <param name="placement">The placement asked for.</param>
-    /// <param name="viewport">The boundaries.</param>
+    /// <param name="viewport">The viewport: <c>auto</c>'s and <c>flip</c>'s boundaries.</param>
     /// <param name="preventOverflow">popper.js's <c>preventOverflow</c>: Base Web's <c>!ignoreBoundary</c>.</param>
-    public static TetherResult Compute(Rect anchor, Size body, Thickness margin, double? arrow, PopoverPlacement placement, Rect viewport, bool preventOverflow)
+    /// <param name="boundaries"><c>preventOverflow</c>'s boundaries: the viewport unless given.</param>
+    public static TetherResult Compute(Rect anchor, Size body, Thickness margin, double? arrow, PopoverPlacement placement, Rect viewport,
+        bool preventOverflow, Rect? boundaries = null)
     {
         // offsetWidth and offsetHeight are whole pixels; clientWidth and clientHeight too (the body has no border).
         var width = Whole(body.Width);
@@ -60,6 +63,7 @@ internal static class Tether
             Margin = margin,
             Arrow = arrow,
             Viewport = viewport,
+            Boundaries = boundaries ?? viewport,
             PreventOverflow = preventOverflow,
         };
 
@@ -159,6 +163,7 @@ internal static class Tether
         public Thickness Margin;
         public double? Arrow;
         public Rect Viewport;
+        public Rect Boundaries;
         public bool PreventOverflow;
         public double ArrowLeft, ArrowTop;
     }
@@ -247,7 +252,7 @@ internal static class Tether
 
     private static void PreventOverflow(Data d)
     {
-        var b = Bounds(d.Viewport, 0);
+        var b = Bounds(d.Boundaries, 0);
         var p = d.Popper;
         // priority: left, right, top, bottom. A secondary reads the right or bottom computed before the modifier.
         if (p.Left < b.Left) p.Left = Math.Max(p.Left, b.Left);

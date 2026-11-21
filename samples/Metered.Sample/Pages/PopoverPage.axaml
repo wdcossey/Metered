@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.PopoverPage">
+  <!-- Base Web's popover, as its documentation's examples show it: always open, opened by a click and by a hover, with
+       an arrow, its placements, closed from its content, and its overrides. Headings are the shell's. A tap outside a
+       popover closes it; a drag that scrolls the page doesn't; a finger never hovers, so the hover popovers open only
+       under a mouse or by keyboard focus. -->
+  <UserControl.Styles>
+    <!-- Base Web's ParagraphSmall, padded scale500, the examples' content. -->
+    <Style Selector="TextBlock.paragraph">
+      <Setter Property="FontFamily" Value="{DynamicResource typography.ParagraphSmall.fontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource typography.ParagraphSmall.fontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource typography.ParagraphSmall.fontWeight}" />
+      <Setter Property="LineHeight" Value="{DynamicResource typography.ParagraphSmall.lineHeight}" />
+      <!-- scale500 -->
+      <Setter Property="Margin" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.anchor">
+      <Setter Property="FontFamily" Value="{DynamicResource typography.font300.fontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource typography.font300.fontSize}" />
+      <Setter Property="LineHeight" Value="{DynamicResource typography.font300.lineHeight}" />
+      <Setter Property="Foreground" Value="{DynamicResource colors.contentPrimary}" />
+    </Style>
+    <Style Selector="WrapPanel > b|Popover">
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Always open" />
+      <!-- stateless.tsx: isOpen, and no dismissal (Base Web's Popover has none unless it is given onClickOutside). -->
+      <b:Popover x:Name="AlwaysOpen" IsOpen="True" DismissOnClickOutside="False" DismissOnEsc="False" AutoFocus="False"
+                 HorizontalAlignment="Left">
+        <b:Popover.Content>
+          <TextBlock Classes="paragraph" Text="hello world" />
+        </b:Popover.Content>
+        <TextBlock Classes="anchor" Text="Always open" />
+      </b:Popover>
+
+      <TextBlock Classes="heading" Text="Opens on click" />
+      <WrapPanel>
+        <!-- stateful-click.tsx -->
+        <b:Popover x:Name="Click" AccessibilityType="Tooltip">
+          <b:Popover.Content>
+            <TextBlock Classes="paragraph" Text="hello world" />
+          </b:Popover.Content>
+          <b:Button Content="Open" />
+        </b:Popover>
+        <!-- with-arrow.tsx -->
+        <b:Popover x:Name="Arrow" AccessibilityType="Tooltip" ShowArrow="True">
+          <b:Popover.Content>
+            <TextBlock Classes="paragraph" Text="hello world" />
+          </b:Popover.Content>
+          <b:Button Content="With arrow" />
+        </b:Popover>
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="Opens on hover" />
+      <!-- stateful-hover.tsx: a mouse over the text, or keyboard focus on it. -->
+      <b:Popover x:Name="Hover" AccessibilityType="Tooltip" TriggerType="Hover" HorizontalAlignment="Left">
+        <b:Popover.Content>
+          <TextBlock Classes="paragraph" Text="hello world" />
+        </b:Popover.Content>
+        <TextBlock Classes="anchor" Text="Hover" />
+      </b:Popover>
+
+      <TextBlock Classes="heading" Text="Close from content" />
+      <!-- dismiss.tsx: neither Escape nor a click outside closes it; its content's button does, by the close function
+           its content is given (PopoverPage.axaml.cs). -->
+      <b:Popover x:Name="Dismiss" AccessibilityType="Tooltip" DismissOnEsc="False" DismissOnClickOutside="False">
+        <b:Button Content="Click Me" />
+      </b:Popover>
+
+      <TextBlock Classes="heading" Text="Placements" />
+      <!-- placements.tsx: each placement (PopoverPage.axaml.cs). Base Web's open on hover; these on a click, so a finger
+           can open them too. -->
+      <WrapPanel x:Name="Placements" />
+
+      <TextBlock Classes="heading" Text="Overrides" />
+      <!-- overrides.tsx: open at first (initialState), the body, arrow and inner in the warning colour, a smaller
+           radius, white text. -->
+      <b:Popover x:Name="Overridden" ShowArrow="True" IsOpen="True">
+        <b:Popover.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="Arrow">
+              <b:Override.Style>
+                <ControlTheme TargetType="Border">
+                  <Setter Property="Background" Value="{DynamicResource colors.warning}" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+            <b:Override Part="Body">
+              <b:Override.Style>
+                <ControlTheme TargetType="Border">
+                  <Setter Property="Background" Value="{DynamicResource colors.warning}" />
+                  <Setter Property="CornerRadius" Value="{DynamicResource borders.radius200}" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+            <b:Override Part="Inner">
+              <b:Override.Style>
+                <ControlTheme TargetType="ContentPresenter">
+                  <Setter Property="Background" Value="{DynamicResource colors.warning}" />
+                  <Setter Property="CornerRadius" Value="{DynamicResource borders.radius200}" />
+                  <Setter Property="Foreground" Value="{DynamicResource colors.white}" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Popover.Overrides>
+        <b:Popover.Content>
+          <TextBlock Classes="paragraph" Text="hello world" />
+        </b:Popover.Content>
+        <b:Button Content="Click Me" />
+      </b:Popover>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
