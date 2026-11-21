@@ -69,7 +69,7 @@ many of a region's sampled pixels differ: under 5 is the same, over 20 a change 
   click select; Down and Up move the selection, wrapping.
 - **switch:** a tap on its track, a click, Space and an Enter on it each toggle it, read from the page's `State` line and
   through UI Automation; an Enter pressed on the next switch, then let go once the
-  focus is back on the first, toggles neither (#49).
+  focus is back on the first, toggles neither (#49); a held touch draws the pressed tint (#68).
 - **progress bar:** the stepped bar's Next (a click) and Previous (a tap) move it a step; UI Automation reads its range,
   read only, and Base Web's name for it, "Step 2 of 5" (#53).
 - **slider:** in the page's ScrollViewer, a touch drag across the first slider moves its thumb from 60 to 80 and leaves the
