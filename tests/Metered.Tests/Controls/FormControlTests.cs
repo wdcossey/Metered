@@ -611,6 +611,9 @@ public class FormControlTests
         scene.Window.MouseUp(at, MouseButton.Left);
         scene.Pump();
         Assert.True(box.IsChecked);
+        // Nothing is left of that click: a finger's tap on the label is a click of its own.
+        ClickAt(scene, at, touch: true);
+        Assert.False(box.IsChecked);
     }
 
     // A control above whose own hit area reaches over the form control's top margin (a compact Button's tap band, 48 px)
@@ -665,6 +668,140 @@ public class FormControlTests
         var label = new FormControlLabel { Content = "Label" };
         using var scene = Show(new StackPanel { Margin = new Thickness(0, 20), Children = { label, new Input() } });
         Assert.Equal(new Rect(label.Bounds.Size), label.HitArea);
+    }
+
+    // Something under the whole form control (a card's background, behind it in a grid) leaves the margins the label's.
+    [AvaloniaFact]
+    public void A_background_behind_the_form_control_leaves_the_margins_the_labels()
+    {
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        var card = new Grid { Children = { new Border { Background = Brushes.Transparent }, form } };
+        using var scene = Show(card);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var top = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        ClickAt(scene, new Point(scene.CentreOf(label).X, top + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // A disabled control above whose tap band reaches over the margin is passed through, as input passes through it.
+    [AvaloniaFact]
+    public void A_disabled_tap_band_over_the_margin_leaves_it_the_labels()
+    {
+        var above = new Metered.Controls.Button { Content = "Above", Size = ButtonSize.Mini, MinHitArea = ButtonMinHitArea.Tap, IsEnabled = false };
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { above, form } });
+        var formTop = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        var band = above.TranslatePoint(new Point(above.Bounds.Width / 2, above.Bounds.Height), scene.Window)!.Value;
+        Assert.True(band.Y > formTop + 1);
+        ClickAt(scene, new Point(band.X, formTop + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // The margins as laid out: an override's negative margin on the control container collapses the gap under the row,
+    // and the label covers only what is left.
+    [AvaloniaFact]
+    public void The_hit_area_is_the_margin_as_laid_out()
+    {
+        var container = new ControlTheme(typeof(FormControlStack)) { Setters = { new Setter(Layoutable.MarginProperty, new Thickness(0, -4, 0, 16)) } };
+        var form = new FormControl
+        {
+            Label = "Label", Content = new Input(),
+            Overrides = [new Override { Part = FormControl.ControlContainerPart, Style = container }],
+        };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var margin = FormControlOracle.Value.Layout.Facts.LabelContainer.Margin;
+        Assert.Equal(-margin[1], label.HitArea.Top, 3);
+        Assert.Equal(label.Bounds.Height + margin[3] - 4, label.HitArea.Bottom, 3);
+    }
+
+    // One finger's click isn't another's: a second finger's tap on the label while the first is held neither clicks nor
+    // takes the first one's click.
+    [AvaloniaFact]
+    public void A_second_fingers_tap_doesnt_take_the_first_ones_click()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var form = new FormControl { Label = "Label", Content = box };
+        using var scene = Show(form);
+        var at = CentreOfLabel(scene, form);
+        var first = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        var second = scene.Window.TouchBegin(at + new Vector(20, 0), RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(second, at + new Vector(20, 0), RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+        scene.Window.TouchEnd(first, at, RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+    }
+
+    // A label taken out of the tree mid-click lets the click go: put back, the main button's release clicks nothing.
+    [AvaloniaFact]
+    public void A_label_taken_out_mid_click_lets_it_go()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var form = new FormControl { Label = "Label", Content = box };
+        var page = new StackPanel { Children = { form } };
+        using var scene = Show(page);
+        var at = CentreOfLabel(scene, form);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        page.Children.Remove(form);
+        scene.Pump();
+        page.Children.Add(form);
+        scene.Pump();
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+    }
+
+    // A browser's label clicks a button or an input it labels, nothing else: a control that isn't a button, even one
+    // whose peer can be invoked, is only focused.
+    [AvaloniaFact]
+    public void Only_a_button_is_clicked()
+    {
+        var other = new Invokable();
+        var form = new FormControl { Label = "Label", Content = new Input(), HtmlFor = other };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        scene.Click((Visual)form.Part(FormControl.LabelPart)!);
+        Assert.True(other.IsFocused);
+        Assert.Equal(0, other.Invoked);
+    }
+
+    // Its hit area is wider than its box, but what it shows is clipped to its box, by its presenter.
+    [AvaloniaFact]
+    public void The_labels_content_is_clipped_to_its_box()
+    {
+        var form = new FormControl { Label = "Label", Content = new Input() };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        Assert.False(label.ClipToBounds);
+        Assert.True(label.Presenter!.ClipToBounds);
+    }
+
+    /// <summary>A focusable control that isn't a button, whose automation peer can be invoked.</summary>
+    private sealed class Invokable : Control
+    {
+        public Invokable()
+        {
+            Focusable = true;
+            Height = 10;
+        }
+
+        public int Invoked { get; set; }
+
+        protected override AutomationPeer OnCreateAutomationPeer() => new Peer(this);
+
+        private sealed class Peer(Invokable owner) : ControlAutomationPeer(owner), Avalonia.Automation.Provider.IInvokeProvider
+        {
+            public void Invoke() => owner.Invoked++;
+        }
     }
 
     /// <summary>A command that counts its runs.</summary>

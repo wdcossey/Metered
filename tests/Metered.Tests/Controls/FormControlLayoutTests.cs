@@ -218,6 +218,40 @@ public class FormControlLayoutTests
         Assert.True(inner.Bounds.Width >= inner.TextLayout.WidthIncludingTrailingWhitespace);
     }
 
+    // Text measured at its min-content width is measured again when its font grows, or another text takes its place.
+    [AvaloniaFact]
+    public void The_end_enhancers_text_is_measured_again_when_its_font_or_text_block_changes()
+    {
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = "1", Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var end = (Avalonia.Controls.Presenters.ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        void Whole()
+        {
+            var text = (TextBlock)end.Child!;
+            Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace,
+                $"{text.Text}: {text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+        }
+
+        ((TextBlock)end.Child!).FontSize = 30;
+        scene.Pump();
+        Whole();
+        form.LabelEndEnhancer = new TextBlock { Text = "1234" };
+        scene.Pump();
+        Whole();
+    }
+
+    // Its min-content width is the text's with its letter spacing: the text is drawn whole.
+    [AvaloniaFact]
+    public void The_end_enhancers_letter_spacing_is_in_its_width()
+    {
+        var text = new TextBlock { Text = "1234", LetterSpacing = 4 };
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = text, Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace,
+            $"{text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+        Assert.Single(text.TextLayout.TextLines);
+    }
+
     [AvaloniaFact]
     public void A_no_break_space_doesnt_break_the_end_enhancer()
     {

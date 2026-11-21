@@ -43,14 +43,15 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
 {
     static FormControlLabel()
     {
-        // A templated control clips to its bounds, hit tests too: its hit area is wider (a browser's label box doesn't clip
-        // either, its overflow visible).
+        // A templated control clips to its bounds, hit tests too: its hit area is wider. Its content is still clipped to
+        // its box, by its presenter.
         ClipToBoundsProperty.OverrideDefaultValue<FormControlLabel>(false);
         TemplateProperty.OverrideDefaultValue<FormControlLabel>(new FuncControlTemplate<FormControlLabel>((label, scope) =>
         {
             var content = new ContentPresenter
             {
                 Name = "PART_ContentPresenter",
+                ClipToBounds = true,
                 [!ContentPresenter.ContentProperty] = label[!ContentProperty],
                 [!ContentPresenter.ContentTemplateProperty] = label[!ContentTemplateProperty],
                 [!ContentPresenter.BackgroundProperty] = label[!BackgroundProperty],
@@ -73,8 +74,9 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
     /// </summary>
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        // Another button pressed meanwhile doesn't cancel the main one's click, as a browser's.
+        // Another button pressed meanwhile doesn't cancel the main one's click, as a browser's; nor another finger.
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed) return;
+        if (_pressed is not null && _pressed != e.Pointer) return;
         _pressed = e.Pointer;
         // The text under the pointer took it on the press; the label takes it, so that a scroller that takes it for a drag
         // takes it from the label, which hears that (capture lost isn't routed).
@@ -88,30 +90,32 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        // Another finger's is not its click.
+        if (e.Pointer != _pressed) return;
         // Another button let go meanwhile isn't the click, as a browser's: the main one's release is. Avalonia's mouse lets
         // the capture go on any button's release; the click goes on.
         if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
         {
-            _otherReleased = e.Pointer == _pressed;
+            _otherReleased = e.Pointer.Captured == this;
             return;
         }
 
-        var pressed = _pressed;
         _pressed = null;
-        if (pressed != e.Pointer || Target is not { } target || !HitTest(e.GetPosition(this))) return;
+        if (Target is not { } target || !HitTest(e.GetPosition(this))) return;
         e.Handled = true;
         Activate(target);
     }
 
     /// <summary>
-    /// A browser's label activation: the labelled control focused, then clicked, by its automation peer's toggle or
-    /// invoke, which run its own click; nothing for a disabled one.
+    /// A browser's label activation: the labelled control focused, then, if it is a button (Avalonia's, so a toggle button,
+    /// a checkbox, a radio or a switch too, as a browser's label clicks a button or an input it labels), clicked by its
+    /// automation peer's toggle or invoke, which run its own click; nothing for a disabled one.
     /// </summary>
     internal static void Activate(IInputElement target)
     {
         if (!target.IsEffectivelyEnabled) return;
         target.Focus(NavigationMethod.Pointer);
-        if (target is not Control control) return;
+        if (target is not Avalonia.Controls.Button control) return;
         var peer = ControlAutomationPeer.CreatePeerForElement(control);
         if (peer.GetProvider<IToggleProvider>() is { } toggle) toggle.Toggle();
         else if (peer.GetProvider<IInvokeProvider>() is { } invoke) invoke.Invoke();
@@ -128,10 +132,26 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
         {
             var box = new Rect(Bounds.Size);
             if (this.GetVisualParent() is not FormControlLabelContainer row) return box;
-            var above = Math.Max(0, row.Margin.Top) + Math.Max(0, Bounds.Top);
-            var below = Math.Max(0, row.Margin.Bottom) + Math.Max(0, row.Bounds.Height - Bounds.Bottom);
+            // The margins as laid out: a neighbour's own margin collapsed with them (an override's negative margin) leaves
+            // less room, which is the neighbour's.
+            var (before, after) = Neighbours(row);
+            var top = Math.Max(0, Math.Min(row.Margin.Top, row.Bounds.Top - before));
+            var bottom = Math.Max(0, Math.Min(row.Margin.Bottom, after - row.Bounds.Bottom));
+            var above = top + Math.Max(0, Bounds.Top);
+            var below = bottom + Math.Max(0, row.Bounds.Height - Bounds.Bottom);
             return new Rect(0, -above, Bounds.Width, Bounds.Height + above + below);
         }
+    }
+
+    /// <summary>Where the row's neighbours in its flow end above it and start below it (the flow's edges without one).</summary>
+    private static (double Before, double After) Neighbours(Layoutable row)
+    {
+        if (row.GetVisualParent() is not Panel flow) return (double.NegativeInfinity, double.PositiveInfinity);
+        var shown = flow.Children.Where(c => c.IsVisible).ToList();
+        var i = shown.IndexOf((Control)row);
+        var before = i > 0 ? shown[i - 1].Bounds.Bottom : 0;
+        var after = i >= 0 && i < shown.Count - 1 ? shown[i + 1].Bounds.Top : flow.Bounds.Height;
+        return (before, after);
     }
 
     private bool _probing;
@@ -146,18 +166,30 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
         if (new Rect(Bounds.Size).Contains(point)) return true;
         if (_probing || !HitArea.Contains(point) || TopLevel.GetTopLevel(this) is not Visual root) return false;
         if (this.TranslatePoint(point, root) is not { } at) return false;
-        // What else is hit there, the label left out (it answers false while it asks): anything neither round it nor in it
-        // is in front of the margin.
+        // What else input would hit there, the label left out (it answers false while it asks). Something that reaches into
+        // the margin from beside it (a tap band, a child pulled over by its margin) takes the point; something under the
+        // whole label (a card's background) doesn't. Something in front of the label is hit first whatever it answers.
         _probing = true;
         try
         {
-            return root.GetVisualsAt(at, v => v.IsVisible && v is not InputElement { IsHitTestVisible: false })
-                .All(v => v.IsVisualAncestorOf(this) || this.IsVisualAncestorOf(v));
+            var box = new Rect(at - point, Bounds.Size).Deflate(0.5);
+            return !root.GetVisualsAt(at, v => v.IsVisible && (v is not InputElement e || (e.IsHitTestVisible && e.IsEffectivelyEnabled)))
+                .Any(v => !v.IsVisualAncestorOf(this) && !this.IsVisualAncestorOf(v)
+                    && !(v.TranslatePoint(default, root) is { } origin && new Rect(origin, v.Bounds.Size).Contains(box)));
         }
         finally
         {
             _probing = false;
         }
+    }
+
+    /// <summary>A label taken out of the tree mid-click lets the click go.</summary>
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        StopWatching();
+        _pressed = null;
+        _otherReleased = false;
     }
 
     /// <summary>
@@ -172,8 +204,12 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
         if (e.Pointer != _pressed) return;
         if (other && TopLevel.GetTopLevel(this) is { } top)
         {
-            _watched = top;
-            top.AddHandler(PointerReleasedEvent, OnAnyRelease, RoutingStrategies.Bubble, handledEventsToo: true);
+            if (_watched is null)
+            {
+                _watched = top;
+                top.AddHandler(PointerReleasedEvent, OnAnyRelease, RoutingStrategies.Bubble, handledEventsToo: true);
+            }
+
             return;
         }
 
@@ -189,6 +225,11 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
         if (e.Pointer != _pressed && _pressed is not null) return;
         if (_pressed is not null && e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased) return;
         _pressed = null;
+        StopWatching();
+    }
+
+    private void StopWatching()
+    {
         _watched?.RemoveHandler(PointerReleasedEvent, OnAnyRelease);
         _watched = null;
     }

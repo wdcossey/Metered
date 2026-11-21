@@ -101,7 +101,11 @@ public class FormControlLabelContainer : Panel
     private ContentPresenter? _watchedPresenter;
     private TextBlock? _watchedText;
 
-    /// <summary>Follows the enhancer's presenter and text block, which its min-content width is read from.</summary>
+    /// <summary>
+    /// Follows the enhancer's presenter and text block, which its min-content width is read from: what <see cref="Widest"/>
+    /// reads (the text, its font and letter spacing) and what is added round it (padding, margins). Text in inlines has no
+    /// <c>Text</c>, so it isn't measured as text: as other content, its growth reaches the row of itself.
+    /// </summary>
     private void Watch(ContentPresenter? presenter, TextBlock? text)
     {
         if (presenter != _watchedPresenter)
@@ -137,7 +141,7 @@ public class FormControlLabelContainer : Panel
     private static readonly char[] Breaks = Enumerable.Range(0, 0x3001).Select(c => (char)c)
         .Where(c => char.IsWhiteSpace(c) && c is not ('\u00A0' or '\u2007' or '\u202F')).ToArray();
 
-    private (string Text, Typeface Typeface, double Size, double Width)? _widest;
+    private (string Text, Typeface Typeface, double Size, double Spacing, double Width)? _widest;
 
     /// <summary>
     /// The widest word of the text in the text block's font: CSS's min-content width of text, its words broken at the
@@ -146,15 +150,20 @@ public class FormControlLabelContainer : Panel
     private double Widest(TextBlock text, string content)
     {
         var typeface = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch);
-        if (_widest is { } last && last.Text == content && last.Typeface == typeface && last.Size == text.FontSize) return last.Width;
+        if (_widest is { } last && last.Text == content && last.Typeface == typeface && last.Size == text.FontSize
+            && last.Spacing == text.LetterSpacing)
+        {
+            return last.Width;
+        }
+
         var widest = 0.0;
         foreach (var word in content.Split(Breaks, StringSplitOptions.RemoveEmptyEntries))
         {
-            using var layout = new TextLayout(word, typeface, text.FontSize, null);
+            using var layout = new TextLayout(word, typeface, text.FontSize, null, letterSpacing: text.LetterSpacing);
             widest = Math.Max(widest, layout.WidthIncludingTrailingWhitespace);
         }
 
-        _widest = (content, typeface, text.FontSize, widest);
+        _widest = (content, typeface, text.FontSize, text.LetterSpacing, widest);
         return widest;
     }
 }
