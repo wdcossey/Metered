@@ -117,10 +117,26 @@ public class PreviewGallery
         foreach (var page in shell.Catalogue)
         {
             shell.Open(page);
+            Stage(page.Title, shell.Shown);
             Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{PictureName(page.Title)}");
         }
 
         shell.ShowIndex();
+    }
+
+    /// <summary>
+    /// What a page shows in its pictures that it doesn't show when opened. The Button page's <c>Loading</c> button
+    /// loading, as Base Web's <c>&lt;Button isLoading&gt;</c> shows (#83): the page itself shows it only for a while
+    /// after a click, and a button of its own would wrap its row and make the page two screens. Its ring is held still,
+    /// as every endless motion is (<see cref="HoldStill"/>). A page without the button fails rather than drawing a
+    /// picture without it.
+    /// </summary>
+    private static void Stage(string title, Control? shown)
+    {
+        if (title != "Button") return;
+        var loading = shown?.FindControl<Button>("Loading")
+            ?? throw new InvalidOperationException("The Button page has no 'Loading' button: update PreviewGallery.");
+        loading.IsLoading = true;
     }
 
     /// <summary>What the list's pictures are called.</summary>

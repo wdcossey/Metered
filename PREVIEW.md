@@ -29,8 +29,9 @@ A Button for each page in the catalogue, one per control.
 
 ## Button
 
-The seven kinds and disabled, the four sizes, the shapes, the selected state, the tap area (an XSmall button that
-takes taps in a 48 px band), the fill width, and the start and end enhancers.
+The seven kinds and disabled, the four sizes, the shapes, a button loading (its ring held still for the picture; the
+page shows it for two seconds after a click), the selected state, the tap area (an XSmall button that takes taps in a
+48 px band), the fill width, and the start and end enhancers.
 
 <p>
 <img src="docs/preview/light__button-1.png" width="270" alt="Button, light: kinds, sizes, shapes, states and enhancers">
