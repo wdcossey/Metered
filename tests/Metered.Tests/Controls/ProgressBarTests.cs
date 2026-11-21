@@ -329,11 +329,7 @@ public class ProgressBarTests
     {
         var max = Math.Max(c.MaxValue, c.MinValue);
         var value = Math.Clamp(c.Value, c.MinValue, max);
-        if (value == c.Value && max == c.MaxValue) return c;
-        var found = ProgressBarOracle.Data.Values.Where(v => v.Value == value && v.MinValue == c.MinValue && v.MaxValue == max
-            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel).ToList();
-        return found.Count == 1 ? found[0] : throw new InvalidOperationException(
-            $"The oracle has {found.Count} cases for {c} clamped to {value} of {c.MinValue} to {max}: add one to tools/reference/progress-bar.js's VALUES.");
+        return value == c.Value && max == c.MaxValue ? c : Twin(c, value, c.MinValue, max);
     }
 
     /// <summary>The oracle's labelled bar of one step, with no name given, for a value and a range.</summary>
@@ -348,9 +344,16 @@ public class ProgressBarTests
     /// the developer's choice; docs/controls/ProgressBar/, known difference 12). The empty case itself stays as Base Web
     /// rendered it.
     /// </summary>
-    private static ProgressBarValueCase Drawn(ProgressBarValueCase c) =>
-        c.MaxValue != c.MinValue ? c : ProgressBarOracle.Data.Values.Single(v => v.Value == 0 && v.MinValue == 0 && v.MaxValue == 100
-            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel);
+    private static ProgressBarValueCase Drawn(ProgressBarValueCase c) => c.MaxValue > c.MinValue ? c : Twin(c, 0, 0, 100);
+
+    /// <summary>The oracle's case like <paramref name="c"/> (its steps, label and name) at another value and range.</summary>
+    private static ProgressBarValueCase Twin(ProgressBarValueCase c, double value, double min, double max)
+    {
+        var found = ProgressBarOracle.Data.Values.Where(v => v.Value == value && v.MinValue == min && v.MaxValue == max
+            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel).ToList();
+        return found.Count == 1 ? found[0] : throw new InvalidOperationException(
+            $"The oracle has {found.Count} cases for {c} at {value} of {min} to {max}: add one to tools/reference/progress-bar.js's VALUES.");
+    }
 
     /// <summary>What Base Web renders for a case, to tell two apart: the name, the label and each bar's state and offset.</summary>
     private static string Output(ProgressBarValueCase c) =>

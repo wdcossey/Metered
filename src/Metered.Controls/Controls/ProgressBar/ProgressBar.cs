@@ -123,13 +123,25 @@ public class ProgressBar : RangeBase
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
 
     /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, given the bar's own range, or its default.</summary>
-    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DefaultLabel(Drawn.Value, Drawn.Max, Drawn.Min);
+    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DrawnLabel();
+
+    private string DrawnLabel()
+    {
+        var (value, min, max) = Drawn;
+        return DefaultLabel(value, max, min);
+    }
 
     /// <summary>
     /// The name Base Web gives assistive technology when the app gives none (<c>aria-label</c>): "Loading" when infinite,
     /// "Step 3 of 4" with steps, otherwise the label.
     /// </summary>
-    internal string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? StepLabel(Drawn.Value, Drawn.Max, Drawn.Min, Steps) : ProgressLabel;
+    internal string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? DrawnStepLabel() : ProgressLabel;
+
+    private string DrawnStepLabel()
+    {
+        var (value, min, max) = Drawn;
+        return StepLabel(value, max, min, Steps);
+    }
 
     /// <summary>
     /// The value and range Base Web's formulas are given for the default label, the name, the fill and the step states:
@@ -300,7 +312,7 @@ public class ProgressBar : RangeBase
             for (var i = 0; i < Steps; i++)
             {
                 var fill = new ProgressBarFill();
-                UpdateFill(fill, i);
+                UpdateFill(fill, i, Drawn);
                 bars.Add(new Border { Child = fill });
                 fills.Add(fill);
             }
@@ -314,13 +326,14 @@ public class ProgressBar : RangeBase
     private void UpdateFills()
     {
         var fills = _parts.All(BarProgressPart);
-        for (var i = 0; i < fills.Count; i++) UpdateFill(fills[i], i);
+        var drawn = Drawn;
+        for (var i = 0; i < fills.Count; i++) UpdateFill(fills[i], i, drawn);
     }
 
-    private void UpdateFill(StyledElement fill, int index)
+    private void UpdateFill(StyledElement fill, int index, (double Value, double Min, double Max) drawn)
     {
         var classes = (IPseudoClasses)fill.Classes;
-        var (value, min, max) = Drawn;
+        var (value, min, max) = drawn;
         var state = Steps > 1 ? StepState(value, min, max, Steps, index) : null;
         foreach (var s in StepStates) classes.Set(s, s == state);
         if (state is not null) return;
