@@ -219,7 +219,8 @@ public class PreviewGallery
         var settled = DateTime.UtcNow + RealTimeSettle;
         while (DateTime.UtcNow < settled)
         {
-            Dispatcher.UIThread.MainLoop(new CancellationTokenSource(50).Token);
+            using var stop = new CancellationTokenSource(50);
+            Dispatcher.UIThread.MainLoop(stop.Token);
             Draw(window).Dispose();
         }
     }

@@ -158,7 +158,8 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   opened again during it; focus going inside or not by `AutoFocus` and accessibility type; the focus lock; content as a
   function, text, a control and data with its template; a binding following the clicks, `Open` and `Close`; opened on
   load and taken out; overrides of the three parts, and of the body's margin; UI Automation; a page that scrolls; a flip
-  near the window's foot.
+  near the window's foot; changes while it is shown (an Avalonia toggle button as the anchor, the arrow shown, the
+  trigger type, a new anchor), a tab put away and back, a window close that is cancelled.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
 - `Sample/PopoverPageTests`: the sample's page, 5: its place, the examples as set, a tap opening and closing, the dismiss
   example, each placement.
@@ -198,7 +199,7 @@ entrance's transition and the hover body's pointer as Base Web's.
    popup would throw.
 8. **Closed as its window closes.** Avalonia 12.1.4 fails taking down a window with an overlay popup open in another's
    content (each closes itself as the overlay layer's children are walked), so a popover closes on its window's
-   `Closing`, even one a handler then cancels.
+   `Closing`, and is shown again if a handler cancels the close.
 9. **Not ported:** `mountNode` (the overlay layer is the window's), `renderAll` (server-side rendering), `popperOptions`
    (popper.js's own modifiers), `stateReducer`, `focusOptions`, `id` and `data-baseweb`.
 10. **Not tried on a phone or in a real window** yet (#119): a tap and a drag outside, the hover trigger under a mouse,

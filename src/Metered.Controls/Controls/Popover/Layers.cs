@@ -31,8 +31,8 @@ internal sealed class Layer
 /// Base Web's <c>LayersManager</c> (<c>layer/layers-manager.js</c>), one for each top level: the open layers in the
 /// order they opened, the last on top. An Escape key's release (Base Web's <c>keyup</c>) goes to the top layer's escape
 /// handler only, and a press in the window (Base Web's <c>mousedown</c>, on the document) to the top click layer's
-/// document-click handler only, which decides whether it was outside. Shared by everything Base Web shows in a layer
-/// (Popover, and Select's and Menu's dropdowns through it).
+/// document-click handler only, which decides whether it was outside. For everything Base Web shows in a layer (the
+/// Popover here).
 /// </summary>
 /// <remarks>
 /// Touch first: a mouse's or a pen's press is the document click, as a browser's <c>mousedown</c>; a finger's is a tap,
@@ -46,6 +46,9 @@ internal sealed class Layers
     private readonly TopLevel _top;
     private readonly List<Layer> _layers = [];
     private readonly Dictionary<long, (Point At, Visual? Source)> _touches = [];
+
+    /// <summary>The fingers down at once that are remembered; a touch cancelled by the system leaves its entry.</summary>
+    private const int MaxTouches = 10;
 
     private Layers(TopLevel top)
     {
@@ -86,6 +89,8 @@ internal sealed class Layers
     {
         if (e.Pointer.Type == PointerType.Touch)
         {
+            // A touch the system cancels never comes up: no more fingers are down than a hand has, so older ones go.
+            if (_touches.Count >= MaxTouches) _touches.Clear();
             _touches[e.Pointer.Id] = (e.GetPosition(_top), e.Source as Visual);
             return;
         }

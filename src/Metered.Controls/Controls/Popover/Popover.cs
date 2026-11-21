@@ -141,21 +141,25 @@ public class Popover : TemplatedControl
 
     private static readonly PopoverPlacement[] Placements = Enum.GetValues<PopoverPlacement>().Where(p => p != PopoverPlacement.Auto).ToArray();
 
+    /// <summary>Each placement's pseudoclass, <c>:placement-bottom-left</c>.</summary>
+    private static readonly string[] PlacementClasses = Placements.Select(p => ":placement-" + Kebab(p)).ToArray();
+
     private readonly Parts _parts;
-    private readonly Dictionary<(AvaloniaObject, AvaloniaProperty), IDisposable> _given = [];
+    private readonly Dictionary<(AvaloniaObject, AvaloniaProperty), (object Value, IDisposable Frame)> _given = [];
     private ContentPresenter? _anchorPresenter;
     private Popup? _popup;
     private TopLevel? _top;
     private IDisposable? _layer;
     private bool _mounted;
     private bool _animating;
-    private PopoverPlacement _placement;
     private PopoverPlacement _actualPlacement;
-    private (Rect Anchor, Size Body, Size View)? _tethered;
+    private (Rect Anchor, Size Body, Size View, Rect? Bounds)? _tethered;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
     private IInputElement? _focusBefore;
     private (int Time, Transitions Transitions)? _exit;
     private Animatable? _exiting;
+    private (Point At, TransformOperations Operations)? _translate;
+    private bool _unclipped;
 
     public Popover()
     {
@@ -259,7 +263,7 @@ public class Popover : TemplatedControl
             oldBody.PointerExited -= OnBodyExited;
         }
 
-        foreach (var frame in _given.Values) frame.Dispose();
+        foreach (var given in _given.Values) given.Frame.Dispose();
         _given.Clear();
         base.OnApplyTemplate(e);
         _parts.Attach(e.NameScope);
@@ -272,7 +276,6 @@ public class Popover : TemplatedControl
             body.PointerExited += OnBodyExited;
         }
 
-        _placement = Placement;
         ActualPlacement = Placement;
         UpdateStates();
         UpdateParts();
@@ -288,10 +291,13 @@ public class Popover : TemplatedControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        // Leaving the tree, the popup closes itself (Avalonia's Popup, on its own detach): closing it here, while the
-        // tree is being taken down (a window closing with a popover in another's content), would change the overlay
-        // layer's children as Avalonia walks them.
+        // Leaving the tree, its popup is closed once the tree has been taken down: closing it here, while it is (a window
+        // closing with a popover in another's content), would change the overlay layer's children as Avalonia walks them.
+        // Avalonia's Popup closes itself only on leaving the logical tree; a host that keeps it there (a tab not shown)
+        // would leave it open.
         Unmount(closePopup: false);
+        var popup = _popup;
+        Dispatcher.UIThread.Post(() => { if (!_mounted && popup is { IsOpen: true }) popup.IsOpen = false; });
         ClearTimers();
         _top = null;
         base.OnDetachedFromVisualTree(e);
@@ -307,20 +313,31 @@ public class Popover : TemplatedControl
         else if (p == ShowArrowProperty || p == TriggerTypeProperty || p == PopoverMarginProperty || p == FocusLockProperty
             || p == AccessibilityTypeProperty || p == AnimateOutTimeProperty)
         {
+            if (p == TriggerTypeProperty) Relayer();
             UpdateStates();
             UpdateParts();
+            // What popper.js reads changed (the arrow, the margin): placed again.
+            _tethered = null;
+            Retether();
+        }
+        else if (p == AnchorProperty)
+        {
+            // What was given the old anchor goes with it.
+            if (change.OldValue is AvaloniaObject old) Give(old, AutomationProperties.HelpTextProperty, null);
+            _tethered = null;
+            GiveAnchorHelp();
             Retether();
         }
         else if (p == PlacementProperty || p == IgnoreBoundaryProperty)
         {
             if (!_mounted)
             {
-                _placement = Placement;
                 ActualPlacement = Placement;
                 UpdateStates();
                 UpdateParts();
             }
 
+            _tethered = null;
             Retether();
         }
     }
@@ -394,7 +411,7 @@ public class Popover : TemplatedControl
         _mounted = true;
         _animating = false;
         _tethered = null;
-        _placement = Placement;
+        _unclipped = false;
         ActualPlacement = Placement;
         _focusBefore = _top.FocusManager?.GetFocusedElement();
         GiveContent();
@@ -404,21 +421,33 @@ public class Popover : TemplatedControl
         // offset, which places it again.
         _popup.PlacementTarget = _top;
         _popup.IsOpen = true;
-        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, TriggerType == PopoverTriggerType.Hover ? null : OnDocumentClick));
+        Relayer();
         _top.LayoutUpdated += OnTopLayoutUpdated;
         if (_top is Window window) window.Closing += OnWindowClosing;
         Retether();
     }
 
     /// <summary>
+    /// Base Web's layer for the trigger type: a hover layer has no document-click handler. A new trigger type while it is
+    /// shown is a new layer (Base Web's Layer is rendered again with its new handlers), on top.
+    /// </summary>
+    private void Relayer()
+    {
+        if (!_mounted || _top is null) return;
+        _layer?.Dispose();
+        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, TriggerType == PopoverTriggerType.Hover ? null : OnDocumentClick));
+    }
+
+    /// <summary>
     /// Base Web's layer doesn't clip the body, whose shadow reaches past its box: the popup's host and its template's
     /// elements, up to the overlay layer, clip to their bounds, so that is turned off on them (a host is made for each
-    /// opening, its template applied by the time it is laid out and placed). And its host lets Tab out.
+    /// opening, its template applied by the time it is laid out and placed: done once it is found). And its host lets Tab out.
     /// </summary>
     private void Unclip()
     {
         for (var v = (_parts[BodyPart] as Visual)?.GetVisualParent(); v is not null and not OverlayLayer; v = v.GetVisualParent())
         {
+            if (v is OverlayPopupHost) _unclipped = true;
             v.ClipToBounds = false;
             // Base Web's layer is in the page's tab order: without a focus lock, Tab leaves it. Avalonia's popup host
             // cycles Tab inside itself; Continue lets it out (with the lock, the body cycles: UpdateParts).
@@ -443,7 +472,6 @@ public class Popover : TemplatedControl
         if (_top is Window window) window.Closing -= OnWindowClosing;
         if (closePopup && _popup is not null) _popup.IsOpen = false;
 
-        _placement = Placement;
         ActualPlacement = Placement;
         UpdateStates();
         UpdateParts();
@@ -461,7 +489,13 @@ public class Popover : TemplatedControl
     /// Closed before its window closes: Avalonia 12.1.4 fails taking down a window with an overlay popup open inside
     /// another's (a popover in a popover's content), each closing itself as the overlay layer's children are walked.
     /// </summary>
-    private void OnWindowClosing(object? sender, WindowClosingEventArgs e) => Unmount();
+    /// <remarks>A close a handler cancels leaves the window: the popover, still open, is shown again once the close has
+    /// been decided (a closed window has taken it out of the tree by then).</remarks>
+    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        Unmount();
+        Dispatcher.UIThread.Post(() => { if (IsOpen && !_mounted && _top is not null) Mount(); });
+    }
 
     /// <summary>The exit's transitions taken off the body: it has gone, or opened again.</summary>
     private void EndExit()
@@ -492,14 +526,13 @@ public class Popover : TemplatedControl
         if (anchor.TranslatePoint(default, _top) is not { } anchorAt) return;
         var size = body.Bounds.Size;
         if (!body.IsMeasureValid || (size.Width <= 0 && size.Height <= 0)) return;
-        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize);
+        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(anchor));
         if (_tethered == key) return;
         _tethered = key;
-        Unclip();
+        if (!_unclipped) Unclip();
 
         var arrow = ShowArrow && _parts[ArrowPart] is Avalonia.Layout.Layoutable a ? a.Bounds.Width : (double?)null;
-        var result = Tether.Compute(key.Item1, size, body.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, ScrollParent(anchor));
-        _placement = result.Placement;
+        var result = Tether.Compute(key.Item1, size, body.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, key.Item4);
         ActualPlacement = result.Placement;
         if (_parts[ArrowPart] is { } arrowPart && result.ArrowOffset is { } ao)
         {
@@ -552,7 +585,7 @@ public class Popover : TemplatedControl
         SetState(":is-animating", _animating);
         SetState(":show-arrow", ShowArrow);
         SetState(":is-hover-trigger", TriggerType == PopoverTriggerType.Hover);
-        foreach (var p in Placements) SetState(":placement-" + Kebab(p), _placement == p);
+        for (var i = 0; i < Placements.Length; i++) SetState(PlacementClasses[i], _actualPlacement == Placements[i]);
     }
 
     private void SetState(string pseudoClass, bool on)
@@ -585,10 +618,10 @@ public class Popover : TemplatedControl
         var arrowSize = showArrow ? ArrowSize : 0;
         if (_parts[BodyPart] is { } body)
         {
-            Give(body, MarginProperty, MarginFor(_placement, arrowSize, PopoverMargin));
+            Give(body, MarginProperty, MarginFor(_actualPlacement, arrowSize, PopoverMargin));
             var open = IsOpen && _mounted;
-            var start = open && _animating ? new Point(0, 0) : StartFor(_placement, arrowSize, PopoverMargin);
-            Give(body, RenderTransformProperty, TransformOperations.Parse(FormattableString.Invariant($"translate({start.X}px, {start.Y}px)")));
+            var start = open && _animating ? new Point(0, 0) : StartFor(_actualPlacement, arrowSize, PopoverMargin);
+            Give(body, RenderTransformProperty, Translate(start));
             var tooltip = AccessibilityType == PopoverAccessibilityType.Tooltip;
             Give(body, KeyboardNavigation.TabNavigationProperty, FocusLock && !tooltip ? KeyboardNavigationMode.Cycle : null);
             Give(body, AutomationProperties.ControlTypeOverrideProperty, tooltip ? AutomationControlType.ToolTip : null);
@@ -596,6 +629,15 @@ public class Popover : TemplatedControl
 
         if (_parts[ArrowPart] is { } arrow) Give(arrow, IsVisibleProperty, showArrow);
         GiveAnchorHelp();
+    }
+
+    /// <summary>A translation as CSS's <c>translate()</c>, one instance for each point, so an unchanged one is the same value.</summary>
+    private TransformOperations Translate(Point at)
+    {
+        if (_translate is { } made && made.At == at) return made.Operations;
+        var operations = TransformOperations.Parse(FormattableString.Invariant($"translate({at.X}px, {at.Y}px)"));
+        _translate = (at, operations);
+        return operations;
     }
 
     /// <summary>Base Web's <c>getPopoverMarginStyles</c>: the gap on the side facing the anchor.</summary>
@@ -666,26 +708,19 @@ public class Popover : TemplatedControl
         _ => null,
     };
 
-    /// <summary>Gives a value at the template's priority, below an override's; null lets it go.</summary>
+    /// <summary>
+    /// Gives a value at the template's priority, below an override's (Base Web's props are below an override's style); null
+    /// lets it go. The same value again is left as it is: a new frame would raise a change for nothing.
+    /// </summary>
     private void Give(AvaloniaObject target, AvaloniaProperty property, object? value)
     {
         var key = (target, property);
-        if (_given.Remove(key, out var old))
-        {
-            if (value is null)
-            {
-                old.Dispose();
-                return;
-            }
-
-            var frame = target.SetValue(property, value, BindingPriority.Template);
-            old.Dispose();
-            if (frame is not null) _given[key] = frame;
-            return;
-        }
-
-        if (value is null) return;
-        if (target.SetValue(property, value, BindingPriority.Template) is { } f) _given[key] = f;
+        var had = _given.TryGetValue(key, out var old);
+        if (had && Equals(old.Value, value)) return;
+        // The new value before the old one goes, so the property never passes through its default between them.
+        if (value is not null && target.SetValue(property, value, BindingPriority.Template) is { } frame) _given[key] = (value, frame);
+        else _given.Remove(key);
+        if (had) old.Frame.Dispose();
     }
 
     // ---- Focus: react-focus-lock's MoveFocusInside and FocusLock ----
@@ -739,7 +774,7 @@ public class Popover : TemplatedControl
     /// </summary>
     private void OnAnchorTapped(object? sender, TappedEventArgs e)
     {
-        if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(x => x != _anchorPresenter).OfType<Button>().Any()) return;
+        if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(x => x != _anchorPresenter).OfType<Avalonia.Controls.Button>().Any()) return;
         AnchorClick();
     }
 

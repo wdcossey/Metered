@@ -12,8 +12,8 @@ internal readonly record struct TetherResult(PopoverPlacement Placement, Point O
 
 /// <summary>
 /// Base Web's <c>TetherBehavior</c> (<c>layer/tether.js</c>): where a body goes against its anchor, as popper.js 1.16.1
-/// computes it with the options Base Web gives it, ported. Shared by everything that Base Web tethers to an anchor
-/// (Popover, and Select's and Menu's dropdowns through it).
+/// computes it with the options Base Web gives it, ported. For everything Base Web tethers to an anchor (the Popover
+/// here).
 /// </summary>
 /// <remarks>
 /// <para>popper.js's first update, its modifiers in their order: <c>auto</c> (the side with the most room that the body

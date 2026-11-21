@@ -51,7 +51,8 @@ public class PopoverTests
     /// </summary>
     internal static void Settle(Scene scene, int ms = 200)
     {
-        Dispatcher.UIThread.MainLoop(new CancellationTokenSource(ms).Token);
+        using var stop = new CancellationTokenSource(ms);
+        Dispatcher.UIThread.MainLoop(stop.Token);
         scene.Pump();
     }
 
@@ -734,6 +735,109 @@ public class PopoverTests
         scene.Click(anchor);
         Settle(scene);
         Assert.Equal(new Rect(135, 470, 120, 60), BoxOf(Body(popover), scene));
+    }
+
+    // ---- Changes while it is shown ----
+
+    // Any Avalonia button (a toggle button, a checkbox, a switch) raises Click, and its tap is not a second click.
+    [AvaloniaFact]
+    public void An_Avalonia_toggle_button_anchor_toggles_it_once()
+    {
+        var toggle = new Avalonia.Controls.Primitives.ToggleButton { Content = "Open", Width = 90, Height = 40 };
+        var popover = new Popover { Anchor = toggle, Content = "content", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(100) };
+        using var scene = Show(popover);
+        scene.Click(toggle);
+        Settle(scene, 50);
+        Assert.True(popover.IsOpen);
+        Tap(scene, scene.CentreOf(toggle));
+        Settle(scene, 50);
+        Assert.False(popover.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void An_arrow_shown_while_it_is_open_is_placed()
+    {
+        var (popover, _, _) = Fixed(150, 400);
+        popover.Placement = PopoverPlacement.Bottom;
+        popover.IsOpen = true;
+        using var scene = Show(popover);
+        Settle(scene);
+        popover.ShowArrow = true;
+        Settle(scene);
+        var arrow = (Control)popover.Part(Popover.ArrowPart)!;
+        // popper.js's arrow offset for this anchor and body: the anchor's centre (195) less half the arrow, from the body's left.
+        Assert.Equal(195 - 4.5 - 135, arrow.Bounds.X, 0);
+        Assert.Equal(new Rect(135, 400 + 40 + 14, 120, 60), BoxOf(Body(popover), scene));
+    }
+
+    [AvaloniaFact]
+    public void A_trigger_type_changed_while_it_is_open_takes_its_layers_handlers()
+    {
+        var (popover, _, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        popover.IsOpen = true;
+        using var scene = Show(popover);
+        Settle(scene);
+        popover.TriggerType = PopoverTriggerType.Click;
+        Press(scene, new Point(20, 20));
+        Assert.False(popover.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_new_anchor_takes_the_tooltips_description_from_the_old()
+    {
+        var first = new MeteredButton { Content = "One" };
+        var second = new MeteredButton { Content = "Two" };
+        var popover = new Popover { Anchor = first, Content = "hello world", AccessibilityType = PopoverAccessibilityType.Tooltip, IsOpen = true };
+        using var scene = Show(new StackPanel { Margin = new Thickness(40), Children = { popover } });
+        Settle(scene);
+        Assert.Equal("hello world", AutomationProperties.GetHelpText(first));
+        popover.Anchor = second;
+        scene.Pump();
+        Assert.Null(AutomationProperties.GetHelpText(first));
+        Assert.Equal("hello world", AutomationProperties.GetHelpText(second));
+    }
+
+    // A tab not shown keeps its content in the logical tree, out of the visual one: its popover's popup closes.
+    [AvaloniaFact]
+    public void A_popover_in_a_tab_put_away_is_hidden_and_back_again_with_it()
+    {
+        var (popover, _, _) = Fixed(20, 100);
+        popover.IsOpen = true;
+        var tabs = new TabControl
+        {
+            ItemsSource = new[]
+            {
+                new TabItem { Header = "One", Content = popover },
+                new TabItem { Header = "Two", Content = new TextBlock { Text = "two" } },
+            },
+        };
+        using var scene = Show(tabs);
+        Settle(scene);
+        Assert.True(Shown(popover));
+        tabs.SelectedIndex = 1;
+        Settle(scene, 100);
+        Assert.False(popover.PopupHost!.IsOpen);
+        tabs.SelectedIndex = 0;
+        Settle(scene);
+        Assert.True(Shown(popover));
+    }
+
+    // A close its window's handler cancels leaves it shown.
+    [AvaloniaFact]
+    public void A_window_close_that_is_cancelled_leaves_it_shown()
+    {
+        var (popover, _, _) = Fixed(150, 400);
+        popover.IsOpen = true;
+        using var scene = Show(popover);
+        Settle(scene);
+        scene.Window.Closing += (_, e) => e.Cancel = true;
+        scene.Window.Close();
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        Assert.True(Shown(popover));
+        Press(scene, new Point(20, 20));
+        Assert.False(popover.IsOpen);
     }
 
     // ---- UI Automation ----

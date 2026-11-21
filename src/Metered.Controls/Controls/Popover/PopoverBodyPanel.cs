@@ -19,17 +19,14 @@ public class PopoverBodyPanel : Panel
 
     static PopoverBodyPanel()
     {
-        // A child's position changed (a placement's state style), or its size or margin (the arrow's offset), which moves it
-        // without changing the panel's size: Avalonia would arrange it again in its old place, so the panel arranges it.
-        foreach (var property in new AvaloniaProperty[]
-        {
-            Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty,
-            MarginProperty, WidthProperty, HeightProperty,
-        })
+        // A child's position changed (a placement's state style): its panel arranges it again.
+        foreach (var property in new AvaloniaProperty[] { Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty })
         {
             property.Changed.AddClassHandler<Control>((c, _) => (c.GetVisualParent() as PopoverBodyPanel)?.InvalidateArrange());
         }
     }
+
+    private readonly Dictionary<Control, Size> _arranged = [];
 
     public static bool GetIsAbsolute(Control element) => element.GetValue(IsAbsoluteProperty);
 
@@ -43,6 +40,9 @@ public class PopoverBodyPanel : Panel
             if (GetIsAbsolute(child))
             {
                 child.Measure(Size.Infinity);
+                // A new size or margin (the arrow's offset) moves it without changing the panel's size: Avalonia would
+                // arrange it again in its old box, so the panel arranges it.
+                if (!_arranged.TryGetValue(child, out var was) || was != child.DesiredSize) InvalidateArrange();
                 continue;
             }
 
@@ -65,6 +65,7 @@ public class PopoverBodyPanel : Panel
 
             // The margin box: DesiredSize holds the margins, which Arrange takes off again.
             var box = child.DesiredSize;
+            _arranged[child] = box;
             var left = Canvas.GetLeft(child);
             var top = Canvas.GetTop(child);
             var right = Canvas.GetRight(child);
