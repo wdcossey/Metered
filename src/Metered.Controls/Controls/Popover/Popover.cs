@@ -154,6 +154,8 @@ public class Popover : TemplatedControl
     private (Rect Anchor, Size Body, Size View)? _tethered;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
     private IInputElement? _focusBefore;
+    private (int Time, Transitions Transitions)? _exit;
+    private Animatable? _exiting;
 
     public Popover()
     {
@@ -286,7 +288,10 @@ public class Popover : TemplatedControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        Unmount();
+        // Leaving the tree, the popup closes itself (Avalonia's Popup, on its own detach): closing it here, while the
+        // tree is being taken down (a window closing with a popover in another's content), would change the overlay
+        // layer's children as Avalonia walks them.
+        Unmount(closePopup: false);
         ClearTimers();
         _top = null;
         base.OnDetachedFromVisualTree(e);
@@ -328,6 +333,7 @@ public class Popover : TemplatedControl
         {
             // popover.js's init: opening while the layer is mounted clears the exit's timers.
             ClearTimers();
+            EndExit();
             if (_mounted)
             {
                 UpdateStates();
@@ -357,7 +363,15 @@ public class Popover : TemplatedControl
         }
 
         // Shown: $isOpen goes false at once, its exit over animateOutTime; it is unmounted animateOutTime after
-        // animateOut, 20 ms on (popover.js's init and animateOut).
+        // animateOut, 20 ms on (popover.js's init and animateOut). The exit's transitions are the body's before the state
+        // changes, so its opacity and transform go over them: as the body's own value, above the theme's entrance (a state
+        // style), for the exit alone.
+        if (AnimateOutTime > 0 && _parts[BodyPart] is Animatable exiting)
+        {
+            exiting.SetValue(Animatable.TransitionsProperty, ExitTransitions());
+            _exiting = exiting;
+        }
+
         UpdateStates();
         UpdateParts();
         _animateOut = DispatcherTimer.RunOnce(() =>
@@ -392,36 +406,43 @@ public class Popover : TemplatedControl
         _popup.IsOpen = true;
         _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, TriggerType == PopoverTriggerType.Hover ? null : OnDocumentClick));
         _top.LayoutUpdated += OnTopLayoutUpdated;
+        if (_top is Window window) window.Closing += OnWindowClosing;
         Retether();
     }
 
     /// <summary>
     /// Base Web's layer doesn't clip the body, whose shadow reaches past its box: the popup's host and its template's
     /// elements, up to the overlay layer, clip to their bounds, so that is turned off on them (a host is made for each
-    /// opening, its template applied by the time it is laid out and placed).
+    /// opening, its template applied by the time it is laid out and placed). And its host lets Tab out.
     /// </summary>
     private void Unclip()
     {
         for (var v = (_parts[BodyPart] as Visual)?.GetVisualParent(); v is not null and not OverlayLayer; v = v.GetVisualParent())
         {
             v.ClipToBounds = false;
+            // Base Web's layer is in the page's tab order: without a focus lock, Tab leaves it. Avalonia's popup host
+            // cycles Tab inside itself; Continue lets it out (with the lock, the body cycles: UpdateParts).
+            if (v is OverlayPopupHost host) KeyboardNavigation.SetTabNavigation(host, KeyboardNavigationMode.Continue);
         }
     }
 
     /// <summary>The layer unmounted: hidden, the layer taken away, Base Web's state's placement back to the one asked for.</summary>
-    private void Unmount()
+    private void Unmount(bool closePopup = true)
     {
         if (!_mounted) return;
         var focusInside = _top?.FocusManager?.GetFocusedElement() is Visual focused && Layers.IsWithin(focused, _parts[BodyPart] as Visual);
         _mounted = false;
         _animating = false;
+        EndExit();
         _tethered = null;
         _animateIn?.Dispose();
         _animateIn = null;
         _layer?.Dispose();
         _layer = null;
         if (_top is not null) _top.LayoutUpdated -= OnTopLayoutUpdated;
-        if (_popup is not null) _popup.IsOpen = false;
+        if (_top is Window window) window.Closing -= OnWindowClosing;
+        if (closePopup && _popup is not null) _popup.IsOpen = false;
+
         _placement = Placement;
         ActualPlacement = Placement;
         UpdateStates();
@@ -434,6 +455,19 @@ public class Popover : TemplatedControl
         }
 
         _focusBefore = null;
+    }
+
+    /// <summary>
+    /// Closed before its window closes: Avalonia 12.1.4 fails taking down a window with an overlay popup open inside
+    /// another's (a popover in a popover's content), each closing itself as the overlay layer's children are walked.
+    /// </summary>
+    private void OnWindowClosing(object? sender, WindowClosingEventArgs e) => Unmount();
+
+    /// <summary>The exit's transitions taken off the body: it has gone, or opened again.</summary>
+    private void EndExit()
+    {
+        _exiting?.ClearValue(Animatable.TransitionsProperty);
+        _exiting = null;
     }
 
     private void ClearTimers()
@@ -555,7 +589,6 @@ public class Popover : TemplatedControl
             var open = IsOpen && _mounted;
             var start = open && _animating ? new Point(0, 0) : StartFor(_placement, arrowSize, PopoverMargin);
             Give(body, RenderTransformProperty, TransformOperations.Parse(FormattableString.Invariant($"translate({start.X}px, {start.Y}px)")));
-            Give(body, Animatable.TransitionsProperty, !open && _animating && AnimateOutTime > 0 ? ExitTransitions() : null);
             var tooltip = AccessibilityType == PopoverAccessibilityType.Tooltip;
             Give(body, KeyboardNavigation.TabNavigationProperty, FocusLock && !tooltip ? KeyboardNavigationMode.Cycle : null);
             Give(body, AutomationProperties.ControlTypeOverrideProperty, tooltip ? AutomationControlType.ToolTip : null);
@@ -597,13 +630,16 @@ public class Popover : TemplatedControl
     /// <summary>The body's exit: opacity and transform over animateOutTime on easeInCurve (getBodyStyles).</summary>
     private Transitions ExitTransitions()
     {
+        if (_exit is { } made && made.Time == AnimateOutTime) return made.Transitions;
         var duration = TimeSpan.FromMilliseconds(AnimateOutTime);
         var easing = this.TryFindResource("animation.easeInCurve", out var e) && e is Easing ease ? ease : new LinearEasing();
-        return
+        Transitions transitions =
         [
             new DoubleTransition { Property = OpacityProperty, Duration = duration, Easing = easing },
             new TransformOperationsTransition { Property = RenderTransformProperty, Duration = duration, Easing = easing },
         ];
+        _exit = (AnimateOutTime, transitions);
+        return transitions;
     }
 
     private void GiveContent()
@@ -676,6 +712,7 @@ public class Popover : TemplatedControl
     {
         anchor.AddHandler(Button.ClickEvent, OnAnchorButtonClick);
         anchor.AddHandler(InputElement.TappedEvent, OnAnchorTapped);
+        anchor.AddHandler(InputElement.DoubleTappedEvent, OnAnchorTapped);
         anchor.PointerEntered += OnAnchorEntered;
         anchor.PointerExited += OnAnchorExited;
         anchor.GotFocus += OnAnchorGotFocus;
@@ -686,6 +723,7 @@ public class Popover : TemplatedControl
     {
         anchor.RemoveHandler(Button.ClickEvent, OnAnchorButtonClick);
         anchor.RemoveHandler(InputElement.TappedEvent, OnAnchorTapped);
+        anchor.RemoveHandler(InputElement.DoubleTappedEvent, OnAnchorTapped);
         anchor.PointerEntered -= OnAnchorEntered;
         anchor.PointerExited -= OnAnchorExited;
         anchor.GotFocus -= OnAnchorGotFocus;
@@ -695,7 +733,10 @@ public class Popover : TemplatedControl
     /// <summary>A button anchor's click (a press and release, a tap, Enter or Space): Base Web's onClick on the anchor.</summary>
     private void OnAnchorButtonClick(object? sender, RoutedEventArgs e) => AnchorClick();
 
-    /// <summary>Any other anchor's click or tap; a button's comes as its Click instead.</summary>
+    /// <summary>
+    /// Any other anchor's click or tap; a button's comes as its Click instead. A second click soon after the first is
+    /// Avalonia's double tap, and a browser's click all the same.
+    /// </summary>
     private void OnAnchorTapped(object? sender, TappedEventArgs e)
     {
         if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(x => x != _anchorPresenter).OfType<Button>().Any()) return;

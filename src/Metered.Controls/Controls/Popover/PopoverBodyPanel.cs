@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 
 namespace Metered.Controls;
 
@@ -18,7 +19,16 @@ public class PopoverBodyPanel : Panel
 
     static PopoverBodyPanel()
     {
-        AffectsParentArrange<PopoverBodyPanel>(Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty);
+        // A child's position changed (a placement's state style), or its size or margin (the arrow's offset), which moves it
+        // without changing the panel's size: Avalonia would arrange it again in its old place, so the panel arranges it.
+        foreach (var property in new AvaloniaProperty[]
+        {
+            Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty,
+            MarginProperty, WidthProperty, HeightProperty,
+        })
+        {
+            property.Changed.AddClassHandler<Control>((c, _) => (c.GetVisualParent() as PopoverBodyPanel)?.InvalidateArrange());
+        }
     }
 
     public static bool GetIsAbsolute(Control element) => element.GetValue(IsAbsoluteProperty);
