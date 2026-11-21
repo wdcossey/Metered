@@ -76,17 +76,43 @@ many of a region's sampled pixels differ: under 5 is the same, over 20 a change 
   page; a tap on its line puts it at 30; a drag mostly up the page, 150 view px up and a fifth of the line across, still
   moves it, to 50, and still leaves the page; a mouse drag moves it back to 20; and a touch drag up off the slider, on its
   heading, does scroll the page, so the first two prove something. Read from the page's `State` line (`Value: 60`).
+- **input:** a click focuses the first input and what is typed goes in at its end (the page's `Value:` line and UI
+  Automation's value pattern); Tab goes from the clearable input to its clear icon, to the password, to its mask toggle,
+  and Shift+Tab back. The clear icon by a click, a tap and Space (which types no space), and Escape in the input, each
+  clear it and leave the input focused. Enter in the password leaves it masked; Enter on its toggle and a click relabel it
+  (`Show password text`, `Hide password text`) and draw the text unmasked, compared in the input's left half, and back. A
+  click on the `@` enhancer and a tap on the `$` one focus their inputs (known difference 1 in `docs/controls/Input`).
+  #94: a finger's drag up on an input scrolls the page, unfocused and focused, and leaves the caret where it was (a typed
+  `Z` goes at the end); a tap on its first letter puts the caret there.
+- **textarea:** a click focuses it and Enter starts a line; the clear icon by a click, and Escape, clear it. With the page
+  scrolled just far enough to show the long text, so the page can still scroll on: a notch of the wheel scrolls the text
+  and not the page, and a notch back undoes it; a finger's short drag scrolls the text partway, and a long one to its end
+  with the page left where it was (latched); a drag that starts with the text at its end scrolls the page. Where the text
+  is, from its own scroller's scroll pattern. The resize grip: a mouse drag makes it 40 wider and 30 taller, a finger's 30
+  narrower and 20 shorter, within 2 view px, and neither moves the page.
+
+A control below the fold is brought into view through UI Automation's scroll pattern, which sends no input (`Reveal`,
+just far enough; `ScrollToEnd`). A part inside a control, such as the clear icon or the mask toggle, is found inside it
+by its type and its label (`Inner`). A touch drag that a scroller shouldn't carry on after the lift is held still for a
+moment first, so it ends with no speed for inertia.
+
+The input and textarea sections (#98) haven't been run against a real window yet: the first run is the coordinator's,
+through the device lease.
 
 **Look at the frames as well.** Most of what's wrong with a page isn't something it checks.
 
 ## Checking it without a run
 
 `helpers.ps1` holds the script's pure helpers: the ready line's fields, `-Only`'s match, a page line's
-values, the whole lines of a growing file, the pixel thresholds and the tap's verdict, and the sizes it expects. `selftest.ps1` checks them on known
-answers, checks those sizes against `MainWindow.axaml` and `SampleShell.axaml`, and checks the script as parsed: that it
-parses, that each section's title selects it alone, that every page it opens is in the sample, and that every control a
-section finds is on that section's page or the shell: an `x:Name` for `ById` and `ReadOut`, a quoted value (a `Content`, a
-`Text`, an `AutomationProperties.Name`) for `Named`. It takes no input and opens no window, so it runs on any OS, under pwsh 7 (and Windows PowerShell 5.1, as
+values, the whole lines of a growing file, the pixel thresholds and the tap's verdict, and the sizes it expects; where an
+input's start enhancer and its text are and where a textarea's grip is, from Base Web's lengths; a text's lines, where a
+letter was typed, how much a box grew, and how far, in the scroll pattern's percent, a page has to scroll to show a box.
+`selftest.ps1` checks them on known answers, checks those sizes against `MainWindow.axaml` and `SampleShell.axaml` and
+those lengths against the generated `Input.Parts.g.axaml` and `Textarea.Parts.g.axaml` and `Textarea.axaml`'s grip, and
+checks the script as parsed: that it parses, that each section's title selects it alone, that every page it opens is in
+the sample, and that every control a section finds is on that section's page or the shell: an `x:Name` for `ById` and
+`ReadOut`, a quoted value (a `Content`, a `Text`, an `AutomationProperties.Name`) for `Named`; and that every part `Inner`
+finds inside a control is named by a constant in `Metered.Controls` (BaseInput's `Clear value`, `Show password text`). It takes no input and opens no window, so it runs on any OS, under pwsh 7 (and Windows PowerShell 5.1, as
 `helpers.ps1` has to, since `drive.ps1` loads it under both). CI's `generated` job runs it on Linux, and its `real-window`
 job on Windows under both:
 
@@ -101,10 +127,14 @@ pwsh -NoProfile -File tools/real-window/selftest.ps1
 - **Not a phone's touch.** Its touch is Windows' injected touch, through Avalonia's Win32 backend, with one contact; a
   phone's comes through Android (`:pointer-coarse` is set only there), and the phone is the real touch test
   (`tools/android`).
+- **Not a phone's soft keyboard.** The input and textarea sections type with the real keyboard. A touch that focuses a
+  text box may bring up Windows' touch keyboard on a PC set to show it, over the window, where a later press would miss;
+  the caret, the selection handles and the soft keyboard under a finger are the phone's to show (#90).
 
 The frames come from the screen, not `PrintWindow`, which offsets a window by its invisible border, and that looks like a
 bug in the app. They are the window's client area: UI Automation reports that as the window's bounds.
 
 Ported from Cornflower's `tools/real-window/` (`wdcossey/CornflowerUI`), which came from Avonic's: the window, the input,
 touch, the pixel reads, the frames, the every-page loop, `-Only`, the pure helpers and the self-test. Metered's own: the
-sections after the loop, the sizes read from the sample's XAML, `Mark`, `After` and `TapVerdict`.
+sections after the loop, the sizes read from the sample's XAML and the lengths from the themes, `Mark`, `After`,
+`TapVerdict`, `Reveal`, `Inner` and the wheel.

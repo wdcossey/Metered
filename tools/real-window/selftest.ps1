@@ -61,6 +61,35 @@ Check 'TapVerdict: still drawn with the cursor on it is not settled' ((TapVerdic
 Check 'TapVerdict: a hover the samples don''t show settles nothing' ((TapVerdict $Moved 50 $false) -eq 'unsettled')
 Check 'the same is under the moved' ($Same -lt $Moved)
 
+$ex, $ey = EnhancerAt 100 200 48 1
+Check 'EnhancerAt is past the border, the root''s padding and the enhancer''s own, half way down' (($ex -eq 124) -and ($ey -eq 224)) "$ex, $ey"
+$ex, $ey = EnhancerAt 100 200 96 2
+Check 'EnhancerAt scales its lengths, not the box' (($ex -eq 148) -and ($ey -eq 248)) "$ex, $ey"
+$tx, $ty = TextAt 100 200 48 1
+Check 'TextAt is 2 view px into the text, past the border and its padding' (($tx -eq 118) -and ($ty -eq 224)) "$tx, $ty"
+$tx, $null = TextAt 0 0 48 1.25 0
+Check 'TextAt scales, and takes how far in' ($tx -eq 20) "$tx"
+$gx, $gy = GripAt 300 400 1
+Check 'GripAt is the grip''s middle, inside the border, in the end corner' (($gx -eq 290) -and ($gy -eq 390)) "$gx, $gy"
+$gx, $gy = GripAt 300 400 2
+Check 'GripAt scales' (($gx -eq 280) -and ($gy -eq 380)) "$gx, $gy"
+Check 'Grew takes a growth within its tolerance' ((Grew 100 141 40 2) -and (Grew 100 70 -30 2))
+Check 'Grew leaves one beyond it, or the wrong way' (-not (Grew 100 137 40 2) -and -not (Grew 100 130 -30 2))
+$lines = @(LinesOf "one`r`ntwo")
+Check 'LinesOf splits at CR LF' (($lines.Count -eq 2) -and ($lines[0] -ceq 'one') -and ($lines[1] -ceq 'two')) ($lines -join ' | ')
+Check 'LinesOf splits at LF, and keeps an empty text one line' ((@(LinesOf "a`nb").Count -eq 2) -and (@(LinesOf '').Count -eq 1))
+Check 'InsertedAt reads where a letter went in' (((InsertedAt 'Clear me!Z' 'YClear me!Z' 'Y') -eq 0) -and ((InsertedAt 'Clear me!Z' 'CYlear me!Z' 'Y') -eq 1) -and ((InsertedAt 'Clear me!Z' 'Clear me!ZY' 'Y') -eq 10))
+Check 'InsertedAt is -1 when the rest has changed' (((InsertedAt 'Clear me!Z' 'Ylear me!Z' 'Y') -eq -1) -and ((InsertedAt 'Clear me!Z' 'Clear me!Z' 'Y') -eq -1))
+Check 'Wholly takes a box within the area, edges and all' ((Wholly 10 20 0 100) -and (Wholly 0 100 0 100))
+Check 'Wholly leaves one over either edge' (-not (Wholly -1 20 0 100) -and -not (Wholly 10 101 0 100))
+Check 'ScrollBy is nothing for a box that shows' ((ScrollBy 10 20 0 100 4) -eq 0)
+Check 'ScrollBy scrolls down to a box below, with the margin' ((ScrollBy 90 120 0 100 4) -eq 24) (ScrollBy 90 120 0 100 4)
+Check 'ScrollBy scrolls up to a box above, by its top' ((ScrollBy -30 200 0 100 4) -eq -34) (ScrollBy -30 200 0 100 4)
+Check 'ScrollPercentFor: a view half of what it scrolls, 400 high, scrolls 400; 100 of it is 25 %' ((ScrollPercentFor 0 50 400 100) -eq 25) (ScrollPercentFor 0 50 400 100)
+Check 'ScrollPercentFor goes back, too' ((ScrollPercentFor 50 50 400 -100) -eq 25) (ScrollPercentFor 50 50 400 -100)
+Check 'ScrollPercentFor stops at either end' (((ScrollPercentFor 90 50 400 100) -eq 100) -and ((ScrollPercentFor 10 50 400 -100) -eq 0))
+Check 'ScrollPercentFor leaves a view that can''t scroll' (((ScrollPercentFor 0 100 400 100) -eq 0) -and ((ScrollPercentFor -1 50 400 100) -eq -1))
+
 '== the sizes it expects, against the sample'
 $repo = (Resolve-Path (Join-Path (Join-Path $PSScriptRoot '..') '..')).Path
 $sample = Join-Path $repo 'samples'
@@ -69,6 +98,39 @@ Check "the window is $WindowWidth x $WindowHeight, as MainWindow.axaml says" (([
 [xml]$shell = Get-Content -Raw (Join-Path (Join-Path $sample 'Metered.Sample') 'SampleShell.axaml')
 $bar = @($shell.SelectNodes('//*') | Where-Object { $_.GetAttribute('Name', 'http://schemas.microsoft.com/winfx/2006/xaml') -ceq 'Bar' })
 Check "the bar is $BarHeight high, as SampleShell.axaml says" (($bar.Count -eq 1) -and ([double]$bar[0].Height -eq $BarHeight)) "$($bar | ForEach-Object { $_.Height })"
+
+'== the lengths it aims by, against the themes'
+$themes = Join-Path (Join-Path (Join-Path $repo 'src') 'Metered.Themes') 'Controls'
+# A setter's value in a theme file: the ControlTheme by its x:Key, its own setter or a style's in it by the selector.
+function SetterOf($file, $key, $selector, $property) {
+    [xml]$doc = Get-Content -Raw (Join-Path $themes $file)
+    $ns = New-Object Xml.XmlNamespaceManager $doc.NameTable
+    $ns.AddNamespace('a', 'https://github.com/avaloniaui')
+    $ns.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    $owner = $doc.SelectSingleNode("//a:ControlTheme[@x:Key='$key']", $ns)
+    if ($owner -and $selector) { $owner = $owner.SelectSingleNode("a:Style[@Selector='$selector']", $ns) }
+    if ($owner) { $setter = $owner.SelectSingleNode("a:Setter[@Property='$property']", $ns); if ($setter) { $setter.GetAttribute('Value') } }
+}
+# A thickness's left, as Avalonia reads '2' or '14,0,0,0'.
+function LeftOf($thickness) { if ("$thickness" -match '^\s*([\d.]+)') { [double]$Matches[1] } }
+$v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' $null 'BorderThickness'
+Check "an input's border is $InputBorder, as Input.StyledRoot's" ((LeftOf $v) -eq $InputBorder) "$v"
+$v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' '^:adjoined-left' 'Padding'
+Check "its root's padding beside a start enhancer is $InputRootPadding" ((LeftOf $v) -eq $InputRootPadding) "$v"
+$plain = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' $null 'Padding'
+$trailing = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' '^:has-icon-trailing' 'Padding'
+Check 'and none before the text with no start enhancer, a trailing icon or not, as TextAt takes it' (((LeftOf $plain) -eq 0) -and ((LeftOf $trailing) -eq 0)) "$plain / $trailing"
+$v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledStartEnhancer' $null 'Padding'
+Check "a default-size start enhancer's padding is $EnhancerPadding" ((LeftOf $v) -eq $EnhancerPadding) "$v"
+$v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledInput' $null 'Padding'
+Check "a default-size input's text is $InputPadding in" ((LeftOf $v) -eq $InputPadding) "$v"
+$v = SetterOf 'Textarea.Parts.g.axaml' 'Textarea.StyledRoot' $null 'BorderThickness'
+Check "a textarea's border is $InputBorder too, as Textarea.StyledRoot's" ((LeftOf $v) -eq $InputBorder) "$v"
+$gw = SetterOf 'Textarea.axaml' 'Textarea.Resizer' $null 'Width'
+$gh = SetterOf 'Textarea.axaml' 'Textarea.Resizer' $null 'Height'
+Check "the grip is $GripSize square, as Textarea.Resizer's" (([double]$gw -eq $GripSize) -and ([double]$gh -eq $GripSize)) "$gw x $gh"
+$ga = "$(SetterOf 'Textarea.axaml' 'Textarea.Resizer' $null 'HorizontalAlignment') $(SetterOf 'Textarea.axaml' 'Textarea.Resizer' $null 'VerticalAlignment')"
+Check 'in the bottom right corner' ($ga -ceq 'Right Bottom') $ga
 
 '== drive.ps1, as parsed'
 $drive = Join-Path $PSScriptRoot 'drive.ps1'
@@ -141,6 +203,10 @@ function InSection($node) {
     }
     $false
 }
+# What Inner finds inside a control is a part of its template, named by the control's code: a C# constant there.
+$library = Join-Path (Join-Path $repo 'src') 'Metered.Controls'
+$controls = @(Get-ChildItem $library -Recurse -Filter *.cs | Where-Object { $_.FullName.Substring($library.Length) -notmatch '[\\/](bin|obj)[\\/]' } | ForEach-Object { $_.FullName })
+Check 'the library has sources' ($controls.Count -gt 0)
 $found = 0
 foreach ($section in (Calls $ast 'Section')) {
     $title = $section.CommandElements[1].Value
@@ -156,6 +222,10 @@ foreach ($section in (Calls $ast 'Section')) {
     foreach ($call in (Calls $body 'Named')) {
         $text = Literally $call 2
         if ($text) { $found++; Check "'$title' finds '$text' by its text, on its page or the shell" (Quoted $files $text) ($files -join ', ') }
+    }
+    foreach ($call in (Calls $body 'Inner')) {
+        $text = Literally $call 3
+        if ($text) { $found++; Check "'$title' finds '$text' inside a control, a label of Metered.Controls" (Quoted $controls $text) }
     }
 }
 # Outside the sections: what the list's and the pages' helpers find, which is the shell's.
@@ -177,6 +247,12 @@ $unquoted = @($ast.FindAll({ param($n)
                 $n.CommandElements[1].StringConstantType -eq 'SingleQuoted') -and -not (InsideFinder $n)
         }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
 Check 'every control it finds by name is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
+$unquoted = @($ast.FindAll({ param($n)
+            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Inner' -and
+            -not ($n.CommandElements.Count -gt 3 -and $n.CommandElements[3] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                $n.CommandElements[3].StringConstantType -eq 'SingleQuoted')
+        }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
+Check 'every part it finds inside a control is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
 
 "$($script:checks - $script:failures) of $($script:checks) checks passed"
 if ($script:failures -gt 0) { exit 1 }
