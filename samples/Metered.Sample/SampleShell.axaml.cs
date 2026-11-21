@@ -18,7 +18,9 @@ namespace Metered.Sample;
 /// the page's title and the Light/Dark switch. <see cref="MainWindow"/> holds one on desktop, and <see cref="App"/> shows
 /// one as a phone's view. Back is the Back button, or Avalonia's back request (Alt+Left on desktop, the back button or
 /// gesture on a phone) once nothing else on its route has taken it. From Cornflower's, without its page transition and
-/// its rail: Base Web has neither, so a page takes the list's place at once.
+/// its rail: Base Web has neither, so a page takes the list's place at once. The list, or the page in its place, is in a
+/// <see cref="KeyboardInset"/>, so that on a phone it ends above the soft keyboard and its focused input is brought into
+/// view, as a phone's browser does (#108).
 /// <para>
 /// The shell times every page it opens, from before the page is made to its first drawn frame, and writes the page's
 /// <c>METERED ready</c> line to standard output (logcat's <c>DOTNET</c> tag on Android), so that a tool which reads it
