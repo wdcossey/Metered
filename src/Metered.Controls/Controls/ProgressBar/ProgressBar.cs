@@ -114,15 +114,16 @@ public class ProgressBar : RangeBase
 
     /// <summary>
     /// Base Web's <c>getProgressLabel</c>: the label for a value, a maximum and a minimum, in that order, as Base Web
-    /// calls it. Null is Base Web's default, the percentage, rounded: "20% Complete".
+    /// calls it. Null is Base Web's default, the percentage, rounded: "20% Complete"; over an empty range "0% Complete",
+    /// where Base Web's reads "NaN% Complete".
     /// </summary>
     public Func<double, double, double, string>? GetProgressLabel { get => GetValue(GetProgressLabelProperty); set => SetValue(GetProgressLabelProperty, value); }
 
     /// <summary>Base Web's <c>overrides</c>, by part: <c>Root</c>, <c>BarContainer</c>, <c>Bar</c>, <c>BarProgress</c>, <c>InfiniteBar</c>, <c>Label</c>.</summary>
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
 
-    /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, or its default.</summary>
-    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DefaultLabel(Value, Maximum, Minimum);
+    /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, or its default (<see cref="ShownLabel"/>).</summary>
+    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? ShownLabel(Value, Maximum, Minimum);
 
     /// <summary>
     /// The name Base Web gives assistive technology when the app gives none (<c>aria-label</c>): "Loading" when infinite,
@@ -205,6 +206,14 @@ public class ProgressBar : RangeBase
     /// <summary>Base Web's default label: <c>`${Math.round((value - minValue) / (maxValue - minValue) * 100)}% Complete`</c>.</summary>
     internal static string DefaultLabel(double value, double maxValue, double minValue) =>
         $"{Js(JsRound((value - minValue) / (maxValue - minValue) * 100))}% Complete";
+
+    /// <summary>
+    /// The default label the bar shows and names itself by: Base Web's (<see cref="DefaultLabel"/>), except over an
+    /// empty range (the maximum at the minimum), where Base Web's divides zero by zero and reads "NaN% Complete", which a
+    /// screen reader reads out too: here "0% Complete" (the developer's choice of 2026-11-21, #82; against Base Web).
+    /// </summary>
+    internal static string ShownLabel(double value, double maxValue, double minValue) =>
+        maxValue == minValue ? "0% Complete" : DefaultLabel(value, maxValue, minValue);
 
     /// <summary>Base Web's step label: <c>`Step ${Math.ceil((value - minValue) / (maxValue - minValue) * steps)} of ${steps}`</c>.</summary>
     internal static string StepLabel(double value, double maxValue, double minValue, int steps) =>
