@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Platform;
 using Avalonia.Controls.Presenters;
 using Avalonia.Layout;
-using Avalonia.Reactive;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -33,8 +32,8 @@ namespace Metered.Controls;
 /// overflows it, so such a decorator keeps nothing clear; it is meant to be given its height.
 /// </para>
 /// <para>
-/// The pane is read when it says its state changed, and, once laid out, when the decorator is attached, when its top
-/// level resizes, when the platform's insets change, and when the decorator moves or resizes while the keyboard is up.
+/// The pane is read when it says its state changed, and, once laid out, when the decorator is attached, when the
+/// platform's insets change, and when the decorator moves or resizes while the keyboard is up (a rotation among them).
 /// Android raises <see cref="IInputPane.StateChanged"/> only as the keyboard's insets start to animate, with its final
 /// rect (<c>AndroidInsetsManager.OnStart</c>, API 31 and later); a rotation, or a keyboard hidden while the app is in the
 /// background, changes the pane with no animation, and only the insets' change says so
@@ -52,7 +51,6 @@ public class KeyboardInset : Decorator
     private double _inset;
     private IPane? _pane;
     private TopLevel? _top;
-    private IDisposable? _sizeWatch;
     private bool _readPosted;
 
     /// <summary>Whether a reading is laying the decorator out: its own bounds' changes then ask for no other reading.</summary>
@@ -122,10 +120,9 @@ public class KeyboardInset : Decorator
 
         _pane.StateChanged += OnStateChanged;
         _pane.InsetsChanged += OnInsetsChanged;
-        // Gives the size it has at once, so a keyboard already up is read once the decorator is laid out.
-        _sizeWatch = _top?.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(_ => PostRead()));
-        if (_sizeWatch is null)
-            PostRead();
+        // A keyboard already up, read once the decorator is laid out: attached again in the same place, its bounds don't
+        // change, and so don't ask.
+        PostRead();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -135,8 +132,6 @@ public class KeyboardInset : Decorator
             _pane.StateChanged -= OnStateChanged;
             _pane.InsetsChanged -= OnInsetsChanged;
         }
-        _sizeWatch?.Dispose();
-        _sizeWatch = null;
         _pane = null;
         _top = null;
         _said = null;
@@ -238,7 +233,6 @@ public class KeyboardInset : Decorator
     {
         if (_top?.FocusManager?.GetFocusedElement() is not Control focused || !this.IsVisualAncestorOf(focused))
             return;
-        UpdateLayout();
         focused.BringIntoView();
         if (CaretOf(focused) is { } caret)
             focused.BringIntoView(caret);

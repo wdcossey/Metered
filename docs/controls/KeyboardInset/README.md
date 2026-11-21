@@ -30,7 +30,7 @@ browser does, for the content an app puts in it. Opt-in; the sample's shell (`Sa
 - **With no input pane** (Avalonia's headless platform, a desktop with no touch keyboard), it does nothing.
 
 The pane is read when it says its state changed, and, once laid out, when the decorator is attached (a keyboard already
-up), when the top level resizes, when the platform's insets change, and when the decorator moves or resizes while the
+up, or attached again in the same place), when the platform's insets change, and when the decorator moves or resizes while the
 keyboard is up. On API 31 and later Android raises `StateChanged` only as the keyboard's insets start to animate; a
 rotation, or a keyboard hidden while the app is in the background, changes the pane with no animation, and only the
 insets manager's `SafeAreaChanged` (raised from every `OnApplyWindowInsets`) says so. That comes just before the
@@ -89,7 +89,7 @@ a bar, over a footer), nothing when closed (and for a closed pane with a rect, A
 one with none), nothing for a keyboard below it, no more than its height, its own padding kept, the focused input at a
 page's foot scrolled above the keyboard, the caret of a text taller than the room left (scrolled in its own scroller, read-only too), a reading posted before
 the state event, the page's range grown by the
-inset, a focused control outside it left alone, a keyboard already up when it is attached, a resize (and the focused
+inset, a focused control outside it left alone, a keyboard already up when it is attached or attached again, a layout changed just before the keyboard opens, a resize (and the focused
 input brought back into view), a keyboard hidden with no animation, a decorator that moves, one whose height follows
 its child's read again and again, one inside another, detach, and no pane.
 `tests/Metered.Tests/Sample/ShellKeyboardTests.cs`: the shell's host is in one and its footer isn't, and the Input

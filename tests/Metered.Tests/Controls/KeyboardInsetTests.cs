@@ -303,6 +303,28 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void Attached_Again_In_The_Same_Place_Under_An_Open_Keyboard_It_Is_Kept_Clear_Of()
+    {
+        // Taken out and put back where it was: its bounds are the same, so only its attachment says to read the pane.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        var holder = new Border { Child = inset };
+        using var scene = new Scene(holder);
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        holder.Child = null;
+        scene.Pump();
+        Assert.Equal(0, inset.Inset);
+        holder.Child = inset;
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+        Assert.Equal(Scene.Height - 300, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
     public void A_Layout_Changed_Just_Before_The_Keyboard_Opens_Is_Read_As_It_Will_Be()
     {
         // The banner under it goes in the same turn as the keyboard opens, before any layout: the decorator will reach the
