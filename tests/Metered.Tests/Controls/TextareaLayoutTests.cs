@@ -76,9 +76,11 @@ public class TextareaLayoutTests
         {
             Assert.Equal("fit-content", c.RootWidth);
             Assert.Equal(HorizontalAlignment.Left, root.HorizontalAlignment);
+            // Chrome's 20 columns of the font's OS/2 average character, read from the font file, and the padding.
             var clearWidth = c.Clear.Padding[0] + c.Clear.IconSize + c.Clear.Padding[2];
-            Assert.Equal(field.IntrinsicWidth, field.Bounds.Width);
-            Assert.Equal(c.RootBorder[0] + field.IntrinsicWidth + clearWidth + c.RootBorder[2], root.Bounds.Width);
+            var own = 20 * TextareaTests.AverageCharWidth(c.InputFont.FontSize) + c.InputPadding[0] + c.InputPadding[2];
+            Assert.Equal(own, field.Bounds.Width);
+            Assert.Equal(c.RootBorder[0] + own + clearWidth + c.RootBorder[2], root.Bounds.Width);
         }
 
         // The grip: shown for a resize that drags.

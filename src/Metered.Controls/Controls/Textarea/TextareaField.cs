@@ -16,7 +16,8 @@ namespace Metered.Controls;
 /// </summary>
 /// <remarks>
 /// <para>Its <see cref="Decorator.Padding"/> is the style function's, set by the part's theme, and isn't applied round
-/// its child: the template gives it to the scroller's content as a margin, which scrolls with the text.</para>
+/// its child: the template gives it to the scroller's content as a margin, which scrolls with the text. A border an
+/// override gives it is round its child, as a textarea's (<c>box-sizing: border-box</c>).</para>
 /// <para>Its width, where nothing stretches it (the root is <c>fit-content</c> once the textarea can be resized), is a
 /// browser's for a textarea of HTML's 20 columns (<c>cols</c>, which Base Web never sets): Chrome's 20 times the font's
 /// average character width (its <c>OS/2</c> table's <c>xAvgCharWidth</c>, rounded to a pixel; the width of <c>0</c> where
@@ -80,7 +81,7 @@ public class TextareaField : InputField
     }
 
     /// <summary>The width a browser gives a textarea of <see cref="Cols"/> columns in its font, and its padding.</summary>
-    public double IntrinsicWidth => Cols * AverageCharWidth() + Padding.Left + Padding.Right;
+    public double IntrinsicWidth => Cols * AverageCharWidth() + Padding.Left + Padding.Right + BorderThickness.Left + BorderThickness.Right;
 
     /// <summary>
     /// The width its grip has dragged it to, NaN until then: a browser's own width on the textarea, kept within the width
@@ -89,14 +90,37 @@ public class TextareaField : InputField
     public double ResizedWidth
     {
         get => _resizedWidth;
-        internal set { _resizedWidth = value; InvalidateMeasure(); }
+        internal set
+        {
+            if (_resizedWidth.Equals(value)) return;
+            _resizedWidth = value;
+            Resized();
+        }
     }
 
     /// <summary>The height its grip has dragged it to, NaN until then.</summary>
     public double ResizedHeight
     {
         get => _resizedHeight;
-        internal set { _resizedHeight = value; InvalidateMeasure(); }
+        internal set
+        {
+            if (_resizedHeight.Equals(value)) return;
+            _resizedHeight = value;
+            Resized();
+        }
+    }
+
+    /// <summary>Its own size changed in the same space: its child is measured at the new size, not the last laid out.</summary>
+    private void Resized()
+    {
+        _arrangedFor = new Size(double.NaN, double.NaN);
+        InvalidateMeasure();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == RowsProperty) Resized();
     }
 
     /// <summary>The width it was last given to lay out in: the most the grip can drag it to.</summary>
@@ -111,7 +135,9 @@ public class TextareaField : InputField
         AvailableWidth = availableSize.Width;
         _available = availableSize;
         var width = double.IsNaN(ResizedWidth) ? IntrinsicWidth : ResizedWidth;
-        var height = double.IsNaN(ResizedHeight) ? Lines * LineHeight + padding.Top + padding.Bottom : ResizedHeight;
+        var height = double.IsNaN(ResizedHeight)
+            ? Lines * LineHeight + padding.Top + padding.Bottom + BorderThickness.Top + BorderThickness.Bottom
+            : ResizedHeight;
         var size = new Size(Math.Min(width, availableSize.Width), height);
         // Its child at the size it will have: the size it was last laid out at in this space; else all the width there
         // is, stretched, as a textarea of width 100% is. Measured at one size and laid out at another, the child would
@@ -129,14 +155,14 @@ public class TextareaField : InputField
         _arranged = finalSize;
         _arrangedFor = _available;
         if (_measuredWith != finalSize) MeasureChild(finalSize);
-        Child?.Arrange(new Rect(finalSize));
+        Child?.Arrange(new Rect(finalSize).Deflate(BorderThickness));
         return finalSize;
     }
 
     private void MeasureChild(Size size)
     {
         _measuredWith = size;
-        Child?.Measure(size);
+        Child?.Measure(size.Deflate(BorderThickness));
     }
 
     /// <summary>Chrome's average character width: the <c>OS/2</c> table's, rounded; else the width of <c>0</c>.</summary>

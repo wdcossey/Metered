@@ -79,12 +79,13 @@ public class Textarea : BaseInput
         base.OnPointerPressed(e);
     }
 
-    // A finger's drag on the text is a scroll's, the textarea's or the page's, as in a browser, where the caret moves by
-    // its handle. Avalonia's text box would take the drag to move its caret, and keep any scroller round it from
-    // panning. After a hold, the drag extends the selection the hold made, as the text box's does.
+    // A finger's or a pen's drag on the text is a scroll's, the textarea's or the page's, as in a browser on a phone,
+    // where the caret moves by its handle (and Avalonia's scroll gesture takes a pen's as a finger's). Avalonia's text
+    // box would take the drag to move its caret, and keep any scroller round it from panning. After a hold, the drag
+    // extends the selection the hold made, as the text box's does.
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        if (e.Pointer.Type == PointerType.Touch && !_held) return;
+        if (e.Pointer.Type != PointerType.Mouse && !_held) return;
         base.OnPointerMoved(e);
     }
 

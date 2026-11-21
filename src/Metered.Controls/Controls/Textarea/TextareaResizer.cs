@@ -48,6 +48,8 @@ public class TextareaResizer : Control, ICustomHitTest
     /// <summary>Whether a pointer is dragging it.</summary>
     public bool IsDragging => _dragging is not null;
 
+    private TextareaField? _field;
+
     private TextareaField? Field => this.FindAncestorOfType<TextareaField>();
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -82,6 +84,7 @@ public class TextareaResizer : Control, ICustomHitTest
     {
         base.OnPointerPressed(e);
         if (_dragging is not null || Direction == TextareaResize.None || Field is not { } field) return;
+        _field = field;
         if (e.Pointer.Type == PointerType.Mouse && !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         _dragging = e.Pointer;
         _from = e.GetPosition(null);
@@ -94,7 +97,7 @@ public class TextareaResizer : Control, ICustomHitTest
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        if (_dragging != e.Pointer || Field is not { } field) return;
+        if (_dragging != e.Pointer || _field is not { } field) return;
         e.PreventGestureRecognition();
         e.Handled = true;
         var by = e.GetPosition(null) - _from;
@@ -117,6 +120,7 @@ public class TextareaResizer : Control, ICustomHitTest
         base.OnPointerReleased(e);
         if (_dragging != e.Pointer) return;
         _dragging = null;
+        _field = null;
         e.Pointer.Capture(null);
         e.Handled = true;
     }
@@ -124,6 +128,8 @@ public class TextareaResizer : Control, ICustomHitTest
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        if (_dragging == e.Pointer) _dragging = null;
+        if (_dragging != e.Pointer) return;
+        _dragging = null;
+        _field = null;
     }
 }

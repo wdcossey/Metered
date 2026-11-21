@@ -603,17 +603,26 @@ public class TextareaTests
         var textarea = new Textarea { Resize = TextareaResize.Both };
         using var scene = Show(textarea);
         var field = P<TextareaField>(textarea, BaseInput.InputPart);
-        var bytes = File.ReadAllBytes(Path.Combine(Metered.Tests.Repository.RepositoryFiles.FindRoot(), "fonts", "InstrumentSans", "InstrumentSans-Regular.ttf"));
-        var (average, em) = Os2(bytes);
         var size = field.GetValue(Avalonia.Controls.Documents.TextElement.FontSizeProperty);
-        var expected = Math.Round(average * size / em, MidpointRounding.AwayFromZero);
+        var expected = AverageCharWidth(size);
         Assert.Equal(expected, field.AverageCharWidth());
         Assert.Equal(20, TextareaField.Cols);
         Assert.Equal(20 * expected + field.Padding.Left + field.Padding.Right, field.Bounds.Width);
     }
 
+    /// <summary>
+    /// Chrome's average character width for Instrument Sans Regular (the substitute for Uber Move Text: ADR 0003) at a
+    /// size: its OS/2 xAvgCharWidth in pixels, rounded, read from the font file itself.
+    /// </summary>
+    internal static double AverageCharWidth(double size)
+    {
+        var bytes = File.ReadAllBytes(Path.Combine(Metered.Tests.Repository.RepositoryFiles.FindRoot(), "fonts", "InstrumentSans", "InstrumentSans-Regular.ttf"));
+        var (average, em) = Os2(bytes);
+        return Math.Round(average * size / em, MidpointRounding.AwayFromZero);
+    }
+
     /// <summary>xAvgCharWidth (OS/2) and unitsPerEm (head) of a TrueType file.</summary>
-    private static (short Average, ushort Em) Os2(byte[] font)
+    internal static (short Average, ushort Em) Os2(byte[] font)
     {
         int Table(string tag)
         {
@@ -663,6 +672,28 @@ public class TextareaTests
         // Even over a state style: an override's plain setter wins (ADR 0001, item 6).
         scene.Key(Key.Tab);
         Assert.Same(Red, P<Border>(textarea, Textarea.RootPart).BorderBrush);
+    }
+
+    // A border an override gives the Input part is round the text and the grip, inside the textarea's size, as a
+    // textarea's (box-sizing: border-box).
+    [AvaloniaFact]
+    public void A_border_an_override_gives_the_textarea_is_round_its_text()
+    {
+        var plain = new Textarea { Text = "Value", Resize = TextareaResize.Both };
+        var bordered = new Textarea
+        {
+            Text = "Value", Resize = TextareaResize.Both,
+            Overrides = [new Override { Part = BaseInput.InputPart, Style = Theme<TextareaField>(Border.BorderThicknessProperty, new Thickness(3)) }],
+        };
+        using var scene = Show(plain, bordered);
+        var a = P<TextareaField>(plain, BaseInput.InputPart);
+        var b = P<TextareaField>(bordered, BaseInput.InputPart);
+        Assert.Equal(a.Bounds.Width + 6, b.Bounds.Width);
+        Assert.Equal(a.Bounds.Height + 6, b.Bounds.Height);
+        var scroller = Scroller(bordered);
+        Assert.Equal(new Rect(3, 3, b.Bounds.Width - 6, b.Bounds.Height - 6), new Rect(scroller.TranslatePoint(default, b)!.Value, scroller.Bounds.Size));
+        var grip = Grip(bordered);
+        Assert.Equal(new Point(b.Bounds.Width - 3, b.Bounds.Height - 3), grip.TranslatePoint(new Point(grip.Bounds.Width, grip.Bounds.Height), b));
     }
 
     [AvaloniaFact]
