@@ -401,31 +401,51 @@ public class RadioGroupTests
         Assert.Equal("2", group.Value);
     }
 
-    // Anything else that changes what the group holds, Avalonia's radios of one name unchecking a grouped radio as one
-    // outside the group is checked, or code's SetCurrentValue, is put back: the group's value decides.
+    // Base Web's group gives its radios its own name (groupContext?.name ?? name, empty by default: no browser group),
+    // so a radio's GroupName doesn't group it with radios outside the group while the group holds it, and comes back
+    // when it leaves. Each radio whose value is the group's is checked, two of one value or radios of two groups that
+    // share a name, with no fight between Avalonia's grouping and the group's.
     [AvaloniaFact]
-    public void The_groups_value_is_put_back_over_a_change_of_anything_else()
+    public void A_radios_own_group_name_doesnt_group_it_while_the_group_holds_it()
     {
-        var (group, radios) = Group("2", ["One", "Two"]);
+        var (group, radios) = Group("2", ["One", "Two", "Also two"]);
+        radios[2].Value = "2";
         foreach (var r in radios) r.GroupName = "shared";
+        var (other, others) = Group("1", ["Other one"]);
+        others[0].GroupName = "shared";
         var outside = new Radio { Value = "x", Content = "Outside", GroupName = "shared" };
-        using var scene = new Scene(new StackPanel { Children = { group, outside } });
-        Assert.True(radios[1].IsChecked);
+        var elsewhere = new StackPanel();
+        using var scene = new Scene(new StackPanel { Children = { group, other, outside, elsewhere } });
+        Assert.Equal([false, true, true], radios.Select(r => r.IsChecked == true));
+        Assert.True(others[0].IsChecked);
 
-        // As a browser's radios of one name: a controlled input checked again unchecks the other.
         outside.IsChecked = true;
         scene.Pump();
-        Assert.True(radios[1].IsChecked);
-        Assert.False(outside.IsChecked);
+        Assert.Equal([false, true, true], radios.Select(r => r.IsChecked == true));
+        Assert.True(others[0].IsChecked);
+        Assert.True(outside.IsChecked);
         Assert.Equal("2", group.Value);
 
+        group.Items.Remove(radios[0]);
+        elsewhere.Children.Add(radios[0]);
+        scene.Pump();
+        Assert.Equal("shared", radios[0].GroupName);
+    }
+
+    // Code's SetCurrentValue changes what the group shows, as it does anything held; the group's value is back at its
+    // next look at the radio (its place, its value or the group's changing), as React puts back a controlled input's.
+    [AvaloniaFact]
+    public void The_groups_values_are_put_back_over_SetCurrentValue_at_its_next_look()
+    {
+        var (group, radios) = Group("2", ["One", "Two"]);
+        using var scene = new Scene(group);
         radios[1].SetCurrentValue(ToggleButton.IsCheckedProperty, false);
+        radios[0].SetCurrentValue(InputElement.IsTabStopProperty, true);
+        Assert.False(radios[1].IsChecked);
+
+        group.Items.Insert(0, new Radio { Value = "0", Content = "Zero" });
         scene.Pump();
         Assert.True(radios[1].IsChecked);
-
-        // The tab stop, at the group's next look at the radio.
-        radios[0].SetCurrentValue(InputElement.IsTabStopProperty, true);
-        radios[0].Value = "one";
         Assert.False(radios[0].IsTabStop);
     }
 

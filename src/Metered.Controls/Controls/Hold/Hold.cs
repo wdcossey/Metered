@@ -35,7 +35,7 @@ internal class Hold(AvaloniaObject target)
     public bool Holds(AvaloniaProperty property) => _held.ContainsKey(property);
 
     /// <summary>Whether the child shows something other than the value held for <paramref name="property"/>.</summary>
-    public bool Drifted(AvaloniaProperty property) =>
+    private bool Drifted(AvaloniaProperty property) =>
         _held.TryGetValue(property, out var held) && !Equals(target.GetValue(property), held.Value);
 
     public void LetAll()

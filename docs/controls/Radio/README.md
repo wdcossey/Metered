@@ -46,7 +46,8 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 | `onChange` | `Value`'s change |
 | `overrides` | `Overrides`: `RadioGroupRoot` |
 | `role="radiogroup"` | announced as a group (Avalonia has no radio group); `aria-invalid` has no equivalent |
-| `name`, `autoFocus`, `required`, `stateReducer`, `aria-*` | not yet |
+| `name` | not yet: each radio has a `GroupName` of its own while the group holds it, as Base Web's empty name groups nothing in a browser; its own comes back when it leaves |
+| `autoFocus`, `required`, `stateReducer`, `aria-*` | not yet |
 
 ## Behaviour, as Base Web's
 
@@ -75,10 +76,13 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   and a tab stop over the radio's own, at Avalonia's `Animation` priority, the one above a local value, and lets go of
   them when the radio leaves, as ButtonGroup does (#70; the shared `Hold`). So the radio's own values stay beneath,
   local, styled or bound, including those set on it while it was in the group, and a click in the group checks it
-  through the group's value, not its own. Avalonia's radios of one logical parent (or one `GroupName`) uncheck each
-  other, as a browser's radios of one name do: the group holds whether a radio is checked from the moment it is added,
-  lets go of a leaving radio's only once it has left, and puts its value back over anything else that changes it, as
-  React puts a controlled input's `checked` back.
+  through the group's value, not its own (a `TwoWay` binding's source excepted: known difference 13). Base Web's
+  group gives its radios its own name, empty by default, which in a browser groups nothing; Avalonia's radios of one
+  logical parent or one `GroupName` uncheck each other with `SetCurrentValue`, which would fight the group's value and
+  overwrite a radio's own. So from the moment a radio is added, the group also holds a `GroupName` of the radio's own
+  over its own: a radio checked outside the group, of the same name, leaves the group's alone, and two radios of the
+  group's value are both checked, as Base Web's are. Something that sets a held value with `SetCurrentValue` changes
+  it until the group's next look at the radio (its place, its value or the group's changing), as for ButtonGroup.
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
   finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
@@ -90,7 +94,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 43 in all.
+  each behaviour of the group above: 44 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.

@@ -32,7 +32,8 @@ gallery for two groups: radio, and checkbox with the outline kind.
   as Base Web's `cloneElement` replaces a child's props without changing the child (#70). The group
   holds its kind, size, shape, selection, tab stop and role over the button's own, at Avalonia's
   `Animation` priority, the one above a local value, and lets go of them when the button leaves
-  (`Hold`, which RadioGroup shares: #80).
+  (`Hold`, which RadioGroup shares: #80). A held value something else changes with `SetCurrentValue`
+  is put back at the group's next apply.
   So the button's own values stay beneath, local, styled or bound, including those set on it while
   it was in the group, and the control's defaults where it has none. The group no longer listens
   to its clicks.
