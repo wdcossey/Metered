@@ -155,10 +155,9 @@ public class Popover : TemplatedControl
     private bool _mounted;
     private bool _animating;
     private PopoverPlacement _actualPlacement;
-    private (Rect Anchor, Size Body, Size View, Rect? Bounds, Thickness Margin)? _tethered;
+    private (Rect Anchor, Size Body, Size View, Rect? Bounds, Thickness Margin, double? Arrow)? _tethered;
     private ScrollContentPresenter? _scrollParent;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
-    private IInputElement? _focusBefore;
     private (int Time, Easing? Easing, Transitions Transitions)? _exit;
     private Animatable? _exiting;
     private (Point At, TransformOperations Operations)? _translate;
@@ -215,7 +214,7 @@ public class Popover : TemplatedControl
     /// <summary>Base Web's <c>focusLock</c>: Tab stays inside, and focus goes back when it closes (<see cref="ReturnFocus"/>).</summary>
     public bool FocusLock { get => GetValue(FocusLockProperty); set => SetValue(FocusLockProperty, value); }
 
-    /// <summary>Base Web's <c>returnFocus</c>: with <see cref="FocusLock"/>, focus goes back to where it was when it closes.</summary>
+    /// <summary>Base Web's <c>returnFocus</c>. Avalonia's popup gives focus back to what had it when it opened whatever this says (docs/controls/Popover, Known differences 4); with <see cref="FocusLock"/>, focus goes back to where it was when it closes.</summary>
     public bool ReturnFocus { get => GetValue(ReturnFocusProperty); set => SetValue(ReturnFocusProperty, value); }
 
     /// <summary>Base Web's <c>accessibilityType</c>.</summary>
@@ -319,8 +318,7 @@ public class Popover : TemplatedControl
             if (p == TriggerTypeProperty) Relayer();
             UpdateStates();
             UpdateParts();
-            // What popper.js reads changed (the arrow, the margin): placed again.
-            _tethered = null;
+            // The arrow and the margin are in what placing reads (Retether's key): placed again if they changed.
             Retether();
         }
         else if (p == AnchorProperty)
@@ -406,7 +404,7 @@ public class Popover : TemplatedControl
         }, TimeSpan.FromMilliseconds(AnimateInTime));
     }
 
-    /// <summary>Base Web's Layer mounted: the body shown (still hidden: opacity 0), the layer added, focus remembered.</summary>
+    /// <summary>Base Web's Layer mounted: the body shown (still hidden: opacity 0), the layer added.</summary>
     private void Mount()
     {
         // Base Web's layer is in the page: here the window's overlay layer, which every theme's window template has. A
@@ -417,7 +415,6 @@ public class Popover : TemplatedControl
         _tethered = null;
         _unclipped = false;
         ActualPlacement = Placement;
-        _focusBefore = _top.FocusManager?.GetFocusedElement();
         GiveContent();
         UpdateStates();
         UpdateParts();
@@ -464,7 +461,6 @@ public class Popover : TemplatedControl
     private void Unmount(bool closePopup = true)
     {
         if (!_mounted) return;
-        var focusInside = _top?.FocusManager?.GetFocusedElement() is Visual focused && Layers.IsWithin(focused, _parts[BodyPart] as Visual);
         _mounted = false;
         _animating = false;
         EndExit();
@@ -480,14 +476,6 @@ public class Popover : TemplatedControl
         ActualPlacement = Placement;
         UpdateStates();
         UpdateParts();
-        // react-focus-lock's returnFocus: only with a focus lock, and never for a hover popover (popover.js).
-        if (FocusLock && ReturnFocus && AccessibilityType != PopoverAccessibilityType.Tooltip && TriggerType != PopoverTriggerType.Hover
-            && _focusBefore is { } back && (focusInside || _top?.FocusManager?.GetFocusedElement() is null))
-        {
-            back.Focus();
-        }
-
-        _focusBefore = null;
     }
 
     /// <summary>
@@ -533,12 +521,15 @@ public class Popover : TemplatedControl
         if (anchor.TranslatePoint(default, _top) is not { } anchorAt) return;
         var size = body.Bounds.Size;
         if (!body.IsMeasureValid || (size.Width <= 0 && size.Height <= 0)) return;
-        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(), body.Margin);
+        // The arrow's outer size, as popper.js's getOuterSizes: its box once laid out, its width before (just shown).
+        double? arrow = ShowArrow && _parts[ArrowPart] is Avalonia.Layout.Layoutable a
+            ? (a.Bounds.Width > 0 ? a.Bounds.Width : double.IsNaN(a.Width) ? 0 : a.Width)
+            : null;
+        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(), body.Margin, arrow);
         if (_tethered == key) return;
         _tethered = key;
         if (!_unclipped) Unclip();
 
-        var arrow = ShowArrow && _parts[ArrowPart] is Avalonia.Layout.Layoutable a ? a.Bounds.Width : (double?)null;
         var result = Tether.Compute(key.Item1, size, key.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, key.Item4);
         ActualPlacement = result.Placement;
         if (_parts[ArrowPart] is { } arrowPart && result.ArrowOffset is { } ao)

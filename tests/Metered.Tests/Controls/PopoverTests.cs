@@ -7,6 +7,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -409,7 +410,8 @@ public class PopoverTests
         Assert.False(popover.IsOpen);
     }
 
-    // Touch first: a finger never hovers (as the v2 controls' :is-hovered), so a tap doesn't open a hover popover.
+    // Touch first: a finger never hovers (as the v2 controls' :is-hovered), so a tap doesn't open a hover popover, nor a
+    // finger's pointer entering the anchor (as a phone's browser's emulated mouseenter would).
     [AvaloniaFact]
     public void A_finger_doesnt_open_a_hover_popover()
     {
@@ -420,6 +422,30 @@ public class PopoverTests
         Tap(scene, scene.CentreOf(anchor));
         Settle(scene, 100);
         Assert.False(popover.IsOpen);
+
+        var presenter = (Visual)Avalonia.VisualTree.VisualExtensions.GetVisualParent(anchor)!;
+        var finger = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+        ((Interactive)presenter).RaiseEvent(new PointerEventArgs(InputElement.PointerEnteredEvent, presenter, finger, scene.Window,
+            scene.CentreOf(anchor), 0, new PointerPointProperties(), KeyModifiers.None));
+        Settle(scene, 50);
+        Assert.False(popover.IsOpen);
+        var mouse = new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true);
+        ((Interactive)presenter).RaiseEvent(new PointerEventArgs(InputElement.PointerEnteredEvent, presenter, mouse, scene.Window,
+            scene.CentreOf(anchor), 0, new PointerPointProperties(), KeyModifiers.None));
+        Settle(scene, 50);
+        Assert.True(popover.IsOpen);
+    }
+
+    // A window with no template has no overlay layer: the popover shows nothing, where Avalonia's popup would throw.
+    [AvaloniaFact]
+    public void In_a_window_with_no_overlay_layer_it_shows_nothing()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        using var scene = new Scene(popover);
+        scene.Click(anchor);
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        Assert.False(popover.PopupHost!.IsOpen);
     }
 
     // stateful-container.js's onFocus: keyboard focus on the anchor opens a hover popover; onBlur closes it unless autoFocus.
@@ -768,6 +794,36 @@ public class PopoverTests
         // popper.js's arrow offset for this anchor and body: the anchor's centre (195) less half the arrow, from the body's left.
         Assert.Equal(195 - 4.5 - 135, arrow.Bounds.X, 0);
         Assert.Equal(new Rect(135, 400 + 40 + 14, 120, 60), BoxOf(Body(popover), scene));
+    }
+
+    // The arrow shown under an override's fixed margin: nothing the key holds changes, and it is placed all the same.
+    [AvaloniaFact]
+    public void An_arrow_shown_under_an_overrides_margin_is_placed()
+    {
+        var (popover, _, _) = Fixed(150, 400);
+        popover.Placement = PopoverPlacement.Bottom;
+        popover.Overrides = [new Override { Part = "Body", Style = new ControlTheme(typeof(Border)) { Setters = { new Setter(Layoutable.MarginProperty, new Thickness(0, 20, 0, 0)) } } }];
+        popover.IsOpen = true;
+        using var scene = Show(popover);
+        Settle(scene);
+        popover.ShowArrow = true;
+        Settle(scene);
+        var arrow = (Control)popover.Part(Popover.ArrowPart)!;
+        Assert.Equal(195 - 4.5 - 135, arrow.Bounds.X, 0);
+    }
+
+    [AvaloniaFact]
+    public void A_placement_changed_while_it_is_open_places_it_again()
+    {
+        var (popover, _, _) = Fixed(150, 400);
+        popover.Placement = PopoverPlacement.Bottom;
+        popover.IsOpen = true;
+        using var scene = Show(popover);
+        Settle(scene);
+        popover.Placement = PopoverPlacement.Top;
+        Settle(scene);
+        Assert.Equal(PopoverPlacement.Top, popover.ActualPlacement);
+        Assert.Equal(new Rect(135, 400 - 8 - 60, 120, 60), BoxOf(Body(popover), scene));
     }
 
     [AvaloniaFact]

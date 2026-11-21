@@ -121,7 +121,7 @@ From `stateful-container.js` and `popover.js`:
   that time, it stays.
 - **Focus** (`react-focus-lock`): once placed, focus goes to the first focusable element inside (`autoFocus`), unless it
   is a tooltip or focus is already inside; shown with the focus ring if focus was the keyboard's. `FocusLock` keeps Tab
-  inside the body and gives focus back to where it was when it closes (`returnFocus`), never for a hover popover or a
+  inside the body and gives focus back to where it was when it closes (`returnFocus`; Avalonia's popup does this for every popover: known difference 4), never for a hover popover or a
   tooltip.
 - **Accessibility** (`getAnchorProps`, `getPopoverBodyProps`): a tooltip's body is a tooltip to UI Automation, and its
   text is the anchor's help text while it is open (`aria-describedby`).
@@ -163,7 +163,8 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   load and taken out; overrides of the three parts, and of the body's margin; UI Automation; a page that scrolls; a flip
   near the window's foot; changes while it is shown (an Avalonia toggle button as the anchor, the arrow shown, the
   trigger type, a new anchor), a tab put away and back, a window close that is cancelled; a press in a combo box's
-  drop-down in the content; an anchor that handles its own tap; focus in Tab's order.
+  drop-down in the content; an anchor that handles its own tap; focus in Tab's order; a finger's pointer entering a hover
+  anchor; a window with no overlay layer; an arrow shown under an override's margin; a placement changed while open.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
 - `Sample/PopoverPageTests`: the sample's page, 5: its place, the examples as set, a tap opening and closing, the dismiss
   example, each placement.
@@ -192,7 +193,7 @@ entrance's transition and the hover body's pointer as Base Web's.
    anchor; in a scrolling element, that element's box. An app's page is a scroll viewer: Metered takes it as the
    scrolling element, so a popover whose anchor scrolls away stays at the scroller's edge (`flip` keeps to the window,
    the viewport). Without a scroll viewer, the window.
-4. **Without a focus lock, focus goes back to the anchor when it closes.** Base Web's leaves focus on the page when the
+4. **Focus goes back to the anchor when it closes, with or without a focus lock, whatever `ReturnFocus` says.** Base Web's leaves focus on the page when the
    focused element inside goes; Avalonia's popup gives focus back to what had it before it opened.
 5. **A menu's anchor isn't marked as having a popup or expanded** (`aria-haspopup`, `aria-expanded`,
    `aria-controls`/`aria-owns`): Avalonia has no way to add an expand state to another control's automation peer. A
