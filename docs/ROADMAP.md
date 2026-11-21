@@ -96,3 +96,7 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       automation; its ring's drawing shared with Button's (`docs/controls/Spinner/`)
 - [x] Slider (#55): Base Web's `baseui/slider` (no v2), dragged and stepped as react-range does it; one thumb or a range,
       marks, labels, parts and overrides, a touch drag that never pans the page (`docs/controls/Slider/`)
+- [x] Input (#84): Base Web's `baseui/input` (no v2), on Avalonia's `TextBox`: its twelve parts and overrides, sizes,
+      enhancers and adjoined, error and positive, disabled and read-only, the clear icon and Escape, a password's mask
+      toggle, maxLength, the focus ring; Base Web's three icons as paths; `BaseInput` and the generator's parts shared for
+      Textarea (#85) (`docs/controls/Input/`). MaskedInput, FormControl and PhoneInput are follow-ups
