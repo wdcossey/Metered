@@ -75,7 +75,10 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   and a tab stop over the radio's own, at Avalonia's `Animation` priority, the one above a local value, and lets go of
   them when the radio leaves, as ButtonGroup does (#70; the shared `Hold`). So the radio's own values stay beneath,
   local, styled or bound, including those set on it while it was in the group, and a click in the group checks it
-  through the group's value, not its own.
+  through the group's value, not its own. Avalonia's radios of one logical parent (or one `GroupName`) uncheck each
+  other, as a browser's radios of one name do: the group holds whether a radio is checked from the moment it is added,
+  lets go of a leaving radio's only once it has left, and puts its value back over anything else that changes it, as
+  React puts a controlled input's `checked` back.
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
   finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
@@ -87,7 +90,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 38 in all.
+  each behaviour of the group above: 43 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.

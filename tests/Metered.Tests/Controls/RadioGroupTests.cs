@@ -372,6 +372,63 @@ public class RadioGroupTests
         Assert.True(radios[1].IsTabStop);
     }
 
+    // A radio whose own IsChecked is true, joining and leaving: Avalonia's radios of one logical parent uncheck each
+    // other. A radio added to Items is the group's logical child before it is prepared, so the group's checked radio
+    // would uncheck it, its own true lost for good (the third); and a radio leaving is still the group's logical child as
+    // its collection tells of it, so its own true would uncheck the group's checked radio. Each keeps its own: the
+    // group's checked radio is the group's value, before and after (radio-v2's checked = selectedValue === value).
+    [AvaloniaTheory]
+    [InlineData(0, "remove")]
+    [InlineData(2, "remove")]
+    [InlineData(0, "source")]
+    [InlineData(2, "source")]
+    public void The_checked_radio_stays_checked_when_a_radio_checked_of_its_own_leaves(int leaving, string from)
+    {
+        var radios = new[] { "1", "2", "3" }.Select(v => new Radio { Value = v, Content = v }).ToArray();
+        radios[leaving].IsChecked = true;
+        var source = new System.Collections.ObjectModel.ObservableCollection<Radio>(radios);
+        var group = new RadioGroup { Value = "2" };
+        if (from == "source") group.ItemsSource = source;
+        else foreach (var r in radios) group.Items.Add(r);
+        using var scene = new Scene(group);
+        Assert.Equal([false, true, false], radios.Select(r => r.IsChecked == true));
+
+        if (from == "source") source.Remove(radios[leaving]);
+        else group.Items.Remove(radios[leaving]);
+        scene.Pump();
+        Assert.True(radios[leaving].IsChecked);
+        Assert.True(radios[1].IsChecked);
+        Assert.Equal("2", group.Value);
+    }
+
+    // Anything else that changes what the group holds, Avalonia's radios of one name unchecking a grouped radio as one
+    // outside the group is checked, or code's SetCurrentValue, is put back: the group's value decides.
+    [AvaloniaFact]
+    public void The_groups_value_is_put_back_over_a_change_of_anything_else()
+    {
+        var (group, radios) = Group("2", ["One", "Two"]);
+        foreach (var r in radios) r.GroupName = "shared";
+        var outside = new Radio { Value = "x", Content = "Outside", GroupName = "shared" };
+        using var scene = new Scene(new StackPanel { Children = { group, outside } });
+        Assert.True(radios[1].IsChecked);
+
+        // As a browser's radios of one name: a controlled input checked again unchecks the other.
+        outside.IsChecked = true;
+        scene.Pump();
+        Assert.True(radios[1].IsChecked);
+        Assert.False(outside.IsChecked);
+        Assert.Equal("2", group.Value);
+
+        radios[1].SetCurrentValue(ToggleButton.IsCheckedProperty, false);
+        scene.Pump();
+        Assert.True(radios[1].IsChecked);
+
+        // The tab stop, at the group's next look at the radio.
+        radios[0].SetCurrentValue(InputElement.IsTabStopProperty, true);
+        radios[0].Value = "one";
+        Assert.False(radios[0].IsTabStop);
+    }
+
     private static void Leave(RadioGroup group, System.Collections.ObjectModel.ObservableCollection<Radio> source, Radio radio, string leave)
     {
         // Removed, the whole group cleared, or its source cleared: a reset, which names no old items.

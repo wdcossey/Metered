@@ -6,6 +6,7 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace Metered.Controls;
 
@@ -105,13 +106,23 @@ public class RadioGroup : ItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is not Radio radio) return;
-        if (_members.TryAdd(radio, new Hold(radio)))
-        {
-            radio.IsCheckedChanged += OnRadioCheckedChanged;
-            radio.Group = this;
-        }
-
+        Take(radio);
         Apply(radio, index);
+    }
+
+    /// <summary>
+    /// Takes a radio into the group, holding whether it is checked at once: Avalonia's radios of one logical parent
+    /// uncheck each other, and a radio added to <c>Items</c> is the group's logical child before it is prepared, so an
+    /// earlier radio the group checks would otherwise uncheck it, and take its own IsChecked for good.
+    /// </summary>
+    private void Take(Radio radio)
+    {
+        if (_members.ContainsKey(radio)) return;
+        var hold = new Hold(radio);
+        _members.Add(radio, hold);
+        hold.Set(ToggleButton.IsCheckedProperty, (bool?)IsChecked(radio));
+        radio.IsCheckedChanged += OnRadioCheckedChanged;
+        radio.Group = this;
     }
 
     protected override void ClearContainerForItemOverride(Control container)
@@ -148,11 +159,7 @@ public class RadioGroup : ItemsControl
     }
 
     /// <summary>A radio's value changed: whether it is checked, and a tab stop, again.</summary>
-    internal void Refresh(Radio radio)
-    {
-        var index = IndexFromContainer(radio);
-        if (index >= 0) Apply(radio, index);
-    }
+    internal void Refresh(Radio radio) => Apply(radio, IndexFromContainer(radio));
 
     private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -162,6 +169,7 @@ public class RadioGroup : ItemsControl
             ? _members.Keys.Where(radio => !Items.Contains(radio)).ToList()
             : e.OldItems?.OfType<Radio>().Where(radio => !Items.Contains(radio)).ToList() ?? [];
         foreach (var radio in gone) Release(radio);
+        foreach (var radio in Items.OfType<Radio>()) Take(radio);
     }
 
     /// <summary>Gives a radio that leaves the group its own values back: the group lets go of what it holds.</summary>
@@ -170,31 +178,45 @@ public class RadioGroup : ItemsControl
         if (!_members.Remove(radio, out var hold)) return;
         radio.IsCheckedChanged -= OnRadioCheckedChanged;
         radio.Group = null;
-        hold.LetAll();
+        // Avalonia's radios of one logical parent uncheck each other, and a radio leaving is still the group's logical
+        // child while its collection tells of the change: its own values show once it has gone, so that an own
+        // IsChecked of true doesn't uncheck the group's checked radio.
+        if (radio.Parent == this) Dispatcher.UIThread.Post(hold.LetAll);
+        else hold.LetAll();
     }
 
     private void ApplyAll()
     {
-        foreach (var container in GetRealizedContainers())
-        {
-            if (container is Radio radio && _members.ContainsKey(radio)) Apply(radio, IndexFromContainer(radio));
-        }
+        foreach (var radio in _members.Keys.ToList()) Apply(radio, IndexFromContainer(radio));
     }
 
+    /// <summary>Base Web's checked = groupContext.selectedValue === value, whatever the radio's own.</summary>
+    private bool IsChecked(Radio radio) => !string.IsNullOrEmpty(Value) && radio.Value == Value;
+
+    /// <summary>Holds the group's values on a radio; its tab stop only once it has a place (an index of 0 or more).</summary>
     private void Apply(Radio radio, int index)
     {
-        var hold = _members[radio];
-        // Base Web's checked = groupContext.selectedValue === value, whatever the radio's own.
-        var none = string.IsNullOrEmpty(Value);
-        var isChecked = !none && radio.Value == Value;
+        if (!_members.TryGetValue(radio, out var hold)) return;
+        var isChecked = IsChecked(radio);
         hold.Set(ToggleButton.IsCheckedProperty, (bool?)isChecked);
         // Base Web's tabIndex: the checked radio, or the first when the group has no value.
-        hold.Set(IsTabStopProperty, isChecked || (none && index == 0));
+        if (index >= 0) hold.Set(IsTabStopProperty, isChecked || (string.IsNullOrEmpty(Value) && index == 0));
     }
 
     private void OnRadioCheckedChanged(object? sender, RoutedEventArgs e)
     {
-        if (sender is Radio { IsChecked: true } radio && radio.Value != Value) SetCurrentValue(ValueProperty, radio.Value);
+        if (sender is not Radio radio) return;
+        // A click or Space: the group's value is the radio's.
+        if (radio.IsChecked == true && radio.Value != Value)
+        {
+            SetCurrentValue(ValueProperty, radio.Value);
+            return;
+        }
+
+        // Anything else that changed what the group holds (Avalonia's radios of one name or parent unchecking each
+        // other, or SetCurrentValue): the group's value again, as a controlled input is, once the change is over.
+        if (_members.TryGetValue(radio, out var hold) && hold.Drifted(ToggleButton.IsCheckedProperty))
+            Dispatcher.UIThread.Post(() => Refresh(radio));
     }
 
     private void OnKeyDownForArrows(object? sender, KeyEventArgs e)

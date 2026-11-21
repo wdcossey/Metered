@@ -13,10 +13,13 @@ internal class Hold(AvaloniaObject target)
 {
     private readonly Dictionary<AvaloniaProperty, (object? Value, IDisposable? Undo)> _held = [];
 
-    /// <summary>Holds <paramref name="value"/> over the child's own.</summary>
+    /// <summary>
+    /// Holds <paramref name="value"/> over the child's own; again if something else has changed it since (a
+    /// <c>SetCurrentValue</c> changes the value the hold shows, and leaves the hold in place).
+    /// </summary>
     public void Set<T>(StyledProperty<T> property, T value)
     {
-        if (_held.TryGetValue(property, out var held) && Equals(held.Value, value)) return;
+        if (_held.TryGetValue(property, out var held) && Equals(held.Value, value) && !Drifted(property)) return;
         var undo = target.SetValue(property, value, BindingPriority.Animation);
         // Let go of the old value after the new one is held, so that the child's own doesn't show between.
         held.Undo?.Dispose();
@@ -30,6 +33,10 @@ internal class Hold(AvaloniaObject target)
     }
 
     public bool Holds(AvaloniaProperty property) => _held.ContainsKey(property);
+
+    /// <summary>Whether the child shows something other than the value held for <paramref name="property"/>.</summary>
+    public bool Drifted(AvaloniaProperty property) =>
+        _held.TryGetValue(property, out var held) && !Equals(target.GetValue(property), held.Value);
 
     public void LetAll()
     {
