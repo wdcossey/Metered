@@ -102,42 +102,16 @@ public class ButtonGroup : ItemsControl
     /// The buttons the group has taken, so that each is given back when it leaves, however it leaves, and what the
     /// group holds on each.
     /// </summary>
-    private readonly Dictionary<Button, Hold> _members = [];
+    private readonly Dictionary<Button, ButtonHold> _members = [];
 
     /// <summary>
-    /// The values the group holds on a button, above the button's own, which stay beneath them: Base Web's
-    /// <c>cloneElement</c>, which replaces a child's props and leaves the child unchanged. Let go, the button's own
-    /// values are its again, local, bound or styled.
+    /// The values the group holds on a button, above the button's own, which stay beneath them (<see cref="Hold"/>):
+    /// Base Web's <c>cloneElement</c>, which replaces a child's props and leaves the child unchanged.
     /// </summary>
-    private sealed class Hold(Button button)
+    private sealed class ButtonHold(Button button) : Hold(button)
     {
-        private readonly Dictionary<AvaloniaProperty, (object? Value, IDisposable? Undo)> _held = [];
-
-        /// <summary>Holds <paramref name="value"/> over the button's own.</summary>
-        public void Set<T>(StyledProperty<T> property, T value)
-        {
-            if (_held.TryGetValue(property, out var held) && Equals(held.Value, value)) return;
-            var undo = button.SetValue(property, value, BindingPriority.Animation);
-            // Let go of the old value after the new one is held, so that the button's own doesn't show between.
-            held.Undo?.Dispose();
-            _held[property] = (value, undo);
-        }
-
-        /// <summary>The button's own value shows again.</summary>
-        public void Let(AvaloniaProperty property)
-        {
-            if (_held.Remove(property, out var held)) held.Undo?.Dispose();
-        }
-
-        public bool Holds(AvaloniaProperty property) => _held.ContainsKey(property);
-
         /// <summary>The button's IsSelected beneath the group's, as it was once the group last set its own.</summary>
         public Optional<bool> SelectedBeneath { get; set; }
-
-        public void LetAll()
-        {
-            foreach (var property in _held.Keys.ToList()) Let(property);
-        }
     }
 
     public ButtonGroup()
@@ -209,7 +183,7 @@ public class ButtonGroup : ItemsControl
     {
         base.PrepareContainerForItemOverride(container, item, index);
         if (container is not Button button) return;
-        if (_members.TryAdd(button, new Hold(button)))
+        if (_members.TryAdd(button, new ButtonHold(button)))
         {
             button.Click += OnButtonClick;
             button.PropertyChanged += OnButtonPropertyChanged;
@@ -301,7 +275,7 @@ public class ButtonGroup : ItemsControl
         }
     }
 
-    private void ApplyHeld(Button button, Hold hold, int index)
+    private void ApplyHeld(Button button, ButtonHold hold, int index)
     {
         // Base Web's cloneElement: the group's kind, shape and size replace the child's.
         hold.Set(Button.KindProperty, Kind);

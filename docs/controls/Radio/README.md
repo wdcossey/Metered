@@ -46,7 +46,8 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 | `onChange` | `Value`'s change |
 | `overrides` | `Overrides`: `RadioGroupRoot` |
 | `role="radiogroup"` | announced as a group (Avalonia has no radio group); `aria-invalid` has no equivalent |
-| `name`, `autoFocus`, `required`, `stateReducer`, `aria-*` | not yet |
+| `name` | not yet: each radio has a `GroupName` of its own while the group holds it, as Base Web's empty name groups nothing in a browser; its own comes back when it leaves |
+| `autoFocus`, `required`, `stateReducer`, `aria-*` | not yet |
 
 ## Behaviour, as Base Web's
 
@@ -68,6 +69,22 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   radio, wrapping. Space checks the focused radio; Enter doesn't, as a browser's radio doesn't (it submits the form;
   radio-v2 has no key handler of its own). The radio has no Enter rule, so none to differ in (#49): the radio doesn't
   take the key.
+- In a group, a radio is checked by the group's value whatever its own `IsChecked` (radio-v2's `checked =
+  groupContext ? groupContext.selectedValue === value : checkedProp`), and its tab stop is the group's. A radio that
+  leaves, however it leaves (removed, the items cleared, or its `ItemsSource` reset), has its own back, as Base Web's
+  context replaces what a radio draws without changing its props (#80). The group holds whether each radio is checked
+  and a tab stop over the radio's own, at Avalonia's `Animation` priority, the one above a local value, and lets go of
+  them when the radio leaves, as ButtonGroup does (#70; the shared `Hold`). So the radio's own values stay beneath,
+  local, styled or bound, including those set on it while it was in the group, and a click in the group checks it
+  through the group's value, not its own (a `TwoWay` binding's source excepted: known difference 13). Base Web's
+  group gives its radios its own name, empty by default, which in a browser groups nothing; Avalonia's radios of one
+  logical parent or one `GroupName` uncheck each other with `SetCurrentValue`, which would fight the group's value and
+  overwrite a radio's own. So the group also holds a `GroupName` of the radio's own over its own,
+  before whether it is checked: a radio checked outside the group, of the same name, leaves the group's alone, either
+  way (and one leaving the group leaves it alone), and two radios of the group's value are both checked, as Base
+  Web's are. Something that sets a held value with `SetCurrentValue` changes
+  it until the group's next look at the radio (its place, its value or the group's changing), as for ButtonGroup.
+  While the group holds a radio, its `GroupName` reads as that name of its own (`metered-radio-group-<n>`).
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
   finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
@@ -79,7 +96,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 32 in all.
+  each behaviour of the group above: 46 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.
@@ -119,4 +136,11 @@ oracle (`tools/reference/radio.js`) evaluates the same functions on the real lig
     window's presenter), so the cursor is its parent's. The theme still sets Base Web's (`Cursor` No), as Button's does.
 12. **A group's items are `Radio`s.** Data through `ItemsSource` with a template isn't a radio of the group yet, as
     ButtonGroup's items are its `Button`s.
-13. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+13. **A `TwoWay` binding on a grouped radio's `IsChecked` follows the group.** `IsChecked` binds two-way by default,
+    and Avalonia writes a value back to the source at any priority, so the source takes the group's value while the
+    radio is in the group; Base Web's group never changes a radio's own `checked`. The group's value still shows over a
+    change the source makes, and once the radio leaves, the source's value shows (a `OneWay` binding's source is left
+    alone).
+14. **The group's values are held at the `Animation` priority**, so `IsAnimating` is true for a grouped radio's
+    `IsChecked` and `IsTabStop`, and an app's own animation of either competes with the group's value, as ButtonGroup's.
+15. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).

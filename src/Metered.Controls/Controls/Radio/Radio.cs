@@ -70,6 +70,10 @@ public class Radio : RadioButton
 
     private readonly Parts _parts;
     private RadioGroup? _group;
+    private string? _groupedName;
+
+    /// <summary>The last of the names given to radios in a group, one each.</summary>
+    private static long s_groupedNames;
     private readonly BackplatePointer _pointer;
 
     public Radio()
@@ -123,6 +127,12 @@ public class Radio : RadioButton
             UpdateContext();
         }
     }
+
+    /// <summary>
+    /// The <c>GroupName</c> a <see cref="RadioGroup"/> holds over the radio's own: one of its own, kept for its life, so
+    /// that Avalonia's grouping of radios by name or parent puts it with no other radio while the group holds it.
+    /// </summary>
+    internal string GroupedName => _groupedName ??= $"metered-radio-group-{++s_groupedNames}";
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];

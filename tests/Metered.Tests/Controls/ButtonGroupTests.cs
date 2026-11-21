@@ -515,6 +515,21 @@ public class ButtonGroupTests
         Assert.True(button.IsSelected);
     }
 
+    // #80: a held value something else sets with SetCurrentValue is put back at the group's next apply, as
+    // cloneElement's props are the button's at every render.
+    [AvaloniaFact]
+    public void A_held_value_set_with_SetCurrentValue_is_put_back_at_the_groups_next_apply()
+    {
+        var group = Group(2, g => { g.Mode = ButtonGroupMode.Radio; g.Selected = [1]; g.Kind = ButtonKind.Tertiary; });
+        using var scene = new Scene(group);
+        var button = (Button)group.Items[0]!;
+        button.SetCurrentValue(Button.KindProperty, ButtonKind.Primary);
+        Assert.Equal(ButtonKind.Primary, button.Kind);
+
+        group.Selected = [1];
+        Assert.Equal(ButtonKind.Tertiary, button.Kind);
+    }
+
     // A TwoWay binding writes the group's selection back to its source, beneath the group's value. That isn't the
     // button's own isSelected: the group still decides. A true the source sets itself is the button's own, kept.
     [AvaloniaFact]
