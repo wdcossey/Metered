@@ -474,6 +474,38 @@ public class FormControlTests
         }
     }
 
+    // A browser's click needs the press and the release on the label: one let go elsewhere is no click.
+    [AvaloniaFact]
+    public void A_press_on_the_label_let_go_elsewhere_is_no_click()
+    {
+        var input = new Input();
+        var other = new Border { Height = 40, Background = Avalonia.Media.Brushes.Transparent };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        scene.Press((Visual)form.Part(FormControl.LabelPart)!);
+        var away = scene.CentreOf(other);
+        scene.Window.MouseMove(away);
+        scene.Window.MouseUp(away, MouseButton.Left);
+        scene.Pump();
+        Assert.False(input.IsFocused);
+    }
+
+    // Out of the tree it renders nothing, so a child taken out then is let go when it is taken out.
+    [AvaloniaFact]
+    public void A_child_taken_out_while_out_of_the_tree_is_let_go()
+    {
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Caption = "Caption", Error = true, Content = input };
+        var page = new StackPanel { Children = { form } };
+        using var scene = Show(page);
+        Assert.True(input.Error);
+        page.Children.Remove(form);
+        form.Content = new Input();
+        Assert.False(input.Error);
+        Assert.Null(AutomationProperties.GetHelpText(input));
+        Assert.Null(AutomationProperties.GetLabeledBy(input));
+    }
+
     [AvaloniaFact]
     public void A_label_without_a_focusable_target_does_nothing()
     {

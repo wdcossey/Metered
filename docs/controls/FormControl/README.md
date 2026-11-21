@@ -117,8 +117,8 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
 - `Controls/FormControlTests`: the hint, its icon, the parts rendered, the state and the functions' arguments, the
   child's help text (78); the counter (132); what each kind of child is given (120); the counter following typing and
   its maximum; `Counter` in XAML; a child let go; Base Web's defaults; `HtmlFor` or the child; a click and a tap on the
-  label, not a press, nor a press whose pointer something else took; a touch drag from the label in a page that scrolls;
-  disabled; a label with nothing focusable; a form control taken out of the tree letting its label's name go; the
+  label, not a press, nor a press whose pointer something else took, nor one let go elsewhere; a touch drag from the label in a page that scrolls;
+  disabled; a label with nothing focusable; a form control taken out of the tree letting its label's name go, and a child taken out then; the
   counter's text going from one value to the next; a line break counted once; a change to its counter; nothing given
   out of the tree; another button pressed during a click; a number as JavaScript's truth; overrides; UI Automation; a function called again when the state
   changes, and one giving text; the input states scenario.
