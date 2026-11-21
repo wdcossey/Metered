@@ -209,13 +209,36 @@ function ById($id) {
 # controls, as Base Web's are): searched in the raw view. Only for a container whose bounds a section aims along; a
 # control is found by ById, which would miss one left out of the control view, as it caught #56.
 function RawById($id) {
+    $el = RawFind $win (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)
+    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
+    $el
+}
+# The first element under $root that meets a condition, in UI Automation's raw view, or nothing.
+function RawFind($root, $cond) {
     $request = New-Object Windows.Automation.CacheRequest
     $request.TreeFilter = [Windows.Automation.Automation]::RawViewCondition
     $request.Push()
-    try { $el = $win.FindFirst($TS::Descendants, (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)) }
+    try { $root.FindFirst($TS::Descendants, $cond) }
     finally { $request.Pop() }
-    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
-    $el
+}
+# A part of a control's template by its Name, which Avalonia gives UI Automation as its AutomationId, inside the control,
+# in the raw view: a textarea's Root, whose box is the one that resizes. selftest.ps1 finds the name in the themes.
+function PartOf($el, $id) {
+    $found = RawFind $el (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)
+    if (-not $found) { throw "$($el.Current.AutomationId) has no part $id inside it" }
+    $found
+}
+# The shell's Debug footer, laid over the page's foot, is hidden by a press on it, which reaches nothing it covers
+# (SampleShell's OnFooterTapped); so a control at the page's foot can be pressed. Nothing to do in Release, or once hidden.
+function NoFooter {
+    $footer = RawFind $win (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, 'Footer')
+    if (-not $footer -or $footer.Current.IsOffscreen) { return }
+    $f = $footer.Current.BoundingRectangle
+    if ([double]::IsInfinity($f.Height) -or $f.Width -le 0 -or $f.Height -le 0) { return }
+    ClickAt ([int]($f.X + $f.Width / 2)) ([int]($f.Y + $f.Height / 2))
+    Away
+    $f = $footer.Current.BoundingRectangle
+    if (-not $footer.Current.IsOffscreen -and $f.Height -gt 0 -and -not [double]::IsInfinity($f.Height)) { throw 'The footer is still over the page after a press on it' }
 }
 # The page's scroll viewer: the first that UI Automation can scroll, as it holds every control on the page.
 function PageScroller {
@@ -234,6 +257,7 @@ function ScrollToEnd {
 # its view, $margin view px from its edge (helpers.ps1's ScrollBy and ScrollPercentFor); fails if it still doesn't show.
 # A control's bounds are its whole box, scrolled out of view or not, so its top and bottom say how far.
 function Reveal($el, $margin = 4) {
+    NoFooter
     $viewer = PageScroller
     $scroll = $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
     $v = $viewer.Current.BoundingRectangle
@@ -249,11 +273,7 @@ function Reveal($el, $margin = 4) {
 # The scroll viewer inside a control, as a textarea's text scroller, by UI Automation's scroll pattern: searched in the raw
 # view, as RawById does, since a template's part may be left out of the control view. Its pattern, read live by .Current.
 function ScrollerIn($el) {
-    $request = New-Object Windows.Automation.CacheRequest
-    $request.TreeFilter = [Windows.Automation.Automation]::RawViewCondition
-    $request.Push()
-    try { $found = $el.FindFirst($TS::Descendants, (New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true)) }
-    finally { $request.Pop() }
+    $found = RawFind $el (New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true)
     if (-not $found) { throw "$($el.Current.AutomationId) has no scroller inside it that UI Automation can read" }
     $found.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
 }
@@ -262,8 +282,8 @@ function ScrollerIn($el) {
 # of the whole tree takes long enough to shift a timed read.
 function ReadOut($id) { ById $id }
 # A part of a control's template, inside it, by its type and its name to UI Automation: an input's clear icon and its mask
-# toggle, named by BaseInput's labels (Base Web's aria-labels), which selftest.ps1 finds in Metered.Controls. Found afresh
-# each time, as a part that is hidden and shown again may be a new element.
+# toggle, named by BaseInput's labels (Base Web's aria-labels), which selftest.ps1 finds in Metered.Controls. Find it again
+# once it has been hidden: a part shown again may be a new element.
 function Inner($el, $type, $name) {
     $cond = New-Object Windows.Automation.PropertyCondition $AE::ControlTypeProperty, $type
     $found = $el.FindAll($TS::Descendants, $cond) | ForEach-Object { $_ } | Where-Object { $_.Current.Name -ceq $name } | Select-Object -First 1
@@ -271,6 +291,8 @@ function Inner($el, $type, $name) {
     $found
 }
 # An input's or a textarea's text, through UI Automation's value pattern (Avalonia's text box is an edit with its value).
+# Whether a control's name to UI Automation is a label, case and all: as Inner's, one of Metered.Controls' (selftest.ps1).
+function Labelled($el, $name) { $el.Current.Name -ceq $name }
 function TextOf($el) { "$($el.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current.Value)" }
 function Texts { (All $CT::Text | ForEach-Object { $_.Current.Name } | Where-Object { $_ }) }
 function FirstText($like) { Texts | Where-Object { $_ -like $like } | Select-Object -First 1 }
@@ -933,26 +955,26 @@ try {
         function Label { $toggle.Current.Name }
         Click $password
         Key '{ENTER}'
-        Check 'Enter in the password leaves it masked' ((Label) -ceq 'Show password text') (Label)
+        Check 'Enter in the password leaves it masked' (Labelled $toggle 'Show password text') (Label)
         Key '{TAB}'
         Check 'Tab focuses its toggle' (IsFocused $toggle) "$($AE::FocusedElement.Current.Name)"
         $masked = LeftHalf $password
         try {
             Key '{ENTER}'
             Shot 'input-password-shown'
-            Check 'Enter on the toggle shows the text, and relabels it' ((Label) -ceq 'Hide password text') (Label)
+            Check 'Enter on the toggle shows the text, and relabels it' (Labelled $toggle 'Hide password text') (Label)
             $shown = Changed $masked (LeftHalf $password)
             Check 'and the text is drawn unmasked' ($shown -gt $Moved) "$shown sampled pixels differ"
             Key '{ENTER}'
-            Check 'a second Enter masks it again' ((Label) -ceq 'Show password text') (Label)
+            Check 'a second Enter masks it again' (Labelled $toggle 'Show password text') (Label)
             $again = Changed $masked (LeftHalf $password)
             Check 'and it is drawn as it was' ($again -lt $Same) "$again sampled pixels differ"
             Click $toggle
-            Check 'a click on the toggle shows the text' ((Label) -ceq 'Hide password text') (Label)
+            Check 'a click on the toggle shows the text' (Labelled $toggle 'Hide password text') (Label)
             $clicked = Changed $masked (LeftHalf $password)
             Check 'drawn unmasked' ($clicked -gt $Moved) "$clicked sampled pixels differ"
             Click $toggle
-            Check 'and a second click masks it' ((Label) -ceq 'Show password text') (Label)
+            Check 'and a second click masks it' (Labelled $toggle 'Show password text') (Label)
         }
         finally { $masked.Dispose() }
         Away
@@ -1062,8 +1084,11 @@ try {
         Open 'Textarea'
         $long = ById 'Long'
         Reveal $long
-        $page = (PageScroller).GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
-        Check 'the page can still scroll further, so a drag that leaves it proves something' (($page.Current.VerticalScrollPercent -ge 0) -and ($page.Current.VerticalScrollPercent -lt 99.5)) "$($page.Current.VerticalScrollPercent) %"
+        $viewer = PageScroller
+        $page = $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
+        # The page's last control: what is left is its StackPanel's 32 view px margin below it, less Reveal's 4.
+        $room = RoomLeft $page.Current.VerticalScrollPercent $page.Current.VerticalViewSize $viewer.Current.BoundingRectangle.Height
+        Check 'the page can still scroll 16 view px further, so a drag that leaves it proves something' ($room -ge (Px 16)) "$room px at $($page.Current.VerticalScrollPercent) %"
         $text = ScrollerIn $long
         function Scrolled { $text.Current.VerticalScrollPercent }
         function Top { $long.Current.BoundingRectangle.Y }
@@ -1104,13 +1129,16 @@ try {
         Open 'Textarea'
         $resizable = ById 'Resizable'
         Reveal $resizable 60
-        $before = $resizable.Current.BoundingRectangle
+        # The root's box, not the control's: a textarea that resizes has a fit-content root to the left
+        # (Textarea.StyledRoot's :resize-both), and the control stretches across the page.
+        $box = PartOf $resizable 'Root'
+        $before = $box.Current.BoundingRectangle
         $gx, $gy = GripAt $before.Right $before.Bottom $script:scale
         MouseDrag $gx $gy (Px 40) (Px 30)
         Start-Sleep -Milliseconds 400
         Away
         Shot 'textarea-grip-mouse'
-        $after = $resizable.Current.BoundingRectangle
+        $after = $box.Current.BoundingRectangle
         Check 'a mouse drag on its grip makes it 40 wider' (Grew $before.Width $after.Width (Px 40) (Px 2)) "$($before.Width) to $($after.Width)"
         Check 'and 30 taller' (Grew $before.Height $after.Height (Px 30) (Px 2)) "$($before.Height) to $($after.Height)"
         Check 'and leaves the page' ($after.Y -eq $before.Y) "$($after.Y) against $($before.Y)"
@@ -1118,7 +1146,7 @@ try {
         TouchDrag $gx $gy (-(Px 30)) (-(Px 20)) 15 16 200
         Start-Sleep -Milliseconds 600
         Shot 'textarea-grip-touch'
-        $touched = $resizable.Current.BoundingRectangle
+        $touched = $box.Current.BoundingRectangle
         Check 'a finger''s drag on its grip makes it 30 narrower' (Grew $after.Width $touched.Width (-(Px 30)) (Px 2)) "$($after.Width) to $($touched.Width)"
         Check 'and 20 shorter' (Grew $after.Height $touched.Height (-(Px 20)) (Px 2)) "$($after.Height) to $($touched.Height)"
         Check 'and pans nothing' ($touched.Y -eq $after.Y) "$($touched.Y) against $($after.Y)"

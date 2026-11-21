@@ -88,6 +88,8 @@ Check 'ScrollBy scrolls up to a box above, by its top' ((ScrollBy -30 200 0 100 
 Check 'ScrollPercentFor: a view half of what it scrolls, 400 high, scrolls 400; 100 of it is 25 %' ((ScrollPercentFor 0 50 400 100) -eq 25) (ScrollPercentFor 0 50 400 100)
 Check 'ScrollPercentFor goes back, too' ((ScrollPercentFor 50 50 400 -100) -eq 25) (ScrollPercentFor 50 50 400 -100)
 Check 'ScrollPercentFor stops at either end' (((ScrollPercentFor 90 50 400 100) -eq 100) -and ((ScrollPercentFor 10 50 400 -100) -eq 0))
+Check 'RoomLeft: a quarter of the way down a view that scrolls 400, 300 are left' ((RoomLeft 25 50 400) -eq 300) (RoomLeft 25 50 400)
+Check 'RoomLeft is nothing at the end, or for a view that can''t scroll' (((RoomLeft 100 50 400) -eq 0) -and ((RoomLeft 0 100 400) -eq 0) -and ((RoomLeft -1 50 400) -eq 0))
 Check 'ScrollPercentFor leaves a view that can''t scroll' (((ScrollPercentFor 0 100 400 100) -eq 0) -and ((ScrollPercentFor -1 50 400 100) -eq -1))
 
 '== the sizes it expects, against the sample'
@@ -117,6 +119,8 @@ $v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' $null 'BorderThickness'
 Check "an input's border is $InputBorder, as Input.StyledRoot's" ((LeftOf $v) -eq $InputBorder) "$v"
 $v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' '^:adjoined-left' 'Padding'
 Check "its root's padding beside a start enhancer is $InputRootPadding" ((LeftOf $v) -eq $InputRootPadding) "$v"
+$v = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' '^:adjoined-both' 'Padding'
+Check "and beside both enhancers" ((LeftOf $v) -eq $InputRootPadding) "$v"
 $plain = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' $null 'Padding'
 $trailing = SetterOf 'Input.Parts.g.axaml' 'Input.StyledRoot' '^:has-icon-trailing' 'Padding'
 Check 'and none before the text with no start enhancer, a trailing icon or not, as TextAt takes it' (((LeftOf $plain) -eq 0) -and ((LeftOf $trailing) -eq 0)) "$plain / $trailing"
@@ -208,6 +212,9 @@ function InSection($node) {
 $library = Join-Path (Join-Path $repo 'src') 'Metered.Controls'
 $controls = @(Get-ChildItem $library -Recurse -Filter *.cs | Where-Object { $_.FullName.Substring($library.Length) -notmatch '[\\/](bin|obj)[\\/]' } | ForEach-Object { $_.FullName })
 Check 'the library has sources' ($controls.Count -gt 0)
+# What PartOf finds is a part of a control's template: a Name in one of the themes' templates.
+$templateNames = @(Get-ChildItem $themes -Filter *.axaml | ForEach-Object { Select-String -Path $_.FullName -Pattern '\bName="([^"]+)"' -AllMatches -CaseSensitive } | ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value })
+Check 'the themes have template parts' ($templateNames.Count -gt 0)
 $found = 0
 foreach ($section in (Calls $ast 'Section')) {
     $title = $section.CommandElements[1].Value
@@ -228,8 +235,18 @@ foreach ($section in (Calls $ast 'Section')) {
         $text = Literally $call 3
         if ($text) { $found++; Check "'$title' finds '$text' inside a control, a label of Metered.Controls" (Quoted $controls $text) }
     }
+    foreach ($call in (Calls $body 'Labelled')) {
+        $text = Literally $call 2
+        if ($text) { $found++; Check "'$title' reads the label '$text', one of Metered.Controls'" (Quoted $controls $text) }
+    }
+    foreach ($call in (Calls $body 'PartOf')) {
+        $id = Literally $call 2
+        if ($id) { $found++; Check "'$title' finds the part '$id', a Name in a control's template" ($templateNames -ccontains $id) }
+    }
 }
-# Outside the sections: what the list's and the pages' helpers find, which is the shell's.
+# Outside the sections: what the list's and the pages' helpers find, which is the shell's. NoFooter's footer too.
+$shellIds = XNames $shellFiles
+Check "the shell has 'Footer', which NoFooter finds by its AutomationId" ($shellIds -ccontains 'Footer')
 foreach ($call in @(Calls $ast 'Named' | Where-Object { -not (InSection $_) })) {
     $text = Literally $call 2
     if ($text) { $found++; Check "the shell has '$text', which the helpers find by its text" (Quoted $shellFiles $text) }
@@ -254,6 +271,12 @@ $unquoted = @($ast.FindAll({ param($n)
                 $n.CommandElements[3].StringConstantType -eq 'SingleQuoted')
         }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
 Check 'every part it finds inside a control is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
+$unquoted = @($ast.FindAll({ param($n)
+            $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -in 'Labelled', 'PartOf' -and
+            -not ($n.CommandElements.Count -gt 2 -and $n.CommandElements[2] -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+                $n.CommandElements[2].StringConstantType -eq 'SingleQuoted')
+        }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
+Check 'every label it reads and part it finds by name is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
 
 "$($script:checks - $script:failures) of $($script:checks) checks passed"
 if ($script:failures -gt 0) { exit 1 }

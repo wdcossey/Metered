@@ -131,6 +131,11 @@ function ScrollBy([double]$top, [double]$bottom, [double]$areaTop, [double]$area
 # UI Automation's scroll pattern in percent: the one that scrolls $by pixels from $percent, for a view $viewport pixels high
 # that is $viewSize percent of what it scrolls, so that what it can scroll is the rest. Clamped to 0 and 100; a view that
 # shows everything can't scroll, and stays where it is.
+# How many pixels a view can still scroll down, from its scroll pattern's percent and view size, for a view $viewport high.
+function RoomLeft([double]$percent, [double]$viewSize, [double]$viewport) {
+    if ($viewSize -ge 100 -or $viewSize -le 0 -or $percent -lt 0) { return 0 }
+    (100 - $percent) / 100 * $viewport * (100 / $viewSize - 1)
+}
 function ScrollPercentFor([double]$percent, [double]$viewSize, [double]$viewport, [double]$by) {
     if ($viewSize -ge 100 -or $viewSize -le 0 -or $percent -lt 0) { return $percent }
     $range = $viewport * (100 / $viewSize - 1)
