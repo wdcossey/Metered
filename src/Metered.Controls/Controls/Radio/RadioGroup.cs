@@ -6,6 +6,7 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 
 namespace Metered.Controls;
 
@@ -124,14 +125,12 @@ public class RadioGroup : ItemsControl
         if (_members.ContainsKey(radio)) return;
         var hold = new Hold(radio);
         _members.Add(radio, hold);
-        hold.Set(RadioButton.GroupNameProperty, $"metered-radio-group-{Interlocked.Increment(ref s_groupNames)}");
+        hold.Set(RadioButton.GroupNameProperty, radio.GroupedName);
         hold.Set(ToggleButton.IsCheckedProperty, (bool?)IsChecked(radio));
         radio.IsCheckedChanged += OnRadioCheckedChanged;
         radio.Group = this;
     }
 
-    /// <summary>The last of the names the groups have given their radios, one each.</summary>
-    private static long s_groupNames;
 
     protected override void ClearContainerForItemOverride(Control container)
     {
@@ -167,7 +166,11 @@ public class RadioGroup : ItemsControl
     }
 
     /// <summary>A radio's value changed: whether it is checked, and a tab stop, again.</summary>
-    internal void Refresh(Radio radio) => Apply(radio, Items.IndexOf(radio));
+    internal void Refresh(Radio radio)
+    {
+        var index = Items.IndexOf(radio);
+        if (index >= 0) Apply(radio, index);
+    }
 
     private void OnItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -187,6 +190,9 @@ public class RadioGroup : ItemsControl
         if (!_members.Remove(radio, out var hold)) return;
         radio.IsCheckedChanged -= OnRadioCheckedChanged;
         radio.Group = null;
+        // Whether it is checked first, while it still has a name of its own: its own IsChecked of true then unchecks no
+        // radio of the group's, nor of its own GroupName as it comes back.
+        hold.Let(ToggleButton.IsCheckedProperty);
         hold.LetAll();
     }
 
@@ -217,6 +223,9 @@ public class RadioGroup : ItemsControl
         if (sender is not Radio radio) return;
         // A click or Space: the group's value is the radio's.
         if (radio.IsChecked == true && radio.Value != Value) SetCurrentValue(ValueProperty, radio.Value);
+        // A click on a radio of no value in a group of none (Base Web's selectedValue === value checks no radio): the
+        // group's unchecked again, once the click is over.
+        else if (radio.IsChecked == true && !IsChecked(radio)) Dispatcher.UIThread.Post(() => Refresh(radio));
     }
 
     private void OnKeyDownForArrows(object? sender, KeyEventArgs e)

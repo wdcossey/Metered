@@ -83,6 +83,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   over its own: a radio checked outside the group, of the same name, leaves the group's alone, and two radios of the
   group's value are both checked, as Base Web's are. Something that sets a held value with `SetCurrentValue` changes
   it until the group's next look at the radio (its place, its value or the group's changing), as for ButtonGroup.
+  While the group holds a radio, its `GroupName` reads as that name of its own (`metered-radio-group-<n>`).
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
   finger's (CSS's `:active`). A control in the label taking the focus doesn't give the radio its outline.
 
@@ -94,7 +95,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 44 in all.
+  each behaviour of the group above: 45 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.

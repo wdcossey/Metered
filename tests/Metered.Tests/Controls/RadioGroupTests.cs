@@ -449,6 +449,20 @@ public class RadioGroupTests
         Assert.False(radios[0].IsTabStop);
     }
 
+    // radio-v2's checked = selectedValue === value: a radio of no value, in a group of none, is never checked, a click
+    // on it included.
+    [AvaloniaFact]
+    public void A_click_on_a_radio_of_no_value_in_a_group_of_none_leaves_it_unchecked()
+    {
+        var radio = new Radio { Content = "No value" };
+        var group = new RadioGroup { Items = { radio } };
+        using var scene = new Scene(group);
+        scene.Click(radio);
+        scene.Pump();
+        Assert.False(radio.IsChecked);
+        Assert.Null(group.Value);
+    }
+
     private static void Leave(RadioGroup group, System.Collections.ObjectModel.ObservableCollection<Radio> source, Radio radio, string leave)
     {
         // Removed, the whole group cleared, or its source cleared: a reset, which names no old items.
