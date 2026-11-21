@@ -98,8 +98,8 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       marks, labels, parts and overrides, a touch drag that never pans the page (`docs/controls/Slider/`)
 - [x] Input (#84): Base Web's `baseui/input` (no v2), on Avalonia's `TextBox`: its twelve parts and overrides, sizes,
       enhancers and adjoined, error and positive, disabled and read-only, the clear icon and Escape, a password's mask
-      toggle, maxLength, the focus ring; Base Web's three icons as paths; `BaseInput` and the generator's parts shared for
-      Textarea (#85) (`docs/controls/Input/`). MaskedInput, FormControl and PhoneInput are follow-ups
+      toggle, maxLength, the focus ring, a finger's drag the page's (#94); Base Web's three icons as paths; `BaseInput`
+      and the generator's parts shared for Textarea (#85) (`docs/controls/Input/`). MaskedInput, FormControl and PhoneInput are follow-ups
 - [x] Textarea (#85): Base Web's `baseui/textarea` (no v2) on Input's `BaseInput`: rows, resize (a browser's grip), sizes,
       error and positive, disabled and read-only, clearable and Escape, maxLength, its parts and overrides; the text wraps,
       scrolls under its padding, and a finger's drag scrolls it, not the page, until it is at its end

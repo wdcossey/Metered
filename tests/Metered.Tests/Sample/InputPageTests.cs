@@ -12,8 +12,8 @@ namespace Metered.Tests.Sample;
 
 /// <summary>
 /// The sample's Input page: its place in the catalogue (its issue's number, 84, before the theme), Metered's inputs
-/// throughout, each within a phone's width, the documentation's examples as set, and the first one's value said under
-/// it as it is typed, after a finger's tap in the page's ScrollViewer focuses it.
+/// throughout, each within a phone's width, the documentation's examples as set, the first one's value said under it
+/// as it is typed, after a finger's tap in the page's ScrollViewer focuses it, and a finger's drag on it scrolling the page.
 /// </summary>
 public class InputPageTests
 {
@@ -75,5 +75,30 @@ public class InputPageTests
         scene.Pump();
         Assert.Equal("Hello!", basic.Text);
         Assert.Equal("Value: Hello!", state.Text);
+    }
+
+    // A phone's page of inputs scrolls by a finger dragged on one, as a browser's does (#94).
+    [AvaloniaFact]
+    public void A_Drag_On_An_Input_Scrolls_The_Page()
+    {
+        var page = new InputPage();
+        using var scene = new Scene(page, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        var pageScroller = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        Assert.True(pageScroller.Extent.Height - pageScroller.Viewport.Height > 100);
+        var basic = page.FindControl<Input>("Basic")!;
+
+        var at = scene.CentreOf((Visual)basic.Part(BaseInput.InputPart)!);
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        for (var i = 1; i <= 10; i++)
+        {
+            scene.Window.TouchMove(touch, new Point(at.X, at.Y - 8 * i), RawInputModifiers.None);
+            scene.Pump();
+        }
+
+        scene.Window.TouchEnd(touch, new Point(at.X, at.Y - 80), RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(pageScroller.Offset.Y > 40, $"the page moved {pageScroller.Offset.Y}");
+        Assert.Equal("Hello", basic.Text);
     }
 }
