@@ -399,6 +399,81 @@ public class FormControlTests
         Assert.Null(Icon(form));
     }
 
+    // A browser's textarea value has a line break as "\n", one character; Avalonia's text box may have "\r\n".
+    [AvaloniaFact]
+    public void A_line_break_counts_as_one()
+    {
+        var textarea = new Textarea { MaxLength = 40, Text = "a\r\nb\nc" };
+        var form = new FormControl { Label = "Label", Counter = true, Content = textarea };
+        using var scene = Show(form);
+        Assert.Equal("5/40", ((ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!).Content);
+    }
+
+    [AvaloniaFact]
+    public void A_change_to_the_counter_it_has_renders_it_again()
+    {
+        var form = new FormControl { Label = "Label", Counter = new FormControlCounter { Length = 0, MaxLength = 100 }, Content = new Input() };
+        using var scene = Show(form);
+        var end = (ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        Assert.Equal("0/100", end.Content);
+        form.Counter!.Length = 120;
+        scene.Pump();
+        Assert.Equal("120/100", end.Content);
+        Assert.True(form.State.CounterError);
+
+        // One it no longer has is no longer heard.
+        var old = form.Counter;
+        form.Counter = new FormControlCounter { Length = 1 };
+        old.Length = 7;
+        scene.Pump();
+        Assert.Equal("1", end.Content);
+    }
+
+    [AvaloniaFact]
+    public void Out_of_the_tree_it_gives_nothing_to_an_element_outside_it()
+    {
+        var five = new Input();
+        var form = new FormControl { Label = "Label", Content = new Input(), HtmlFor = five };
+        var page = new StackPanel { Children = { form, five } };
+        using var scene = Show(page);
+        page.Children.Remove(form);
+        form.Label = "Another label";
+        form.HtmlFor = null;
+        form.HtmlFor = five;
+        scene.Pump();
+        Assert.Null(AutomationProperties.GetLabeledBy(five));
+    }
+
+    [AvaloniaFact]
+    public void Another_button_pressed_meanwhile_doesnt_cancel_the_click()
+    {
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(form);
+        var at = scene.CentreOf((Visual)form.Part(FormControl.LabelPart)!);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.True(input.IsFocused);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0, false)]
+    [InlineData(3, true)]
+    public void A_number_is_something_unless_it_is_0(int n, bool something)
+    {
+        foreach (var value in new object[] { (decimal)n, (short)n, (byte)n, (uint)n, (ulong)n, (double)n, n })
+        {
+            var form = new FormControl { Label = "Label", Error = value, Content = new Input() };
+            using var scene = Show(form);
+            Assert.Equal(something, form.State.Error);
+            Assert.Equal(something, ((Visual)form.Part(FormControl.CaptionPart)!).IsEffectivelyVisible);
+        }
+    }
+
     [AvaloniaFact]
     public void A_label_without_a_focusable_target_does_nothing()
     {

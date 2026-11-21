@@ -24,16 +24,30 @@ public sealed record FormControlState(bool Disabled, bool Error, bool Positive, 
 /// is none: a null <see cref="FormControl.Counter"/> (<c>False</c>).
 /// </summary>
 [TypeConverter(typeof(FormControlCounterConverter))]
-public sealed class FormControlCounter
+public sealed class FormControlCounter : INotifyPropertyChanged
 {
+    private int? _length;
+    private int? _maxLength;
+    private bool? _error;
+
+    /// <summary>A value changed: the form control showing the counter renders again, as Base Web's does with new props.</summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     /// <summary>The length shown; the child's text's length when unset.</summary>
-    public int? Length { get; set; }
+    public int? Length { get => _length; set => Set(ref _length, value); }
 
     /// <summary>The maximum shown after the length; the child's <c>MaxLength</c> when unset or 0 (JavaScript's falsy).</summary>
-    public int? MaxLength { get; set; }
+    public int? MaxLength { get => _maxLength; set => Set(ref _maxLength, value); }
 
     /// <summary>The counter's error; when unset, a length past the maximum.</summary>
-    public bool? Error { get; set; }
+    public bool? Error { get => _error; set => Set(ref _error, value); }
+
+    private void Set<T>(ref T field, T value, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 
     /// <summary><c>counter={true}</c>: on, everything read from the child; <c>false</c>: off (null).</summary>
     public static implicit operator FormControlCounter?(bool on) => on ? new FormControlCounter() : null;

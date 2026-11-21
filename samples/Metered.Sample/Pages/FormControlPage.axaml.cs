@@ -38,8 +38,7 @@ public partial class FormControlPage : UserControl
         Email.TextChanged += (_, _) => Validate();
 
         // form-control-with-counter.scenario.tsx's "Override counter": the length given, not read from the input.
-        CounterOverrideInput.TextChanged += (_, _) =>
-            CounterOverride.Counter = new FormControlCounter { Length = CounterOverrideInput.Text?.Length ?? 0, MaxLength = 100 };
+        CounterOverrideInput.TextChanged += (_, _) => CounterOverride.Counter!.Length = CounterOverrideInput.Text?.Length ?? 0;
     }
 
     private void Validate()

@@ -63,12 +63,14 @@ From `form-control.js`:
   none for a function, and none without a hint. An error as a boolean with a caption: the caption, red, with the alert.
 - **The label** renders with its row only when it is something; the end enhancer only with a label, when it is
   something. The label's function is called after the counter.
-- **The counter**: the length is the counter's, else the child's text's (Base Web's child's `value`), else 0; the
+- **The counter**: the length is the counter's, else the child's text's (Base Web's child's `value`, a line break one
+  character as in a browser's textarea value, where Avalonia's text box may hold `\r\n`), else 0; the
   maximum the counter's unless 0 (JavaScript's falsy), else the child's `MaxLength` (0 is none, Avalonia's). The end
   enhancer shows `length` or `length/max` unless one is given. A length past the maximum is an error unless the
   counter's `Error` says otherwise: `$counterError`, and `$error`, which the caption and the child take. Base Web gives
   `$maxLength` the length, not the maximum (`sharedProps.$maxLength = length`); `FormControlState.MaxLength` is kept so.
-  The counter follows the text as it is typed, as Base Web re-renders with the child's `value`.
+  The counter follows the text as it is typed, as Base Web re-renders with the child's `value`, and a change to the
+  `FormControlCounter` it has, as a new `counter` prop.
 - **The child is given** what `cloneElement` gives it: the error and the positive when the form control's are on, below
   the child's own values (a local value wins, as the child's own prop does); disabled with the form control, as
   `onlyChildProps.disabled || disabled`. Base Web's `Textarea` has `error: false` in its defaultProps, which React
@@ -110,14 +112,15 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   the icon and the text shown; and the alert drawn in the caption's colour inside its padding, its "!" cut out (2).
 - `Controls/FormControlLayoutTests`: 9 cases of label, end enhancer and hint: where each box is for an input's height, the
   margins collapsed; a child's own margins collapsing with the rows round it; the end enhancer at its min-content width,
-  and not broken at a no-break space; the caption's icon box and the message beside it; the fonts; long text wrapping at
+  and not broken at a no-break space; a child's margin moved, laid out again; the caption's icon box and the message beside it; the fonts; long text wrapping at
   its words.
 - `Controls/FormControlTests`: the hint, its icon, the parts rendered, the state and the functions' arguments, the
   child's help text (78); the counter (132); what each kind of child is given (120); the counter following typing and
   its maximum; `Counter` in XAML; a child let go; Base Web's defaults; `HtmlFor` or the child; a click and a tap on the
   label, not a press, nor a press whose pointer something else took; a touch drag from the label in a page that scrolls;
   disabled; a label with nothing focusable; a form control taken out of the tree letting its label's name go; the
-  counter's text going from one value to the next; overrides; UI Automation; a function called again when the state
+  counter's text going from one value to the next; a line break counted once; a change to its counter; nothing given
+  out of the tree; another button pressed during a click; a number as JavaScript's truth; overrides; UI Automation; a function called again when the state
   changes, and one giving text; the input states scenario.
 - `Controls/FormControlFrames`: the label, the counter past its maximum and the caption drawn in their colours, light and
   dark; the gallery above.

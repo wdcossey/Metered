@@ -137,6 +137,20 @@ public class FormControlLayoutTests
         Assert.Equal(top + input.Bounds.Height + Collapse(20, facts.Caption.Margin[1]), InputLayoutTests.At(caption, form).Y, 3);
     }
 
+    // A margin moved from the child's top to its bottom leaves its presenter's size as it was: laid out again all the same.
+    [AvaloniaFact]
+    public void A_childs_margin_moved_is_laid_out_again()
+    {
+        var input = new Input { Margin = new Thickness(0, 12, 0, 0) };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var before = InputLayoutTests.At(input, form).Y;
+        input.Margin = new Thickness(0, 0, 0, 12);
+        scene.Pump();
+        var facts = FormControlOracle.Value.Layout.Facts;
+        Assert.Equal(before - 12 + facts.LabelContainer.Margin[3], InputLayoutTests.At(input, form).Y, 3);
+    }
+
     [AvaloniaFact]
     public void A_no_break_space_doesnt_break_the_end_enhancer()
     {

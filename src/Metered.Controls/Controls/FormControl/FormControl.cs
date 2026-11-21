@@ -9,7 +9,9 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Avalonia.Metadata;
 using AvaloniaLabel = Avalonia.Controls.Label;
 
@@ -180,6 +182,11 @@ public class FormControl : ContentControl
         var p = change.Property;
         if (p == ContentProperty) Follow(change.NewValue as AvaloniaObject);
         if (p == OverridesProperty) FollowOverrides(Overrides);
+        if (p == CounterProperty)
+        {
+            if (change.OldValue is FormControlCounter old) old.PropertyChanged -= OnCounterChanged;
+            if (change.NewValue is FormControlCounter now) now.PropertyChanged += OnCounterChanged;
+        }
         if (p == LabelProperty || p == CaptionProperty || p == ErrorProperty || p == PositiveProperty || p == LabelEndEnhancerProperty
             || p == CounterProperty || p == HtmlForProperty || p == ContentProperty || p == IsEffectivelyEnabledProperty)
         {
@@ -195,8 +202,8 @@ public class FormControl : ContentControl
         bool b => b,
         double d => d != 0 && !double.IsNaN(d),
         float f => f != 0 && !float.IsNaN(f),
-        int i => i != 0,
-        long l => l != 0,
+        decimal m => m != 0,
+        byte or sbyte or short or ushort or int or uint or long or ulong or nint or nuint => Convert.ToDecimal(value) != 0,
         _ => true,
     };
 
@@ -216,7 +223,8 @@ public class FormControl : ContentControl
     /// </summary>
     private void Update()
     {
-        if (!IsInitialized) return;
+        // Nothing is given while it is out of the tree: what it gave an element outside it was let go on leaving.
+        if (!IsInitialized || !((ILogical)this).IsAttachedToLogicalTree) return;
         var error = Error;
         var positive = Positive;
         var state = new FormControlState(!IsEffectivelyEnabled, IsTruthy(error), IsTruthy(positive));
@@ -237,7 +245,7 @@ public class FormControl : ContentControl
             // Inferred values are preferred, but the counter's own win (form-control.js).
             var text = _child as TextBox;
             int? maxLength = counter.MaxLength is { } m && m != 0 ? m : text is { MaxLength: > 0 } ? text.MaxLength : null;
-            var length = counter.Length ?? text?.Text?.Length ?? 0;
+            var length = counter.Length ?? Length(text?.Text);
             var counterError = counter.Error;
             if (!IsTruthy(endEnhancer))
             {
@@ -286,6 +294,19 @@ public class FormControl : ContentControl
             // A hint is a caption, a positive or an error, so one of the two names it whenever it is shown.
             Give(child, AutomationProperties.HelpTextProperty, hasHint ? TextOf(hint) : null);
         }
+    }
+
+    /// <summary>
+    /// The length of the child's value as a browser gives it: a textarea's value has its line breaks as one character,
+    /// "\n", where Avalonia's text box has its new line (Windows' "\r\n").
+    /// </summary>
+    private static int Length(string? text) => text is null ? 0 : text.Length - CountCrLf(text);
+
+    private static int CountCrLf(string text)
+    {
+        var n = 0;
+        for (var i = text.IndexOf("\r\n", StringComparison.Ordinal); i >= 0; i = text.IndexOf("\r\n", i + 2, StringComparison.Ordinal)) n++;
+        return n;
     }
 
     private bool IsPart(AvaloniaObject o) => o is StyledElement s && _parts.Names.Any(n => _parts[n] == s);
@@ -343,7 +364,16 @@ public class FormControl : ContentControl
     private void OnChildChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (Counter is not null && (e.Property == TextBox.TextProperty || e.Property == TextBox.MaxLengthProperty)) Update();
+        // The stacks collapse the child's margins through its presenter: one moved from top to bottom leaves the
+        // presenter's size as it was, so the stacks are told.
+        if (e.Property == MarginProperty && _parts[ControlContainerPart] is Layoutable container)
+        {
+            container.InvalidateMeasure();
+            (container.GetVisualParent() as Layoutable)?.InvalidateMeasure();
+        }
     }
+
+    private void OnCounterChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Update();
 
     /// <summary>The app's overrides, less a style and props for the parts Base Web gives only a component.</summary>
     private void FollowOverrides(OverrideCollection? overrides)

@@ -56,10 +56,12 @@ public class FormControlLabel : AvaloniaLabel
     /// </summary>
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        _pressed = e.GetCurrentPoint(this).Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed ? e.Pointer : null;
+        // Another button pressed meanwhile doesn't cancel the main one's click, as a browser's.
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed) return;
+        _pressed = e.Pointer;
         // The text under the pointer took it on the press; the label takes it, so that a scroller that takes it for a drag
         // takes it from the label, which hears that (capture lost isn't routed).
-        _pressed?.Capture(this);
+        _pressed.Capture(this);
     }
 
     /// <summary>The click: the release of the pointer that pressed it, on it.</summary>
