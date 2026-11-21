@@ -74,7 +74,8 @@ When a unit of work runs into one of these it doesn't try it: it finishes the re
    matches, what differs and why.
 6. **Document** in the same PR: `CLAUDE.md` (it states only what exists), `docs/ROADMAP.md`, an ADR in
    `docs/decisions/` for a design decision, `docs/controls/<Name>/` for a control, and any deviation from
-   Base Web with its measurement. A PR that lands a control or changes the sample visibly redraws the
+   Base Web with its measurement, in the control's README and as a row of `docs/deviations.md`, the one list of
+   them all ("as built" until the developer has decided it). A PR that lands a control or changes the sample visibly redraws the
    preview (`METERED_PREVIEW`, `tests/Metered.Tests/Sample/PreviewGallery.cs`) into `docs/preview/` and
    updates `PREVIEW.md`, in the same PR or its batch's roll-up.
 
