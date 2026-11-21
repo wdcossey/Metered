@@ -2,8 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
 using Avalonia.Headless.XUnit;
-using Avalonia.Input;
-using Avalonia.Input.TextInput;
+using Avalonia.Controls.Presenters;
+using Avalonia.VisualTree;
 using Avalonia.Layout;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
@@ -363,19 +363,28 @@ public class KeyboardInsetTests
         Assert.True(BottomOf(last, scene) <= turned.Y, $"The focused input ends at {BottomOf(last, scene)}, under the keyboard's top at {turned.Y}.");
     }
 
-    [AvaloniaFact]
-    public void The_Caret_Of_A_Text_Taller_Than_The_Room_Left_Is_Brought_Above_The_Keyboard()
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_Caret_Of_A_Text_Taller_Than_The_Room_Left_Is_Brought_Above_The_Keyboard(bool readOnly)
     {
-        // A text box 700 high, its caret on its last line: brought into view alone, it would show its top and leave the
-        // line being typed under the keyboard.
+        // A text box 700 high, its 60 lines scrolled in its own scroller to its caret on the last: brought into view
+        // alone, it would show its top and leave the line being typed under the keyboard. Read-only too: its caret is
+        // still where the reader is.
         var pane = new FakeInputPane();
-        var text = new TextBox { Height = 700, AcceptsReturn = true, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Text = string.Join(Environment.NewLine, Enumerable.Range(1, 30).Select(line => $"line {line}")) };
+        var text = new TextBox
+        {
+            Height = 700, AcceptsReturn = true, IsReadOnly = readOnly, TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Text = string.Join(Environment.NewLine, Enumerable.Range(1, 60).Select(line => $"line {line}")),
+        };
         var page = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 400 }, text } } };
         var inset = new KeyboardInset { InputPane = pane, Child = page };
         using var scene = new Scene(inset, themes: Themes);
         text.Focus();
         text.CaretIndex = text.Text.Length;
         scene.Pump();
+        var presenter = text.GetVisualDescendants().OfType<TextPresenter>().Single();
+        Assert.True(presenter.Bounds.Height > text.Bounds.Height, "The text doesn't scroll in its own scroller: the scene doesn't test it.");
 
         pane.Open(Keyboard);
         scene.Pump();
@@ -384,6 +393,21 @@ public class KeyboardInsetTests
         Assert.True(caret.Height > 0);
         Assert.True(caret.Bottom <= Keyboard.Y, $"The caret ends at {caret.Bottom}, under the keyboard's top at {Keyboard.Y}.");
         Assert.True(caret.Top >= 0, $"The caret starts at {caret.Top}, above the view.");
+    }
+
+    [AvaloniaFact]
+    public void A_Reading_Posted_Before_The_Keyboard_Says_It_Opened_Keeps_Its_Final_Rect()
+    {
+        // Android: OnApplyWindowInsets raises SafeAreaChanged, which posts a reading, then the animation's OnStart raises
+        // StateChanged with the keyboard's final rect, while the pane's own rect may still be its start.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        using var scene = new Scene(inset);
+
+        pane.Animate(InputPaneState.Open, Keyboard);
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
     }
 
     [AvaloniaFact]
@@ -427,13 +451,11 @@ public class KeyboardInsetTests
         return (pane, new KeyboardInset { InputPane = pane, Child = page }, page, last);
     }
 
-    /// <summary>The caret of a focused text box, in the window's coordinates, as the input method reads it.</summary>
+    /// <summary>A text box's caret in the window's coordinates, from its presenter's layout.</summary>
     private static Rect CaretOf(TextBox text, Scene scene)
     {
-        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
-        text.RaiseEvent(request);
-        var client = request.Client!;
-        return client.CursorRectangle.TransformToAABB(client.TextViewVisual.TransformToVisual(scene.Window)!.Value);
+        var presenter = text.GetVisualDescendants().OfType<TextPresenter>().Single();
+        return presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex).TransformToAABB(presenter.TransformToVisual(scene.Window)!.Value);
     }
 
     private static double BottomOf(Visual visual, Scene scene) =>
@@ -473,6 +495,18 @@ internal sealed class FakeInputPane : KeyboardInset.IPane
 
     /// <summary>The keyboard's rect changes with no event at all, as the view's size changes on a rotation.</summary>
     public void Move(Rect keyboard) => OccludedRect = keyboard;
+
+    /// <summary>
+    /// As Android opens or closes it: the insets' change first, then the state event with the final rect, while the
+    /// pane's own rect is still where the animation starts.
+    /// </summary>
+    public void Animate(InputPaneState state, Rect end)
+    {
+        var start = OccludedRect;
+        State = state;
+        Dispatcher.UIThread.Invoke(() => InsetsChanged?.Invoke(this, EventArgs.Empty));
+        Dispatcher.UIThread.Invoke(() => StateChanged?.Invoke(this, new InputPaneStateEventArgs(state, start, end)));
+    }
 
     /// <summary>The pane changes with no state event, and the platform's insets say they changed.</summary>
     public void ChangeInsets(InputPaneState state, Rect keyboard)

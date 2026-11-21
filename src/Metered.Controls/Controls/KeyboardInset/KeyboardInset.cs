@@ -1,8 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
-using Avalonia.Input;
-using Avalonia.Input.TextInput;
+using Avalonia.Controls.Presenters;
 using Avalonia.Layout;
 using Avalonia.Reactive;
 using Avalonia.Threading;
@@ -15,9 +14,11 @@ namespace Metered.Controls;
 /// on (#108). While the platform's input pane (<see cref="TopLevel.InputPane"/>) is open, the child's foot is padded by
 /// as much of this decorator as the keyboard covers, on top of its own <see cref="Decorator.Padding"/>, so a
 /// <see cref="ScrollViewer"/> inside ends above the keyboard and can scroll its last control there. When the keyboard
-/// opens, the focused control is brought into view if it is inside, and then its caret. Opt-in: an app puts one round
-/// the content it wants kept clear, its page or its whole view, given its height by its parent. On a platform with no
-/// input pane, as Avalonia's headless one, it does nothing.
+/// opens, the focused control is brought into view if it is inside, and then a text box's caret. Opt-in: an app puts
+/// one round the content it wants kept clear, its page or its whole view, given its height by its parent. On a platform
+/// with no input pane, as Avalonia's headless one, it does nothing. A popup on a phone is an overlay in the same top
+/// level, and is measured against the keyboard's rect as anything else; one in a top level of its own, as a desktop's,
+/// would be measured in its own coordinates against the window's rect, and is left out.
 /// <para>
 /// Why an app needs it: Avalonia 12.1.4 reports the keyboard but moves nothing for it. On Android 15 and later an app
 /// that targets API 35 or later is always drawn edge to edge, and such a window is never resized for the keyboard, so
@@ -56,6 +57,12 @@ public class KeyboardInset : Decorator
 
     /// <summary>The room left above the keyboard at the last reading: the decorator's height less its inset.</summary>
     private double _room;
+
+    /// <summary>
+    /// What the last <see cref="IInputPane.StateChanged"/> said, while a reading it came before is still to run: that
+    /// reading takes it over the pane, whose rect may still be the keyboard's at the start of its animation.
+    /// </summary>
+    private (bool Open, Rect Keyboard)? _said;
 
     static KeyboardInset()
     {
@@ -129,7 +136,9 @@ public class KeyboardInset : Decorator
         _sizeWatch = null;
         _pane = null;
         _top = null;
+        _said = null;
         Inset = 0;
+        _room = 0;
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -145,6 +154,9 @@ public class KeyboardInset : Decorator
     private void OnStateChanged(object? sender, InputPaneStateEventArgs e)
     {
         var open = e.NewState == InputPaneState.Open;
+        // Android posts a reading (SafeAreaChanged, from OnApplyWindowInsets) just before it raises this.
+        if (_readPosted)
+            _said = (open, e.EndRect);
         Apply(open, e.EndRect);
         if (open)
             BringFocusIntoView();
@@ -169,13 +181,15 @@ public class KeyboardInset : Decorator
     private void Read()
     {
         _readPosted = false;
+        var said = _said;
+        _said = null;
         if (_pane is not { } pane)
             return;
-        var open = pane.State == InputPaneState.Open;
+        var (open, keyboard) = said ?? (pane.State == InputPaneState.Open, pane.OccludedRect);
         if (!open && Inset == 0)
             return;
         var before = _room;
-        Apply(open, pane.OccludedRect);
+        Apply(open, keyboard);
         if (open && _room != before)
             BringFocusIntoView();
     }
@@ -212,11 +226,24 @@ public class KeyboardInset : Decorator
             return;
         UpdateLayout();
         focused.BringIntoView();
+        if (CaretOf(focused) is { } caret)
+            focused.BringIntoView(caret);
+    }
 
-        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
-        focused.RaiseEvent(request);
-        if (request.Client is { TextViewVisual: Control view } client && this.IsVisualAncestorOf(view))
-            view.BringIntoView(client.CursorRectangle);
+    /// <summary>
+    /// A text box's caret, in the text box's own coordinates, where its text's scroller shows it; else null. Read from its
+    /// presenter's layout, read-only or not; and asked of the text box itself, not its presenter, so that the page's
+    /// scroller takes it, not the text's own.
+    /// </summary>
+    private static Rect? CaretOf(Control focused)
+    {
+        if (focused is not TextBox || focused.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault() is not { } presenter
+            || presenter.TransformToVisual(focused) is not { } toFocused)
+            return null;
+        // Its lines only: a caret has no width, and a rect with none intersects nothing.
+        var caret = presenter.TextLayout.HitTestTextPosition(presenter.CaretIndex).TransformToAABB(toFocused);
+        double top = Math.Max(caret.Top, 0), bottom = Math.Min(caret.Bottom, focused.Bounds.Height);
+        return bottom > top ? new Rect(0, top, focused.Bounds.Width, bottom - top) : null;
     }
 
     /// <summary>The platform's input pane and insets manager, as <see cref="IPane"/>.</summary>
