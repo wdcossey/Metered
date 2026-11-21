@@ -1,0 +1,140 @@
+<!--
+  Base Web's Textarea (baseui 18.2.0, textarea/textarea.js, rendering input/base-input.js), as a template of named
+  parts. Each part's look is its own theme, Textarea.Styled<Part> (Textarea.Parts.g.axaml), which the textarea's
+  Overrides merge over: this file holds only the structure.
+
+  Root                       (a flex row: the container)
+    InputContainer           (BaseInput's: a flex row too)
+      Before                 (the text box's InnerLeftContent)
+      Input                  (the textarea: its scroller, the placeholder, the text presenter; and the resize grip)
+      ClearIconContainer     (only while there is something to clear: Metered.Controls.BaseInput)
+        ClearIcon
+      After                  (the text box's InnerRightContent)
+  The text box is Base Web's <textarea>: PART_ScrollViewer and PART_TextPresenter are Avalonia's TextBox's. The Input
+  part's padding (TextareaField) is the scroller's content's margin, so the text scrolls under it.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <!--
+    The text's scroller: a long text scrolls in it, by the wheel, by the caret and by a touch's drag (a scroll gesture,
+    flung as a browser's is), with no bars: a phone's scroll bars are drawn over the text while it moves, and Metered
+    draws none.
+  -->
+  <ControlTheme x:Key="Textarea.TextScrollViewer" TargetType="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ScrollContentPresenter Name="PART_ContentPresenter"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+          <ScrollContentPresenter.GestureRecognizers>
+            <ScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                                     CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                                     IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                                     Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                                     Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                                     Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+          </ScrollContentPresenter.GestureRecognizers>
+        </ScrollContentPresenter>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!-- A browser's resize grip (CSS's resize), not Base Web's: hidden unless the textarea resizes. -->
+  <ControlTheme x:Key="Textarea.Resizer" TargetType="b:TextareaResizer">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Foreground" Value="{DynamicResource colors.contentTertiary}" />
+    <Style Selector="^[Direction=None]">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type b:Textarea}" TargetType="b:Textarea">
+    <!-- The root's width is its own theme's: 100%, or the textarea's own once it resizes. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- A <textarea>: Enter is a new line, and its text wraps. -->
+    <Setter Property="AcceptsReturn" Value="True" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <!-- Base Web leaves the selection to the browser: Metered's, by token, as Input's (docs/controls/Input). -->
+    <Setter Property="SelectionBrush" Value="{DynamicResource colors.accent}" />
+    <Setter Property="SelectionForegroundBrush" Value="{DynamicResource colors.contentOnColor}" />
+    <Setter Property="ContextFlyout" Value="{DynamicResource Input.ContextFlyout}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="Root" Theme="{DynamicResource Textarea.StyledRoot}">
+          <Border Name="InputContainer" Theme="{DynamicResource Textarea.StyledInputContainer}">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+              <ContentPresenter Name="Before"
+                                Grid.Column="0"
+                                Theme="{DynamicResource Textarea.StyledBefore}"
+                                Content="{TemplateBinding InnerLeftContent}" />
+              <b:TextareaField Name="Input"
+                               Grid.Column="1"
+                               Rows="{TemplateBinding Rows}"
+                               Theme="{DynamicResource Textarea.StyledInput}">
+                <Panel>
+                  <ScrollViewer Name="PART_ScrollViewer"
+                                Theme="{StaticResource Textarea.TextScrollViewer}"
+                                HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                                VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                                IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                                BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+                    <Panel Margin="{Binding #Input.Padding}">
+                      <TextBlock Name="PART_Placeholder"
+                                 Text="{TemplateBinding PlaceholderText}"
+                                 Foreground="{Binding #Input.PlaceholderForeground}"
+                                 TextAlignment="{TemplateBinding TextAlignment}"
+                                 TextWrapping="{TemplateBinding TextWrapping}">
+                        <TextBlock.IsVisible>
+                          <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding ElementName="PART_TextPresenter" Path="PreeditText" Converter="{x:Static StringConverters.IsNullOrEmpty}" />
+                            <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Text" Converter="{x:Static StringConverters.IsNullOrEmpty}" />
+                          </MultiBinding>
+                        </TextBlock.IsVisible>
+                      </TextBlock>
+                      <TextPresenter Name="PART_TextPresenter"
+                                     CaretBrush="{Binding #Input.CaretBrush}"
+                                     CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                                     CaretIndex="{TemplateBinding CaretIndex}"
+                                     PasswordChar="{TemplateBinding PasswordChar}"
+                                     RevealPassword="{TemplateBinding RevealPassword}"
+                                     SelectionBrush="{TemplateBinding SelectionBrush}"
+                                     SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                     SelectionStart="{TemplateBinding SelectionStart}"
+                                     SelectionEnd="{TemplateBinding SelectionEnd}"
+                                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                                     TextAlignment="{TemplateBinding TextAlignment}"
+                                     TextWrapping="{TemplateBinding TextWrapping}" />
+                    </Panel>
+                  </ScrollViewer>
+                  <b:TextareaResizer Name="PART_Resizer"
+                                     Theme="{StaticResource Textarea.Resizer}"
+                                     Direction="{Binding #Input.Resize}" />
+                </Panel>
+              </b:TextareaField>
+              <Border Name="ClearIconContainer" Grid.Column="2" Theme="{DynamicResource Textarea.StyledClearIconContainer}">
+                <b:InputIcon Name="ClearIcon" Theme="{DynamicResource Textarea.StyledClearIcon}" />
+              </Border>
+              <ContentPresenter Name="After"
+                                Grid.Column="3"
+                                Theme="{DynamicResource Textarea.StyledAfter}"
+                                Content="{TemplateBinding InnerRightContent}" />
+            </Grid>
+          </Border>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>
