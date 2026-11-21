@@ -55,6 +55,9 @@ public class KeyboardInset : Decorator
     private IDisposable? _sizeWatch;
     private bool _readPosted;
 
+    /// <summary>Whether a reading is laying the decorator out: its own bounds' changes then ask for no other reading.</summary>
+    private bool _applying;
+
     /// <summary>The room left above the keyboard at the last reading: the decorator's height less its inset.</summary>
     private double _room;
 
@@ -147,7 +150,7 @@ public class KeyboardInset : Decorator
         base.OnPropertyChanged(change);
         // Moved or resized under an open keyboard: the part it covers may have changed. The inset doesn't change the
         // decorator's bounds, so this never follows from its own reading.
-        if (change.Property == BoundsProperty && _pane?.State == InputPaneState.Open)
+        if (change.Property == BoundsProperty && !_applying && _pane?.State == InputPaneState.Open)
             PostRead();
     }
 
@@ -208,11 +211,22 @@ public class KeyboardInset : Decorator
             return;
         }
 
-        UpdateLayout();
-        Inset = this.TranslatePoint(default, top) is { } origin
-            ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
-            : 0;
-        _room = Bounds.Height - Inset;
+        // Laid out before, and with the inset after, as one reading: a change of its own bounds in either pass is this
+        // reading's, not a move to read again, so a layout that disagreed with its inset could never loop.
+        _applying = true;
+        try
+        {
+            UpdateLayout();
+            Inset = this.TranslatePoint(default, top) is { } origin
+                ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
+                : 0;
+            _room = Bounds.Height - Inset;
+            UpdateLayout();
+        }
+        finally
+        {
+            _applying = false;
+        }
     }
 
     /// <summary>
