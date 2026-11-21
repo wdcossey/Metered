@@ -99,8 +99,13 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
 - [x] Input (#84): Base Web's `baseui/input` (no v2), on Avalonia's `TextBox`: its twelve parts and overrides, sizes,
       enhancers and adjoined, error and positive, disabled and read-only, the clear icon and Escape, a password's mask
       toggle, maxLength, the focus ring, a finger's drag the page's (#94); Base Web's three icons as paths; `BaseInput`
-      and the generator's parts shared for Textarea (#85) (`docs/controls/Input/`). MaskedInput, FormControl and PhoneInput are follow-ups
+      and the generator's parts shared for Textarea (#85) (`docs/controls/Input/`). MaskedInput and PhoneInput are follow-ups; FormControl is #88
 - [x] Textarea (#85): Base Web's `baseui/textarea` (no v2) on Input's `BaseInput`: rows, resize (a browser's grip), sizes,
       error and positive, disabled and read-only, clearable and Escape, maxLength, its parts and overrides; the text wraps,
       scrolls under its padding, and a finger's drag scrolls it, not the page, until it is at its end
       (`docs/controls/Textarea/`). On the Pixel: #90
+- [x] FormControl (#88): Base Web's `baseui/form-control` (no v2) round its one child: the label, the caption, the error
+      and positive messages with Base Web's two icons, the label's end enhancer and the counter, disabled, what the child
+      is given (`cloneElement`'s), its seven parts and overrides; the label focuses what it labels on a click or a tap,
+      not a press, so a finger's drag from it scrolls the page; the label names it to UI Automation
+      (`docs/controls/FormControl/`). On the Pixel: #102

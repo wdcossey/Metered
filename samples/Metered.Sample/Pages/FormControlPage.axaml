@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.FormControlPage">
+  <!-- Base Web's form control, as its documentation's examples show it round an input and a textarea: basic, the
+       validation example and the states; then its scenarios' disabled label, the counters, a label for another
+       control (htmlFor), the input's form control states, and a checkbox and a radio group in one. Headings are the
+       shell's. A tap on a label focuses its control. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Input" />
+      <b:FormControl x:Name="Basic" Label="Input label" Caption="Input caption">
+        <b:Input x:Name="BasicInput" />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="Textarea" />
+      <b:FormControl Label="Textarea label" Caption="Textarea caption">
+        <b:Textarea x:Name="BasicTextarea" />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="Validation example" />
+      <b:FormControl x:Name="Validation" Label="Your email">
+        <b:Input x:Name="Email" />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="States" />
+      <b:FormControl Label="Input label" Caption="Input caption">
+        <b:Input />
+      </b:FormControl>
+      <b:FormControl x:Name="Positive" Positive="Positive caption" Label="Input label" Caption="Input caption">
+        <b:Input Positive="True" />
+      </b:FormControl>
+      <b:FormControl x:Name="Error" Error="Error caption" Label="Input label" Caption="Input caption">
+        <b:Input Error="True" />
+      </b:FormControl>
+      <b:FormControl x:Name="Disabled" IsEnabled="False" Label="Input label disabled" Caption="Input caption">
+        <b:Input Size="Compact" />
+      </b:FormControl>
+      <!-- form-control.scenario.tsx's boolean states: the caption in their colour, with the icon. -->
+      <b:FormControl x:Name="PositiveState" Positive="{x:True}" Label="Input label positive" Caption="Input caption">
+        <b:Input Size="Compact" />
+      </b:FormControl>
+      <b:FormControl x:Name="ErrorState" Error="{x:True}" Label="Input label error" Caption="Input caption">
+        <b:Input Size="Compact" />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="Counter" />
+      <b:FormControl x:Name="Counter" Label="Enable counter" Caption="Input caption" Counter="True">
+        <b:Input Size="Compact" />
+      </b:FormControl>
+      <b:FormControl x:Name="CounterMax" Label="Counter with max value" Caption="Input caption" Counter="True">
+        <b:Input Size="Compact" MaxLength="40" Text="Type up to forty characters" />
+      </b:FormControl>
+      <b:FormControl x:Name="CounterTextarea" Label="Counter with textarea" Caption="Input caption" Counter="True">
+        <b:Textarea MaxLength="40" />
+      </b:FormControl>
+      <b:FormControl x:Name="CounterOverride" Label="Override counter with max length" Caption="Input caption">
+        <b:FormControl.Counter>
+          <b:FormControlCounter Length="0" MaxLength="100" />
+        </b:FormControl.Counter>
+        <b:Input x:Name="CounterOverrideInput" Size="Compact" MaxLength="50" />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="A label for another control" />
+      <b:FormControl x:Name="For" Label="Input label" Caption="Input caption" HtmlFor="Five">
+        <StackPanel Spacing="8">
+          <b:Input x:Name="Four" PlaceholderText="four" />
+          <b:Input x:Name="Five" PlaceholderText="five" />
+        </StackPanel>
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="Form control states" />
+      <b:FormControl x:Name="Success" Label="Positive" Positive="Success!">
+        <b:Input />
+      </b:FormControl>
+      <b:FormControl x:Name="Failure" Label="Error" Error="Error!">
+        <b:Input />
+      </b:FormControl>
+
+      <TextBlock Classes="heading" Text="Checkbox and RadioGroup" />
+      <b:FormControl Label="Checkbox label" Caption="Checkbox caption">
+        <b:Checkbox Content="Checkbox control" />
+      </b:FormControl>
+      <b:FormControl Label="RadioGroup label" Caption="RadioGroup caption">
+        <b:RadioGroup>
+          <b:Radio Value="red" Content="Red" />
+          <b:Radio Value="green" Content="Green" />
+          <b:Radio Value="blue" Content="Blue" />
+        </b:RadioGroup>
+      </b:FormControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
