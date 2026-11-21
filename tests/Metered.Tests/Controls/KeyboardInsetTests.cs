@@ -391,7 +391,9 @@ public class KeyboardInsetTests
 
         var caret = CaretOf(text, scene);
         Assert.True(caret.Height > 0);
-        Assert.True(caret.Bottom <= Keyboard.Y, $"The caret ends at {caret.Bottom}, under the keyboard's top at {Keyboard.Y}.");
+        // Within half a pixel: the caret's line is laid out at the font's fractional height, and the page's offset is
+        // rounded to whole pixels (Linux's font metrics left it 0.125 lower than Windows').
+        Assert.True(caret.Bottom <= Keyboard.Y + 0.5, $"The caret ends at {caret.Bottom}, under the keyboard's top at {Keyboard.Y}.");
         Assert.True(caret.Top >= 0, $"The caret starts at {caret.Top}, above the view.");
     }
 
