@@ -185,7 +185,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    Copy and paste work. The clear icon clears and keeps the focus. A password asks for a password keyboard (no
    personalised learning), and the toggle takes the focus and closes the keyboard, as in Chrome on Android. A tap on an enhancer
    focuses the input. Problems found there, each its own issue:
-   - the keyboard covers a focused input near the page's foot, and the page can't scroll it into view (#108);
+   - the keyboard covers a focused input near the page's foot, and the page can't scroll it into view (#108; the sample's
+     shell now keeps its page clear with [`KeyboardInset`](../KeyboardInset/README.md), not yet run on the Pixel);
    - selection handles stay on an input after the focus leaves it (#109);
    - the menu shows desktop shortcuts and covers the selection (#110).
 
