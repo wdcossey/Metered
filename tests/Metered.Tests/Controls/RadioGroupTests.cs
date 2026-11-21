@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Styling;
 using Metered.Controls;
 using AvaloniaButton = Avalonia.Controls.Button;
 
@@ -259,6 +262,180 @@ public class RadioGroupTests
         scene.Pump();
         Assert.False(radio.IsChecked);
         Assert.False(radio.IsTabStop);
+    }
+
+    // #80, as ButtonGroup's #70: radio-v2's group context stands in for a radio's own checked and tabIndex
+    // (radio-v2/radio.js: checked = groupContext ? groupContext.selectedValue === value : checkedProp) without changing
+    // the radio's props. So the group holds its values over the radio's own, and a style's values are the radio's
+    // again when it leaves, the style still live.
+    [AvaloniaTheory]
+    [InlineData("remove")]
+    [InlineData("clear")]
+    [InlineData("source")]
+    public void A_radios_styled_checked_and_tab_stop_come_back_when_it_leaves(string leave)
+    {
+        var radio = new Radio { Value = "1", Content = "One", Classes = { "own" } };
+        var group = new RadioGroup();
+        var source = new System.Collections.ObjectModel.ObservableCollection<Radio> { radio, new() { Value = "2", Content = "Two" } };
+        if (leave == "source") group.ItemsSource = source;
+        else foreach (var r in source.ToList()) group.Items.Add(r);
+        var elsewhere = new StackPanel();
+        var root = new StackPanel { Children = { group, elsewhere } };
+        root.Styles.Add(new Style(x => x.OfType<Radio>().Class("own"))
+        {
+            Setters = { new Setter(ToggleButton.IsCheckedProperty, true), new Setter(InputElement.IsTabStopProperty, false) },
+        });
+        using var scene = new Scene(root);
+        // The group's: no value, so none checked and the first a tab stop.
+        Assert.False(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+        Assert.Null(group.Value);
+
+        Leave(group, source, radio, leave);
+        elsewhere.Children.Add(radio);
+        scene.Pump();
+        Assert.True(radio.IsChecked);
+        Assert.False(radio.IsTabStop);
+        radio.Classes.Remove("own");
+        Assert.False(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+    }
+
+    // A binding the radio has stays beneath the group's values, live: once the radio leaves, it shows the binding's
+    // value now, not the one it had when the radio joined, and follows it.
+    [AvaloniaFact]
+    public void A_radios_bound_checked_and_tab_stop_come_back_live_when_it_leaves()
+    {
+        var model = new Model { Checked = true, TabStop = false };
+        var radio = new Radio { Value = "1", Content = "One", DataContext = model };
+        radio.Bind(ToggleButton.IsCheckedProperty, new ReflectionBinding(nameof(Model.Checked)) { Mode = BindingMode.OneWay });
+        radio.Bind(InputElement.IsTabStopProperty, new ReflectionBinding(nameof(Model.TabStop)) { Mode = BindingMode.OneWay });
+        var group = new RadioGroup { Items = { radio, new Radio { Value = "2", Content = "Two" } } };
+        var elsewhere = new StackPanel();
+        using var scene = new Scene(new StackPanel { Children = { group, elsewhere } });
+        Assert.False(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+
+        // Changed while the radio is in the group: the group's values still show.
+        model.Checked = false;
+        model.TabStop = true;
+        group.Value = "2";
+        Assert.False(radio.IsChecked);
+        Assert.False(radio.IsTabStop);
+
+        group.Items.Remove(radio);
+        elsewhere.Children.Add(radio);
+        scene.Pump();
+        Assert.False(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+        model.Checked = true;
+        model.TabStop = false;
+        Assert.True(radio.IsChecked);
+        Assert.False(radio.IsTabStop);
+    }
+
+    // What is set on a radio while it is in the group is its own, beneath the group's values, which still show (and
+    // so don't change the group's value); it shows once the radio leaves. A click in the group doesn't change it.
+    [AvaloniaFact]
+    public void A_radios_checked_and_tab_stop_set_while_in_the_group_are_its_own_when_it_leaves()
+    {
+        var (group, radios) = Group(null, ["One", "Two"]);
+        var radio = radios[0];
+        var elsewhere = new StackPanel();
+        using var scene = new Scene(new StackPanel { Children = { group, elsewhere } });
+
+        radio.IsChecked = true;
+        radio.IsTabStop = false;
+        Assert.False(radio.IsChecked);
+        Assert.True(radio.IsTabStop);
+        Assert.Null(group.Value);
+
+        scene.Click(radio);
+        Assert.Equal("1", group.Value);
+        scene.Click(radios[1]);
+        Assert.Equal("2", group.Value);
+        Assert.False(radio.IsChecked);
+        Assert.True(radios[1].IsChecked);
+
+        group.Items.Remove(radio);
+        elsewhere.Children.Add(radio);
+        scene.Pump();
+        Assert.True(radio.IsChecked);
+        Assert.False(radio.IsTabStop);
+
+        // The other radio, checked by a click while in the group: the click checked it through the group, so once it
+        // leaves it has its own (none) again.
+        group.Items.Remove(radios[1]);
+        elsewhere.Children.Add(radios[1]);
+        scene.Pump();
+        Assert.False(radios[1].IsChecked);
+        Assert.True(radios[1].IsTabStop);
+    }
+
+    private static void Leave(RadioGroup group, System.Collections.ObjectModel.ObservableCollection<Radio> source, Radio radio, string leave)
+    {
+        // Removed, the whole group cleared, or its source cleared: a reset, which names no old items.
+        if (leave == "remove") group.Items.Remove(radio);
+        else if (leave == "clear") group.Items.Clear();
+        else if (leave == "source") source.Clear();
+        else throw new ArgumentOutOfRangeException(nameof(leave), leave, null);
+    }
+
+    // IsChecked binds TwoWay by default, and Avalonia writes a value back to the source at any priority, so a bound
+    // radio's source follows the group's value while the radio is in the group (the README's known difference 13).
+    // The group's value still shows over a change the source makes; once the radio leaves, the source's value shows.
+    [AvaloniaFact]
+    public void A_two_way_bound_checked_follows_the_group_and_is_the_sources_when_it_leaves()
+    {
+        var model = new Model { Checked = false };
+        var radio = new Radio { Value = "1", Content = "One", DataContext = model };
+        radio.Bind(ToggleButton.IsCheckedProperty, new ReflectionBinding(nameof(Model.Checked)));
+        var group = new RadioGroup { Value = "1", Items = { radio, new Radio { Value = "2", Content = "Two" } } };
+        using var scene = new Scene(group);
+        Assert.True(radio.IsChecked);
+        Assert.True(model.Checked);
+
+        group.Value = "2";
+        Assert.False(radio.IsChecked);
+        Assert.False(model.Checked);
+
+        group.Value = "1";
+        model.Checked = false;
+        Assert.True(radio.IsChecked);
+
+        group.Items.Remove(radio);
+        scene.Pump();
+        Assert.False(radio.IsChecked);
+        model.Checked = true;
+        Assert.True(radio.IsChecked);
+    }
+
+    private sealed class Model : System.ComponentModel.INotifyPropertyChanged
+    {
+        private bool? _checked;
+        private bool _tabStop;
+
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        public bool? Checked
+        {
+            get => _checked;
+            set
+            {
+                _checked = value;
+                PropertyChanged?.Invoke(this, new(nameof(Checked)));
+            }
+        }
+
+        public bool TabStop
+        {
+            get => _tabStop;
+            set
+            {
+                _tabStop = value;
+                PropertyChanged?.Invoke(this, new(nameof(TabStop)));
+            }
+        }
     }
 
     // The flex-end alignment is the group's row's: a radio on its own with those props stays at the top of its slot.

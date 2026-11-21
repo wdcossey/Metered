@@ -31,7 +31,8 @@ gallery for two groups: radio, and checkbox with the outline kind.
   as an `ObservableCollection`'s `Clear` does, naming no old items: #45), has its own values back,
   as Base Web's `cloneElement` replaces a child's props without changing the child (#70). The group
   holds its kind, size, shape, selection, tab stop and role over the button's own, at Avalonia's
-  `Animation` priority, the one above a local value, and lets go of them when the button leaves.
+  `Animation` priority, the one above a local value, and lets go of them when the button leaves
+  (`Hold`, which RadioGroup shares: #80).
   So the button's own values stay beneath, local, styled or bound, including those set on it while
   it was in the group, and the control's defaults where it has none. The group no longer listens
   to its clicks.
