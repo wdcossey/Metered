@@ -303,6 +303,27 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void A_Layout_Changed_Just_Before_The_Keyboard_Opens_Is_Read_As_It_Will_Be()
+    {
+        // The banner under it goes in the same turn as the keyboard opens, before any layout: the decorator will reach the
+        // view's foot, and the keyboard cover 300 of it.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var banner = new Border { Height = 100 };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+        grid.Children.Add(inset);
+        Grid.SetRow(banner, 1);
+        grid.Children.Add(banner);
+        using var scene = new Scene(grid);
+
+        banner.IsVisible = false;
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Decorator_That_Moves_Under_An_Open_Keyboard_Is_Read_Again()
     {
         // A banner under it, 100 high, is taken away: the decorator now reaches the view's foot, and the keyboard covers
