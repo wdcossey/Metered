@@ -577,6 +577,96 @@ public class FormControlTests
         Assert.True(Within(taker, input), $"{taker}");
     }
 
+    // A browser's click is the main button's: another button let go while it is held clicks nothing, and the main one's
+    // release then clicks once, on the label, or not at all elsewhere, and leaves nothing behind.
+    [AvaloniaFact]
+    public void Another_buttons_release_clicks_nothing_and_the_main_ones_once()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var other = new Border { Height = 40, Background = Brushes.Transparent };
+        var form = new FormControl { Label = "Label", Content = box };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        var at = CentreOfLabel(scene, form);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+
+        // The same, the main button let go elsewhere: no click, and none later from a press elsewhere let go on the label.
+        var away = scene.CentreOf(other);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Window.MouseMove(away);
+        scene.Window.MouseUp(away, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+        scene.Window.MouseDown(away, MouseButton.Left);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+    }
+
+    // A control above whose own hit area reaches over the form control's top margin (a compact Button's tap band, 48 px)
+    // keeps its taps there: the label's margins are empty space only.
+    [AvaloniaFact]
+    public void A_tap_band_reaching_over_the_labels_margin_keeps_its_taps()
+    {
+        var above = new Metered.Controls.Button { Content = "Above", Size = ButtonSize.Mini, MinHitArea = ButtonMinHitArea.Tap };
+        var clicks = 0;
+        above.Click += (_, _) => clicks++;
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { above, form } });
+        var formTop = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        var band = above.TranslatePoint(new Point(above.Bounds.Width / 2, above.Bounds.Height), scene.Window)!.Value;
+        var label = (Visual)form.Part(FormControl.LabelPart)!;
+        Assert.True(band.Y > formTop + 1, $"the band ends at {band.Y}, the form control starts at {formTop}");
+        Assert.True(scene.CentreOf(label).X > band.X - above.Bounds.Width / 2);
+
+        ClickAt(scene, new Point(band.X, formTop + 1), touch: true);
+        Assert.Equal(1, clicks);
+        Assert.False(input.IsFocused);
+        // Past the band, the margin is the label's.
+        ClickAt(scene, new Point(scene.Window.Bounds.Width - 30, formTop + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // A press on the label let go over the child, which its own negative margin pulls over the row's bottom margin, is let
+    // go on the child: no click.
+    [AvaloniaFact]
+    public void A_release_over_the_child_pulled_over_the_margin_is_no_click()
+    {
+        var input = new Input { Margin = new Thickness(0, -8, 0, 0) };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var at = scene.CentreOf(label);
+        var over = new Point(at.X, input.TranslatePoint(new Point(0, 2), scene.Window)!.Value.Y);
+        Assert.True(label.HitArea.Contains(scene.Window.TranslatePoint(over, label)!.Value));
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseMove(over);
+        scene.Window.MouseUp(over, MouseButton.Left);
+        scene.Pump();
+        Assert.False(input.IsFocused);
+    }
+
+    // Only a form control's label row widens it: a label placed elsewhere (a template of an app's) keeps its box.
+    [AvaloniaFact]
+    public void A_label_outside_a_label_row_keeps_its_box()
+    {
+        var label = new FormControlLabel { Content = "Label" };
+        using var scene = Show(new StackPanel { Margin = new Thickness(0, 20), Children = { label, new Input() } });
+        Assert.Equal(new Rect(label.Bounds.Size), label.HitArea);
+    }
+
     /// <summary>A command that counts its runs.</summary>
     private sealed class Counted(Action run) : System.Windows.Input.ICommand
     {

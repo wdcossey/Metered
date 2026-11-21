@@ -16,10 +16,12 @@ namespace Metered.Controls;
 /// <remarks>
 /// <para>The first child is the label and the second the enhancer, as form-control.js renders them; a hidden one takes no
 /// room.</para>
-/// <para>The enhancer is measured at its min-content width, so a text that grows within it (a counter going from "1" to
-/// "3", a proportional figure wider) is clamped to the old width, its desired size unchanged, and Avalonia's layout would
-/// never measure the row again: the row follows what it measures, the presenter's content and child and the text's
-/// words and font, and measures itself again when one changes.</para>
+/// <para>Text is measured at its min-content width, so text that grows (a counter going from "1" to "3", a proportional
+/// figure wider) would be clamped to the old width, its desired size unchanged, and Avalonia's layout would never
+/// measure the row again: a "3" drawn cut to a "1"'s width, found on a Pixel. So the row follows what it reads the
+/// width from, the presenter's content and child and the text and its font, and measures itself again when one changes.
+/// Other content is as wide as it asks: it is left measured at no width, so its growth reaches the row as any child's
+/// does.</para>
 /// </remarks>
 public class FormControlLabelContainer : Panel
 {
@@ -27,9 +29,13 @@ public class FormControlLabelContainer : Panel
 
     private Control? End => Children.Count > 1 && Children[1].IsVisible ? Children[1] : null;
 
+    /// <summary>The enhancer's width as last measured (its desired size may be its natural one).</summary>
+    private double _endWidth;
+
     protected override Size MeasureOverride(Size availableSize)
     {
         var (endWidth, endHeight) = MeasureEnd(availableSize.Width);
+        _endWidth = endWidth;
         var labelHeight = 0.0;
         var labelWidth = 0.0;
         if (Label is { } label)
@@ -44,7 +50,7 @@ public class FormControlLabelContainer : Panel
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var endWidth = End?.DesiredSize.Width ?? 0;
+        var endWidth = End is null ? 0 : _endWidth;
         Label?.Arrange(new Rect(0, 0, Math.Max(0, finalSize.Width - endWidth), finalSize.Height));
         End?.Arrange(new Rect(Math.Max(0, finalSize.Width - endWidth), 0, endWidth, finalSize.Height));
         return finalSize;
@@ -63,22 +69,35 @@ public class FormControlLabelContainer : Panel
             return (0, 0);
         }
 
-        end.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Watch(end as ContentPresenter, (end as ContentPresenter)?.Child as TextBlock);
-        var width = end.DesiredSize.Width;
-        if (end is ContentPresenter { Child: TextBlock { Text: { } content } text } presenter)
+        _measuring = true;
+        try
         {
-            width = Widest(text, content) + text.Margin.Left + text.Margin.Right + text.Padding.Left + text.Padding.Right
-                + presenter.Padding.Left + presenter.Padding.Right + end.Margin.Left + end.Margin.Right;
-        }
+            end.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var natural = end.DesiredSize.Width;
+            var width = natural;
+            var text = end is ContentPresenter { Child: TextBlock { Text: not null } block } ? block : null;
+            Watch(end as ContentPresenter, text);
+            if (text is not null)
+            {
+                width = Widest(text, text.Text!) + text.Margin.Left + text.Margin.Right + text.Padding.Left + text.Padding.Right
+                    + ((ContentPresenter)end).Padding.Left + ((ContentPresenter)end).Padding.Right + end.Margin.Left + end.Margin.Right;
+            }
 
-        // Whole device pixels, so that the label and the enhancer meet at one and the enhancer ends at the row's end.
-        var scale = LayoutHelper.GetLayoutScale(this);
-        width = Math.Min(Math.Ceiling(width * scale) / scale, available);
-        end.Measure(new Size(width, double.PositiveInfinity));
-        return (width, end.DesiredSize.Height);
+            // Whole device pixels, so that the label and the enhancer meet at one and the enhancer ends at the row's end.
+            var scale = LayoutHelper.GetLayoutScale(this);
+            width = Math.Min(Math.Ceiling(width * scale) / scale, available);
+            // Content that has its width is left measured at no width (its growth then reaches the row); text, or content
+            // wider than the row, is measured at its width, for its height there.
+            if (text is not null || width < natural) end.Measure(new Size(width, double.PositiveInfinity));
+            return (width, end.DesiredSize.Height);
+        }
+        finally
+        {
+            _measuring = false;
+        }
     }
 
+    private bool _measuring;
     private ContentPresenter? _watchedPresenter;
     private TextBlock? _watchedText;
 
@@ -102,11 +121,13 @@ public class FormControlLabelContainer : Panel
 
     private void OnEndChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
+        // A change made while the row measures it (the presenter building its child) is already read.
+        if (_measuring) return;
         var p = e.Property;
         if (p == ContentPresenter.ContentProperty || p == ContentPresenter.ChildProperty || p == ContentPresenter.PaddingProperty
             || p == TextBlock.TextProperty || p == TextBlock.FontFamilyProperty || p == TextBlock.FontSizeProperty
             || p == TextBlock.FontWeightProperty || p == TextBlock.FontStyleProperty || p == TextBlock.FontStretchProperty
-            || p == TextBlock.PaddingProperty || p == MarginProperty)
+            || p == TextBlock.LetterSpacingProperty || p == TextBlock.PaddingProperty || p == MarginProperty)
         {
             InvalidateMeasure();
         }

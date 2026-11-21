@@ -6,6 +6,7 @@ using Avalonia.Controls.Automation.Peers;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Rendering;
 using Avalonia.VisualTree;
@@ -80,13 +81,24 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
         _pressed.Capture(this);
     }
 
-    /// <summary>The click: the release of the pointer that pressed it, on it.</summary>
+    /// <summary>
+    /// The click: the release of the main button (a mouse's left, a finger, a pen's tip) of the pointer that pressed it,
+    /// on it: where its hit test takes the pointer, not where the child, pulled over the row's margin, is.
+    /// </summary>
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        // Another button let go meanwhile isn't the click, as a browser's: the main one's release is. Avalonia's mouse lets
+        // the capture go on any button's release; the click goes on.
+        if (e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
+        {
+            _otherReleased = e.Pointer == _pressed;
+            return;
+        }
+
         var pressed = _pressed;
         _pressed = null;
-        if (pressed != e.Pointer || Target is not { } target || !HitArea.Contains(e.GetPosition(this))) return;
+        if (pressed != e.Pointer || Target is not { } target || !HitTest(e.GetPosition(this))) return;
         e.Handled = true;
         Activate(target);
     }
@@ -107,28 +119,78 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
 
     /// <summary>
     /// Its box, from the label row's top margin's edge to its bottom margin's edge: the room the row's margins keep above
-    /// and below it, in its own coordinates.
+    /// and below it, in its own coordinates. Only in a form control's label row (a template that puts it elsewhere keeps
+    /// its box).
     /// </summary>
     internal Rect HitArea
     {
         get
         {
             var box = new Rect(Bounds.Size);
-            if (this.GetVisualParent() is not Layoutable row) return box;
+            if (this.GetVisualParent() is not FormControlLabelContainer row) return box;
             var above = Math.Max(0, row.Margin.Top) + Math.Max(0, Bounds.Top);
             var below = Math.Max(0, row.Margin.Bottom) + Math.Max(0, row.Bounds.Height - Bounds.Bottom);
             return new Rect(0, -above, Bounds.Width, Bounds.Height + above + below);
         }
     }
 
-    /// <summary>Avalonia's compositor asks it for any point, outside its bounds too: its hit area.</summary>
-    public bool HitTest(Point point) => HitArea.Contains(point);
+    private bool _probing;
 
-    /// <summary>A scroller that takes the pointer for a drag takes the click with it.</summary>
+    /// <summary>
+    /// Avalonia's compositor asks it for any point, outside its bounds too: its box, and its row's margins where they are
+    /// empty space. A point there that anything else takes (a control above whose tap band reaches over the margin, the
+    /// child pulled over it by its own margin, an overlay), other than what the label is inside, is that element's.
+    /// </summary>
+    public bool HitTest(Point point)
+    {
+        if (new Rect(Bounds.Size).Contains(point)) return true;
+        if (_probing || !HitArea.Contains(point) || TopLevel.GetTopLevel(this) is not Visual root) return false;
+        if (this.TranslatePoint(point, root) is not { } at) return false;
+        // What else is hit there, the label left out (it answers false while it asks): anything neither round it nor in it
+        // is in front of the margin.
+        _probing = true;
+        try
+        {
+            return root.GetVisualsAt(at, v => v.IsVisible && v is not InputElement { IsHitTestVisible: false })
+                .All(v => v.IsVisualAncestorOf(this) || this.IsVisualAncestorOf(v));
+        }
+        finally
+        {
+            _probing = false;
+        }
+    }
+
+    /// <summary>
+    /// A scroller that takes the pointer for a drag takes the click with it. Another button's release lets the capture go
+    /// too, the main button still held: the click goes on, and the main button's release ends it wherever it is.
+    /// </summary>
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        if (e.Pointer == _pressed) _pressed = null;
+        var other = _otherReleased;
+        _otherReleased = false;
+        if (e.Pointer != _pressed) return;
+        if (other && TopLevel.GetTopLevel(this) is { } top)
+        {
+            _watched = top;
+            top.AddHandler(PointerReleasedEvent, OnAnyRelease, RoutingStrategies.Bubble, handledEventsToo: true);
+            return;
+        }
+
+        _pressed = null;
+    }
+
+    private bool _otherReleased;
+    private TopLevel? _watched;
+
+    /// <summary>The main button's release anywhere, after the label has had it: the click is over.</summary>
+    private void OnAnyRelease(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.Pointer != _pressed && _pressed is not null) return;
+        if (_pressed is not null && e.GetCurrentPoint(this).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased) return;
+        _pressed = null;
+        _watched?.RemoveHandler(PointerReleasedEvent, OnAnyRelease);
+        _watched = null;
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new FormControlLabelAutomationPeer(this);

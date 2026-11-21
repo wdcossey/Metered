@@ -85,8 +85,9 @@ public class FormControlLayoutTests
         Assert.Equal(Width, InputLayoutTests.At(end, form).Right, 3);
         Assert.Equal(0, InputLayoutTests.At(label, form).X, 3);
         Assert.Equal(Width - end.Bounds.Width, label.Bounds.Width, 3);
-        // Two lines of the enhancer's: the row is as tall, and the label stretched to it.
+        // Two lines of the enhancer's, drawn so: the row is as tall, and the label stretched to it.
         Assert.Equal(2 * facts.LabelEndEnhancer.Font.LineHeight, end.Bounds.Height, 3);
+        Assert.Equal(2, ((TextBlock)((Avalonia.Controls.Presenters.ContentPresenter)end).Child!).TextLayout.TextLines.Count);
         Assert.Equal(end.Bounds.Height, label.Bounds.Height, 3);
     }
 
@@ -182,6 +183,39 @@ public class FormControlLayoutTests
             Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace, $"{count}: {text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
             Assert.Equal(form.Bounds.Width, InputLayoutTests.At(end, form).Right, 3);
         }
+    }
+
+    // The same for an app's own end enhancer: a text block whose text grows, other content in its place, and a text block
+    // inside a control.
+    [AvaloniaFact]
+    public void An_end_enhancer_that_grows_is_measured_again()
+    {
+        var text = new TextBlock { Text = "1" };
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = text, Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var end = (Control)form.Part(FormControl.LabelEndEnhancerPart)!;
+        var one = end.Bounds.Width;
+
+        text.Text = "1234";
+        scene.Pump();
+        Assert.True(end.Bounds.Width > one, $"{end.Bounds.Width} after {one}");
+        Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace);
+
+        var box = new Border { Width = 80, Height = 10 };
+        form.LabelEndEnhancer = box;
+        scene.Pump();
+        Assert.Equal(80, end.Bounds.Width, 3);
+        Assert.Equal(80, box.Bounds.Width, 3);
+
+        // A text block inside a control of the app's, its text grown.
+        var inner = new TextBlock { Text = "1" };
+        form.LabelEndEnhancer = new Border { Child = inner };
+        scene.Pump();
+        var small = end.Bounds.Width;
+        inner.Text = "1234";
+        scene.Pump();
+        Assert.True(end.Bounds.Width > small, $"{end.Bounds.Width} after {small}");
+        Assert.True(inner.Bounds.Width >= inner.TextLayout.WidthIncludingTrailingWhitespace);
     }
 
     [AvaloniaFact]
