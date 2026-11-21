@@ -39,7 +39,8 @@ namespace Metered.Controls;
 /// <para><c>disabled</c> is Avalonia's <see cref="InputElement.IsEnabled"/>, which disables the child too, as Base Web
 /// gives it <c>onlyChildProps.disabled || disabled</c>. The child is given the form control's error and positive, as
 /// Base Web's <c>cloneElement</c> gives them, below its own values: a child's own <c>Error</c> or <c>Positive</c> wins.
-/// Base Web's Textarea has its own error, false, in its defaultProps: a Textarea isn't given the error.</para>
+/// Base Web's Textarea has its own error, false, in its defaultProps, so Base Web's never takes the form control's;
+/// Metered's Textarea is given it as an Input is (docs/controls/FormControl).</para>
 /// </remarks>
 [TemplatePart(LabelContainerPart, typeof(StyledElement))]
 [TemplatePart(LabelPart, typeof(FormControlLabel))]
@@ -123,9 +124,9 @@ public class FormControl : ContentControl
     public FormControlCounter? Counter { get => GetValue(CounterProperty); set => SetValue(CounterProperty, value); }
 
     /// <summary>
-    /// Base Web's <c>htmlFor</c>: the element the label labels, focused by a click or tap on it, by name in XAML as
-    /// Avalonia's <c>Label.Target</c>. When unset, the child: Base Web's default is the child's <c>id</c>, which Avalonia
-    /// hasn't (docs/controls/FormControl).
+    /// Base Web's <c>htmlFor</c>: the element the label labels, focused and clicked by a click or tap on it, by name in
+    /// XAML as Avalonia's <c>Label.Target</c>. When unset, the child: Base Web's default is the child's <c>id</c>, which
+    /// Avalonia hasn't (docs/controls/FormControl).
     /// </summary>
     [ResolveByName]
     public IInputElement? HtmlFor { get => GetValue(HtmlForProperty); set => SetValue(HtmlForProperty, value); }
@@ -288,8 +289,9 @@ public class FormControl : ContentControl
         _held.Release(o => o != _child && !IsPart(o) && o != target);
         if (_child is { } child)
         {
-            // Base Web's Textarea has error: false in its defaultProps, so its own error is always set.
-            if (child is not Textarea) GiveFlag(child, "Error", state.Error);
+            // Base Web's Textarea has error: false in its defaultProps, so it never takes the form control's error: an
+            // accident of its defaults. Metered gives it the error as it gives an Input (docs/controls/FormControl).
+            GiveFlag(child, "Error", state.Error);
             GiveFlag(child, "Positive", state.Positive);
             // A hint is a caption, a positive or an error, so one of the two names it whenever it is shown.
             Give(child, AutomationProperties.HelpTextProperty, hasHint ? TextOf(hint) : null);

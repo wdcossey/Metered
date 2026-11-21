@@ -13,8 +13,15 @@ namespace Metered.Controls;
 /// run, the label (<c>width: 100%</c>, which flex shrinks) the rest; both as tall as the row, which is as tall as the
 /// taller (<c>align-items: stretch</c>).
 /// </summary>
-/// <remarks>The first child is the label and the second the enhancer, as form-control.js renders them; a hidden one
-/// takes no room.</remarks>
+/// <remarks>
+/// <para>The first child is the label and the second the enhancer, as form-control.js renders them; a hidden one takes no
+/// room.</para>
+/// <para>Text is measured at its min-content width, so a text block whose text grows (a counter going from "1" to "3",
+/// a proportional figure wider) gives no wider a desired size, and Avalonia's layout would never measure the row again:
+/// a "3" drawn cut to a "1"'s width, found on a Pixel. So the row follows the text block it reads the width from (its
+/// text, font, letter spacing, padding and margin) and measures itself again when one changes. A change to the
+/// presenter, or other content, reaches the row through layout of itself.</para>
+/// </remarks>
 public class FormControlLabelContainer : Panel
 {
     private Control? Label => Children.Count > 0 && Children[0].IsVisible ? Children[0] : null;
@@ -51,27 +58,74 @@ public class FormControlLabelContainer : Panel
     /// </summary>
     private (double Width, double Height) MeasureEnd(double available)
     {
-        if (End is not { } end) return (0, 0);
-        end.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        var width = end.DesiredSize.Width;
-        if (end is ContentPresenter { Child: TextBlock { Text: { } content } text } presenter)
+        if (End is not { } end)
         {
-            width = Widest(text, content) + text.Margin.Left + text.Margin.Right + text.Padding.Left + text.Padding.Right
-                + presenter.Padding.Left + presenter.Padding.Right + end.Margin.Left + end.Margin.Right;
+            Watch(null);
+            return (0, 0);
         }
 
-        // Whole device pixels, so that the label and the enhancer meet at one and the enhancer ends at the row's end.
-        var scale = LayoutHelper.GetLayoutScale(this);
-        width = Math.Min(Math.Ceiling(width * scale) / scale, available);
-        end.Measure(new Size(width, double.PositiveInfinity));
-        return (width, end.DesiredSize.Height);
+        _measuring = true;
+        try
+        {
+            end.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var width = end.DesiredSize.Width;
+            var presenter = end as ContentPresenter;
+            var text = presenter?.Child as TextBlock;
+            Watch(text);
+            if (presenter is not null && text is { Text: { } content })
+            {
+                width = Widest(text, content) + text.Margin.Left + text.Margin.Right + text.Padding.Left + text.Padding.Right
+                    + presenter.Padding.Left + presenter.Padding.Right + end.Margin.Left + end.Margin.Right;
+            }
+
+            // Whole device pixels, so that the label and the enhancer meet at one and the enhancer ends at the row's end.
+            var scale = LayoutHelper.GetLayoutScale(this);
+            width = Math.Min(Math.Ceiling(width * scale) / scale, available);
+            end.Measure(new Size(width, double.PositiveInfinity));
+            return (width, end.DesiredSize.Height);
+        }
+        finally
+        {
+            _measuring = false;
+        }
+    }
+
+    private bool _measuring;
+    private TextBlock? _watchedText;
+
+    /// <summary>
+    /// Follows the enhancer's text block, which its min-content width is read from: what <see cref="Widest"/> reads (the
+    /// text, its font and letter spacing) and what is added round it (padding, margin). Text in inlines has no
+    /// <c>Text</c>, so it isn't measured as text: as other content, its growth reaches the row of itself.
+    /// </summary>
+    private void Watch(TextBlock? text)
+    {
+        if (text != _watchedText)
+        {
+            if (_watchedText is not null) _watchedText.PropertyChanged -= OnEndChanged;
+            _watchedText = text;
+            if (text is not null) text.PropertyChanged += OnEndChanged;
+        }
+    }
+
+    private void OnEndChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        // A change made while the row measures it (the presenter giving its text block its text) is already read.
+        if (_measuring) return;
+        var p = e.Property;
+        if (p == TextBlock.TextProperty || p == TextBlock.FontFamilyProperty || p == TextBlock.FontSizeProperty
+            || p == TextBlock.FontWeightProperty || p == TextBlock.FontStyleProperty || p == TextBlock.FontStretchProperty
+            || p == TextBlock.LetterSpacingProperty || p == TextBlock.PaddingProperty || p == MarginProperty)
+        {
+            InvalidateMeasure();
+        }
     }
 
     /// <summary>The white space a line breaks at: all but the no-break spaces (U+00A0, U+2007, U+202F).</summary>
     private static readonly char[] Breaks = Enumerable.Range(0, 0x3001).Select(c => (char)c)
         .Where(c => char.IsWhiteSpace(c) && c is not ('\u00A0' or '\u2007' or '\u202F')).ToArray();
 
-    private (string Text, Typeface Typeface, double Size, double Width)? _widest;
+    private (string Text, Typeface Typeface, double Size, double Spacing, double Width)? _widest;
 
     /// <summary>
     /// The widest word of the text in the text block's font: CSS's min-content width of text, its words broken at the
@@ -80,15 +134,20 @@ public class FormControlLabelContainer : Panel
     private double Widest(TextBlock text, string content)
     {
         var typeface = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch);
-        if (_widest is { } last && last.Text == content && last.Typeface == typeface && last.Size == text.FontSize) return last.Width;
+        if (_widest is { } last && last.Text == content && last.Typeface == typeface && last.Size == text.FontSize
+            && last.Spacing == text.LetterSpacing)
+        {
+            return last.Width;
+        }
+
         var widest = 0.0;
         foreach (var word in content.Split(Breaks, StringSplitOptions.RemoveEmptyEntries))
         {
-            using var layout = new TextLayout(word, typeface, text.FontSize, null);
+            using var layout = new TextLayout(word, typeface, text.FontSize, null, letterSpacing: text.LetterSpacing);
             widest = Math.Max(widest, layout.WidthIncludingTrailingWhitespace);
         }
 
-        _widest = (content, typeface, text.FontSize, widest);
+        _widest = (content, typeface, text.FontSize, text.LetterSpacing, widest);
         return widest;
     }
 }

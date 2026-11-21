@@ -5,7 +5,7 @@
   <!-- Base Web's form control, as its documentation's examples show it round an input and a textarea: basic, the
        validation example and the states; then its scenarios' disabled label, the counters, a label for another
        control (htmlFor), the input's form control states, and a checkbox and a radio group in one. Headings are the
-       shell's. A tap on a label focuses its control. -->
+       shell's. A tap on a label focuses its control and clicks it: the checkbox's toggles it. -->
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16,0,16,32">
       <TextBlock Classes="heading" Text="Input" />
@@ -78,8 +78,8 @@
       </b:FormControl>
 
       <TextBlock Classes="heading" Text="Checkbox and RadioGroup" />
-      <b:FormControl Label="Checkbox label" Caption="Checkbox caption">
-        <b:Checkbox Content="Checkbox control" />
+      <b:FormControl x:Name="CheckboxForm" Label="Checkbox label" Caption="Checkbox caption">
+        <b:Checkbox x:Name="CheckboxControl" Content="Checkbox control" />
       </b:FormControl>
       <b:FormControl Label="RadioGroup label" Caption="RadioGroup caption">
         <b:RadioGroup>

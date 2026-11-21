@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -84,8 +85,9 @@ public class FormControlLayoutTests
         Assert.Equal(Width, InputLayoutTests.At(end, form).Right, 3);
         Assert.Equal(0, InputLayoutTests.At(label, form).X, 3);
         Assert.Equal(Width - end.Bounds.Width, label.Bounds.Width, 3);
-        // Two lines of the enhancer's: the row is as tall, and the label stretched to it.
+        // Two lines of the enhancer's, drawn so: the row is as tall, and the label stretched to it.
         Assert.Equal(2 * facts.LabelEndEnhancer.Font.LineHeight, end.Bounds.Height, 3);
+        Assert.Equal(2, ((TextBlock)((Avalonia.Controls.Presenters.ContentPresenter)end).Child!).TextLayout.TextLines.Count);
         Assert.Equal(end.Bounds.Height, label.Bounds.Height, 3);
     }
 
@@ -149,6 +151,111 @@ public class FormControlLayoutTests
         scene.Pump();
         var facts = FormControlOracle.Value.Layout.Facts;
         Assert.Equal(before - 12 + facts.LabelContainer.Margin[3], InputLayoutTests.At(input, form).Y, 3);
+    }
+
+    // Found on a Pixel 8 (411 dp at 2.625): typing "hey" into the counter's input drew its "3" cut in half. Instrument
+    // Sans' figures are proportional: "1" is narrower than "0", the row shrank to it, and a wider "2" or "3" was clamped to
+    // that width, its desired size unchanged, so the row was never measured again. Each text is at its own min-content
+    // width, at the row's end, and drawn whole.
+    [AvaloniaTheory]
+    [InlineData(1.0)]
+    [InlineData(2.625)]
+    public void The_counter_is_measured_again_as_it_changes(double scaling)
+    {
+        var facts = FormControlOracle.Value.Layout.Facts;
+        var input = new Input { Size = InputSize.Compact };
+        var form = new FormControl { Label = "Enable counter", Caption = "Input caption", Counter = true, Content = input };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(16, 0), Children = { form } }, width: 411);
+        scene.Window.SetRenderScaling(scaling);
+        scene.Pump();
+        var end = (Avalonia.Controls.Presenters.ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        scene.Click(input);
+        foreach (var (key, count) in new[] { ("h", "1"), ("e", "2"), ("y", "3"), ("", "2") })
+        {
+            if (key == "") scene.Key(Avalonia.Input.Key.Back);
+            else scene.Window.KeyTextInput(key);
+            scene.Pump();
+            var text = (TextBlock)end.Child!;
+            Assert.Equal(count, text.Text);
+            var width = Measure(count, facts.LabelEndEnhancer.Font);
+            // Within a pixel: the layout rounds to whole device pixels.
+            Assert.InRange(end.Bounds.Width, width - 1, width + 1);
+            Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace, $"{count}: {text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+            Assert.Equal(form.Bounds.Width, InputLayoutTests.At(end, form).Right, 3);
+        }
+    }
+
+    // The same for an app's own end enhancer: a text block whose text grows, other content in its place, and a text block
+    // inside a control.
+    [AvaloniaFact]
+    public void An_end_enhancer_that_grows_is_measured_again()
+    {
+        var text = new TextBlock { Text = "1" };
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = text, Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var end = (Control)form.Part(FormControl.LabelEndEnhancerPart)!;
+        var one = end.Bounds.Width;
+
+        text.Text = "1234";
+        scene.Pump();
+        Assert.True(end.Bounds.Width > one, $"{end.Bounds.Width} after {one}");
+        Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace);
+
+        var box = new Border { Width = 80, Height = 10 };
+        form.LabelEndEnhancer = box;
+        scene.Pump();
+        Assert.Equal(80, end.Bounds.Width, 3);
+        Assert.Equal(80, box.Bounds.Width, 3);
+
+        // A text block inside a control of the app's, its text grown.
+        var inner = new TextBlock { Text = "1" };
+        form.LabelEndEnhancer = new Border { Child = inner };
+        scene.Pump();
+        var small = end.Bounds.Width;
+        inner.Text = "1234";
+        scene.Pump();
+        Assert.True(end.Bounds.Width > small, $"{end.Bounds.Width} after {small}");
+        Assert.True(inner.Bounds.Width >= inner.TextLayout.WidthIncludingTrailingWhitespace);
+    }
+
+    // Text measured at its min-content width is measured again when its font grows, or another text takes its place.
+    [AvaloniaFact]
+    public void The_end_enhancers_text_is_measured_again_when_its_font_or_text_block_changes()
+    {
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = "1", Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var end = (Avalonia.Controls.Presenters.ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        void Whole()
+        {
+            var text = (TextBlock)end.Child!;
+            Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace,
+                $"{text.Text}: {text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+        }
+
+        ((TextBlock)end.Child!).FontSize = 30;
+        scene.Pump();
+        Whole();
+        form.LabelEndEnhancer = new TextBlock { Text = "1234" };
+        scene.Pump();
+        Whole();
+        // Room added round it by the presenter.
+        var before = end.Bounds.Width;
+        end.Padding = new Thickness(10, 0);
+        scene.Pump();
+        Assert.Equal(before + 20, end.Bounds.Width, 3);
+        Whole();
+    }
+
+    // Its min-content width is the text's with its letter spacing: the text is drawn whole.
+    [AvaloniaFact]
+    public void The_end_enhancers_letter_spacing_is_in_its_width()
+    {
+        var text = new TextBlock { Text = "1234", LetterSpacing = 4 };
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = text, Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        Assert.True(text.Bounds.Width >= text.TextLayout.WidthIncludingTrailingWhitespace,
+            $"{text.Bounds.Width} for {text.TextLayout.WidthIncludingTrailingWhitespace}");
+        Assert.Single(text.TextLayout.TextLines);
     }
 
     [AvaloniaFact]

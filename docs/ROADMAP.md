@@ -108,4 +108,5 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       and positive messages with Base Web's two icons, the label's end enhancer and the counter, disabled, what the child
       is given (`cloneElement`'s), its seven parts and overrides; the label focuses what it labels on a click or a tap,
       not a press, so a finger's drag from it scrolls the page; the label names it to UI Automation
-      (`docs/controls/FormControl/`). On the Pixel: #102
+      (`docs/controls/FormControl/`). On the Pixel: #102. Then (#105): the label also clicks what it labels (a checkbox
+      toggles, a button is clicked), its hit area covers its row's margins, and a Textarea is given the error

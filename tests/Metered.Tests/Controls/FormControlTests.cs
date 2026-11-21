@@ -4,9 +4,12 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
@@ -189,7 +192,10 @@ public class FormControlTests
         form.Content = child;
         using var scene = Show(form);
 
-        Assert.Equal(c.Error ?? false, child.GetValue(error));
+        // Metered's one change (docs/controls/FormControl, known difference 9): a Textarea is given the error as an Input
+        // is. Base Web's isn't, by its defaultProps' error: false; the oracle keeps that, and a Textarea expects the error
+        // Base Web gives an Input with the same props.
+        Assert.Equal(Expected(c).Error ?? false, child.GetValue(error));
         // Base Web gives a positive to any child; Metered's Checkbox and RadioGroup have none to take it.
         if (positive is not null) Assert.Equal(c.Positive ?? false, child.GetValue(positive));
         Assert.Equal(!(c.Disabled ?? false), child.IsEffectivelyEnabled);
@@ -201,6 +207,50 @@ public class FormControlTests
         scene.Pump();
         var own = c.Own.TryGetValue("error", out var e) && e.GetBoolean();
         Assert.Equal(own, child.GetValue(error));
+    }
+
+    /// <summary>What a child is given: Base Web's, but for a Textarea its Input's with the same props.</summary>
+    private static FormControlChildCase Expected(FormControlChildCase c) => c.Type != "Textarea"
+        ? c
+        : FormControlOracle.Value.Children.Single(i => i.Type == "Input" && Same(i.Form, c.Form) && Same(i.Own, c.Own));
+
+    private static bool Same(Dictionary<string, JsonElement> a, Dictionary<string, JsonElement> b) =>
+        a.Count == b.Count && a.All(p => b.TryGetValue(p.Key, out var v) && v.GetRawText() == p.Value.GetRawText());
+
+    // Base Web's Textarea keeps its own error: false (its defaultProps) under a form control in error, while the caption
+    // turns red. Metered's is given the error, as an Input is, and is drawn as Base Web draws a textarea in error.
+    [AvaloniaTheory]
+    [InlineData("Light")]
+    [InlineData("Dark")]
+    public void A_Textarea_is_given_the_error_as_an_Input_is(string theme)
+    {
+        bool? Given(string type) => FormControlOracle.Value.Children
+            .Single(c => c.Type == type && c.Own.Count == 0 && c.Form.Count == 1 && c.Form.TryGetValue("error", out var e) && e.ValueKind == JsonValueKind.True)
+            .Error;
+        Assert.False(Given("Textarea"));
+        Assert.True(Given("Input"));
+
+        var textarea = new Textarea();
+        var form = new FormControl { Label = "Label", Caption = "Caption", Error = true, Content = textarea };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { form } },
+            theme == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light);
+        Assert.True(textarea.Error);
+        Assert.Contains(":error", textarea.Classes);
+        var drawn = TextareaOracle.Value.Colours.Single(c => c.Theme == theme && c.State == "error");
+        var root = (Border)textarea.Part(Textarea.RootPart)!;
+        Assert.Equal(drawn.RootBorder, InputColourTests.Colour(root.GetBaseValue(Border.BorderBrushProperty).GetValueOrDefault()));
+        Assert.Equal(drawn.RootBackground, InputColourTests.Colour(root.Background));
+
+        // Its own false wins, as an Input's does; and it is let go with the form control's error.
+        textarea.Error = false;
+        scene.Pump();
+        Assert.False(textarea.Error);
+        textarea.ClearValue(Textarea.ErrorProperty);
+        scene.Pump();
+        Assert.True(textarea.Error);
+        form.Error = null;
+        scene.Pump();
+        Assert.False(textarea.Error);
     }
 
     [AvaloniaFact]
@@ -290,6 +340,478 @@ public class FormControlTests
         scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
         scene.Pump();
         Assert.True(input.IsFocused);
+    }
+
+    /// <summary>A real click (a mouse) or tap (a finger) at a point of the window.</summary>
+    private static void ClickAt(Scene scene, Point at, bool touch)
+    {
+        if (touch)
+        {
+            var finger = scene.Window.TouchBegin(at, RawInputModifiers.None);
+            scene.Pump();
+            scene.Window.TouchEnd(finger, at, RawInputModifiers.None);
+        }
+        else
+        {
+            scene.Window.MouseMove(at);
+            scene.Window.MouseDown(at, MouseButton.Left);
+            scene.Window.MouseUp(at, MouseButton.Left);
+        }
+
+        scene.Pump();
+    }
+
+    /// <summary>Whether what took a press is the control or inside it.</summary>
+    private static bool Within(IInputElement? taker, Visual control) =>
+        taker is Visual v && (v == control || v.GetVisualAncestors().Contains(control));
+
+    /// <summary>What a press at a point of the window is taken by: the element that captures its pointer.</summary>
+    private static IInputElement? TakerAt(Scene scene, Point at)
+    {
+        IPointer? pointer = null;
+        void Pressed(object? sender, PointerPressedEventArgs e) => pointer = e.Pointer;
+        scene.Window.AddHandler(InputElement.PointerPressedEvent, Pressed, RoutingStrategies.Tunnel);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Pump();
+        var taker = pointer?.Captured;
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        scene.Window.RemoveHandler(InputElement.PointerPressedEvent, Pressed);
+        return taker;
+    }
+
+    private static Point CentreOfLabel(Scene scene, FormControl form) => scene.CentreOf((Visual)form.Part(FormControl.LabelPart)!);
+
+    // A browser's label activates what it labels: it focuses it and clicks it, so a checkbox toggles (the developer's
+    // decision, 2026-11-21 night).
+    [AvaloniaTheory]
+    [InlineData("Checkbox", false)]
+    [InlineData("Checkbox", true)]
+    [InlineData("Switch", false)]
+    [InlineData("Switch", true)]
+    public void A_click_or_a_tap_on_the_label_toggles_a_checkbox_or_a_switch(string type, bool touch)
+    {
+        ToggleButton toggle = type == "Checkbox" ? new Checkbox { Content = "Control" } : new Switch { Content = "Control" };
+        var clicks = 0;
+        var changes = 0;
+        var commands = 0;
+        toggle.Click += (_, _) => clicks++;
+        toggle.IsCheckedChanged += (_, _) => changes++;
+        toggle.Command = new Counted(() => commands++);
+        var form = new FormControl { Label = "Label", Content = toggle };
+        using var scene = Show(form);
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(toggle.IsChecked);
+        Assert.True(toggle.IsFocused);
+        Assert.Equal((1, 1, 1), (clicks, changes, commands));
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.False(toggle.IsChecked);
+        Assert.Equal((2, 2, 2), (clicks, changes, commands));
+
+        // The keyboard is the control's own, as it was: Space on it toggles it once.
+        scene.Key(Key.Space);
+        Assert.True(toggle.IsChecked);
+        Assert.Equal(3, clicks);
+    }
+
+    // A browser's label checks a radio it labels, and never unchecks it; the group's value follows, as on a click.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_click_or_a_tap_on_the_label_checks_a_radio_and_the_group_follows(bool touch)
+    {
+        var red = new Radio { Value = "red", Content = "Red" };
+        var green = new Radio { Value = "green", Content = "Green" };
+        var group = new RadioGroup { Items = { red, green } };
+        var form = new FormControl { Label = "Green", HtmlFor = green, Content = group };
+        using var scene = Show(form);
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(green.IsChecked);
+        Assert.False(red.IsChecked);
+        Assert.Equal("green", group.Value);
+        Assert.True(green.IsFocused);
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(green.IsChecked);
+        Assert.Equal("green", group.Value);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_click_or_a_tap_on_the_label_clicks_a_button(bool touch)
+    {
+        var clicks = 0;
+        var commands = 0;
+        var button = new Metered.Controls.Button { Content = "Send" };
+        button.Click += (_, _) => clicks++;
+        button.Command = new Counted(() => commands++);
+        var form = new FormControl { Label = "Label", Content = button };
+        using var scene = Show(form);
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.Equal((1, 1), (clicks, commands));
+        Assert.True(button.IsFocused);
+    }
+
+    // A press alone, as ever, is nothing: the checkbox waits for the click.
+    [AvaloniaFact]
+    public void A_press_on_the_label_alone_doesnt_toggle()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var form = new FormControl { Label = "Label", Content = box };
+        using var scene = Show(form);
+        scene.Press((Visual)form.Part(FormControl.LabelPart)!);
+        Assert.False(box.IsChecked);
+        Assert.False(box.IsFocused);
+    }
+
+    // A browser's label does nothing for a disabled control: no focus, no click.
+    [AvaloniaFact]
+    public void A_disabled_target_is_neither_focused_nor_clicked()
+    {
+        var box = new Checkbox { Content = "Control", IsEnabled = false };
+        var clicks = 0;
+        box.Click += (_, _) => clicks++;
+        var form = new FormControl { Label = "Label", Content = new Input(), HtmlFor = box };
+        using var scene = Show(new StackPanel { Children = { form, box } });
+        scene.Click((Visual)form.Part(FormControl.LabelPart)!);
+        Assert.False(box.IsChecked);
+        Assert.False(box.IsFocused);
+        Assert.Equal(0, clicks);
+    }
+
+    // The label is any content: a control in it (a link, a button) keeps its own press, and only a press on the label
+    // itself activates what it labels.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_control_in_the_labels_content_keeps_its_own_press(bool touch)
+    {
+        var box = new Checkbox { Content = "Control" };
+        var terms = 0;
+        var link = new Metered.Controls.Button { Content = "terms", Kind = ButtonKind.Tertiary, Size = ButtonSize.Mini };
+        link.Click += (_, _) => terms++;
+        var words = new TextBlock { Text = "I accept the", VerticalAlignment = VerticalAlignment.Center };
+        var form = new FormControl
+        {
+            Label = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { words, link } },
+            Content = box,
+        };
+        using var scene = Show(form);
+
+        ClickAt(scene, scene.CentreOf(link), touch);
+        Assert.Equal(1, terms);
+        Assert.False(box.IsChecked);
+        Assert.False(box.IsFocused);
+
+        ClickAt(scene, scene.CentreOf(words), touch);
+        Assert.Equal(1, terms);
+        Assert.True(box.IsChecked);
+    }
+
+    // The label's hit area is its box widened over its row's margins (the developer's decision, 2026-11-21 night): from the
+    // form control's top to the child's, Base Web's controlTop (32 px, 36 with an end enhancer), nothing moved.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_labels_hit_area_covers_its_rows_margins(bool end)
+    {
+        var layout = FormControlOracle.Value.Layout.Cases.Single(c => c.Label && c.LabelEndEnhancer == end && c.Hint == "none");
+        var input = new Input();
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = end ? "End" : null, Content = input };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var top = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        var x = scene.CentreOf(label).X;
+
+        // Nothing moved: the label's box is Base Web's, its row's margins round it.
+        Assert.Equal(layout.LabelTop!.Value, label.TranslatePoint(default, form)!.Value.Y);
+        Assert.Equal(layout.LabelRow!.Value, label.Bounds.Height);
+        Assert.Equal(layout.ControlTop, input.TranslatePoint(default, form)!.Value.Y);
+
+        // A tap on its top margin focuses the input.
+        ClickAt(scene, new Point(x, top + 1), touch: true);
+        Assert.True(input.IsFocused);
+
+        Assert.Equal(layout.ControlTop, label.HitArea.Height);
+        Assert.Same(label, TakerAt(scene, new Point(x, top + 0.5)));
+        Assert.Same(label, TakerAt(scene, new Point(x, top + layout.ControlTop - 0.5)));
+        var below = TakerAt(scene, new Point(x, top + layout.ControlTop + 0.5));
+        Assert.True(Within(below, input), $"{below}");
+        // Not past the label's end, where the end enhancer's row is.
+        if (end)
+        {
+            var right = label.TranslatePoint(new Point(label.Bounds.Width + 1, 0), scene.Window)!.Value.X;
+            Assert.NotSame(label, TakerAt(scene, new Point(right, top + 0.5)));
+        }
+    }
+
+    // The hit area is the form control's own room: the control above keeps its last row, and the child its first, even
+    // where its own negative margin pulls it over the label's row's.
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(-8)]
+    public void The_hit_area_takes_no_press_from_the_control_above_or_below(double childTop)
+    {
+        var above = new Metered.Controls.Button { Content = "Above", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var aboveClicks = 0;
+        above.Click += (_, _) => aboveClicks++;
+        var input = new Input { Margin = new Thickness(0, childTop, 0, 0) };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { above, form } });
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var x = scene.CentreOf(label).X;
+        var aboveBottom = above.TranslatePoint(new Point(0, above.Bounds.Height), scene.Window)!.Value.Y;
+        var inputTop = input.TranslatePoint(default, scene.Window)!.Value.Y;
+
+        Assert.True(Within(TakerAt(scene, new Point(x, aboveBottom - 0.5)), above));
+        Assert.Equal(1, aboveClicks);
+        Assert.False(input.IsFocused);
+        Assert.Same(label, TakerAt(scene, new Point(x, aboveBottom + 0.5)));
+        var taker = TakerAt(scene, new Point(x, inputTop + 0.5));
+        Assert.True(Within(taker, input), $"{taker}");
+    }
+
+    // A browser's click is the main button's: another button let go while it is held clicks nothing, and the main one's
+    // release then clicks once, on the label, or not at all elsewhere, and leaves nothing behind.
+    [AvaloniaFact]
+    public void Another_buttons_release_clicks_nothing_and_the_main_ones_once()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var other = new Border { Height = 40, Background = Brushes.Transparent };
+        var form = new FormControl { Label = "Label", Content = box };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        var at = CentreOfLabel(scene, form);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+
+        // The same, the main button let go elsewhere: no click, and none later from a press elsewhere let go on the label.
+        var away = scene.CentreOf(other);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Window.MouseMove(away);
+        scene.Window.MouseUp(away, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+        scene.Window.MouseDown(away, MouseButton.Left);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+        // Nothing is left of that click: a finger's tap on the label is a click of its own.
+        ClickAt(scene, at, touch: true);
+        Assert.False(box.IsChecked);
+    }
+
+    // A control above whose own hit area reaches over the form control's top margin (a compact Button's tap band, 48 px)
+    // keeps its taps there: the label's margins are empty space only.
+    [AvaloniaFact]
+    public void A_tap_band_reaching_over_the_labels_margin_keeps_its_taps()
+    {
+        var above = new Metered.Controls.Button { Content = "Above", Size = ButtonSize.Mini, MinHitArea = ButtonMinHitArea.Tap };
+        var clicks = 0;
+        above.Click += (_, _) => clicks++;
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { above, form } });
+        var formTop = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        var band = above.TranslatePoint(new Point(above.Bounds.Width / 2, above.Bounds.Height), scene.Window)!.Value;
+        var label = (Visual)form.Part(FormControl.LabelPart)!;
+        Assert.True(band.Y > formTop + 1, $"the band ends at {band.Y}, the form control starts at {formTop}");
+        Assert.True(scene.CentreOf(label).X > band.X - above.Bounds.Width / 2);
+
+        ClickAt(scene, new Point(band.X, formTop + 1), touch: true);
+        Assert.Equal(1, clicks);
+        Assert.False(input.IsFocused);
+        // Past the band, the margin is the label's.
+        ClickAt(scene, new Point(scene.Window.Bounds.Width - 30, formTop + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // A press on the label let go over the child, which its own negative margin pulls over the row's bottom margin, is let
+    // go on the child: no click.
+    [AvaloniaFact]
+    public void A_release_over_the_child_pulled_over_the_margin_is_no_click()
+    {
+        var input = new Input { Margin = new Thickness(0, -8, 0, 0) };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var at = scene.CentreOf(label);
+        var over = new Point(at.X, input.TranslatePoint(new Point(0, 2), scene.Window)!.Value.Y);
+        Assert.True(label.HitArea.Contains(scene.Window.TranslatePoint(over, label)!.Value));
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseMove(over);
+        scene.Window.MouseUp(over, MouseButton.Left);
+        scene.Pump();
+        Assert.False(input.IsFocused);
+    }
+
+    // Only a form control's label row widens it: a label placed elsewhere (a template of an app's) keeps its box.
+    [AvaloniaFact]
+    public void A_label_outside_a_label_row_keeps_its_box()
+    {
+        var label = new FormControlLabel { Content = "Label" };
+        using var scene = Show(new StackPanel { Margin = new Thickness(0, 20), Children = { label, new Input() } });
+        Assert.Equal(new Rect(label.Bounds.Size), label.HitArea);
+    }
+
+    // Something under the whole form control (a card's background, behind it in a grid) leaves the margins the label's.
+    [AvaloniaFact]
+    public void A_background_behind_the_form_control_leaves_the_margins_the_labels()
+    {
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        var card = new Grid { Children = { new Border { Background = Brushes.Transparent }, form } };
+        using var scene = Show(card);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var top = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        ClickAt(scene, new Point(scene.CentreOf(label).X, top + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // A disabled control above whose tap band reaches over the margin is passed through, as input passes through it.
+    [AvaloniaFact]
+    public void A_disabled_tap_band_over_the_margin_leaves_it_the_labels()
+    {
+        var above = new Metered.Controls.Button { Content = "Above", Size = ButtonSize.Mini, MinHitArea = ButtonMinHitArea.Tap, IsEnabled = false };
+        var input = new Input();
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { above, form } });
+        var formTop = form.TranslatePoint(default, scene.Window)!.Value.Y;
+        var band = above.TranslatePoint(new Point(above.Bounds.Width / 2, above.Bounds.Height), scene.Window)!.Value;
+        Assert.True(band.Y > formTop + 1);
+        ClickAt(scene, new Point(band.X, formTop + 1), touch: true);
+        Assert.True(input.IsFocused);
+    }
+
+    // The margins as laid out: an override's negative margin on the control container collapses the gap under the row,
+    // and the label covers only what is left.
+    [AvaloniaFact]
+    public void The_hit_area_is_the_margin_as_laid_out()
+    {
+        var container = new ControlTheme(typeof(FormControlStack)) { Setters = { new Setter(Layoutable.MarginProperty, new Thickness(0, -4, 0, 16)) } };
+        var form = new FormControl
+        {
+            Label = "Label", Content = new Input(),
+            Overrides = [new Override { Part = FormControl.ControlContainerPart, Style = container }],
+        };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        var margin = FormControlOracle.Value.Layout.Facts.LabelContainer.Margin;
+        Assert.Equal(-margin[1], label.HitArea.Top, 3);
+        Assert.Equal(label.Bounds.Height + margin[3] - 4, label.HitArea.Bottom, 3);
+    }
+
+    // One finger's click isn't another's: a second finger's tap on the label while the first is held neither clicks nor
+    // takes the first one's click.
+    [AvaloniaFact]
+    public void A_second_fingers_tap_doesnt_take_the_first_ones_click()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var form = new FormControl { Label = "Label", Content = box };
+        using var scene = Show(form);
+        var at = CentreOfLabel(scene, form);
+        var first = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        var second = scene.Window.TouchBegin(at + new Vector(20, 0), RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(second, at + new Vector(20, 0), RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+        scene.Window.TouchEnd(first, at, RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(box.IsChecked);
+    }
+
+    // A label taken out of the tree mid-click lets the click go: put back, the main button's release clicks nothing.
+    [AvaloniaFact]
+    public void A_label_taken_out_mid_click_lets_it_go()
+    {
+        var box = new Checkbox { Content = "Control" };
+        var form = new FormControl { Label = "Label", Content = box };
+        var page = new StackPanel { Children = { form } };
+        using var scene = Show(page);
+        var at = CentreOfLabel(scene, form);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+        page.Children.Remove(form);
+        scene.Pump();
+        page.Children.Add(form);
+        scene.Pump();
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.False(box.IsChecked);
+    }
+
+    // A browser's label clicks a button or an input it labels, nothing else: a control that isn't a button, even one
+    // whose peer can be invoked, is only focused.
+    [AvaloniaFact]
+    public void Only_a_button_is_clicked()
+    {
+        var other = new Invokable();
+        var form = new FormControl { Label = "Label", Content = new Input(), HtmlFor = other };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        scene.Click((Visual)form.Part(FormControl.LabelPart)!);
+        Assert.True(other.IsFocused);
+        Assert.Equal(0, other.Invoked);
+    }
+
+    // Its hit area is wider than its box, but what it shows is clipped to its box, by its presenter.
+    [AvaloniaFact]
+    public void The_labels_content_is_clipped_to_its_box()
+    {
+        var form = new FormControl { Label = "Label", Content = new Input() };
+        using var scene = Show(form);
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        Assert.False(label.ClipToBounds);
+        Assert.True(label.Presenter!.ClipToBounds);
+    }
+
+    /// <summary>A focusable control that isn't a button, whose automation peer can be invoked.</summary>
+    private sealed class Invokable : Control
+    {
+        public Invokable()
+        {
+            Focusable = true;
+            Height = 10;
+        }
+
+        public int Invoked { get; set; }
+
+        protected override AutomationPeer OnCreateAutomationPeer() => new Peer(this);
+
+        private sealed class Peer(Invokable owner) : ControlAutomationPeer(owner), Avalonia.Automation.Provider.IInvokeProvider
+        {
+            public void Invoke() => owner.Invoked++;
+        }
+    }
+
+    /// <summary>A command that counts its runs.</summary>
+    private sealed class Counted(Action run) : System.Windows.Input.ICommand
+    {
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
+
+        public bool CanExecute(object? parameter) => true;
+
+        public void Execute(object? parameter) => run();
     }
 
     // On a phone a finger lands on a label to scroll the page: that drag scrolls it, and focuses nothing.

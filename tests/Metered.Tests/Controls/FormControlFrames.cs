@@ -85,6 +85,8 @@ public class FormControlFrames
         left.Children.Add(new FormControl { Positive = true, Label = "Input label positive", Caption = "Input caption", Content = new Input { Size = InputSize.Compact } });
         left.Children.Add(new FormControl { Error = true, Label = "Input label error", Caption = "Input caption", Content = new Input { Size = InputSize.Compact } });
         left.Children.Add(new FormControl { Label = "Textarea label", Caption = "Textarea caption", Content = new Textarea { Size = InputSize.Compact } });
+        // Metered's: a textarea is given the form control's error, as an input is (docs/controls/FormControl).
+        left.Children.Add(new FormControl { Error = true, Label = "Textarea label error", Caption = "Textarea caption", Content = new Textarea { Size = InputSize.Compact } });
         left.Children.Add(new FormControl { Label = "Checkbox label", Caption = "Checkbox caption", Content = new Checkbox { Content = "Checkbox control" } });
         // form-control-with-counter.scenario.tsx, with a value typed; input-form-control-states.scenario.tsx.
         right.Children.Add(new FormControl { Label = "Enable counter", Caption = "Input caption", Counter = true, Content = new Input { Size = InputSize.Compact, Text = "Hello" } });

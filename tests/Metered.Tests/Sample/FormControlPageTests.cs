@@ -86,7 +86,7 @@ public class FormControlPageTests
     }
 
     [AvaloniaFact]
-    public void A_Tap_On_A_Label_Focuses_Its_Control_And_HtmlFor_Names_Another()
+    public void A_Tap_On_A_Label_Activates_Its_Control_And_HtmlFor_Names_Another()
     {
         var page = new FormControlPage();
         using var scene = Show(page);
@@ -99,6 +99,14 @@ public class FormControlPageTests
         Tap(scene, (Visual)form.Part(FormControl.LabelPart)!);
         Assert.True(page.FindControl<Input>("Five")!.IsFocused);
         Assert.False(page.FindControl<Input>("Four")!.IsFocused);
+
+        // A label clicks what it labels: the checkbox's toggles it (#105).
+        var box = page.FindControl<Checkbox>("CheckboxControl")!;
+        var checkbox = page.FindControl<FormControl>("CheckboxForm")!;
+        Into(scene, checkbox);
+        Tap(scene, (Visual)checkbox.Part(FormControl.LabelPart)!);
+        Assert.True(box.IsChecked);
+        Assert.True(box.IsFocused);
     }
 
     [AvaloniaFact]
