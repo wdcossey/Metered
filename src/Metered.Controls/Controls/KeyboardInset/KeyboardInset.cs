@@ -26,10 +26,13 @@ namespace Metered.Controls;
 /// the keyboard.
 /// </para>
 /// <para>
-/// The inset is taken from the room the child is given, never added to the decorator's own size: a decorator whose
-/// height follows its child's (in a <see cref="StackPanel"/>, say) stays as high as its child would have it, and so a
-/// reading can't feed its last inset back into the next. Its child is then arranged short of its own height, and
-/// overflows it, so such a decorator keeps nothing clear; it is meant to be given its height.
+/// The inset is taken from the room the child is given, never added to the decorator's own size, and a reading lays out
+/// its own inset and asks for no other: a change of the decorator's bounds while it does is the reading's own. So a
+/// reading can't feed its inset back into the next. The decorator is meant to be given its height (a page's or a view's
+/// root, a <see cref="Grid"/> row). One whose height follows its child's stays as high as its child would have it with
+/// no keyboard, if it has unbounded room (in a <see cref="StackPanel"/>, say), and its child overflows it, so it keeps
+/// nothing clear; with bounded room, a child that fits itself to it (a <see cref="ScrollViewer"/>) shrinks it by the
+/// inset, and the inset its reading found stays until the next reading, more than the keyboard then covers.
 /// </para>
 /// <para>
 /// The pane is read when it says its state changed, and, once laid out, when the decorator is attached, when the
@@ -120,6 +123,7 @@ public class KeyboardInset : Decorator
 
         _pane.StateChanged += OnStateChanged;
         _pane.InsetsChanged += OnInsetsChanged;
+        EffectiveViewportChanged += OnEffectiveViewportChanged;
         // A keyboard already up, read once the decorator is laid out: attached again in the same place, its bounds don't
         // change, and so don't ask.
         PostRead();
@@ -131,6 +135,7 @@ public class KeyboardInset : Decorator
         {
             _pane.StateChanged -= OnStateChanged;
             _pane.InsetsChanged -= OnInsetsChanged;
+            EffectiveViewportChanged -= OnEffectiveViewportChanged;
         }
         _pane = null;
         _top = null;
@@ -143,9 +148,22 @@ public class KeyboardInset : Decorator
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        // Moved or resized under an open keyboard: the part it covers may have changed. The inset doesn't change the
-        // decorator's bounds, so this never follows from its own reading.
-        if (change.Property == BoundsProperty && !_applying && _pane?.State == InputPaneState.Open)
+        // Resized under an open keyboard: the part it covers may have changed. A change while a reading lays it out is
+        // that reading's, and asks for no other.
+        if (change.Property == BoundsProperty)
+            OnMoved();
+    }
+
+    /// <summary>
+    /// Moved under an open keyboard, its own bounds the same: a parent moved (a window resized with no insets event, a
+    /// decorator of a fixed height centred in it). <see cref="Visual.Bounds"/> is its parent's; its effective viewport,
+    /// in its own coordinates, moves with it against the top level.
+    /// </summary>
+    private void OnEffectiveViewportChanged(object? sender, EffectiveViewportChangedEventArgs e) => OnMoved();
+
+    private void OnMoved()
+    {
+        if (!_applying && _pane?.State == InputPaneState.Open)
             PostRead();
     }
 
@@ -199,18 +217,24 @@ public class KeyboardInset : Decorator
     /// </summary>
     private void Apply(bool open, Rect occluded)
     {
-        if (!open || occluded.Height <= 0 || _top is not { } top)
-        {
-            Inset = 0;
-            _room = 0;
-            return;
-        }
-
         // Laid out before, and with the inset after, as one reading: a change of its own bounds in either pass is this
-        // reading's, not a move to read again, so a layout that disagreed with its inset could never loop.
+        // reading's, not a move to read again, so a layout that disagreed with its inset could never loop. With no
+        // keyboard to keep clear of, laid out with none, so that a focus brought into view after is brought into the
+        // room as it now is.
         _applying = true;
         try
         {
+            if (!open || occluded.Height <= 0 || _top is not { } top)
+            {
+                _room = 0;
+                if (Inset != 0)
+                {
+                    Inset = 0;
+                    UpdateLayout();
+                }
+                return;
+            }
+
             UpdateLayout();
             Inset = this.TranslatePoint(default, top) is { } origin
                 ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)

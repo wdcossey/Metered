@@ -31,7 +31,7 @@ browser does, for the content an app puts in it. Opt-in; the sample's shell (`Sa
 
 The pane is read when it says its state changed, and, once laid out, when the decorator is attached (a keyboard already
 up, or attached again in the same place), when the platform's insets change, and when the decorator moves or resizes while the
-keyboard is up. On API 31 and later Android raises `StateChanged` only as the keyboard's insets start to animate; a
+keyboard is up (its effective viewport, for a move of a parent that leaves its own bounds alone). On API 31 and later Android raises `StateChanged` only as the keyboard's insets start to animate; a
 rotation, or a keyboard hidden while the app is in the background, changes the pane with no animation, and only the
 insets manager's `SafeAreaChanged` (raised from every `OnApplyWindowInsets`) says so. That comes just before the
 animation's `StateChanged`, so a reading it posted takes the state and final rect the event gave, not the pane's own rect,
@@ -39,10 +39,13 @@ which may still be the keyboard's where its animation starts. Each reading lays 
 another that has just made room is read in that room and pads nothing more (a descendant always subscribes after its
 ancestor, so the outer reads first).
 
-The inset is taken from the room the child is given, never added to the decorator's own size, so a reading can't feed
-its last inset back into the next. It is meant to be given its height (a page's or a view's root, a `Grid` row): one
-whose height follows its child's (in a `StackPanel`, say) stays as high as its child would have it, and its child is
-padded past its foot, overflowing it, so it keeps nothing clear.
+The inset is taken from the room the child is given, never added to the decorator's own size, and a reading lays out
+its own inset and asks for no other (a change of the decorator's bounds while it does is the reading's own), so a
+reading can't feed its inset back into the next. It is meant to be given its height (a page's or a view's root, a
+`Grid` row). One whose height follows its child's isn't kept clear: with unbounded room (in a `StackPanel`, say) it
+stays as high as its child would have it with no keyboard, and its child overflows it; with bounded room, a child that
+fits itself to it (a `ScrollViewer`) shrinks it by the inset, and the inset its reading found stays until the next
+reading, more than the keyboard then covers.
 
 ## Why Avalonia doesn't do it
 

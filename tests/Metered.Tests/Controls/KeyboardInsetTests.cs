@@ -264,6 +264,51 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void An_Open_Pane_That_Loses_Its_Rect_Brings_The_Focus_Into_The_Whole_Room()
+    {
+        // The keyboard is up and the page scrolled back to its top, the focused input, its last, out of view below. The
+        // pane then says open with no rect (as Android's before the window has insets): nothing to keep clear of, and the
+        // input brought into view in the page's whole height, its foot at the view's, not at the keyboard's old top.
+        var (pane, inset, page, last) = PageOfInputs();
+        using var scene = new Scene(inset, themes: Themes);
+        last.Focus();
+        scene.Pump();
+        pane.Open(Keyboard);
+        scene.Pump();
+        page.Offset = default;
+        scene.Pump();
+
+        pane.Open(default);
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+        Assert.Equal(Scene.Height, BottomOf(last, scene), 3);
+    }
+
+    [AvaloniaFact]
+    public void A_Resize_That_Only_Moves_Its_Parent_Reads_The_Keyboard_Again()
+    {
+        // The decorator fills a 400 high panel centred in the window, from 222 to 622: the keyboard's top at 544 covers 78.
+        // The window shrinks to 744 with no insets event, the keyboard's top moving to 444 with it: the panel moves up 50,
+        // to 172 to 572, and the decorator's own bounds, its parent's, stay the same. The keyboard now covers 128.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var panel = new Border { Height = 400, VerticalAlignment = VerticalAlignment.Center, Child = inset };
+        using var scene = new Scene(panel);
+        pane.Open(Keyboard);
+        scene.Pump();
+        Assert.Equal(78, inset.Inset);
+        var bounds = inset.Bounds;
+
+        pane.Move(new Rect(0, 744 - 300, Scene.Width, 300));
+        scene.Window.Height = 744;
+        scene.Pump();
+
+        Assert.Equal(bounds, inset.Bounds);
+        Assert.Equal(128, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Keyboard_Hidden_With_No_Animation_Is_Read_From_The_Insets()
     {
         // The keyboard hidden while the app is in the background: on API 31 and later the pane's state changes with no
