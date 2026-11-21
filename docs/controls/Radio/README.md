@@ -80,8 +80,8 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   group gives its radios its own name, empty by default, which in a browser groups nothing; Avalonia's radios of one
   logical parent or one `GroupName` uncheck each other with `SetCurrentValue`, which would fight the group's value and
   overwrite a radio's own. So the group also holds a `GroupName` of the radio's own over its own,
-  before whether it is checked, and lets go of whether it is checked first: a radio checked outside the group, of the
-  same name, leaves the group's alone, either way, and two radios of the group's value are both checked, as Base
+  before whether it is checked: a radio checked outside the group, of the same name, leaves the group's alone, either
+  way (and one leaving the group leaves it alone), and two radios of the group's value are both checked, as Base
   Web's are. Something that sets a held value with `SetCurrentValue` changes
   it until the group's next look at the radio (its place, its value or the group's changing), as for ButtonGroup.
   While the group holds a radio, its `GroupName` reads as that name of its own (`metered-radio-group-<n>`).

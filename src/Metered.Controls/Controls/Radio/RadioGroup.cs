@@ -187,9 +187,6 @@ public class RadioGroup : ItemsControl
         if (!_members.Remove(radio, out var hold)) return;
         radio.IsCheckedChanged -= OnRadioCheckedChanged;
         radio.Group = null;
-        // Whether it is checked first, while it still has a name of its own: its own IsChecked of true then unchecks no
-        // radio of the group's, nor of its own GroupName as it comes back.
-        hold.Let(ToggleButton.IsCheckedProperty);
         hold.LetAll();
     }
 

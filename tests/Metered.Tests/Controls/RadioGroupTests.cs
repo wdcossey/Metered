@@ -449,8 +449,8 @@ public class RadioGroupTests
         Assert.False(radios[0].IsTabStop);
     }
 
-    // A radio the group has checked, leaving, takes its own GroupName back only once it shows its own IsChecked: a radio
-    // outside the group, of that name and checked, stays checked.
+    // A radio the group has checked, leaving, takes its own GroupName and IsChecked back: a radio outside the group, of
+    // that name and checked, stays checked (Avalonia's grouping reconciles on a check, not on a change of name).
     [AvaloniaFact]
     public void A_checked_radio_leaving_unchecks_no_radio_of_its_own_name()
     {
