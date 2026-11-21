@@ -113,12 +113,12 @@ public class RadioGroup : ItemsControl
     }
 
     /// <summary>
-    /// Takes a radio into the group as soon as it is added, before it is prepared: whether it is checked is the group's
-    /// from then on. Avalonia's radios of one logical parent, or of one <c>GroupName</c>, uncheck each other with
-    /// <c>SetCurrentValue</c>, which would fight the group's value and overwrite a radio's own IsChecked. Base Web's
-    /// group gives each radio its own name (<c>groupContext?.name ?? name</c>, empty by default: in a browser, no group
-    /// at all), so here the group holds a name of each radio's own over its <c>GroupName</c>: no radio of Avalonia's
-    /// grouping is another's while the group holds it.
+    /// Takes a radio into the group. Avalonia's radios of one logical parent, or of one <c>GroupName</c>, uncheck each
+    /// other with <c>SetCurrentValue</c>, which would fight the group's value and overwrite a radio's own IsChecked
+    /// (a radio added to <c>Items</c> is the group's logical child before it is prepared). Base Web's group gives each
+    /// radio its own name (<c>groupContext?.name ?? name</c>, empty by default: in a browser, no group at all), so here
+    /// the group holds a name of each radio's own over its <c>GroupName</c>, before it holds whether it is checked: no
+    /// radio of Avalonia's grouping is another's while the group holds it.
     /// </summary>
     private void Take(Radio radio)
     {
@@ -179,8 +179,6 @@ public class RadioGroup : ItemsControl
             ? _members.Keys.Where(radio => !Items.Contains(radio)).ToList()
             : e.OldItems?.OfType<Radio>().Where(radio => !Items.Contains(radio)).ToList() ?? [];
         foreach (var radio in gone) Release(radio);
-        var added = e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset ? Items : e.NewItems;
-        foreach (var radio in added?.OfType<Radio>() ?? []) Take(radio);
     }
 
     /// <summary>Gives a radio that leaves the group its own values back: the group lets go of what it holds.</summary>

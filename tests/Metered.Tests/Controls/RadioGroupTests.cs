@@ -449,6 +449,24 @@ public class RadioGroupTests
         Assert.False(radios[0].IsTabStop);
     }
 
+    // A radio the group has checked, leaving, takes its own GroupName back only once it shows its own IsChecked: a radio
+    // outside the group, of that name and checked, stays checked.
+    [AvaloniaFact]
+    public void A_checked_radio_leaving_unchecks_no_radio_of_its_own_name()
+    {
+        var (group, radios) = Group("1", ["One", "Two"]);
+        radios[0].GroupName = "shared";
+        var outside = new Radio { Value = "x", Content = "Outside", GroupName = "shared", IsChecked = true };
+        using var scene = new Scene(new StackPanel { Children = { group, outside } });
+        Assert.True(radios[0].IsChecked);
+        Assert.True(outside.IsChecked);
+
+        group.Items.Remove(radios[0]);
+        scene.Pump();
+        Assert.False(radios[0].IsChecked);
+        Assert.True(outside.IsChecked);
+    }
+
     // radio-v2's checked = selectedValue === value: a radio of no value, in a group of none, is never checked, a click
     // on it included.
     [AvaloniaFact]

@@ -79,9 +79,10 @@ padding for a 48 px target under `@media (pointer: coarse)`).
   through the group's value, not its own (a `TwoWay` binding's source excepted: known difference 13). Base Web's
   group gives its radios its own name, empty by default, which in a browser groups nothing; Avalonia's radios of one
   logical parent or one `GroupName` uncheck each other with `SetCurrentValue`, which would fight the group's value and
-  overwrite a radio's own. So from the moment a radio is added, the group also holds a `GroupName` of the radio's own
-  over its own: a radio checked outside the group, of the same name, leaves the group's alone, and two radios of the
-  group's value are both checked, as Base Web's are. Something that sets a held value with `SetCurrentValue` changes
+  overwrite a radio's own. So the group also holds a `GroupName` of the radio's own over its own,
+  before whether it is checked, and lets go of whether it is checked first: a radio checked outside the group, of the
+  same name, leaves the group's alone, either way, and two radios of the group's value are both checked, as Base
+  Web's are. Something that sets a held value with `SetCurrentValue` changes
   it until the group's next look at the radio (its place, its value or the group's changing), as for ButtonGroup.
   While the group holds a radio, its `GroupName` reads as that name of its own (`metered-radio-group-<n>`).
 - A press is any button's on the radio (Base Web's `onMouseDown`), the backplate's tint only the primary button's or a
@@ -95,7 +96,7 @@ padding for a 48 px target under `@media (pointer: coarse)`).
 - `Controls/RadioLayoutTests`: 16 cases (placement × align × pointer): the parts' lengths and type, and where layout
   puts them; and the three-line clamp, horizontal and vertical (18 in all).
 - `Controls/RadioGroupTests`: the root against `RadioGroupRoot` for each align and placement (8 cases), wrapping, and
-  each behaviour of the group above: 45 in all.
+  each behaviour of the group above: 46 in all.
 - `Controls/RadioTests`: the parts' state, hover and press by mouse and finger, the coarse pointer, the label and
   description only when given, the transition, overrides, and the drawn dot, outline, overlay and border: 22 in all.
 - `Sample/RadioPageTests`: the sample's page, 4.
