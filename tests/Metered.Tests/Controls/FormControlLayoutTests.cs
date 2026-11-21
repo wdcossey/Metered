@@ -238,6 +238,12 @@ public class FormControlLayoutTests
         form.LabelEndEnhancer = new TextBlock { Text = "1234" };
         scene.Pump();
         Whole();
+        // Room added round it by the presenter.
+        var before = end.Bounds.Width;
+        end.Padding = new Thickness(10, 0);
+        scene.Pump();
+        Assert.Equal(before + 20, end.Bounds.Width, 3);
+        Whole();
     }
 
     // Its min-content width is the text's with its letter spacing: the text is drawn whole.

@@ -99,20 +99,24 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   control container and the child's presenter. So 8 + the label's line + 8 above the child, and 8 + the caption's line +
   16 below it.
 - **A click or a tap on the label activates what it labels**, as a browser's label: it focuses it, then clicks it. A
-  checkbox or a switch toggles, a radio is checked (never unchecked), a button is clicked; a text box is only focused. The
-  click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its `Click`, its
-  `Command`, and a radio group's value. A disabled target is neither focused nor clicked. A click is a press of the main
+  checkbox or a switch toggles, a radio is checked (never unchecked), a button is clicked; a text box, or any other
+  control that isn't an Avalonia `Button`, is only focused, as a browser's label clicks only a button or an input it
+  labels. The click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its
+  `Click`, its `Command`, and a radio group's value. A disabled target is neither focused nor clicked. A click is a press of the main
   button (a mouse's left, a finger, a pen's tip) on the label and its release on it, the pointer not taken from it in
-  between, as a browser's `click`; another button let go meanwhile clicks nothing. A press alone does nothing
+  between, as a browser's `click`; another button let go meanwhile clicks nothing, and a second finger neither clicks
+  nor takes the first one's click. A press alone does nothing
   (Avalonia's own `Label` focuses on a press). On a phone a finger that lands on a label to scroll the page scrolls it and
   activates nothing: the scroller takes the pointer. The label is any content: a control in it (a link, a button) keeps
   its own press, and only a press on the label itself activates what it labels.
 - **Its hit area covers its row's margins** (Metered's, known difference 10): the label's box, the row's width less the
   end enhancer's, from the row's top margin's edge to its bottom margin's edge, 8 + 16 + 8 = 32 px (36 with an end
   enhancer), where Base Web's label box is the row's 16 px (20). Nothing moves. The margins are the label's only where they
-  are empty space: anything else hit there, other than what the label is inside, keeps the press (the tap band of a
+  are empty space: something that reaches into them from beside the label keeps the press there (the tap band of a
   compact Button above, the child where its own negative margin pulls it over the row's), and a release there is no
-  click. A label a template puts outside the form control's label row keeps its box.
+  click; something under the whole label (a card's background) and a disabled control don't. The margins are as laid
+  out: a neighbour's negative margin collapsed with them leaves the label less. A label a template puts outside the form
+  control's label row keeps its box.
 - **UI Automation**: the label is text, named by its content; it names what it labels (`AutomationProperties.LabeledBy`,
   as `<label for>` names an input). The hint's text is the child's help text when Base Web gives the child
   `aria-describedby` (a caption or a positive) or `aria-errormessage` (an error). The caption's icon is in no view
@@ -126,7 +130,8 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   margins collapsed; a child's own margins collapsing with the rows round it; the end enhancer at its min-content width,
   drawn on two lines, and not broken at a no-break space; the counter measured again as it is typed, at a render scaling
   of 1 and 2.625 (found on the Pixel: Instrument Sans' proportional figures drew a "3" cut to a "1"'s width), and an
-  app's end enhancer that grows (a text block's text, other content, a text block inside a control); a child's margin
+  app's end enhancer that grows (a text block's text, other content, a text block inside a control), its text's font
+  grown, another text block in its place, the presenter's padding, and letter spacing in its width; a child's margin
   moved, laid out again; the caption's icon box and the message beside it; the fonts; long text wrapping at its words.
 - `Controls/FormControlTests`: the hint, its icon, the parts rendered, the state and the functions' arguments, the
   child's help text (78); the counter (132); what each kind of child is given (120, a Textarea expecting what Base Web
@@ -136,7 +141,9 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   the label's hit area over its row's margins, the oracle's `controlTop`, taking no press from the control above or the
   child below, nor from a Button's tap band reaching over the margin, and no click let go over the child; a label outside
   the row keeping its box; another button's release clicking nothing, and the main one's clicking once, or not at all
-  let go elsewhere; the counter following typing and
+  let go elsewhere, nor leaving anything for a finger's tap after; a background behind the form control and a disabled
+  tap band leaving the margins the label's; the margins as laid out; a second finger; a label taken out mid-click; only a
+  button clicked; the label's content clipped to its box; the counter following typing and
   its maximum; `Counter` in XAML; a child let go; Base Web's defaults; `HtmlFor` or the child; a click and a tap on the
   label, not a press, nor a press whose pointer something else took, nor one let go elsewhere; a touch drag from the label in a page that scrolls;
   disabled; a label with nothing focusable; a form control taken out of the tree letting its label's name go, and a child taken out then; the
@@ -187,6 +194,6 @@ themes, and computes the block flow's positions from the style functions' margin
    Base Web gives an Input with the same props. A Textarea's own `Error` still wins, as an Input's does.
 10. **The label's hit area covers its row's 8 px margins** (the developer, 2026-11-21 night, #105): 32 px high, 36 with
     an end enhancer, where Base Web's label box is 16 px, or 20. Touch first: a phone's thin label strip becomes a fair
-    target. Nothing moves on screen. The label doesn't clip to its bounds (a templated control's default), as a browser's
-    label box doesn't (its overflow visible), so its wider hit area is hit-tested; an app's style that sets `ClipToBounds`
-    on the `Label` part brings the hit area back to the label's box.
+    target. Nothing moves on screen. The label doesn't clip to its bounds (a templated control's default), so its wider
+    hit area is hit-tested; its presenter clips what it shows to its box. An app's style that sets `ClipToBounds` on the
+    `Label` part brings the hit area back to the label's box.
