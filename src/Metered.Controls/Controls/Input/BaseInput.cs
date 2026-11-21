@@ -102,6 +102,8 @@ public abstract class BaseInput : TextBox
     private bool _eatSpace;
     private IDisposable? _mask;
     private IDisposable? _maskKeyboard;
+    private readonly List<IDisposable> _labels = [];
+    private IDisposable[] _toggleLabel = [];
 
     /// <param name="component">The prefix of the parts' theme keys: <c>Input</c> for <c>Input.StyledRoot</c>.</param>
     /// <param name="parts">Every part of the control's template, by Base Web's names.</param>
@@ -116,6 +118,7 @@ public abstract class BaseInput : TextBox
         // Before the text box's flyout's own handler (added later, with ContextFlyout): a menu asked for on a control of
         // its own isn't the text box's.
         AddHandler(ContextRequestedEvent, OnContextRequestedFromPart);
+        UpdateMask();
     }
 
     /// <summary>Base Web's <c>size</c>: mini, compact, default (its default) or large.</summary>
@@ -204,8 +207,9 @@ public abstract class BaseInput : TextBox
                 // Only what a click can do: the icon is there.
                 if (CanClear) OnClearIconClick();
             };
-            AutomationProperties.SetName(_clear, ClearLabel);
-            ToolTip.SetTip(_clear, ClearLabel);
+            // base-input.js's aria-label and title, which an override's props replace: at the template's priority.
+            _labels.Add(_clear.SetValue(AutomationProperties.NameProperty, ClearLabel, BindingPriority.Template)!);
+            _labels.Add(_clear.SetValue(ToolTip.TipProperty, ClearLabel, BindingPriority.Template)!);
         }
 
         if (_toggle is not null)
@@ -253,6 +257,8 @@ public abstract class BaseInput : TextBox
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (e.Source != this) return;
+        // Another key: the clearing Space's text, if a platform sent one, has come.
+        _eatSpace = false;
         if (e.Key == Key.Escape && Clearable && ClearOnEscape && !IsReadOnly)
         {
             Clear();
@@ -294,6 +300,7 @@ public abstract class BaseInput : TextBox
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         if (e.Source != this) return;
+        _eatSpace = false;
         base.OnLostFocus(e);
     }
 
@@ -339,6 +346,9 @@ public abstract class BaseInput : TextBox
         if (_clear is null) return;
         var point = e.GetCurrentPoint(_clear);
         if (e.Pointer.Type == PointerType.Mouse && !point.Properties.IsLeftButtonPressed) return;
+        e.Handled = true;
+        // One pointer's click at a time: another finger on it meanwhile isn't a second.
+        if (_clearPress is not null) return;
         _clearPress = e.Pointer;
         e.Pointer.Capture(_clear);
         e.Handled = true;
@@ -402,6 +412,10 @@ public abstract class BaseInput : TextBox
         _clear = null;
         _toggle = null;
         _clearPress = null;
+        foreach (var label in _labels) label.Dispose();
+        _labels.Clear();
+        foreach (var label in _toggleLabel) label.Dispose();
+        _toggleLabel = [];
     }
 
     private void UpdateSize()
@@ -440,7 +454,7 @@ public abstract class BaseInput : TextBox
         else if (!masked && _mask is not null)
         {
             _mask.Dispose();
-            _maskKeyboard?.Dispose();
+            _maskKeyboard!.Dispose();
             _mask = _maskKeyboard = null;
         }
 
@@ -450,8 +464,12 @@ public abstract class BaseInput : TextBox
         if (_toggle is not null)
         {
             var label = IsMasked ? ShowPasswordLabel : HidePasswordLabel;
-            AutomationProperties.SetName(_toggle, label);
-            ToolTip.SetTip(_toggle, label);
+            foreach (var held in _toggleLabel) held.Dispose();
+            _toggleLabel =
+            [
+                _toggle.SetValue(AutomationProperties.NameProperty, label, BindingPriority.Template)!,
+                _toggle.SetValue(ToolTip.TipProperty, label, BindingPriority.Template)!,
+            ];
         }
     }
 }

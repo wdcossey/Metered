@@ -205,6 +205,85 @@ public class InputTests
     }
 
     [AvaloniaFact]
+    public void A_Space_whose_text_never_comes_doesnt_eat_a_later_one()
+    {
+        var input = new Input { Clearable = true, Text = "Thing" };
+        using var scene = Show(input);
+        scene.Key(Key.Tab);
+        scene.Key(Key.Tab);
+        // Space down on the icon clears; its text and its release never come here.
+        scene.Window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, null);
+        scene.Pump();
+        Assert.Equal("", input.Text);
+
+        scene.Window.KeyPress(Key.A, RawInputModifiers.None, PhysicalKey.A, null);
+        scene.Window.KeyTextInput("a");
+        scene.Window.KeyRelease(Key.A, RawInputModifiers.None, PhysicalKey.A, null);
+        scene.Window.KeyTextInput(" ");
+        scene.Pump();
+
+        Assert.Equal("a ", input.Text);
+    }
+
+    [AvaloniaFact]
+    public void A_second_finger_on_the_clear_icon_doesnt_take_the_firsts_tap()
+    {
+        var input = new Input { Clearable = true, Text = "Thing" };
+        using var scene = Show(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.ClearIconPart));
+        var first = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        var second = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+
+        scene.Window.TouchEnd(first, at, RawInputModifiers.None);
+        scene.Pump();
+
+        Assert.Equal("", input.Text);
+        scene.Window.TouchEnd(second, at, RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    [AvaloniaFact]
+    public void An_override_relabels_the_clear_icon_and_the_toggle()
+    {
+        // base-input.js spreads an override's props after its own aria-label and title.
+        ControlTheme Labels<T>(string label) => new(typeof(T))
+        {
+            Setters = { new Setter(AutomationProperties.NameProperty, label), new Setter(ToolTip.TipProperty, label) },
+        };
+        var input = new Input
+        {
+            Clearable = true, Type = InputType.Password, Text = "1234",
+            Overrides =
+            [
+                new Override { Part = BaseInput.ClearIconPart, Props = Labels<InputIcon>("Effacer") },
+                new Override { Part = BaseInput.MaskToggleButtonPart, Props = Labels<InputMaskToggleButton>("Afficher") },
+            ],
+        };
+        using var scene = Show(input);
+        Assert.Equal("Effacer", AutomationProperties.GetName(P<Control>(input, BaseInput.ClearIconPart)));
+        Assert.Equal("Effacer", ToolTip.GetTip(P<Control>(input, BaseInput.ClearIconPart)));
+        Assert.Equal("Afficher", AutomationProperties.GetName(P<Control>(input, BaseInput.MaskToggleButtonPart)));
+        scene.Click(P<Visual>(input, BaseInput.MaskToggleButtonPart));
+        Assert.Equal("Afficher", ToolTip.GetTip(P<Control>(input, BaseInput.MaskToggleButtonPart)));
+    }
+
+    private sealed class PasswordOnly : BaseInput
+    {
+        public PasswordOnly() : base("Input", Input.PartNames) { }
+
+        protected override bool IsPassword => true;
+    }
+
+    [AvaloniaFact]
+    public void A_password_is_masked_before_its_template()
+    {
+        var input = new PasswordOnly();
+        Assert.True(input.IsMasked);
+        Assert.Equal(BaseInput.MaskCharacter, input.PasswordChar);
+    }
+
+    [AvaloniaFact]
     public void Keys_and_text_on_the_clear_icon_arent_the_text_boxs()
     {
         var input = new Input { Clearable = true, Text = "Thing" };

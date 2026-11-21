@@ -106,12 +106,15 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 78: Base Web's defaults; the parts it renders and their labels in 48 cases of clearable, value,
-  disabled, read-only, type and mask; the clear icon by click, touch, a press dragged off, Enter and Space, keys and text
-  on it kept from the text box; Escape's rules (and that it stops there); the toggle, Enter in the input and on the
-  toggle, hiding it by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's focus;
-  enhancers (JavaScript's truth) and adjoined; Before and After; overrides on six parts; the icons' paths and viewBox;
-  transitions after load; UI Automation (the clear icon a button that invokes, the toggle a button, the input an edit).
+- `Controls/InputTests`: 89: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+  labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
+  second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
+  press, a held finger and a menu on the template's own controls kept from the text box, and the text's selection kept;
+  Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
+  it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
+  focus; enhancers (JavaScript's truth, NaN and 0) and adjoined; Before and After; overrides on six parts; the icons'
+  paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
+  click could, the toggle a button, the input an edit).
 - `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the show and
   hide icons, and the gallery above: 5.
 - `Sample/InputPageTests`: the sample's page, 3, a finger's tap in the page's ScrollViewer and typing among them.
@@ -152,7 +155,9 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
 4. **The cut, copy and paste menu is the app theme's text.** A browser's menu; here `Input.ContextFlyout` with the
    strings Avalonia's Simple and Fluent themes define (`StringTextFlyoutCutText` and the others).
 5. **`clearOnEscape` follows `Clearable` now.** base-input.js adds its Escape listener only if the input is clearable when
-   it mounts, so turning `clearable` on later doesn't enable Escape; here Escape follows the current value.
+   it mounts, so turning `clearable` on later doesn't enable Escape; here Escape follows the current value. As Base
+   Web's, Escape in a clearable input goes no further even with nothing to clear (`stopPropagation`): in a dialog or a
+   flyout that closes on Escape, the input takes it first, as Base Web's input keeps it from a modal.
 6. **Before and After** are the text box's inner content, not a component override: an override can't render another
    element (ADR 0001), only restyle or hide one. The documentation's `MaskToggleButton: () => null` is an override whose
    `Props` set `IsVisible` false; its `MaskToggleShowIcon: () => "🐵"` has no equivalent.

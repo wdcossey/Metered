@@ -123,5 +123,5 @@ public class Input : BaseInput
     }
 
     /// <summary>input.js's <c>$hasIconTrailing</c>: clearable or a password, whether or not the icon shows.</summary>
-    private void UpdateTrailing() => SetState(":has-icon-trailing", Clearable || Type == InputType.Password);
+    private void UpdateTrailing() => SetState(":has-icon-trailing", Clearable || IsPassword);
 }
