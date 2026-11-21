@@ -12,7 +12,7 @@ The sample's page, drawn headless by `PreviewGallery` in Instrument Sans, the su
 ([ADR 0003](../../decisions/0003-font.md)). The scenarios, from `InputFrames`' gallery (headless): `input-states`
 (default, focused by keyboard, positive, error, disabled, read only, with an end enhancer), a placeholder,
 `input-sizes`, the documentation's enhancers, `input-clearable`, `input-password` at the four sizes and once shown, and
-`input.scenario` (both enhancers, compact):
+`input.scenario` (both enhancers, compact; its value reads "example" where the scenario's reads "uber", as the sample page's filled example reads "value": Metered carries no Uber mark):
 
 <p>
 <img src="frames/input-gallery-light.png" width="390" alt="Input's scenarios, light">

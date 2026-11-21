@@ -13,7 +13,7 @@
       <TextBlock Classes="heading" Text="States" />
       <StackPanel Spacing="8">
         <b:Input PlaceholderText="simple" />
-        <b:Input Text="uber" />
+        <b:Input Text="value" />
         <b:Input x:Name="Error" PlaceholderText="Input in an error state" Error="True" />
         <b:Input PlaceholderText="Input in an positive state" Positive="True" />
         <b:Input x:Name="Disabled" PlaceholderText="Disabled input" IsEnabled="False" />
