@@ -81,3 +81,63 @@ function TapVerdict([int]$hovered, [int]$afterTap, [bool]$cursorOn) {
     elseif ($cursorOn) { 'drawn, but the cursor was on it, so perhaps by the mouse' }
     else { 'left drawn' }
 }
+
+# Where a default-size Input's parts are, in screen pixels, from its box on the screen. The lengths are Base Web's, from
+# the generated part themes, which selftest.ps1 reads: the root's 2 px border (getRootStyles); the root's padding beside a
+# start enhancer (getRootPadding's scale550, 14); a default-size enhancer's own padding (getInputEnhancerPadding's
+# scale300, 8); and the text's padding before it (getInputPadding's scale550, 14).
+$InputBorder = 2
+$InputRootPadding = 14
+$EnhancerPadding = 8
+$InputPadding = 14
+# Where a start enhancer's content starts, half way down: inside the enhancer, whatever its text's width.
+function EnhancerAt([double]$left, [double]$top, [double]$height, [double]$scale) {
+    [int][math]::Round($left + ($InputBorder + $InputRootPadding + $EnhancerPadding) * $scale), [int][math]::Round($top + $height / 2)
+}
+# $in view px into an input's text, half way down, in an input with no start enhancer: on its first letter.
+function TextAt([double]$left, [double]$top, [double]$height, [double]$scale, [double]$in = 2) {
+    [int][math]::Round($left + ($InputBorder + $InputPadding + $in) * $scale), [int][math]::Round($top + $height / 2)
+}
+
+# A Textarea's resize grip (Textarea.axaml's Textarea.Resizer): a square of 16 view px in the end corner of the root's
+# box, inside its 2 px border. Where its middle is, in screen pixels, left to right.
+$GripSize = 16
+function GripAt([double]$right, [double]$bottom, [double]$scale) {
+    $in = ($InputBorder + $GripSize / 2) * $scale
+    [int][math]::Round($right - $in), [int][math]::Round($bottom - $in)
+}
+
+# Whether a length grew by what was wanted, within a tolerance; a negative want is a shrink.
+function Grew([double]$before, [double]$after, [double]$want, [double]$tolerance) { [math]::Abs(($after - $before) - $want) -le $tolerance }
+
+# A text's lines: Avalonia's text box writes Environment.NewLine for Enter, which is CR LF on Windows.
+function LinesOf([string]$text) { @($text -split "`r?`n") }
+
+# Where $text was put into $before to make $after, as an index, or -1 if $after is no such thing: where a caret was.
+function InsertedAt([string]$before, [string]$after, [string]$text) {
+    for ($i = 0; $i -le $before.Length; $i++) { if ($after -ceq $before.Insert($i, $text)) { return $i } }
+    -1
+}
+
+# Whether a box's top and bottom are both within an area's.
+function Wholly([double]$top, [double]$bottom, [double]$areaTop, [double]$areaBottom) { $top -ge $areaTop -and $bottom -le $areaBottom }
+# How far a page has to scroll to show a box wholly in its view, with a margin: negative up, positive down, 0 if it shows.
+# A box that starts above the view is brought in by its top.
+function ScrollBy([double]$top, [double]$bottom, [double]$areaTop, [double]$areaBottom, [double]$margin) {
+    if ($top -lt $areaTop) { $top - $areaTop - $margin }
+    elseif ($bottom -gt $areaBottom) { $bottom - $areaBottom + $margin }
+    else { 0 }
+}
+# UI Automation's scroll pattern in percent: the one that scrolls $by pixels from $percent, for a view $viewport pixels high
+# that is $viewSize percent of what it scrolls, so that what it can scroll is the rest. Clamped to 0 and 100; a view that
+# shows everything can't scroll, and stays where it is.
+# How many pixels a view can still scroll down, from its scroll pattern's percent and view size, for a view $viewport high.
+function RoomLeft([double]$percent, [double]$viewSize, [double]$viewport) {
+    if ($viewSize -ge 100 -or $viewSize -le 0 -or $percent -lt 0) { return 0 }
+    (100 - $percent) / 100 * $viewport * (100 / $viewSize - 1)
+}
+function ScrollPercentFor([double]$percent, [double]$viewSize, [double]$viewport, [double]$by) {
+    if ($viewSize -ge 100 -or $viewSize -le 0 -or $percent -lt 0) { return $percent }
+    $range = $viewport * (100 / $viewSize - 1)
+    [math]::Min(100, [math]::Max(0, $percent + $by / $range * 100))
+}
