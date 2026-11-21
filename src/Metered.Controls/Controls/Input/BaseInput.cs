@@ -304,18 +304,12 @@ public abstract class BaseInput : TextBox
         base.OnLostFocus(e);
     }
 
-    // The text box's pointer: a press moves its caret and takes the pointer (and so its release), a held finger selects a
-    // word. Neither is a control of its own's.
+    // The text box's pointer: a press moves its caret and takes the pointer (and so its release). Not a control of its
+    // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (FromOwnControl(e.Source)) return;
         base.OnPointerPressed(e);
-    }
-
-    protected override void OnHolding(HoldingRoutedEventArgs e)
-    {
-        if (FromOwnControl(e.Source)) return;
-        base.OnHolding(e);
     }
 
     /// <summary>
@@ -346,12 +340,11 @@ public abstract class BaseInput : TextBox
         if (_clear is null) return;
         var point = e.GetCurrentPoint(_clear);
         if (e.Pointer.Type == PointerType.Mouse && !point.Properties.IsLeftButtonPressed) return;
-        e.Handled = true;
-        // One pointer's click at a time: another finger on it meanwhile isn't a second.
+        // One pointer's click at a time: another finger on it meanwhile isn't a second. The text box leaves the press
+        // alone (FromOwnControl), as it goes on up as Base Web's does.
         if (_clearPress is not null) return;
         _clearPress = e.Pointer;
         e.Pointer.Capture(_clear);
-        e.Handled = true;
     }
 
     private void OnClearReleased(object? sender, PointerReleasedEventArgs e)
@@ -359,7 +352,6 @@ public abstract class BaseInput : TextBox
         if (_clear is null || _clearPress != e.Pointer) return;
         _clearPress = null;
         e.Pointer.Capture(null);
-        e.Handled = true;
         if (new Rect(_clear.Bounds.Size).Contains(e.GetPosition(_clear))) OnClearIconClick();
     }
 

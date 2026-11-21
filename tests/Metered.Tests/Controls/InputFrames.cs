@@ -80,6 +80,30 @@ public class InputFrames
     }
 
     [AvaloniaFact]
+    public void The_toggle_draws_its_ring_on_keyboard_focus()
+    {
+        var input = new Input { Text = "1234", Type = InputType.Password };
+        using var scene = Show(input);
+        var toggle = (InputMaskToggleButton)input.Part(BaseInput.MaskToggleButtonPart)!;
+        var at = toggle.TranslatePoint(default, scene.Window)!.Value;
+        var (x, y) = ((int)Math.Round(at.X), (int)Math.Round(at.Y));
+        var mid = y + (int)(toggle.Bounds.Height / 2);
+        var c = Case("rest");
+        var fill = Color.Parse(c.ContainerBackground);
+        Assert.Equal(fill, Frames.PixelAt(scene.Capture(), x - 2, mid));
+
+        scene.Key(Key.Tab);
+        scene.Key(Key.Tab);
+        Assert.True(toggle.IsFocused);
+        Settle(scene);
+        var frame = scene.Capture();
+        var ring = Color.Parse(InputOracle.Value.Outlines.Single(o => o.Theme == "Light" && o.Part == "MaskToggleButton" && o.FocusVisible).Outline!.Colour);
+        // A 3 px line outside the button's box, on its left.
+        Assert.Equal(ring, Frames.PixelAt(frame, x - 2, mid));
+        Assert.Equal(fill, Frames.PixelAt(frame, x - 4, mid));
+    }
+
+    [AvaloniaFact]
     public void The_toggle_draws_the_show_icon_then_the_hide_icon()
     {
         var input = new Input { Text = "1234", Type = InputType.Password, Size = InputSize.Large };

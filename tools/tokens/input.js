@@ -273,7 +273,9 @@ function parts(styled = { Root: sc.Root, InputContainer: sc.InputContainer, Inpu
     {
       // A button: borderless, no background, its icon centred in its height; the outline on keyboard focus.
       part: 'MaskToggleButton', type: 'b:InputMaskToggleButton',
-      fixed: { VerticalAlignment: 'Stretch', VerticalContentAlignment: 'Center', HorizontalContentAlignment: 'Left', BorderThickness: '0', Background: 'Transparent', FocusAdorner: '{x:Null}' },
+      fixed: { VerticalAlignment: 'Stretch', VerticalContentAlignment: 'Center', HorizontalContentAlignment: 'Left', BorderThickness: '0', Background: 'Transparent', FocusAdorner: '{x:Null}',
+        // CSS's overflow is visible: the outline is drawn outside the button (an Avalonia Button clips by default).
+        ClipToBounds: 'False' },
       // base-input.js gives the toggle $size and $isFocusVisible only.
       styled: (t, c) => declare(sc.StyledMaskToggleButton, t, { $size: c.size, $isFocusVisible: c.isFocusVisible }).flat,
       convert(s) {

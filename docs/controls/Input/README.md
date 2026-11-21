@@ -109,7 +109,7 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputTests`: 89: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
-  press, a held finger and a menu on the template's own controls kept from the text box, and the text's selection kept;
+  press and a menu on the template's own controls kept from the text box, and the text's selection kept;
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
   focus; enhancers (JavaScript's truth, NaN and 0) and adjoined; Before and After; overrides on six parts; the icons'
@@ -167,8 +167,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    properties after a control is made, so here it is whether the type is a password until the toggle is clicked, and the
    toggle's after: the same for an input made a password, as every example and scenario does.
 9. **The text box's own controls.** The parts that take focus are inside the text box's template, so Metered keeps from
-   the text box what Avalonia would give it from them: keys, text, focus, a press, a held finger, a menu asked for. A
-   finger's tap on them still reaches it, which can't be seen headless (#90). A Space that clears from the clear icon
+   the text box what Avalonia would give it from them: keys, text, focus, a press, a menu asked for. A
+   finger's tap and a held finger on them still reach it: neither can be seen headless (#90). A Space that clears from the clear icon
    doesn't type a space into the input it focuses (Base Web's `preventDefault`).
 10. **On a phone, untried.** The caret, the selection handles, the soft keyboard and the clear icon under a finger are
    Avalonia's and tested headless only; the device run is #90 (hands-on).

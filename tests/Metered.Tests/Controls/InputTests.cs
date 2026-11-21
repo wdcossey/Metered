@@ -325,7 +325,8 @@ public class InputTests
     [AvaloniaFact]
     public void A_press_on_a_control_of_its_own_doesnt_move_the_caret()
     {
-        var mine = new Border { Focusable = true, Width = 20, Height = 20, Background = Brushes.Transparent };
+        // Not a Border: Avalonia's text box leaves a press a Border holds alone on its own.
+        var mine = new Panel { Focusable = true, Width = 20, Height = 20, Background = Brushes.Transparent };
         var input = new Input { Text = "Thing", InnerLeftContent = mine };
         using var scene = Show(input);
         input.CaretIndex = 3;
@@ -334,25 +335,6 @@ public class InputTests
 
         Assert.True(mine.IsFocused);
         Assert.Equal(3, input.CaretIndex);
-    }
-
-    [AvaloniaFact]
-    public void A_finger_held_on_the_clear_icon_selects_nothing()
-    {
-        var input = new Input { Clearable = true, Text = "Thing word" };
-        using var scene = Show(input);
-        var at = scene.CentreOf(P<Visual>(input, BaseInput.ClearIconPart));
-        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
-        // Held past Avalonia's holding delay.
-        for (var i = 0; i < 10; i++)
-        {
-            Thread.Sleep(100);
-            scene.Pump();
-        }
-
-        Assert.Equal(input.SelectionStart, input.SelectionEnd);
-        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
-        scene.Pump();
     }
 
     [AvaloniaFact]
@@ -682,6 +664,13 @@ public class InputTests
         host.Child = null;
         scene.Pump();
         Assert.Null(P<Animatable>(input, Input.RootPart).Transitions);
+        Assert.DoesNotContain(":loaded", input.Part(Input.RootPart)!.Classes);
+
+        // Back in the tree, styled before it has loaded: no transitions yet, so its first paint doesn't move.
+        host.Child = input;
+        Assert.Null(P<Animatable>(input, Input.RootPart).Transitions);
+        scene.Pump();
+        Assert.NotNull(P<Animatable>(input, Input.RootPart).Transitions);
     }
 
     [AvaloniaFact]
