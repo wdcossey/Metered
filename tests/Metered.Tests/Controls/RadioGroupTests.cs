@@ -426,6 +426,12 @@ public class RadioGroupTests
         Assert.True(outside.IsChecked);
         Assert.Equal("2", group.Value);
 
+        // Checked again while in the window: no radio of the group is another's in Avalonia's grouping either.
+        group.Value = "1";
+        group.Value = "2";
+        scene.Pump();
+        Assert.Equal([false, true, true], radios.Select(r => r.IsChecked == true));
+
         group.Items.Remove(radios[0]);
         elsewhere.Children.Add(radios[0]);
         scene.Pump();
