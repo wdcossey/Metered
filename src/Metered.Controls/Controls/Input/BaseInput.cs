@@ -32,6 +32,9 @@ namespace Metered.Controls;
 /// <c>:loaded</c> is set once the control is loaded, so a transition doesn't run on its first appearance.</para>
 /// <para>The parts that take focus are inside the text box's template, so the text box takes no key, text, focus or
 /// pointer of theirs: what they do is theirs alone, as their own elements in Base Web.</para>
+/// <para>A finger's or a pen's drag on it scrolls what is round it, as on a phone's browser, and never moves the caret
+/// (Avalonia's text box would move it, and keep the page from panning); after a hold it extends the hold's selection. A
+/// press still focuses it, and a mouse's drag selects.</para>
 /// </remarks>
 [TemplatePart(InputContainerPart, typeof(StyledElement))]
 [TemplatePart(InputPart, typeof(StyledElement))]
@@ -100,6 +103,7 @@ public abstract class BaseInput : TextBox
     private bool _maskState = true;
     private bool _masked;
     private bool _eatSpace;
+    private bool _held;
     private IDisposable? _mask;
     private IDisposable? _maskKeyboard;
     private readonly List<IDisposable> _labels = [];
@@ -308,8 +312,31 @@ public abstract class BaseInput : TextBox
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        _held = false;
         if (FromOwnControl(e.Source)) return;
         base.OnPointerPressed(e);
+    }
+
+    // A finger's or a pen's drag on the text is a scroll's, the page's (or a textarea's own), as in a browser on a phone,
+    // where the caret moves by its handle (and Avalonia's scroll gesture takes a pen's as a finger's). Avalonia's text box
+    // would take the drag to move its caret, and keep any scroller round it from panning (#94). After a hold, the drag
+    // extends the selection the hold made, as the text box's does. A mouse's drag selects, as before.
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        if (e.Pointer.Type != PointerType.Mouse && !_held) return;
+        base.OnPointerMoved(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _held = false;
+    }
+
+    protected override void OnHolding(HoldingRoutedEventArgs e)
+    {
+        base.OnHolding(e);
+        if (e.HoldingState == HoldingState.Started) _held = true;
     }
 
     /// <summary>

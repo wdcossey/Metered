@@ -70,7 +70,7 @@ From the browser, since Base Web renders a `<textarea>`:
 - **A finger's (or a pen's) drag on it scrolls it, not the page round it, unless it is at its end that way when the drag starts**,
   when the drag is the page's. A drag that has moved the textarea stays the textarea's until the finger lifts, even past
   its end: a browser's scroll latching. A textarea whose text fits is the page's to drag. The caret moves by a tap, not
-  by a drag (Avalonia's text box would move it by a drag, and keep the page from panning: #94 for Input); after a hold,
+  by a drag (Avalonia's text box would move it by a drag, and keep the page from panning: `BaseInput`'s, Input's too, #94); after a hold,
   a drag extends the hold's selection, as the text box's.
 - `resize`: a grip in the textarea's end corner, two strokes as Chrome draws it; a drag on it by any pointer sets the
   textarea's width and height as the way allows, within the Input part's `MinWidth`, `MaxWidth`, `MinHeight` and

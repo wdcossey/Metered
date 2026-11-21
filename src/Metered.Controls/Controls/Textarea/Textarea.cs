@@ -43,7 +43,6 @@ public class Textarea : BaseInput
 
     private ScrollViewer? _scroller;
     private readonly HashSet<int> _latched = [];
-    private bool _held;
 
     public Textarea()
         : base("Textarea", PartNames)
@@ -71,34 +70,6 @@ public class Textarea : BaseInput
         _scroller = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
         _scroller?.AddHandler(ScrollGestureEvent, OnScrollGesture, handledEventsToo: true);
         _scroller?.AddHandler(ScrollGestureEndedEvent, OnScrollGestureEnded, handledEventsToo: true);
-    }
-
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        _held = false;
-        base.OnPointerPressed(e);
-    }
-
-    // A finger's or a pen's drag on the text is a scroll's, the textarea's or the page's, as in a browser on a phone,
-    // where the caret moves by its handle (and Avalonia's scroll gesture takes a pen's as a finger's). Avalonia's text
-    // box would take the drag to move its caret, and keep any scroller round it from panning. After a hold, the drag
-    // extends the selection the hold made, as the text box's does.
-    protected override void OnPointerMoved(PointerEventArgs e)
-    {
-        if (e.Pointer.Type != PointerType.Mouse && !_held) return;
-        base.OnPointerMoved(e);
-    }
-
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        base.OnPointerReleased(e);
-        _held = false;
-    }
-
-    protected override void OnHolding(HoldingRoutedEventArgs e)
-    {
-        base.OnHolding(e);
-        if (e.HoldingState == HoldingState.Started) _held = true;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

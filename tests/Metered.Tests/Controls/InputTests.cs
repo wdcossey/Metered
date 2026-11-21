@@ -52,6 +52,33 @@ public class InputTests
         scene.Pump();
     }
 
+    private static void TouchDrag(Scene scene, Point from, Point to, int steps = 15)
+    {
+        var touch = scene.Window.TouchBegin(from, RawInputModifiers.None);
+        scene.Pump();
+        for (var i = 1; i <= steps; i++)
+        {
+            scene.Window.TouchMove(touch, from + (to - from) * ((double)i / steps), RawInputModifiers.None);
+            scene.Pump();
+        }
+
+        scene.Window.TouchEnd(touch, to, RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    private static TextPresenter Presenter(BaseInput input) =>
+        P<Visual>(input, BaseInput.InputPart).GetVisualDescendants().OfType<TextPresenter>().Single();
+
+    /// <summary>An input in a page that scrolls, as the sample's: a ScrollViewer from Avalonia's Simple theme, which pans by touch.</summary>
+    private static (Input Input, ScrollViewer Page, Scene Scene) InAPage(Input input)
+    {
+        var page = new ScrollViewer
+        {
+            Content = new StackPanel { Margin = new Thickness(20, 200, 20, 1600), Children = { input } },
+        };
+        return (input, page, new Scene(page, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]));
+    }
+
     [AvaloniaFact]
     public void Defaults_are_Base_Webs()
     {
@@ -513,6 +540,59 @@ public class InputTests
         Tap(scene, P<Visual>(input, BaseInput.InputPart));
         Assert.True(input.IsFocused);
         Assert.Contains(":is-focused", input.Part(Input.RootPart)!.Classes);
+    }
+
+    // A finger's drag on an input is the page's, focused or not, as on a phone's browser, where the caret moves by its
+    // handle (#94): the page moves, the caret stays and nothing is selected. Avalonia's text box would take the drag to
+    // move its caret and keep the page from panning.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_finger_drag_on_an_input_moves_the_page(bool focused)
+    {
+        var (input, page, scene) = InAPage(new Input { Text = "one two three four five" });
+        using var _ = scene;
+        Assert.True(page.Extent.Height > page.Viewport.Height);
+        if (focused)
+        {
+            Tap(scene, P<Visual>(input, BaseInput.InputPart));
+            Assert.True(input.IsFocused);
+        }
+
+        var caret = input.CaretIndex;
+        // From the start of the text, up and along it: the way a caret drag would go.
+        var presenter = Presenter(input);
+        var at = presenter.TranslatePoint(new Point(4, presenter.Bounds.Height / 2), scene.Window)!.Value;
+        TouchDrag(scene, at, new Point(at.X + 120, at.Y - 150));
+
+        Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
+        Assert.Equal(caret, input.CaretIndex);
+        Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
+    }
+
+    // A mouse's drag on the text still selects it, and the page stays where it is.
+    [AvaloniaFact]
+    public void A_mouse_drag_on_an_input_selects_its_text()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = "one two three" });
+        using var _ = scene;
+        var presenter = Presenter(input);
+        var from = presenter.TranslatePoint(new Point(0, presenter.Bounds.Height / 2), scene.Window)!.Value;
+        var to = presenter.TranslatePoint(new Point(presenter.Bounds.Width - 1, presenter.Bounds.Height / 2), scene.Window)!.Value;
+
+        scene.Window.MouseMove(from);
+        scene.Window.MouseDown(from, MouseButton.Left);
+        scene.Pump();
+        // The left button held as it moves, as a real drag's moves say.
+        scene.Window.MouseMove(from + (to - from) / 2, RawInputModifiers.LeftMouseButton);
+        scene.Pump();
+        scene.Window.MouseMove(to, RawInputModifiers.LeftMouseButton);
+        scene.Window.MouseUp(to, MouseButton.Left);
+        scene.Pump();
+
+        Assert.True(input.IsFocused);
+        Assert.Equal((0, input.Text!.Length), (input.SelectionStart, input.SelectionEnd));
+        Assert.Equal(0, page.Offset.Y);
     }
 
     [AvaloniaFact]
