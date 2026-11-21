@@ -69,7 +69,7 @@ public class FormControlLabelContainer : Panel
 
     /// <summary>The white space a line breaks at: all but the no-break spaces (U+00A0, U+2007, U+202F).</summary>
     private static readonly char[] Breaks = Enumerable.Range(0, 0x3001).Select(c => (char)c)
-        .Where(c => char.IsWhiteSpace(c) && c is not (' ' or ' ' or ' ')).ToArray();
+        .Where(c => char.IsWhiteSpace(c) && c is not ('\u00A0' or '\u2007' or '\u202F')).ToArray();
 
     private (string Text, Typeface Typeface, double Size, double Width)? _widest;
 
