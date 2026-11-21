@@ -160,7 +160,7 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   keyboard focus, `AutoFocus` and the blur; the entrance from its start, the exit at once and over `animateOutTime`,
   opened again during it; focus going inside or not by `AutoFocus` and accessibility type; the focus lock; content as a
   function, text, a control and data with its template; a binding following the clicks, `Open` and `Close`; opened on
-  load and taken out; overrides of the three parts, and of the body's margin; UI Automation; a page that scrolls; a flip
+  load and taken out; overrides of the three parts, and of the body's margin; UI Automation; a page that scrolls (the body leaving with its anchor, and held at the page's end); a flip
   near the window's foot; changes while it is shown (an Avalonia toggle button as the anchor, the arrow shown, the
   trigger type, a new anchor), a tab put away and back, a window close that is cancelled; a press in a combo box's
   drop-down in the content; an anchor that handles its own tap; focus in Tab's order; a finger's pointer entering a hover
@@ -188,11 +188,14 @@ entrance's transition and the hover body's pointer as Base Web's.
 2. **A finger never hovers** (touch first; as Radio's, Checkbox's and Switch's `:is-hovered`): a hover popover isn't
    opened by a tap. A phone's browser fires `mouseenter` on a tap, so Base Web's opens and stays open until a tap
    elsewhere. Keyboard focus still opens it. The alternative: a tap toggles a hover popover.
-3. **`preventOverflow` keeps the body inside the anchor's scroll viewer's box.** popper.js keeps it inside the anchor's
-   scroll parent: in a page that scrolls as a document, the whole document, so a popover goes off the screen with its
-   anchor; in a scrolling element, that element's box. An app's page is a scroll viewer: Metered takes it as the
-   scrolling element, so a popover whose anchor scrolls away stays at the scroller's edge (`flip` keeps to the window,
-   the viewport). Without a scroll viewer, the window.
+3. **`preventOverflow` keeps the body inside what the anchor's scroll viewer scrolls, all of it.** popper.js keeps it
+   inside the anchor's scroll parent: in a page that scrolls as a document (Base Web's layer is in the body), the whole
+   document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
+   is a scroll viewer: Metered takes what it scrolls as the document, so a popover goes with its anchor, as on
+   baseweb.design (`flip` keeps to the window, the viewport). A popover in a small scrolling box inside a page leaves
+   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the window. The overlay layer is the
+   window's: a popover whose anchor scrolls under something above the page (an app's bar) is drawn over it, where a
+   browser's page takes it off the top of the screen.
 4. **Focus goes back to the anchor when it closes, with or without a focus lock, whatever `ReturnFocus` says.** Base Web's leaves focus on the page when the
    focused element inside goes; Avalonia's popup gives focus back to what had it before it opened.
 5. **A menu's anchor isn't marked as having a popup or expanded** (`aria-haspopup`, `aria-expanded`,

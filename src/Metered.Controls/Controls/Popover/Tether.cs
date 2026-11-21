@@ -24,8 +24,8 @@ internal readonly record struct TetherResult(PopoverPlacement Placement, Point O
 /// modifier moved the other is the one computed before it, the body's size is its <c>offsetWidth</c> (rounded) plus its
 /// margins, and <c>auto</c>'s areas are the viewport's unpadded width and height.</para>
 /// <para>Two boundaries, as popper.js's: the viewport, which <c>auto</c> and <c>flip</c> keep to (the window's client
-/// area), and <c>preventOverflow</c>'s, the anchor's scroll parent (the box a scroll viewer shows, as popper.js's
-/// scrolling element's), or with none the document, which in an app's window that doesn't scroll is the window.
+/// area), and <c>preventOverflow</c>'s, the document (a page that scrolls in a scroll viewer: all it scrolls; with none,
+/// the window).
 /// tools/reference/tether.js runs popper.js itself on the same boxes; the tests compare.</para>
 /// </remarks>
 internal static class Tether

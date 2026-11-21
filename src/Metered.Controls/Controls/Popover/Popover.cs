@@ -551,11 +551,16 @@ public class Popover : TemplatedControl
     }
 
     /// <summary>
-    /// popper.js's <c>preventOverflow</c> boundaries: the anchor's scroll parent, the box its nearest scroll viewer shows
-    /// (popper.js's nearest element whose overflow scrolls), found when it opens; none (the window) without one.
+    /// popper.js's <c>preventOverflow</c> boundaries: a layer in the body keeps to the document, the whole page however far
+    /// it scrolls. An app's page scrolls in a scroll viewer: what it scrolls (its content, all of it) is the document, so a
+    /// popover whose anchor scrolls away goes with it. Without one, the window. Found when it opens.
     /// </summary>
     private Rect? ScrollParent() =>
-        _scrollParent is { } shown && _top is not null && shown.TranslatePoint(default, _top) is { } at ? new Rect(at, shown.Bounds.Size) : null;
+        _scrollParent is { Child: Visual page } shown && _top is not null && page.TranslatePoint(default, _top) is { } at
+            && shown.TranslatePoint(default, _top) is { } seen
+            // No smaller than what it shows, as a document is no smaller than the viewport.
+            ? new Rect(at, page.Bounds.Size).Union(new Rect(seen, shown.Bounds.Size))
+            : null;
 
     private void FindScrollParent()
     {

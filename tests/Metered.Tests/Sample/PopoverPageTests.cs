@@ -71,6 +71,9 @@ public class PopoverPageTests
         var page = new PopoverPage();
         using var scene = Show(page);
         var open = (MeteredButton)page.Click.Anchor!;
+        PopoverTests.Settle(scene);
+        // The always-open example's body covers none of it.
+        Assert.True(Layers.IsWithin(scene.Window.GetVisualAt(scene.CentreOf(open)), open));
         Tap(scene, scene.CentreOf(open));
         PopoverTests.Settle(scene);
         Assert.True(page.Click.IsOpen);

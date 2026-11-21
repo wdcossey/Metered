@@ -31,9 +31,10 @@
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16,0,16,32">
       <TextBlock Classes="heading" Text="Always open" />
-      <!-- stateless.tsx: isOpen, and no dismissal (Base Web's Popover has none unless it is given onClickOutside). -->
+      <!-- stateless.tsx: isOpen, and no dismissal (Base Web's Popover has none unless it is given onClickOutside).
+           Room below it for its body, so it covers nothing of the next example. -->
       <b:Popover x:Name="AlwaysOpen" IsOpen="True" DismissOnClickOutside="False" DismissOnEsc="False" AutoFocus="False"
-                 HorizontalAlignment="Left">
+                 HorizontalAlignment="Left" Margin="0,0,0,56">
         <b:Popover.Content>
           <TextBlock Classes="paragraph" Text="hello world" />
         </b:Popover.Content>

@@ -968,14 +968,16 @@ public class PopoverTests
     // ---- Placement in a page ----
 
     [AvaloniaFact]
-    public void It_follows_its_anchor_as_the_page_scrolls_and_stays_inside_the_scrollers_box()
+    public void It_follows_its_anchor_as_the_page_scrolls_and_leaves_with_it()
     {
         var (popover, anchor, _) = Fixed(150, 400);
         popover.Placement = PopoverPlacement.Bottom;
         var page = new ScrollViewer { Content = new Panel { Height = 2000, Children = { popover } } };
         var bar = new Border { Height = 56 };
         DockPanel.SetDock(bar, Dock.Top);
-        using var scene = Show(new DockPanel { Children = { bar, page } });
+        var foot = new Border { Height = 56 };
+        DockPanel.SetDock(foot, Dock.Bottom);
+        using var scene = Show(new DockPanel { Children = { bar, foot, page } });
         scene.Click(anchor);
         Settle(scene);
         var before = BoxOf(Body(popover), scene);
@@ -983,11 +985,23 @@ public class PopoverTests
         Settle(scene);
         Assert.Equal(before.Translate(new Vector(0, -100)), BoxOf(Body(popover), scene));
 
-        // The anchor scrolled above the scroller: popper.js's preventOverflow keeps the body in its scroll parent's box.
+        // The anchor scrolled out of the window: the page that scrolls is the document, which preventOverflow keeps to, so
+        // the body goes with its anchor, as a Base Web popover in a page that scrolls.
         page.Offset = new Vector(0, 800);
         Settle(scene);
-        Assert.Equal(56 + 8, BoxOf(Body(popover), scene).Top);
+        Assert.Equal(before.Translate(new Vector(0, -800)), BoxOf(Body(popover), scene));
         Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
+
+        // Near the page's own end, it is kept inside it: the body would pass the end of what scrolls (above the foot, not
+        // the window's), so it is held there.
+        var (low, lowAnchor, _) = Fixed(150, 1960);
+        low.Placement = PopoverPlacement.Right;
+        ((Panel)page.Content!).Children.Add(low);
+        page.Offset = new Vector(0, 2000);
+        Settle(scene);
+        scene.Click(lowAnchor);
+        Settle(scene);
+        Assert.Equal(844 - 56, BoxOf(Body(low), scene).Bottom, 0);
     }
 
     [AvaloniaFact]
