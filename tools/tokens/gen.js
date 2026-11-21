@@ -149,6 +149,8 @@ files['../Controls/Spinner.Parts.g.axaml'] = require('./spinner').file(version);
 files['../Controls/Input.Parts.g.axaml'] = require('./input').file(version);
 // The themes of Textarea's parts, from Base Web's textarea and Input's BaseInput (textarea.js).
 files['../Controls/Textarea.Parts.g.axaml'] = require('./textarea').file(version);
+// The themes of FormControl's parts, from Base Web's form control and its two icons (form-control.js).
+files['../Controls/FormControl.Parts.g.axaml'] = require('./form-control').file(version);
 
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');

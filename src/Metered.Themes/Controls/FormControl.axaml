@@ -1,0 +1,50 @@
+<!--
+  Base Web's FormControl (baseui 18.2.0, form-control/form-control.js), as a template of named parts. Each part's look
+  is its own theme, FormControl.Styled<Part> (FormControl.Parts.g.axaml), which the form control's Overrides merge
+  over: this file holds only the structure.
+
+  (a block flow: Base Web's fragment of the two containers, their margins collapsed)
+    LabelContainer           (only with a label: a flex row)
+      Label                  (the label element: a click or a tap focuses what it labels)
+      LabelEndEnhancer       (only with one, or a counter)
+    ControlContainer         (a block flow too)
+      the child              (the form control's Content)
+      Caption                (only with a hint: a flex row)
+        CaptionIcon          (only for an error's or a positive's message)
+        CaptionMessage
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:FormControl}" TargetType="b:FormControl">
+    <!-- Its boxes are width: 100%. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:FormControlStack>
+          <b:FormControlLabelContainer Name="LabelContainer" Theme="{DynamicResource FormControl.StyledLabelContainer}">
+            <b:FormControlLabel Name="Label" Theme="{DynamicResource FormControl.StyledLabel}" />
+            <ContentPresenter Name="LabelEndEnhancer" Theme="{DynamicResource FormControl.StyledLabelEndEnhancer}" />
+          </b:FormControlLabelContainer>
+          <b:FormControlStack Name="ControlContainer" Theme="{DynamicResource FormControl.StyledControlContainer}">
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <Border Name="Caption" Theme="{DynamicResource FormControl.StyledCaption}">
+              <Grid ColumnDefinitions="Auto,*">
+                <b:FormControlCaptionIcon Name="CaptionIcon" Theme="{DynamicResource FormControl.StyledCaptionIcon}" />
+                <ContentPresenter Name="CaptionMessage" Grid.Column="1" Theme="{DynamicResource FormControl.StyledCaptionMessage}" />
+              </Grid>
+            </Border>
+          </b:FormControlStack>
+        </b:FormControlStack>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>
