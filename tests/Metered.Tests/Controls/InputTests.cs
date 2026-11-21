@@ -600,6 +600,31 @@ public class InputTests
         Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
     }
 
+    // A finger lifted after another has pressed isn't a tap the text box saw last: it doesn't place the caret.
+    [AvaloniaFact]
+    public void A_finger_lifted_after_another_pressed_leaves_the_caret()
+    {
+        var input = new Input { Text = "one two three four five" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { input } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        Tap(scene, P<Visual>(input, BaseInput.InputPart));
+        input.CaretIndex = 0;
+        scene.Pump();
+        var presenter = Presenter(input);
+        var at = presenter.TranslatePoint(new Point(presenter.TextLayout.Width / 2, presenter.Bounds.Height / 2), scene.Window)!.Value;
+
+        var first = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        var second = scene.Window.TouchBegin(new Point(at.X + 40, at.Y), RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(first, at, RawInputModifiers.None);
+        scene.Pump();
+        Assert.Equal(0, input.CaretIndex);
+
+        scene.Window.TouchEnd(second, new Point(at.X + 40, at.Y), RawInputModifiers.None);
+        scene.Pump();
+    }
+
     // A mouse's drag on the text still selects it, and the page stays where it is.
     [AvaloniaFact]
     public void A_mouse_drag_on_an_input_selects_its_text()

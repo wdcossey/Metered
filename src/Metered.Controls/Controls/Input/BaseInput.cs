@@ -313,9 +313,12 @@ public abstract class BaseInput : TextBox
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        // A pointer's new press ends what its last one left (a release a scroller took never came here).
         if (_held == e.Pointer) _held = null;
+        if (_press?.Pointer == e.Pointer) _press = null;
         if (FromOwnControl(e.Source)) return;
-        if (e.Pointer.Type != PointerType.Mouse) _press = (e.Pointer, e.GetPosition(this));
+        // Where the finger is on the window, not on the input, which a page's scroll moves.
+        if (e.Pointer.Type != PointerType.Mouse) _press = (e.Pointer, e.GetPosition(null));
         base.OnPointerPressed(e);
     }
 
@@ -330,14 +333,21 @@ public abstract class BaseInput : TextBox
     }
 
     // The text box puts the caret where a finger lifts. Only where it lifts from a tap: a drag that nothing scrolled
-    // (sideways, or in a page that can't move) isn't the caret's either.
+    // (sideways, or in a page that can't move) isn't the caret's either, nor is a release whose press this didn't see
+    // last (another finger pressed since). The text box's release does nothing else for a finger that wasn't held: its
+    // touch modes are a hold's, and a press resets them.
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        var press = _press is { } p && p.Pointer == e.Pointer ? p.At : (Point?)null;
-        if (_press?.Pointer == e.Pointer) _press = null;
+        Point? pressedAt = null;
+        if (_press is { } press && press.Pointer == e.Pointer)
+        {
+            pressedAt = press.At;
+            _press = null;
+        }
+
         var held = _held == e.Pointer;
         if (held) _held = null;
-        if (e.Pointer.Type != PointerType.Mouse && !held && press is { } at && !IsTap(e, at)) return;
+        if (e.Pointer.Type != PointerType.Mouse && !held && !(pressedAt is { } at && IsTap(e, at))) return;
         base.OnPointerReleased(e);
     }
 
@@ -352,11 +362,11 @@ public abstract class BaseInput : TextBox
         }
     }
 
-    // Avalonia's tap (Gestures): a release within the platform's tap size of the press.
-    private bool IsTap(PointerReleasedEventArgs e, Point pressedAt)
+    // Avalonia's tap (Gestures): a release within the platform's tap size of the press, here on the window.
+    private static bool IsTap(PointerReleasedEventArgs e, Point pressedAt)
     {
         var size = Application.Current?.PlatformSettings?.GetTapSize(e.Pointer.Type) ?? new Size(4, 4);
-        return new Rect(pressedAt, default(Size)).Inflate(new Thickness(size.Width, size.Height)).ContainsExclusive(e.GetPosition(this));
+        return new Rect(pressedAt, default(Size)).Inflate(new Thickness(size.Width, size.Height)).ContainsExclusive(e.GetPosition(null));
     }
 
     /// <summary>
