@@ -840,6 +840,50 @@ public class PopoverTests
         Assert.False(popover.IsOpen);
     }
 
+    // A popup the content opens (a combo box's drop-down) is inside the body: a press in it closes nothing.
+    [AvaloniaFact]
+    public void A_press_in_a_popup_its_content_opened_is_inside()
+    {
+        var combo = new ComboBox { ItemsSource = new[] { "One", "Two", "Three" }, Width = 100 };
+        var (popover, anchor, _) = Fixed(20, 100);
+        popover.Content = new Border { Padding = new Thickness(12), Child = combo };
+        popover.Placement = PopoverPlacement.Bottom;
+        using var scene = Show(popover);
+        scene.Click(anchor);
+        Settle(scene);
+        combo.IsDropDownOpen = true;
+        Settle(scene, 50);
+        var item = combo.ContainerFromIndex(2)!;
+        Press(scene, scene.CentreOf(item));
+        Assert.True(popover.IsOpen);
+        Assert.Equal("Three", combo.SelectedItem);
+    }
+
+    // Base Web's onClick on the anchor sees every click: one its content handles too.
+    [AvaloniaFact]
+    public void An_anchor_that_handles_its_tap_still_opens_it()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        anchor.Tapped += (_, e) => e.Handled = true;
+        using var scene = Show(popover);
+        scene.Click(anchor);
+        Assert.True(popover.IsOpen);
+    }
+
+    // react-focus-lock's first tab stop is Tab's first: TabIndex before the tree's order.
+    [AvaloniaFact]
+    public void Focus_goes_to_the_first_tab_stop_in_Tabs_order()
+    {
+        var later = new TextBox { TabIndex = 2 };
+        var first = new TextBox { TabIndex = 1 };
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.Content = new StackPanel { Children = { later, first } };
+        using var scene = Show(popover);
+        scene.Click(anchor);
+        Settle(scene);
+        Assert.True(first.IsFocused);
+    }
+
     // ---- UI Automation ----
 
     // popover.js: a tooltip's body has role tooltip, and the anchor is described by it (aria-describedby).

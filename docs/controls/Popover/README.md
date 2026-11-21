@@ -110,9 +110,10 @@ From `stateful-container.js` and `popover.js`:
   or end, `preventOverflow` (padding 0, Base Web's; off with `IgnoreBoundary`), `keepTogether`, the arrow, and `flip` (to
   the other side when the body overlaps the anchor or leaves the viewport less 5 px). The body's margin is read as
   popper.js reads it, its own: the margin at Base Web's state's placement, which is the one asked for until popper.js
-  has run (none for `auto`) and the one chosen after; so a body that opens with `auto` and goes above or to the left
-  touches its anchor until it is placed again (the anchor moved, the page scrolled), as Base Web's does. When it has
-  gone, the state's placement goes back to the one asked for.
+  has run (none for `auto`) and the one chosen after. The new margin is popper.js's next update at once (known
+  difference 11). When it has gone, the state's placement goes back to the one asked for.
+- **What counts as inside**: the anchor and the body, and a popup the content opened (a text box's menu, a combo box's
+  drop-down: a host of its own, its logical parent the content).
 - **Its entrance** (`getBodyStyles`): shown at opacity 0 at its start, `getStartPosition`'s, 16 px towards the anchor
   (12 with the arrow, 2 × `popoverMargin` without); 20 ms after it is placed (`ANIMATE_IN_TIME`), `$isAnimating`: opacity
   1 and its place over 0.1 s on `easeOutCurve`. **Its exit**: `$isOpen` goes false at once, opacity 0 over
@@ -140,12 +141,14 @@ theme's entrance, so its opacity goes over them the moment the state changes.
 
 ## Held by
 
-- `Controls/PopoverTetherTests`: `Tether` against popper.js itself, 1170 cases from `tether.g.json`: nine anchors
-  (the middle, each corner and edge, the page's width, a fractional one), three bodies (small, wide, taller than the room
-  on either side), each placement, with and without the arrow, a margin of 8 and of 0, and no boundary: the placement
-  chosen, the body's offset and the arrow's.
-- `Controls/PopoverLayoutTests`: the body and the arrow drawn where popper.js and Base Web put them (184 cases, four
-  anchors including a fractional one laid out unrounded); every `getPopoverMarginStyles` and `getStartPosition` case
+- `Controls/PopoverTetherTests`: `Tether` against popper.js itself, 1443 cases from `tether.g.json`: eleven anchors
+  (the middle, each corner and edge, the page's width, a fractional one, two out of the page), three bodies (small, wide,
+  taller than the room on either side), each placement, with and without the arrow, a margin of 8 and of 0, and no
+  boundary: the placement chosen, the body's offset and the arrow's, on popper.js's first update and on its next ones
+  with the margin at the placement chosen.
+- `Controls/PopoverLayoutTests`: the body and the arrow drawn where popper.js and Base Web put them, popper.js run
+  again with the margin at the placement chosen (200 cases: four anchors including a fractional one laid out unrounded,
+  and every case whose next update moves it); every `getPopoverMarginStyles` and `getStartPosition` case
   (96); the margin given at the placement chosen.
 - `Controls/PopoverColourTests`: Body's, Arrow's and Inner's fill, radius, shadow and text colour, light and dark; the
   arrow's size and turn; `StyledPadding`; the entrance's transitions and none before or at the exit; a hover body's first
@@ -159,7 +162,8 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   function, text, a control and data with its template; a binding following the clicks, `Open` and `Close`; opened on
   load and taken out; overrides of the three parts, and of the body's margin; UI Automation; a page that scrolls; a flip
   near the window's foot; changes while it is shown (an Avalonia toggle button as the anchor, the arrow shown, the
-  trigger type, a new anchor), a tab put away and back, a window close that is cancelled.
+  trigger type, a new anchor), a tab put away and back, a window close that is cancelled; a press in a combo box's
+  drop-down in the content; an anchor that handles its own tap; focus in Tab's order.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
 - `Sample/PopoverPageTests`: the sample's page, 5: its place, the examples as set, a tap opening and closing, the dismiss
   example, each placement.
@@ -204,3 +208,9 @@ entrance's transition and the hover body's pointer as Base Web's.
    (popper.js's own modifiers), `stateReducer`, `focusOptions`, `id` and `data-baseweb`.
 10. **Not tried on a phone or in a real window** yet (#119): a tap and a drag outside, the hover trigger under a mouse,
     focus, the overlay over the soft keyboard. Android's back button doesn't close a popover (Base Web has none).
+11. **A new margin is placed at once.** When popper.js has chosen a placement, Base Web's body takes the margin at it,
+    but popper.js runs again only at the next scroll, resize or change of size: a body that opens with `auto` and goes
+    above or to the left of its anchor touches it until then (Base Web's margin is on the far side), and a flip near an
+    edge can leave it a few pixels off. Metered runs popper.js's next update at once (`tether.g.json`'s `steady`, which
+    the drawn cases are held to), so it never shows that. The alternative: Base Web's first update kept until the
+    anchor moves.

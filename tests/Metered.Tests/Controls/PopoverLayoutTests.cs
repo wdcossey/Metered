@@ -9,7 +9,8 @@ namespace Metered.Tests.Controls;
 
 /// <summary>
 /// Where the popover's body and arrow are drawn, in a 390 × 844 window as tether.g.json's page: popper.js's placement and
-/// offsets (PopoverOracle's tether cases, popper.js itself) with the margin Base Web's Body has at the placement chosen,
+/// offsets once it has run again with the margin Base Web's Body has at the placement chosen (PopoverOracle's tether
+/// cases' steady ones, popper.js itself), that margin added,
 /// and the arrow where getArrowPositionStyles puts it; Body's margin and its entrance's start by placement, arrow and
 /// popoverMargin (getPopoverMarginStyles, getStartPosition).
 /// </summary>
@@ -23,7 +24,8 @@ public class PopoverLayoutTests
         for (var i = 0; i < cases.Length; i++)
         {
             var c = cases[i];
-            if (c.BodyWidth == 120 && c.BodyHeight == 60 && c.Anchor is "middle" or "bottomRight" or "fractional" or "right") data.Add(i);
+            if ((c.BodyWidth == 120 && c.BodyHeight == 60 && c.Anchor is "middle" or "bottomRight" or "fractional" or "right")
+                || c.SteadyResult != c.Result || c.SteadyLeft != c.Left || c.SteadyTop != c.Top) data.Add(i);
         }
 
         return data;
@@ -47,22 +49,22 @@ public class PopoverLayoutTests
         PopoverTests.Settle(scene, 180);
 
         Assert.Equal(new Rect(c.X, c.Y, c.Width, c.Height), PopoverTests.BoxOf(anchor, scene));
-        Assert.Equal(PopoverOracle.Placement(c.Result), popover.ActualPlacement);
-        var margin = PopoverOracle.Margin(c.Result, c.ShowArrow, c.PopoverMargin);
+        Assert.Equal(PopoverOracle.Placement(c.SteadyResult), popover.ActualPlacement);
+        var margin = PopoverOracle.Margin(c.SteadyResult, c.ShowArrow, c.PopoverMargin);
         var body = (Visual)popover.Part(Popover.BodyPart)!;
         var box = PopoverTests.BoxOf(body, scene);
-        Assert.Equal(new Rect(c.Left + margin.Left, c.Top + margin.Top, c.BodyWidth, c.BodyHeight), box);
+        Assert.Equal(new Rect(c.SteadyLeft + margin.Left, c.SteadyTop + margin.Top, c.BodyWidth, c.BodyHeight), box);
 
         var arrow = (Control)popover.Part(Popover.ArrowPart)!;
         Assert.Equal(c.ShowArrow, arrow.IsEffectivelyVisible);
         if (!c.ShowArrow) return;
         // getArrowPositionStyles: popper.js's offset on the side along the placement's side, ARROW_SIZE - 2 beyond the other.
-        var at = PopoverOracle.Value.Arrow.Cases.Single(a => a.Placement == c.Result);
-        var side = c.Result.StartsWith("top") || c.Result.StartsWith("bottom") ? "left" : "top";
+        var at = PopoverOracle.Value.Arrow.Cases.Single(a => a.Placement == c.SteadyResult);
+        var side = c.SteadyResult.StartsWith("top") || c.SteadyResult.StartsWith("bottom") ? "left" : "top";
         var w = PopoverOracle.Value.Arrow.Width;
         var h = PopoverOracle.Value.Arrow.Height;
-        double x = side == "left" ? c.ArrowLeft!.Value : at.Left ?? (at.Right is { } r ? c.BodyWidth - r - w : 0);
-        double y = side == "top" ? c.ArrowTop!.Value : at.Top ?? (at.Bottom is { } b ? c.BodyHeight - b - h : 0);
+        double x = side == "left" ? c.SteadyArrowLeft!.Value : at.Left ?? (at.Right is { } r ? c.BodyWidth - r - w : 0);
+        double y = side == "top" ? c.SteadyArrowTop!.Value : at.Top ?? (at.Bottom is { } b ? c.BodyHeight - b - h : 0);
         // The arrow's box, before its turn: its bounds in the body (the panel fills it: the body has no padding).
         Assert.Equal(new Rect(x, y, w, h), arrow.Bounds);
     }

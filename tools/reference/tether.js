@@ -4,8 +4,9 @@
 // body of a size with the margin Base Web's Body has before popper.js first runs (getPopoverMarginStyles at the
 // requested placement: none for auto, whose $placement is still 'auto'), an arrow or none, and a placement. popper.js's
 // first update gives the placement it chose, the body's offset and the arrow's (parsePopperOffset floors them), which is
-// what Base Web renders: its Tether schedules another update only when the anchor or the body changes size, and a new
-// margin doesn't change the body's border box.
+// what Base Web renders when it opens: its Tether schedules another update only when the anchor or the body changes size,
+// and a new margin doesn't change the body's border box. Each case also has popper.js's next update (`steady`), with the
+// margin Base Web's Body has at the placement chosen: what a scroll or a resize gives, and what Metered shows.
 //
 //   node tools/reference/tether.js           print a summary
 //   node tools/reference/tether.js --write   write tools/reference/tether.g.json (generated: never hand-edit it; run
@@ -30,7 +31,7 @@ const popperVersion = require('popper.js/package.json').version;
 
 const VIEW = { width: 390, height: 844 };
 
-// Anchors across the page: its middle, each corner and edge, one as wide as the page, one off its top.
+// Anchors across the page: its middle, each corner and edge, one as wide as the page, one at fractional pixels.
 const ANCHORS = [
   { name: 'middle', x: 150, y: 400, width: 90, height: 40 },
   { name: 'topLeft', x: 8, y: 8, width: 60, height: 32 },
@@ -41,6 +42,10 @@ const ANCHORS = [
   { name: 'right', x: 350, y: 400, width: 40, height: 40 },
   { name: 'wide', x: 0, y: 300, width: 390, height: 48 },
   { name: 'fractional', x: 100.5, y: 200.25, width: 75.5, height: 33.75 },
+  // Out of the page above and to the left (where a browser's page doesn't grow to hold it), as an anchor scrolled out of
+  // its scroller: keepTogether keeps the body by it.
+  { name: 'offLeft', x: -60, y: 400, width: 40, height: 40 },
+  { name: 'offAbove', x: 150, y: -60, width: 90, height: 40 },
 ];
 // Bodies: small, wider than half the page, taller than the space on either side of the middle.
 const BODIES = [
@@ -50,7 +55,7 @@ const BODIES = [
 ];
 const PLACEMENTS = Object.values(PLACEMENT);
 // The anchors measured with ignoreBoundary too: where preventOverflow would move the body.
-const IGNORE = ['topLeft', 'bottomRight', 'right'];
+const IGNORE = ['topLeft', 'bottomRight', 'right', 'offLeft'];
 
 function cases() {
   const list = [];
@@ -81,7 +86,11 @@ async function measure() {
     const page = await browser.newPage({ viewport: VIEW });
     await page.setContent('<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0}</style></head><body></body></html>');
     await page.addScriptTag({ path: popperFile });
-    const input = cases().map((c) => ({ ...c, margin: margins(c), popperPlacement: toPopperPlacement(c.placement) }));
+    const input = cases().map((c) => ({
+      ...c, margin: margins(c), popperPlacement: toPopperPlacement(c.placement),
+      // The margin at each placement popper.js can choose, by its name for it.
+      margins: Object.fromEntries(PLACEMENTS.filter((p) => p !== 'auto').map((p) => [toPopperPlacement(p), margins({ ...c, placement: p })])),
+    }));
     const results = await page.evaluate(async ({ list, arrowWidth }) => {
       const out = [];
       for (const c of list) {
@@ -101,21 +110,41 @@ async function measure() {
         }
         document.body.append(ref, pop);
         // eslint-disable-next-line no-undef
-        const data = await new Promise((done) => {
-          // TetherBehavior's options, with Popover's defaultPopperOptions merged over its modifiers.
-          // eslint-disable-next-line no-new, no-undef
-          new Popper(ref, pop, {
-            placement: c.popperPlacement,
-            modifiers: {
-              arrow: { element: arrow, enabled: !!arrow },
-              computeStyle: { gpuAcceleration: false },
-              applyStyle: { enabled: false },
-              applyReactStyle: { enabled: true, fn: (d) => { done(d); return d; }, order: 900 },
-              preventOverflow: { enabled: !c.ignoreBoundary, padding: 0 },
-            },
-          });
+        let done;
+        const next = () => new Promise((r) => { done = r; });
+        const take = (d) => ({ placement: d.placement, popper: { top: d.offsets.popper.top, left: d.offsets.popper.left }, arrow: d.offsets.arrow ? { ...d.offsets.arrow } : null });
+        let waiting = next();
+        // TetherBehavior's options, with Popover's defaultPopperOptions merged over its modifiers.
+        // eslint-disable-next-line no-undef
+        const popper = new Popper(ref, pop, {
+          placement: c.popperPlacement,
+          modifiers: {
+            arrow: { element: arrow, enabled: !!arrow },
+            computeStyle: { gpuAcceleration: false },
+            applyStyle: { enabled: false },
+            applyReactStyle: { enabled: true, fn: (d) => { done(d); return d; }, order: 900 },
+            preventOverflow: { enabled: !c.ignoreBoundary, padding: 0 },
+          },
         });
-        out.push({ placement: data.placement, popper: { top: data.offsets.popper.top, left: data.offsets.popper.left }, arrow: data.offsets.arrow ? { ...data.offsets.arrow } : null });
+        const first = take(await waiting);
+        // Base Web's state takes the placement chosen, and its Body the margin at it; popper.js's next update (a scroll, a
+        // resize) reads that margin. Updated until the placement, and so the margin, holds.
+        let last = first;
+        let runs = 0;
+        for (;;) {
+          const m = c.margins[last.placement];
+          Object.assign(pop.style, { marginTop: `${m.top}px`, marginRight: `${m.right}px`, marginBottom: `${m.bottom}px`, marginLeft: `${m.left}px` });
+          waiting = next();
+          popper.update();
+          const again = take(await waiting);
+          runs += 1;
+          const held = again.placement === last.placement;
+          last = again;
+          if (held) break;
+          if (runs > 3) throw new Error('the placement never holds');
+        }
+        popper.destroy();
+        out.push({ first, steady: last });
       }
       return out;
     }, { list: input, arrowWidth: ARROW_WIDTH });
@@ -143,7 +172,9 @@ const floor = (o) => ({ top: Math.floor(o.top || 0), left: Math.floor(o.left || 
       anchor: c.anchor.name, rect: [c.anchor.x, c.anchor.y, c.anchor.width, c.anchor.height],
       body: [c.body.width, c.body.height], placement: c.placement, showArrow: c.showArrow, popoverMargin: c.popoverMargin,
       ignoreBoundary: c.ignoreBoundary, margin: [c.margin.left, c.margin.top, c.margin.right, c.margin.bottom],
-      result: placementOf(r.placement), offset: floor(r.popper), arrowOffset: c.showArrow ? floor(r.arrow || {}) : null,
+      result: placementOf(r.first.placement), offset: floor(r.first.popper), arrowOffset: c.showArrow ? floor(r.first.arrow || {}) : null,
+      // popper.js's next update, with the margin Base Web's Body then has (at the placement chosen), as long as it changes.
+      steady: { result: placementOf(r.steady.placement), offset: floor(r.steady.popper), arrowOffset: c.showArrow ? floor(r.steady.arrow || {}) : null },
     })),
   };
   const flips = json.cases.filter((x) => x.placement !== 'auto' && x.result !== x.placement).length;

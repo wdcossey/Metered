@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.VisualTree;
+using System.Runtime.CompilerServices;
 
 namespace Metered.Controls;
 
@@ -20,13 +20,11 @@ public class PopoverBodyPanel : Panel
     static PopoverBodyPanel()
     {
         // A child's position changed (a placement's state style): its panel arranges it again.
-        foreach (var property in new AvaloniaProperty[] { Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty })
-        {
-            property.Changed.AddClassHandler<Control>((c, _) => (c.GetVisualParent() as PopoverBodyPanel)?.InvalidateArrange());
-        }
+        AffectsParentArrange<PopoverBodyPanel>(Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty);
     }
 
-    private readonly Dictionary<Control, Size> _arranged = [];
+    /// <summary>The box each absolute child was last arranged in, kept no longer than the child.</summary>
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, StrongBox<Size>> _arranged = new();
 
     public static bool GetIsAbsolute(Control element) => element.GetValue(IsAbsoluteProperty);
 
@@ -42,7 +40,7 @@ public class PopoverBodyPanel : Panel
                 child.Measure(Size.Infinity);
                 // A new size or margin (the arrow's offset) moves it without changing the panel's size: Avalonia would
                 // arrange it again in its old box, so the panel arranges it.
-                if (!_arranged.TryGetValue(child, out var was) || was != child.DesiredSize) InvalidateArrange();
+                if (!_arranged.TryGetValue(child, out var was) || was.Value != child.DesiredSize) InvalidateArrange();
                 continue;
             }
 
@@ -65,7 +63,7 @@ public class PopoverBodyPanel : Panel
 
             // The margin box: DesiredSize holds the margins, which Arrange takes off again.
             var box = child.DesiredSize;
-            _arranged[child] = box;
+            _arranged.AddOrUpdate(child, new StrongBox<Size>(box));
             var left = Canvas.GetLeft(child);
             var top = Canvas.GetTop(child);
             var right = Canvas.GetRight(child);

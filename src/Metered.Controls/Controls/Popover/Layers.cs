@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -120,11 +121,21 @@ internal sealed class Layers
         }
     }
 
-    /// <summary>Whether a visual is the element or inside it, by the visual tree (a popup's content is in its host's).</summary>
+    /// <summary>
+    /// Whether a visual is the element or inside it: by the visual tree (a popup's content is in its host's), or by the
+    /// logical tree, which leads from a popup the element's content opened (a text box's menu, a combo box's drop-down,
+    /// each in a host of its own) back to it.
+    /// </summary>
     public static bool IsWithin(Visual? visual, Visual? element)
     {
         if (visual is null || element is null) return false;
-        return visual == element || element.IsVisualAncestorOf(visual);
+        if (visual == element || element.IsVisualAncestorOf(visual)) return true;
+        for (var l = ((ILogical)visual).LogicalParent; l is not null; l = l.LogicalParent)
+        {
+            if (ReferenceEquals(l, element)) return true;
+        }
+
+        return false;
     }
 
     private sealed class Removal(Layers owner, Layer layer) : IDisposable

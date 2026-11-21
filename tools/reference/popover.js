@@ -116,7 +116,7 @@ function arrow() {
   return { width: css.px(s.width), height: css.px(s.height), rotate: 45, cases };
 }
 
-/** Where popper.js puts the body and the arrow (tether.g.json). */
+/** Where popper.js puts the body and the arrow, on its first update and on its next (tether.g.json). */
 function tether() {
   const file = path.join(__dirname, 'tether.g.json');
   const g = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -132,6 +132,9 @@ function tether() {
         placement: c.placement, showArrow: c.showArrow, popoverMargin: c.popoverMargin, ignoreBoundary: c.ignoreBoundary,
         result: c.result, left: c.offset.left, top: c.offset.top,
         arrowLeft: c.arrowOffset ? c.arrowOffset.left : null, arrowTop: c.arrowOffset ? c.arrowOffset.top : null,
+        // popper.js's next update, with the margin at the placement chosen: what Metered shows.
+        steadyResult: c.steady.result, steadyLeft: c.steady.offset.left, steadyTop: c.steady.offset.top,
+        steadyArrowLeft: c.steady.arrowOffset ? c.steady.arrowOffset.left : null, steadyArrowTop: c.steady.arrowOffset ? c.steady.arrowOffset.top : null,
       };
     }),
   };

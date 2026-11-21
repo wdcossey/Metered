@@ -46,7 +46,9 @@ namespace Metered.Controls;
 [TemplatePart(BodyPart, typeof(StyledElement))]
 [TemplatePart(ArrowPart, typeof(StyledElement))]
 [TemplatePart(InnerPart, typeof(ContentPresenter))]
-[PseudoClasses(":is-open", ":is-animating", ":show-arrow", ":is-hover-trigger")]
+[PseudoClasses(":is-open", ":is-animating", ":show-arrow", ":is-hover-trigger", ":placement-top-left", ":placement-top", ":placement-top-right",
+    ":placement-right-top", ":placement-right", ":placement-right-bottom", ":placement-bottom-right", ":placement-bottom", ":placement-bottom-left",
+    ":placement-left-bottom", ":placement-left", ":placement-left-top")]
 public class Popover : TemplatedControl
 {
     public const string AnchorPresenterPart = "PART_AnchorPresenter";
@@ -153,10 +155,11 @@ public class Popover : TemplatedControl
     private bool _mounted;
     private bool _animating;
     private PopoverPlacement _actualPlacement;
-    private (Rect Anchor, Size Body, Size View, Rect? Bounds)? _tethered;
+    private (Rect Anchor, Size Body, Size View, Rect? Bounds, Thickness Margin)? _tethered;
+    private ScrollContentPresenter? _scrollParent;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
     private IInputElement? _focusBefore;
-    private (int Time, Transitions Transitions)? _exit;
+    private (int Time, Easing? Easing, Transitions Transitions)? _exit;
     private Animatable? _exiting;
     private (Point At, TransformOperations Operations)? _translate;
     private bool _unclipped;
@@ -324,6 +327,7 @@ public class Popover : TemplatedControl
         {
             // What was given the old anchor goes with it.
             if (change.OldValue is AvaloniaObject old) Give(old, AutomationProperties.HelpTextProperty, null);
+            if (_mounted) Dispatcher.UIThread.Post(FindScrollParent, DispatcherPriority.Loaded);
             _tethered = null;
             GiveAnchorHelp();
             Retether();
@@ -422,6 +426,7 @@ public class Popover : TemplatedControl
         _popup.PlacementTarget = _top;
         _popup.IsOpen = true;
         Relayer();
+        FindScrollParent();
         _top.LayoutUpdated += OnTopLayoutUpdated;
         if (_top is Window window) window.Closing += OnWindowClosing;
         Retether();
@@ -517,7 +522,9 @@ public class Popover : TemplatedControl
     /// <summary>
     /// popper.js's update: when it opens, and when the anchor or the body changes its box or the window its size (Tether's
     /// componentDidUpdate, popper.js's scroll and resize listeners). The margin is read as popper.js reads it, the body's
-    /// own (Base Web's, at the placement its state has then).
+    /// own (Base Web's, at the placement its state has then). A new margin (the placement chosen gives the body its own)
+    /// is popper.js's next update too: Base Web's runs at the next scroll or resize, its first leaving a body that opens
+    /// above or to the left of its anchor with no gap; Metered's runs at once, so it never shows that (docs/controls/Popover).
     /// </summary>
     private void Retether()
     {
@@ -526,13 +533,13 @@ public class Popover : TemplatedControl
         if (anchor.TranslatePoint(default, _top) is not { } anchorAt) return;
         var size = body.Bounds.Size;
         if (!body.IsMeasureValid || (size.Width <= 0 && size.Height <= 0)) return;
-        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(anchor));
+        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(), body.Margin);
         if (_tethered == key) return;
         _tethered = key;
         if (!_unclipped) Unclip();
 
         var arrow = ShowArrow && _parts[ArrowPart] is Avalonia.Layout.Layoutable a ? a.Bounds.Width : (double?)null;
-        var result = Tether.Compute(key.Item1, size, body.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, key.Item4);
+        var result = Tether.Compute(key.Item1, size, key.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, key.Item4);
         ActualPlacement = result.Placement;
         if (_parts[ArrowPart] is { } arrowPart && result.ArrowOffset is { } ao)
         {
@@ -554,17 +561,15 @@ public class Popover : TemplatedControl
 
     /// <summary>
     /// popper.js's <c>preventOverflow</c> boundaries: the anchor's scroll parent, the box its nearest scroll viewer shows
-    /// (popper.js's nearest element whose overflow scrolls); none (the window) without one.
+    /// (popper.js's nearest element whose overflow scrolls), found when it opens; none (the window) without one.
     /// </summary>
-    private Rect? ScrollParent(Visual anchor)
-    {
-        if (_top is null) return null;
-        foreach (var v in anchor.GetVisualAncestors())
-        {
-            if (v is ScrollContentPresenter shown && shown.TranslatePoint(default, _top) is { } at) return new Rect(at, shown.Bounds.Size);
-        }
+    private Rect? ScrollParent() =>
+        _scrollParent is { } shown && _top is not null && shown.TranslatePoint(default, _top) is { } at ? new Rect(at, shown.Bounds.Size) : null;
 
-        return null;
+    private void FindScrollParent()
+    {
+        var anchor = Anchor is Visual v && v.IsAttachedToVisualTree() ? v : _anchorPresenter as Visual ?? this;
+        _scrollParent = anchor.GetVisualAncestors().OfType<ScrollContentPresenter>().FirstOrDefault();
     }
 
     private void AnimateIn()
@@ -672,15 +677,17 @@ public class Popover : TemplatedControl
     /// <summary>The body's exit: opacity and transform over animateOutTime on easeInCurve (getBodyStyles).</summary>
     private Transitions ExitTransitions()
     {
-        if (_exit is { } made && made.Time == AnimateOutTime) return made.Transitions;
+        // The curve as the theme has it now (a subtree's own theme may give another).
+        var themed = this.TryFindResource("animation.easeInCurve", out var e) ? e as Easing : null;
+        if (_exit is { } made && made.Time == AnimateOutTime && ReferenceEquals(made.Easing, themed)) return made.Transitions;
         var duration = TimeSpan.FromMilliseconds(AnimateOutTime);
-        var easing = this.TryFindResource("animation.easeInCurve", out var e) && e is Easing ease ? ease : new LinearEasing();
+        var easing = themed ?? new LinearEasing();
         Transitions transitions =
         [
             new DoubleTransition { Property = OpacityProperty, Duration = duration, Easing = easing },
             new TransformOperationsTransition { Property = RenderTransformProperty, Duration = duration, Easing = easing },
         ];
-        _exit = (AnimateOutTime, transitions);
+        _exit = (AnimateOutTime, themed, transitions);
         return transitions;
     }
 
@@ -734,8 +741,10 @@ public class Popover : TemplatedControl
         if (!AutoFocus || AccessibilityType == PopoverAccessibilityType.Tooltip || _parts[BodyPart] is not Visual body || _top is null) return;
         var focused = _top.FocusManager?.GetFocusedElement() as Visual;
         if (Layers.IsWithin(focused, body)) return;
+        // The first tab stop inside, in Tab's order (TabIndex, then the tree), as react-focus-lock's.
         var first = body.GetVisualDescendants().OfType<InputElement>()
-            .FirstOrDefault(x => x.Focusable && x.IsEffectivelyEnabled && x.IsEffectivelyVisible && KeyboardNavigation.GetIsTabStop(x));
+            .Where(x => x.Focusable && x.IsEffectivelyEnabled && x.IsEffectivelyVisible && KeyboardNavigation.GetIsTabStop(x))
+            .Select((x, i) => (x, i)).OrderBy(t => KeyboardNavigation.GetTabIndex(t.x)).ThenBy(t => t.i).Select(t => t.x).FirstOrDefault();
         if (first is null) return;
         var keyboard = focused is StyledElement s && s.Classes.Contains(":focus-visible");
         first.Focus(keyboard ? NavigationMethod.Tab : NavigationMethod.Unspecified);
@@ -746,8 +755,9 @@ public class Popover : TemplatedControl
     private void Hook(ContentPresenter anchor)
     {
         anchor.AddHandler(Button.ClickEvent, OnAnchorButtonClick);
-        anchor.AddHandler(InputElement.TappedEvent, OnAnchorTapped);
-        anchor.AddHandler(InputElement.DoubleTappedEvent, OnAnchorTapped);
+        // Every click that reaches the anchor, as Base Web's onClick on it: one its content handled too.
+        anchor.AddHandler(InputElement.TappedEvent, OnAnchorTapped, handledEventsToo: true);
+        anchor.AddHandler(InputElement.DoubleTappedEvent, OnAnchorTapped, handledEventsToo: true);
         anchor.PointerEntered += OnAnchorEntered;
         anchor.PointerExited += OnAnchorExited;
         anchor.GotFocus += OnAnchorGotFocus;

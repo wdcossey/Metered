@@ -66,7 +66,8 @@ internal sealed record PopoverView(double Width, double Height);
 
 internal sealed record PopoverTetherCase(
     string Anchor, double X, double Y, double Width, double Height, double BodyWidth, double BodyHeight, string Placement, bool ShowArrow,
-    double PopoverMargin, bool IgnoreBoundary, string Result, double Left, double Top, double? ArrowLeft, double? ArrowTop)
+    double PopoverMargin, bool IgnoreBoundary, string Result, double Left, double Top, double? ArrowLeft, double? ArrowTop,
+    string SteadyResult, double SteadyLeft, double SteadyTop, double? SteadyArrowLeft, double? SteadyArrowTop)
 {
     public override string ToString() =>
         $"{Anchor} {BodyWidth}x{BodyHeight} {Placement}{(ShowArrow ? " arrow" : "")} margin {PopoverMargin}{(IgnoreBoundary ? " ignoreBoundary" : "")}";
