@@ -140,7 +140,7 @@ function colours() {
       const r = render({ startEnhancer: '@', endEnhancer: '.com', clearable: true, type: 'password', value: 'Value', placeholder: 'Placeholder', ...extra }, t);
       const of = (part) => (r[part] ? style(part, t, r[part]) : null);
       const root = of('Root'), input = of('Input'), start = of('StartEnhancer'), end = of('EndEnhancer'), container = of('InputContainer');
-      if (input.WebkitTextFillColor !== undefined && input.WebkitTextFillColor !== input.color) throw new Error('text fill differs from colour');
+      if (input['-webkit-text-fill-color'] !== undefined && input['-webkit-text-fill-color'] !== input.color) throw new Error('text fill differs from colour');
       cases.push({
         theme, state,
         rootBorder: border(root), rootBackground: colour(root.backgroundColor),

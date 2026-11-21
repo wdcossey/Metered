@@ -86,9 +86,11 @@ public class InputFrames
         using var scene = Show(input);
         var show = (InputIcon)input.Part(BaseInput.MaskToggleShowIconPart)!;
         var at = show.TranslatePoint(default, scene.Window)!.Value;
-        // At the large size the icons are 24 px: a viewBox unit is a pixel.
+        // At the large size the icon is as large as its viewBox (24): a viewBox unit is a pixel.
         Assert.Equal(at, new Point(Math.Round(at.X), Math.Round(at.Y)));
-        Assert.Equal(new Size(24, 24), show.Bounds.Size);
+        var size = InputOracle.Value.Layout.First(l => l.Size == "large" && l.Toggle is not null).Toggle!.ShowIconSize;
+        Assert.Equal(InputOracle.Value.Icons["show"].ViewBox[2], size);
+        Assert.Equal(new Size(size, size), show.Bounds.Size);
         var (x, y) = ((int)at.X, (int)at.Y);
         var c = Case("rest");
         var icon = Color.Parse(c.MaskToggleButton!);

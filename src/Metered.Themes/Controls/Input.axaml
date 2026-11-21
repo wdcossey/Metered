@@ -109,12 +109,11 @@
                   </ScrollViewer>
                 </b:InputField>
                 <Border Name="ClearIconContainer" Grid.Column="2" Theme="{DynamicResource Input.StyledClearIconContainer}">
-                  <b:InputIcon Name="ClearIcon" Theme="{DynamicResource Input.StyledClearIcon}" FocusAdorner="{x:Null}" />
+                  <b:InputIcon Name="ClearIcon" Theme="{DynamicResource Input.StyledClearIcon}" />
                 </Border>
                 <b:InputMaskToggleButton Name="MaskToggleButton"
                                          Grid.Column="3"
-                                         Theme="{DynamicResource Input.StyledMaskToggleButton}"
-                                         FocusAdorner="{x:Null}">
+                                         Theme="{DynamicResource Input.StyledMaskToggleButton}">
                   <Panel>
                     <b:InputIcon Name="MaskToggleShowIcon" Theme="{DynamicResource Input.StyledMaskToggleShowIcon}" />
                     <b:InputIcon Name="MaskToggleHideIcon" Theme="{DynamicResource Input.StyledMaskToggleHideIcon}" />

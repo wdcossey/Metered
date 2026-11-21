@@ -157,5 +157,13 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    element (ADR 0001), only restyle or hide one. The documentation's `MaskToggleButton: () => null` is an override whose
    `Props` set `IsVisible` false; its `MaskToggleShowIcon: () => "🐵"` has no equivalent.
 7. **Transitions start after load**, as on every Metered control: CSS doesn't transition a first paint.
-8. **On a phone, untried.** The caret, the selection handles, the soft keyboard and the clear icon under a finger are
-   Avalonia's and tested headless only; the device run is a hands-on follow-up (see the PR).
+8. ** follows the type until the toggle is clicked.** base-input.js sets  once, from the type the
+   input is made with, so an input made as text and turned into a password later is shown unmasked. Avalonia sets
+   properties after a control is made, so here it is whether the type is a password until the toggle is clicked, and the
+   toggle's after: the same for an input made a password, as every example and scenario does.
+9. **The text box's own controls.** The parts that take focus are inside the text box's template, so Metered keeps from
+   the text box what Avalonia would give it from them: keys, text, focus, a press, a held finger, a menu asked for. A
+   finger's tap on them still reaches it, which can't be seen headless (#90). A Space that clears from the clear icon
+   doesn't type a space into the input it focuses (Base Web's ).
+10. **On a phone, untried.** The caret, the selection handles, the soft keyboard and the clear icon under a finger are
+   Avalonia's and tested headless only; the device run is #90 (hands-on).

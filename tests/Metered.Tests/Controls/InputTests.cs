@@ -67,7 +67,23 @@ public class InputTests
         Assert.Equal(!d.Disabled, input.IsEnabled);
         Assert.Equal(d.ReadOnly, input.IsReadOnly);
         Assert.Equal(InputAdjoined.None, input.Adjoined);
+        // base-input.js's isMasked starts as type === 'password'.
+        Assert.Equal(d.Type == "password", input.IsMasked);
+    }
+
+    [AvaloniaFact]
+    public void IsMasked_follows_the_type_until_the_toggle_is_clicked()
+    {
+        var input = new Input { Type = InputType.Password, Text = "1234" };
+        using var scene = Show(input);
         Assert.True(input.IsMasked);
+        input.Type = InputType.Text;
+        Assert.False(input.IsMasked);
+        Assert.Equal(default, input.PasswordChar);
+        input.Type = InputType.Password;
+        Assert.True(input.IsMasked);
+        scene.Click(P<Visual>(input, BaseInput.MaskToggleButtonPart));
+        Assert.False(input.IsMasked);
     }
 
     public static TheoryData<int> PartsCases => new(Enumerable.Range(0, InputOracle.Value.Parts.Length));
@@ -90,7 +106,8 @@ public class InputTests
 
         var shown = Input.PartNames.Where(name => input.Part(name) is Visual { IsEffectivelyVisible: true }).ToHashSet();
         Assert.Equal(c.Rendered.OrderBy(x => x), shown.OrderBy(x => x));
-        Assert.Equal(c.Masked, input.IsMasked);
+        // The case's mask is the toggle's; base-input.js's isMasked is only ever true for a password.
+        Assert.Equal(c.Masked && c.Type == "password", input.IsMasked);
         Assert.Equal(c.InputType == "password", input.PasswordChar != default);
 
         var clear = P<InputIcon>(input, BaseInput.ClearIconPart);
@@ -174,10 +191,17 @@ public class InputTests
         scene.Key(Key.Tab);
         Assert.True(clear.IsFocused);
 
-        scene.Key(key);
+        // A real key: its press, the text a platform sends with it, its release.
+        scene.Window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null);
+        scene.Window.KeyTextInput(key == Key.Space ? " " : "\r");
+        scene.Window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null);
+        scene.Pump();
 
         Assert.Equal("", input.Text);
         Assert.True(input.IsFocused);
+        // Base Web's preventDefault: the key's text isn't typed into the input it focused.
+        Type(scene, "a");
+        Assert.Equal("a", input.Text);
     }
 
     [AvaloniaFact]
@@ -190,6 +214,8 @@ public class InputTests
         scene.Key(Key.Tab);
         Assert.True(clear.IsFocused);
         Assert.DoesNotContain(":is-focused", input.Classes);
+        // Its focus isn't the text box's: Avalonia's text box would select everything on a Tab's focus.
+        Assert.Equal(input.SelectionStart, input.SelectionEnd);
 
         Type(scene, "x");
         scene.Key(Key.Back);
@@ -197,6 +223,79 @@ public class InputTests
 
         Assert.Equal("Thing", input.Text);
         Assert.True(clear.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void The_texts_selection_stays_while_the_focus_moves_between_the_icons()
+    {
+        // A browser keeps an input's selection when the focus is elsewhere; the clear icon's losing it isn't the text box's.
+        var input = new Input { Clearable = true, Type = InputType.Password, Text = "Thing" };
+        using var scene = Show(input);
+        scene.Key(Key.Tab);
+        scene.Key(Key.Tab);
+        Assert.True(P<InputElement>(input, BaseInput.ClearIconPart).IsFocused);
+        input.SelectionStart = 1;
+        input.SelectionEnd = 3;
+
+        scene.Key(Key.Tab);
+
+        Assert.True(P<InputElement>(input, BaseInput.MaskToggleButtonPart).IsFocused);
+        Assert.Equal((1, 3), (input.SelectionStart, input.SelectionEnd));
+    }
+
+    [AvaloniaFact]
+    public void A_press_on_a_control_of_its_own_doesnt_move_the_caret()
+    {
+        var mine = new Border { Focusable = true, Width = 20, Height = 20, Background = Brushes.Transparent };
+        var input = new Input { Text = "Thing", InnerLeftContent = mine };
+        using var scene = Show(input);
+        input.CaretIndex = 3;
+
+        scene.Click(mine);
+
+        Assert.True(mine.IsFocused);
+        Assert.Equal(3, input.CaretIndex);
+    }
+
+    [AvaloniaFact]
+    public void A_finger_held_on_the_clear_icon_selects_nothing()
+    {
+        var input = new Input { Clearable = true, Text = "Thing word" };
+        using var scene = Show(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.ClearIconPart));
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        // Held past Avalonia's holding delay.
+        for (var i = 0; i < 10; i++)
+        {
+            Thread.Sleep(100);
+            scene.Pump();
+        }
+
+        Assert.Equal(input.SelectionStart, input.SelectionEnd);
+        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    [AvaloniaFact]
+    public void A_menu_asked_for_on_the_icons_isnt_the_text_boxs()
+    {
+        var input = new Input { Clearable = true, Type = InputType.Password, Text = "Thing" };
+        // A popup needs the app theme's window, its overlay layer.
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { input } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        var flyout = Assert.IsAssignableFrom<Avalonia.Controls.Primitives.FlyoutBase>(input.ContextFlyout);
+        foreach (var part in new[] { BaseInput.ClearIconPart, BaseInput.MaskToggleButtonPart })
+        {
+            P<Control>(input, part).RaiseEvent(new ContextRequestedEventArgs());
+            scene.Pump();
+            Assert.False(flyout.IsOpen, part);
+        }
+
+        // On the text it is: the cut, copy and paste menu.
+        P<Control>(input, BaseInput.InputPart).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.True(flyout.IsOpen);
+        flyout.Hide();
     }
 
     [AvaloniaFact]
@@ -372,6 +471,8 @@ public class InputTests
     [InlineData(0, true)]
     [InlineData("@", true)]
     [InlineData(true, true)]
+    [InlineData(double.NaN, false)]
+    [InlineData(0.0, true)]
     public void An_enhancer_is_what_JavaScripts_truth_or_0_makes_one(object? value, bool shown)
     {
         Assert.Equal(shown, Input.IsEnhancer(value));
@@ -443,7 +544,8 @@ public class InputTests
         Assert.Equal(30, P<InputIcon>(input, BaseInput.MaskToggleShowIconPart).Bounds.Width);
         // Merged over the part's theme: the root keeps its radius, the icon its height and path.
         Assert.Equal(new CornerRadius(InputOracle.Value.Layout.First(c => c.Size == "default").RootRadius), P<Border>(input, Input.RootPart).CornerRadius);
-        Assert.Equal(20, P<InputIcon>(input, BaseInput.MaskToggleShowIconPart).Bounds.Height);
+        var size = InputOracle.Value.Layout.First(c => c.Size == "default" && c.Toggle is not null).Toggle!.ShowIconSize;
+        Assert.Equal(size, P<InputIcon>(input, BaseInput.MaskToggleShowIconPart).Bounds.Height);
         Assert.NotNull(P<InputIcon>(input, BaseInput.MaskToggleShowIconPart).Data);
 
         // Even over a state style: an override's plain setter wins (ADR 0001, item 6).
@@ -465,6 +567,15 @@ public class InputTests
             Assert.NotNull(icon.Data);
             Assert.Equal(expected.Bounds, icon.Data.Bounds);
             Assert.Equal(new Rect(facts.ViewBox[0], facts.ViewBox[1], facts.ViewBox[2], facts.ViewBox[3]), icon.ViewBox);
+            // Filled by the SVG's rule: the same points inside as the path drawn by that rule, over the whole viewBox.
+            var byRule = Geometry.Parse((facts.FillRule == "evenodd" ? "F0 " : "F1 ") + facts.D);
+            for (var x = 0.25; x < facts.ViewBox[2]; x += 0.5)
+            {
+                for (var y = 0.25; y < facts.ViewBox[3]; y += 0.5)
+                {
+                    Assert.True(byRule.FillContains(new Point(x, y)) == icon.Data.FillContains(new Point(x, y)), $"{name} at ({x}, {y})");
+                }
+            }
         }
     }
 
@@ -516,6 +627,13 @@ public class InputTests
         ((IInvokeProvider)toggle).Invoke();
         scene.Pump();
         Assert.False(toggleInput.IsMasked);
+
+        // Not where a click can't: a read-only input has no clear icon.
+        input.Text = "Thing";
+        input.IsReadOnly = true;
+        scene.Pump();
+        ((IInvokeProvider)peer).Invoke();
+        Assert.Equal("Thing", input.Text);
 
         // The input itself is Avalonia's text box to UI Automation: an edit with its value.
         Assert.Equal(AutomationControlType.Edit, ControlAutomationPeer.CreatePeerForElement(input).GetAutomationControlType());

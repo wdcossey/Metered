@@ -261,7 +261,8 @@ function parts(styled = { Root: sc.Root, InputContainer: sc.InputContainer, Inpu
     {
       // The icon fills with currentColor: the container's colour, inherited.
       part: 'ClearIcon', type: 'b:InputIcon',
-      fixed: { VerticalAlignment: 'Center', HorizontalAlignment: 'Left', Focusable: 'True', Data: CLEAR.data, ViewBox: CLEAR.viewBox },
+      // Its focus ring is Base Web's outline, not Avalonia's adorner.
+      fixed: { VerticalAlignment: 'Center', HorizontalAlignment: 'Left', Focusable: 'True', FocusAdorner: '{x:Null}', Data: CLEAR.data, ViewBox: CLEAR.viewBox },
       styled: (t, c) => ({ ...svgBox('ClearIcon', c, 'ClearIcon'), ...declare(sc.StyledClearIcon, t, props(c)).flat }),
       convert(s) {
         const what = 'ClearIcon';
@@ -272,7 +273,7 @@ function parts(styled = { Root: sc.Root, InputContainer: sc.InputContainer, Inpu
     {
       // A button: borderless, no background, its icon centred in its height; the outline on keyboard focus.
       part: 'MaskToggleButton', type: 'b:InputMaskToggleButton',
-      fixed: { VerticalAlignment: 'Stretch', VerticalContentAlignment: 'Center', HorizontalContentAlignment: 'Left', BorderThickness: '0', Background: 'Transparent' },
+      fixed: { VerticalAlignment: 'Stretch', VerticalContentAlignment: 'Center', HorizontalContentAlignment: 'Left', BorderThickness: '0', Background: 'Transparent', FocusAdorner: '{x:Null}' },
       // base-input.js gives the toggle $size and $isFocusVisible only.
       styled: (t, c) => declare(sc.StyledMaskToggleButton, t, { $size: c.size, $isFocusVisible: c.isFocusVisible }).flat,
       convert(s) {

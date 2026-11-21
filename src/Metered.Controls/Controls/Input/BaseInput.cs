@@ -96,7 +96,10 @@ public abstract class BaseInput : TextBox
     private InputIcon? _clear;
     private Avalonia.Controls.Button? _toggle;
     private IPointer? _clearPress;
-    private bool _masked = true;
+    private readonly Dictionary<string, (bool On, IDisposable Value)> _shown = new(StringComparer.Ordinal);
+    private bool _maskState = true;
+    private bool _masked;
+    private bool _eatSpace;
     private IDisposable? _mask;
     private IDisposable? _maskKeyboard;
 
@@ -110,6 +113,9 @@ public abstract class BaseInput : TextBox
         SetState(":positive", Positive);
         SetState(":is-read-only", IsReadOnly);
         SetState(":is-focused", false);
+        // Before the text box's flyout's own handler (added later, with ContextFlyout): a menu asked for on a control of
+        // its own isn't the text box's.
+        AddHandler(ContextRequestedEvent, OnContextRequestedFromPart);
     }
 
     /// <summary>Base Web's <c>size</c>: mini, compact, default (its default) or large.</summary>
@@ -134,8 +140,9 @@ public abstract class BaseInput : TextBox
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
 
     /// <summary>
-    /// base-input.js's <c>isMasked</c>: a password's text is drawn masked. True until the mask toggle shows it; the
-    /// toggle alone changes it.
+    /// base-input.js's <c>isMasked</c>: a password's text is drawn masked. Base Web starts it as whether the type is a
+    /// password, and the toggle alone changes it; here it is whether the type is a password until the toggle is clicked,
+    /// then the toggle's (docs/controls/Input, known differences).
     /// </summary>
     public bool IsMasked
     {
@@ -160,11 +167,27 @@ public abstract class BaseInput : TextBox
     /// Shows or hides a part, as Base Web renders it or doesn't: at the template's priority, so that an override's
     /// <c>IsVisible</c> (Base Web's <c>MaskToggleButton: () =&gt; null</c>) still hides it.
     /// </summary>
-    protected void Show(string part, bool on) => _parts[part]?.SetValue(IsVisibleProperty, on, BindingPriority.Template);
+    /// <remarks>
+    /// One value for each part, held and let go when it changes: a value set at a priority below the local one is a frame
+    /// of its own, and frames would pile up on every keystroke.
+    /// </remarks>
+    protected void Show(string part, bool on)
+    {
+        if (_parts[part] is not { } element) return;
+        if (_shown.TryGetValue(part, out var held))
+        {
+            if (held.On == on) return;
+            held.Value.Dispose();
+        }
+
+        _shown[part] = (on, element.SetValue(IsVisibleProperty, on, BindingPriority.Template)!);
+    }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         Release();
+        foreach (var held in _shown.Values) held.Value.Dispose();
+        _shown.Clear();
         base.OnApplyTemplate(e);
         _parts.Attach(e.NameScope);
         _clear = _parts[ClearIconPart] as InputIcon;
@@ -176,7 +199,11 @@ public abstract class BaseInput : TextBox
             _clear.AddHandler(PointerCaptureLostEvent, OnClearCaptureLost);
             _clear.AddHandler(KeyDownEvent, OnClearKeyDown);
             _clear.AddHandler(TextInputMethodClientRequestedEvent, OnPartTextInputClient);
-            _clear.Invoked = OnClearIconClick;
+            _clear.Invoked = () =>
+            {
+                // Only what a click can do: the icon is there.
+                if (CanClear) OnClearIconClick();
+            };
             AutomationProperties.SetName(_clear, ClearLabel);
             ToolTip.SetTip(_clear, ClearLabel);
         }
@@ -238,6 +265,7 @@ public abstract class BaseInput : TextBox
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
+        if (e.Key == Key.Space) _eatSpace = false;
         if (e.Source != this) return;
         base.OnKeyUp(e);
     }
@@ -245,6 +273,15 @@ public abstract class BaseInput : TextBox
     protected override void OnTextInput(TextInputEventArgs e)
     {
         if (e.Source != this) return;
+        // The Space that cleared from the clear icon focused the text box on its key down: its text, which a platform sends
+        // after the key, isn't typed (Base Web's preventDefault).
+        if (_eatSpace && e.Text == " ")
+        {
+            _eatSpace = false;
+            e.Handled = true;
+            return;
+        }
+
         base.OnTextInput(e);
     }
 
@@ -260,28 +297,12 @@ public abstract class BaseInput : TextBox
         base.OnLostFocus(e);
     }
 
+    // The text box's pointer: a press moves its caret and takes the pointer (and so its release), a held finger selects a
+    // word. Neither is a control of its own's.
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (FromOwnControl(e.Source)) return;
         base.OnPointerPressed(e);
-    }
-
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        if (FromOwnControl(e.Source)) return;
-        base.OnPointerReleased(e);
-    }
-
-    protected override void OnTapped(TappedEventArgs e)
-    {
-        if (FromOwnControl(e.Source)) return;
-        base.OnTapped(e);
-    }
-
-    protected override void OnDoubleTapped(TappedEventArgs e)
-    {
-        if (FromOwnControl(e.Source)) return;
-        base.OnDoubleTapped(e);
     }
 
     protected override void OnHolding(HoldingRoutedEventArgs e)
@@ -302,6 +323,11 @@ public abstract class BaseInput : TextBox
         }
 
         return false;
+    }
+
+    private void OnContextRequestedFromPart(object? sender, ContextRequestedEventArgs e)
+    {
+        if (FromOwnControl(e.Source)) e.Handled = true;
     }
 
     // A part that takes focus isn't a text box: the IME and the soft keyboard aren't the text box's while it has focus.
@@ -337,6 +363,7 @@ public abstract class BaseInput : TextBox
     {
         if (e.Key is not (Key.Enter or Key.Space)) return;
         e.Handled = true;
+        _eatSpace = e.Key == Key.Space;
         OnClearIconClick();
     }
 
@@ -349,7 +376,7 @@ public abstract class BaseInput : TextBox
 
     private void OnToggleClick(object? sender, RoutedEventArgs e)
     {
-        IsMasked = !IsMasked;
+        _maskState = !IsMasked;
         UpdateMask();
     }
 
@@ -388,10 +415,11 @@ public abstract class BaseInput : TextBox
     /// <summary>base-input.js's renderClear: the icon only for a clearable input with a value, not disabled or read-only.</summary>
     private void UpdateClear()
     {
-        var shown = Clearable && IsEffectivelyEnabled && !IsReadOnly && !string.IsNullOrEmpty(Text);
-        Show(ClearIconContainerPart, shown);
-        Show(ClearIconPart, shown);
+        Show(ClearIconContainerPart, CanClear);
+        Show(ClearIconPart, CanClear);
     }
+
+    private bool CanClear => Clearable && IsEffectivelyEnabled && !IsReadOnly && !string.IsNullOrEmpty(Text);
 
     /// <summary>
     /// base-input.js's getInputType and renderMaskToggle: a password masked until the toggle shows it, the toggle and its
@@ -401,7 +429,8 @@ public abstract class BaseInput : TextBox
     protected void UpdateMask()
     {
         var password = IsPassword;
-        var masked = password && IsMasked;
+        IsMasked = password && _maskState;
+        var masked = IsMasked;
         // At the template's priority, held to be taken away: an app's own value (a local PasswordChar) still wins.
         if (masked && _mask is null)
         {

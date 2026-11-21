@@ -95,8 +95,12 @@ public class Input : BaseInput
         else if (p == ClearableProperty) UpdateTrailing();
     }
 
-    /// <summary>input.js's isEnhancer: something, or 0 (JavaScript's truth): not null, an empty string or false.</summary>
-    internal static bool IsEnhancer(object? enhancer) => enhancer is not (null or "" or false);
+    /// <summary>
+    /// input.js's isEnhancer, <c>Boolean(enhancer || enhancer === 0)</c>: JavaScript's truth, or 0. Not null, an empty
+    /// string, false or NaN; 0 is one.
+    /// </summary>
+    internal static bool IsEnhancer(object? enhancer) =>
+        enhancer is not (null or "" or false) && enhancer is not double.NaN && enhancer is not float.NaN;
 
     /// <summary>input.js renders an enhancer only when it is one, and derives adjoined from the two (getAdjoinedProp).</summary>
     private void UpdateEnhancers()
