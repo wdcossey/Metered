@@ -335,6 +335,70 @@ public class FormControlTests
         Assert.True(input.IsFocused);
     }
 
+    // A press the label noted, then the pointer taken by something else (a scroller, a drag), isn't a click when it comes
+    // back to the label and is let go there.
+    [AvaloniaFact]
+    public void A_press_whose_pointer_is_taken_from_the_label_is_no_click()
+    {
+        var input = new Input();
+        var other = new Border { Width = 10, Height = 10 };
+        var form = new FormControl { Label = "Label", Content = input };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        var label = (FormControlLabel)form.Part(FormControl.LabelPart)!;
+        IPointer? pointer = null;
+        label.AddHandler(InputElement.PointerPressedEvent, (_, e) => pointer = e.Pointer, handledEventsToo: true);
+        scene.Press(label);
+        Assert.Same(label, pointer!.Captured);
+        pointer.Capture(other);
+        pointer.Capture(label);
+        scene.Window.MouseUp(scene.CentreOf(label), MouseButton.Left);
+        scene.Pump();
+        Assert.False(input.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void A_form_control_taken_out_of_the_tree_lets_its_label_go()
+    {
+        var five = new Input();
+        var form = new FormControl { Label = "Label", Content = new Input(), HtmlFor = five };
+        var page = new StackPanel { Children = { form, five } };
+        using var scene = Show(page);
+        Assert.Same(form.Part(FormControl.LabelPart), AutomationProperties.GetLabeledBy(five));
+
+        page.Children.Remove(form);
+        scene.Pump();
+        Assert.Null(AutomationProperties.GetLabeledBy(five));
+
+        page.Children.Insert(0, form);
+        scene.Pump();
+        Assert.Same(form.Part(FormControl.LabelPart), AutomationProperties.GetLabeledBy(five));
+    }
+
+    // Each keystroke changes the counter's text from one value to the next, never through nothing.
+    [AvaloniaFact]
+    public void The_counter_goes_from_one_text_to_the_next()
+    {
+        var input = new Input { MaxLength = 40 };
+        var form = new FormControl { Label = "Label", Counter = true, Content = input };
+        using var scene = Show(form);
+        var end = (ContentPresenter)form.Part(FormControl.LabelEndEnhancerPart)!;
+        var seen = new List<object?>();
+        end.PropertyChanged += (_, e) => { if (e.Property == ContentPresenter.ContentProperty) seen.Add(e.NewValue); };
+        input.Text = "a";
+        input.Text = "ab";
+        scene.Pump();
+        Assert.Equal(["1/40", "2/40"], seen);
+    }
+
+    [AvaloniaFact]
+    public void A_function_giving_text_is_called_and_shows_no_icon()
+    {
+        var form = new FormControl { Label = "Label", Error = new Func<FormControlState, string>(s => s.Error ? "Called" : "?"), Content = new Input() };
+        using var scene = Show(form);
+        Assert.Equal("Called", Hint(form));
+        Assert.Null(Icon(form));
+    }
+
     [AvaloniaFact]
     public void A_label_without_a_focusable_target_does_nothing()
     {

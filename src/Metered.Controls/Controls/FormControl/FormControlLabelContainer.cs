@@ -67,17 +67,28 @@ public class FormControlLabelContainer : Panel
         return (width, end.DesiredSize.Height);
     }
 
-    /// <summary>The widest word of the text in the text block's font: CSS's min-content width of text.</summary>
-    private static double Widest(TextBlock text, string content)
+    /// <summary>The white space a line breaks at: all but the no-break spaces (U+00A0, U+2007, U+202F).</summary>
+    private static readonly char[] Breaks = Enumerable.Range(0, 0x3001).Select(c => (char)c)
+        .Where(c => char.IsWhiteSpace(c) && c is not (' ' or ' ' or ' ')).ToArray();
+
+    private (string Text, Typeface Typeface, double Size, double Width)? _widest;
+
+    /// <summary>
+    /// The widest word of the text in the text block's font: CSS's min-content width of text, its words broken at the
+    /// spaces a line breaks at. The last is kept: a counter's text changes as it is typed, its font doesn't.
+    /// </summary>
+    private double Widest(TextBlock text, string content)
     {
         var typeface = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch);
+        if (_widest is { } last && last.Text == content && last.Typeface == typeface && last.Size == text.FontSize) return last.Width;
         var widest = 0.0;
-        foreach (var word in content.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var word in content.Split(Breaks, StringSplitOptions.RemoveEmptyEntries))
         {
             using var layout = new TextLayout(word, typeface, text.FontSize, null);
             widest = Math.Max(widest, layout.WidthIncludingTrailingWhitespace);
         }
 
+        _widest = (content, typeface, text.FontSize, widest);
         return widest;
     }
 }

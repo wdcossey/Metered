@@ -9,6 +9,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Metadata;
 using AvaloniaLabel = Avalonia.Controls.Label;
 
@@ -92,7 +93,6 @@ public class FormControl : ContentControl
 
     private readonly Parts _parts;
     private readonly Held _held = new();
-    private readonly OverrideCollection _effective = [];
     private OverrideCollection? _followed;
     private AvaloniaObject? _child;
     private FormControlState _state = new(false, false, false);
@@ -100,7 +100,6 @@ public class FormControl : ContentControl
     public FormControl()
     {
         _parts = new Parts(this, "FormControl", PartNames);
-        _parts.SetOverrides(_effective);
     }
 
     /// <summary>Base Web's <c>label</c>: rendered above the child, with its row, when it is something.</summary>
@@ -150,9 +149,26 @@ public class FormControl : ContentControl
         Update();
     }
 
+    /// <summary>Gives the label's target and the child their values again when it comes back into a tree.</summary>
+    protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToLogicalTree(e);
+        Update();
+    }
+
+    /// <summary>
+    /// Lets go of what it gave an element outside it (the label's name for <see cref="HtmlFor"/>'s element) when it
+    /// leaves the tree: a label no longer shown names nothing.
+    /// </summary>
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromLogicalTree(e);
+        _held.Release(o => !IsPart(o) && o != _child);
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _held.Release(part => part is StyledElement s && _parts.Names.Any(n => _parts[n] == s));
+        _held.Release(IsPart);
         base.OnApplyTemplate(e);
         _parts.Attach(e.NameScope);
         Update();
@@ -184,6 +200,12 @@ public class FormControl : ContentControl
         _ => true,
     };
 
+    /// <summary>
+    /// A function of the shared props, Base Web's <c>typeof x === 'function'</c>: one that gives a reference type is one too
+    /// (C#'s covariance). The one test for both what is called and what has no icon.
+    /// </summary>
+    private static bool IsFunction(object? value) => value is Func<FormControlState, object?>;
+
     /// <summary>A value, or what a function of the shared props gives for them.</summary>
     private static object? Resolve(object? value, FormControlState state) =>
         value is Func<FormControlState, object?> f ? f(state) : value;
@@ -206,8 +228,8 @@ public class FormControl : ContentControl
         else if (IsTruthy(Caption)) hint = Resolve(Caption, state);
         var hasHint = IsTruthy(hint);
         string? icon = null;
-        if (hasHint && IsTruthy(error)) icon = error is Delegate ? null : "alert";
-        else if (hasHint && IsTruthy(positive)) icon = positive is Delegate ? null : "check";
+        if (hasHint && IsTruthy(error)) icon = IsFunction(error) ? null : "alert";
+        else if (hasHint && IsTruthy(positive)) icon = IsFunction(positive) ? null : "check";
 
         var endEnhancer = LabelEndEnhancer;
         if (Counter is { } counter)
@@ -261,8 +283,8 @@ public class FormControl : ContentControl
             // Base Web's Textarea has error: false in its defaultProps, so its own error is always set.
             if (child is not Textarea) GiveFlag(child, "Error", state.Error);
             GiveFlag(child, "Positive", state.Positive);
-            var described = IsTruthy(Caption) || IsTruthy(positive) || IsTruthy(error);
-            Give(child, AutomationProperties.HelpTextProperty, described && hasHint ? TextOf(hint) : null);
+            // A hint is a caption, a positive or an error, so one of the two names it whenever it is shown.
+            Give(child, AutomationProperties.HelpTextProperty, hasHint ? TextOf(hint) : null);
         }
     }
 
@@ -334,11 +356,14 @@ public class FormControl : ContentControl
 
     private void OnOverridesChanged(object? sender, NotifyCollectionChangedEventArgs? e)
     {
-        _effective.Clear();
+        // A new collection, given once: the parts' themes are worked out once for a change.
+        var effective = new OverrideCollection();
         foreach (var entry in _followed ?? [])
         {
-            _effective.Add(ComponentOnly.Contains(entry.Part) ? new Override { Part = entry.Part, Component = entry.Component } : entry);
+            effective.Add(ComponentOnly.Contains(entry.Part) ? new Override { Part = entry.Part, Component = entry.Component } : entry);
         }
+
+        _parts.SetOverrides(effective);
     }
 
     /// <summary>
@@ -352,15 +377,13 @@ public class FormControl : ContentControl
         public void Set(AvaloniaObject target, AvaloniaProperty property, object? value)
         {
             var key = (target, property);
-            if (_held.TryGetValue(key, out var held))
-            {
-                if (Equals(held.Value, value)) return;
-                held.Frame?.Dispose();
-                _held.Remove(key);
-            }
+            var had = _held.TryGetValue(key, out var held);
+            if (had && Equals(held.Value, value)) return;
 
-            if (value is null) return;
-            _held[key] = (value, target.SetValue(property, value, BindingPriority.Template));
+            // The new value before the old one goes, so the property never passes through its default between them.
+            if (value is null) _held.Remove(key);
+            else _held[key] = (value, target.SetValue(property, value, BindingPriority.Template));
+            if (had) held.Frame?.Dispose();
         }
 
         /// <summary>Lets go of every value on the elements that match (of that property, if one is given).</summary>

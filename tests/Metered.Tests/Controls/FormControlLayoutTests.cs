@@ -119,6 +119,35 @@ public class FormControlLayoutTests
         AssertFont(facts.Caption.Font, Text(form, FormControl.CaptionMessagePart));
     }
 
+    // CSS collapses the label row's bottom margin, the control container's top (0) and the child's own top margin into
+    // one; and the child's bottom margin with the caption's top margin. Each the largest of the positive ones.
+    [AvaloniaFact]
+    public void A_childs_own_margins_collapse_with_the_rows_round_it()
+    {
+        var facts = FormControlOracle.Value.Layout.Facts;
+        var row = FormControlOracle.Value.Layout.Cases.Single(c => c.Label && !c.LabelEndEnhancer && c.Hint == "caption");
+        var input = new Input { Margin = new Thickness(0, 12, 0, 20) };
+        var form = new FormControl { Label = "Label", Caption = "Caption", Content = input };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        double Collapse(params double[] m) => Math.Max(0, m.Max()) + Math.Min(0, m.Min());
+        var labelBottom = row.LabelTop!.Value + row.LabelRow!.Value;
+        var top = labelBottom + Collapse(facts.LabelContainer.Margin[3], facts.ControlContainer.Margin[1], 12);
+        Assert.Equal(top, InputLayoutTests.At(input, form).Y, 3);
+        var caption = (Control)form.Part(FormControl.CaptionPart)!;
+        Assert.Equal(top + input.Bounds.Height + Collapse(20, facts.Caption.Margin[1]), InputLayoutTests.At(caption, form).Y, 3);
+    }
+
+    [AvaloniaFact]
+    public void A_no_break_space_doesnt_break_the_end_enhancer()
+    {
+        var facts = FormControlOracle.Value.Layout.Facts;
+        var form = new FormControl { Label = "Label", LabelEndEnhancer = "Optional\u00A0field", Content = new Input() };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Width = Width, Children = { form } });
+        var end = (Control)form.Part(FormControl.LabelEndEnhancerPart)!;
+        Assert.InRange(end.Bounds.Width, Measure("Optional\u00A0field", facts.LabelEndEnhancer.Font) - 1, Measure("Optional\u00A0field", facts.LabelEndEnhancer.Font) + 1);
+        Assert.Equal(facts.LabelEndEnhancer.Font.LineHeight, end.Bounds.Height, 3);
+    }
+
     [AvaloniaFact]
     public void A_long_label_and_caption_wrap_at_their_words_inside_the_width()
     {
