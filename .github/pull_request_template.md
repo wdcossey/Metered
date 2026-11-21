@@ -30,7 +30,7 @@ Closes #
 
 ## For you to decide
 
-<!-- Questions settled with the conservative choice, each with the alternative. "None" if none. -->
+<!-- Questions settled with the conservative choice, each with the alternative, and its row in `docs/deviations.md` "as built". "None" if none. -->
 
 ## Hands-on follow-ups
 
