@@ -178,9 +178,17 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    the text box what Avalonia would give it from them: keys, text, focus, a press, a menu asked for. A finger's tap and
    a held finger on them still reach it: neither can be seen headless (#90). A Space that clears from the clear icon
    doesn't type a space into the input it focuses (Base Web's `preventDefault`).
-10. **On a phone, untried.** The caret, the selection handles, the soft keyboard and the clear icon under a finger are
-   Avalonia's and tested headless only; the device run is #90 (hands-on). Holding isn't raised headless, so the drag
-   after a hold, which extends its selection, is untested here too.
+10. **On a phone, tried on a Pixel 8** (Android 16, Gboard, Release, 2026-11-21, #90). A tap focuses the input and
+   opens the keyboard. A finger's drag from an input scrolls the page and focuses nothing (#94). A long press selects a
+   word with Avalonia's handles and opens the menu, and dragging a handle extends the selection without moving the page.
+   Copy and paste work. The clear icon clears and keeps the focus. A password asks for a password keyboard (no
+   personalised learning), and the toggle takes the focus and closes the keyboard, as in Chrome. A tap on an enhancer
+   focuses the input. Problems found there, each its own issue:
+   - the keyboard covers a focused input near the page's foot, and the page can't scroll it into view (#108);
+   - selection handles stay on an input after the focus leaves it (#109);
+   - the menu shows desktop shortcuts and covers the selection (#110).
+
+   Holding isn't raised headless, so the drag after a hold is tested only on the phone.
 11. **A long value doesn't scroll sideways under a finger.** The text's scroller has no scroll gesture, and a finger's
    drag no longer moves the caret (#94), so a sideways drag on a value longer than the box moves nothing; the text still
    scrolls to keep the caret in view (a tap, typing, the keys). Whether a phone's browser scrolls an `<input>`'s

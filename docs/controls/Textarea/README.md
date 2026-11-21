@@ -120,7 +120,9 @@ recorder, on the real light and dark themes.
    text box's template.
 5. **Its 20 columns' width is Chrome's rule**, read from the font's OS/2 table (Instrument Sans here, Uber Move on
    baseweb.design), and only where the root is `fit-content`; with no OS/2 width, the width of `0`.
-6. **The caret, the selection handles and the soft keyboard on a phone are untried**, as Input's: #90 (hands-on), with
-   the drag on a real touch screen and Enter on the soft keyboard. Holding isn't raised headless, so the drag after a
-   hold is untested here.
+6. **Tried on a Pixel 8** (Android 16, Gboard, Release, 2026-11-21, #90). Enter on the soft keyboard makes a new line;
+   a finger's drag in a long text scrolls the text, not the page; the resize grip resizes it under a finger. Input's
+   findings apply here too (its known difference 10). One problem of its own: dragging the grip also focuses the
+   textarea and opens the keyboard (#111). Holding isn't raised headless, so the drag after a hold is tested only on
+   the phone.
 7. **Transitions start after load**, as on every Metered control.
