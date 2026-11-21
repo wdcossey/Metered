@@ -117,7 +117,7 @@ public class ProgressBarTests
         AssertRenders(Case(20, 0, 100), pb);
 
         // A maximum under the minimum is the minimum: an empty range, the value at it. It reads "0% Complete", not Base
-        // Web's "NaN% Complete" (#82: Shown).
+        // Web's "NaN% Complete", and its fill is empty, as Base Web's bar at its minimum (#82: Drawn).
         pb.Minimum = 50;
         pb.Maximum = 10;
         Assert.Equal(50, pb.Maximum);
@@ -266,30 +266,45 @@ public class ProgressBarTests
     }
 
     // #82, against Base Web (the developer's choice of 2026-11-21; docs/controls/ProgressBar/, known difference 12):
-    // over an empty range Base Web's default label, (value - minValue) / (maxValue - minValue), divides zero by zero and
-    // reads "NaN% Complete", and so does its aria-label, which a screen reader reads out. Here both read "0% Complete".
-    // The rest is Base Web's: the oracle's case stays as Base Web rendered it, its fill full (translateX(-NaN%) isn't
-    // CSS); a stepped bar's name stays Base Web's "Step NaN of 3"; an app's own GetProgressLabel gets the range as it is.
+    // over an empty range each of Base Web's formulas divides zero by zero. Its label and aria-label read "NaN%
+    // Complete", a stepped bar's "Step NaN of 3", and a screen reader reads them out; its fill of one step is full
+    // (translateX(-NaN%) isn't CSS), its three steps all await. Here an empty range is Base Web's bar at its minimum,
+    // 0 of 0 to 100, as the oracle rendered it: "0% Complete" over an empty fill, "Step 0 of 3" with the first step in
+    // progress. The oracle's empty cases stay as Base Web rendered them, and differ. An app's GetProgressLabel and the
+    // range assistive technology reads are the bar's own.
     [AvaloniaFact]
-    public void The_default_label_reads_0_percent_on_an_empty_range_where_Base_Webs_reads_NaN()
+    public void An_empty_range_is_drawn_and_named_as_Base_Webs_bar_at_its_minimum_not_with_NaN()
     {
         var c = Case(50, 50, 50);
         Assert.Equal("NaN% Complete", c.Label);
         Assert.Equal("NaN% Complete", c.Name);
-        Assert.Equal("NaN% Complete", ProgressBar.DefaultLabel(c.Value, c.MaxValue, c.MinValue));
+        Assert.Equal(0, c.Bars[0].Offset);
+        var stepped = ProgressBarOracle.Data.Values.Single(v => v.MinValue == 50 && v.MaxValue == 50 && v.Steps == 3);
+        Assert.Equal("Step NaN of 3", stepped.Name);
+        Assert.All(stepped.Bars, bar => Assert.Equal("awaits", bar.State));
+        // Base Web's formulas, as Metered writes them, still give its own output for an empty range.
+        Assert.Equal(c.Label, ProgressBar.DefaultLabel(c.Value, c.MaxValue, c.MinValue));
+        Assert.Equal(stepped.Name, ProgressBar.StepLabel(stepped.Value, stepped.MaxValue, stepped.MinValue, stepped.Steps));
+        Assert.Equal(c.Bars[0].Offset, ProgressBar.Offset(c.Value, c.MinValue, c.MaxValue));
+        Assert.Equal(":step-awaits", ProgressBar.StepState(stepped.Value, stepped.MinValue, stepped.MaxValue, stepped.Steps, 0));
 
         var pb = Make(c);
-        var stepped = ProgressBarOracle.Data.Values.Single(v => v.MinValue == 50 && v.MaxValue == 50 && v.Steps == 3);
         var steps = Make(stepped);
         using var scene = new Scene(new StackPanel { Children = { pb, steps } });
-        Assert.Equal("0% Complete", ((TextBlock)pb.Part(ProgressBar.LabelPart)!).Text);
-        Assert.Equal("0% Complete", ControlAutomationPeer.CreatePeerForElement(pb).GetName());
-        Assert.Equal(c.Bars[0].Offset, pb.Elements(ProgressBar.BarProgressPart).Cast<ProgressBarFill>().Single().Offset, 9);
-        Assert.Equal("Step NaN of 3", stepped.Name);
-        Assert.Equal(stepped.Name, ControlAutomationPeer.CreatePeerForElement(steps).GetName());
-        // Base Web shows a stepped bar's label as a bar of one step's: "0% Complete" here too.
+        var atMinimum = Case(0, 0, 100);
+        var steppedAtMinimum = Drawn(stepped);
+        Assert.Equal(("0% Complete", "0% Complete", -100.0), (atMinimum.Label, atMinimum.Name, atMinimum.Bars[0].Offset));
+        Assert.Equal("Step 0 of 3", steppedAtMinimum.Name);
+        Assert.Equal(["inProgress", "awaits", "awaits"], steppedAtMinimum.Bars.Select(bar => bar.State));
+        AssertRenders(atMinimum, pb);
+        AssertRenders(steppedAtMinimum, steps);
+        Assert.NotEqual(Output(c), Output(atMinimum));
+        Assert.NotEqual(Output(stepped), Output(steppedAtMinimum));
+        Assert.Equal((50.0, 50.0, 50.0), (pb.Value, pb.Minimum, pb.Maximum));
+
+        // A stepped bar's label is a bar of one step's: "0% Complete" too.
         steps.ShowLabel = true;
-        Assert.Equal("0% Complete", ((TextBlock)steps.Part(ProgressBar.LabelPart)!).Text);
+        Assert.Equal(atMinimum.Label, ((TextBlock)steps.Part(ProgressBar.LabelPart)!).Text);
 
         var calls = new List<(double, double, double)>();
         pb.GetProgressLabel = (value, max, min) => { calls.Add((value, max, min)); return $"{value} of {min} to {max}"; };
@@ -297,12 +312,13 @@ public class ProgressBarTests
         Assert.Equal("50 of 50 to 50", ((TextBlock)pb.Part(ProgressBar.LabelPart)!).Text);
         Assert.Equal("50 of 50 to 50", ControlAutomationPeer.CreatePeerForElement(pb).GetName());
 
-        // A range again: Base Web's label.
+        // A range again: Base Web's own, the value at its minimum, then in the range.
         pb.GetProgressLabel = null;
-        pb.Maximum = 100;
-        Assert.Equal("0% Complete", ((TextBlock)pb.Part(ProgressBar.LabelPart)!).Text);
-        pb.Value = 75;
-        Assert.Equal(ProgressBar.DefaultLabel(75, 100, 50), ((TextBlock)pb.Part(ProgressBar.LabelPart)!).Text);
+        pb.Maximum = 200;
+        pb.Minimum = 100;
+        AssertRenders(Case(100, 100, 200), pb);
+        pb.Value = 120;
+        AssertRenders(Case(120, 100, 200), pb);
     }
 
     /// <summary>
@@ -326,23 +342,15 @@ public class ProgressBarTests
             && !v.Infinite && v.ShowLabel && v.AriaLabel is null);
 
     /// <summary>
-    /// The label and the name the bar shows for a case Base Web rendered: Base Web's, but for its default label over an
-    /// empty range, which reads "NaN% Complete" in Base Web and "0% Complete" here (#82, the developer's choice;
-    /// docs/controls/ProgressBar/, known difference 12). The case itself stays as Base Web rendered it.
+    /// What the bar renders for a case Base Web rendered: Base Web's case, but for an empty range, where each of Base
+    /// Web's formulas divides zero by zero ("NaN% Complete", "Step NaN of 3", a full fill of one step, none of three in
+    /// progress), Base Web's own case for a bar at its minimum, 0 of 0 to 100, with the same steps, label and name (#82,
+    /// the developer's choice; docs/controls/ProgressBar/, known difference 12). The empty case itself stays as Base Web
+    /// rendered it.
     /// </summary>
-    private static (string? Label, string Name) Shown(ProgressBarValueCase c)
-    {
-        if (c.MaxValue != c.MinValue) return (c.Label, c.Name);
-        var label = c.Label is null ? null : EmptyRange(c.Label);
-        var name = c.AriaLabel is null && !c.Infinite && c.Steps == 1 ? EmptyRange(c.Name) : c.Name;
-        return (label, name);
-
-        static string EmptyRange(string baseWebs)
-        {
-            Assert.Equal("NaN% Complete", baseWebs);
-            return "0% Complete";
-        }
-    }
+    private static ProgressBarValueCase Drawn(ProgressBarValueCase c) =>
+        c.MaxValue != c.MinValue ? c : ProgressBarOracle.Data.Values.Single(v => v.Value == 0 && v.MinValue == 0 && v.MaxValue == 100
+            && v.Steps == c.Steps && v.Infinite == c.Infinite && v.ShowLabel == c.ShowLabel && v.AriaLabel == c.AriaLabel);
 
     /// <summary>What Base Web renders for a case, to tell two apart: the name, the label and each bar's state and offset.</summary>
     private static string Output(ProgressBarValueCase c) =>
@@ -357,6 +365,8 @@ public class ProgressBarTests
     /// <summary>The bar renders what Base Web renders for the case: its bars, each step's state and fill, the label, the name.</summary>
     private static void AssertRenders(ProgressBarValueCase c, ProgressBar pb)
     {
+        // An empty range is rendered as Base Web's bar at its minimum (#82).
+        c = Drawn(c);
         var fills = pb.Elements(ProgressBar.BarProgressPart).Cast<ProgressBarFill>().ToList();
         Assert.Equal(c.Bars.Length, fills.Count);
         Assert.Equal(c.Bars.Length, pb.Elements(ProgressBar.BarPart).Count);
@@ -371,13 +381,12 @@ public class ProgressBarTests
             Assert.Equal(expected.Offset, fills[i].GetBaseValue(ProgressBarFill.OffsetProperty).GetValueOrDefault(), 9);
         }
 
-        var shown = Shown(c);
         var label = (TextBlock)pb.Part(ProgressBar.LabelPart)!;
-        Assert.Equal(shown.Label is not null, label.IsVisible);
-        if (shown.Label is not null) Assert.Equal(shown.Label, label.Text);
+        Assert.Equal(c.Label is not null, label.IsVisible);
+        if (c.Label is not null) Assert.Equal(c.Label, label.Text);
 
         var peer = ControlAutomationPeer.CreatePeerForElement(pb);
-        Assert.Equal(shown.Name, peer.GetName());
+        Assert.Equal(c.Name, peer.GetName());
         Assert.Equal(AutomationControlType.ProgressBar, peer.GetAutomationControlType());
         // aria-valuenow and aria-valuemax: the range assistive technology reads is the bar's, clamped.
         var range = Assert.IsAssignableFrom<IRangeValueProvider>(peer);

@@ -115,21 +115,32 @@ public class ProgressBar : RangeBase
     /// <summary>
     /// Base Web's <c>getProgressLabel</c>: the label for a value, a maximum and a minimum, in that order, as Base Web
     /// calls it. Null is Base Web's default, the percentage, rounded: "20% Complete"; over an empty range "0% Complete",
-    /// where Base Web's reads "NaN% Complete".
+    /// where Base Web's reads "NaN% Complete". The function is given the bar's own range, empty or not.
     /// </summary>
     public Func<double, double, double, string>? GetProgressLabel { get => GetValue(GetProgressLabelProperty); set => SetValue(GetProgressLabelProperty, value); }
 
     /// <summary>Base Web's <c>overrides</c>, by part: <c>Root</c>, <c>BarContainer</c>, <c>Bar</c>, <c>BarProgress</c>, <c>InfiniteBar</c>, <c>Label</c>.</summary>
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
 
-    /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, or its default (<see cref="ShownLabel"/>).</summary>
-    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? ShownLabel(Value, Maximum, Minimum);
+    /// <summary>The label Base Web shows: <see cref="GetProgressLabel"/>'s, given the bar's own range, or its default.</summary>
+    internal string ProgressLabel => GetProgressLabel?.Invoke(Value, Maximum, Minimum) ?? DefaultLabel(Drawn.Value, Drawn.Max, Drawn.Min);
 
     /// <summary>
     /// The name Base Web gives assistive technology when the app gives none (<c>aria-label</c>): "Loading" when infinite,
     /// "Step 3 of 4" with steps, otherwise the label.
     /// </summary>
-    internal string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? StepLabel(Value, Maximum, Minimum, Steps) : ProgressLabel;
+    internal string DefaultAccessibleName => Infinite ? "Loading" : Steps > 1 ? StepLabel(Drawn.Value, Drawn.Max, Drawn.Min, Steps) : ProgressLabel;
+
+    /// <summary>
+    /// The value and range Base Web's formulas are given for the default label, the name, the fill and the step states:
+    /// the bar's own, but over an empty range (the maximum at the minimum), where each of them divides zero by zero, a
+    /// value at the minimum of a range (0 of 0 to 1). So an empty range is drawn and named as Base Web draws a bar at its
+    /// minimum: "0% Complete", "Step 0 of 3", an empty fill, the first step in progress. Base Web's own reads "NaN%
+    /// Complete" and "Step NaN of 3" over a full fill of one step or none of three (the developer's choice of
+    /// 2026-11-21, #82; against Base Web). An app's <see cref="GetProgressLabel"/> and the range assistive technology
+    /// reads are the bar's own.
+    /// </summary>
+    private (double Value, double Min, double Max) Drawn => Maximum == Minimum ? (0, 0, 1) : (Value, Minimum, Maximum);
 
     /// <summary>A part of the current template by its Base Web name (the first, for a part it makes many of), for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
@@ -207,14 +218,6 @@ public class ProgressBar : RangeBase
     internal static string DefaultLabel(double value, double maxValue, double minValue) =>
         $"{Js(JsRound((value - minValue) / (maxValue - minValue) * 100))}% Complete";
 
-    /// <summary>
-    /// The default label the bar shows and names itself by: Base Web's (<see cref="DefaultLabel"/>), except over an
-    /// empty range (the maximum at the minimum), where Base Web's divides zero by zero and reads "NaN% Complete", which a
-    /// screen reader reads out too: here "0% Complete" (the developer's choice of 2026-11-21, #82; against Base Web).
-    /// </summary>
-    internal static string ShownLabel(double value, double maxValue, double minValue) =>
-        maxValue == minValue ? "0% Complete" : DefaultLabel(value, maxValue, minValue);
-
     /// <summary>Base Web's step label: <c>`Step ${Math.ceil((value - minValue) / (maxValue - minValue) * steps)} of ${steps}`</c>.</summary>
     internal static string StepLabel(double value, double maxValue, double minValue, int steps) =>
         $"Step {Js(Math.Ceiling((value - minValue) / (maxValue - minValue) * steps))} of {steps.ToString(CultureInfo.InvariantCulture)}";
@@ -223,7 +226,8 @@ public class ProgressBar : RangeBase
     /// Base Web's fill in a bar of one step (styled-components.js, StyledBarProgress): <c>translateX(-${100 - (value -
     /// min) * 100 / (max - min)}%)</c>. Past the maximum the width is negative and the text <c>translateX(--50%)</c>
     /// isn't CSS: a browser drops it and draws no transform, 0; so it does for a width that isn't a number (an empty
-    /// range). The bar gives it its coerced value, never one past the range; Base Web's own is kept for the tests.
+    /// range). The bar gives it its coerced value, never one past the range, and never an empty range (<see cref="Drawn"/>);
+    /// Base Web's own is kept for the tests.
     /// </summary>
     internal static double Offset(double value, double minValue, double maxValue)
     {
@@ -316,13 +320,14 @@ public class ProgressBar : RangeBase
     private void UpdateFill(StyledElement fill, int index)
     {
         var classes = (IPseudoClasses)fill.Classes;
-        var state = Steps > 1 ? StepState(Value, Minimum, Maximum, Steps, index) : null;
+        var (value, min, max) = Drawn;
+        var state = Steps > 1 ? StepState(value, min, max, Steps, index) : null;
         foreach (var s in StepStates) classes.Set(s, s == state);
         if (state is not null) return;
 
         // A bar of one step: the value's offset. Set before the last is let go, so the fill never sees the theme's own
         // in between (its transition runs from the last value to this one); kept, a frame each would pile up.
-        var next = fill.SetValue(ProgressBarFill.OffsetProperty, Offset(Value, Minimum, Maximum), BindingPriority.Template);
+        var next = fill.SetValue(ProgressBarFill.OffsetProperty, Offset(value, min, max), BindingPriority.Template);
         _offset?.Dispose();
         _offset = next;
     }

@@ -52,7 +52,7 @@ Avalonia's progress bar automation peer.
   `brandBorderAccessible`; `backgroundAccent` with none), the bar's whole box with its own 2 corners, moved along by
   Base Web's `translateX(-${100 - (value - min) * 100 / (max - min)}%)` and clipped by the bar. The value is never
   past the range here (known difference 11); over an empty range Base Web's text is `translateX(-NaN%)`, which isn't
-  CSS, so a browser draws no transform: the bar is full, here too.
+  CSS, so a browser draws no transform and the bar is full; here it is empty (known difference 12).
 - Stepped: a step whose share of the range is reached is completed (`translateX(0%)`); the next is in progress, Base
   Web's 2.1 s endless slide in from −102 % and fade out (linear); the rest await (−102 %). Base Web's own arithmetic,
   percentages against shares of the range, is kept: `StepState`.
@@ -99,8 +99,8 @@ the pictures. An app never sets it.
   technology; the parts' state; steps and value changing; the transition and both animations with
   `:metered-still`; the gradient drawn at four positions and in a new colour, the fill and the steps drawn; overrides on every part
   (and over the value's offset); the name's change raised as the value moves; a new bar at its value at once; the label
-  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`; the empty range's label,
-  against Base Web's (known difference 12): 83 in all.
+  only with `ShowLabel`; one offset held however often the value changes; no `ErrorMessage`; an empty range drawn and
+  named as Base Web's bar at its minimum, against Base Web's own (known difference 12): 83 in all.
 - `Sample/ProgressBarPageTests`: the sample's page, 5.
 
 The part themes are generated (`tools/tokens/progress-bar.js`): the style functions evaluated on Base Web's theme with
@@ -161,16 +161,19 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
     −10 of 4 steps has its first step in progress. When `Minimum` or `Maximum` changes, `RangeBase` clamps again from
     the value as it was set, so a range that grows back gives the value back, and XAML's order doesn't matter (the
     value is clamped again once the bar is initialized). `Value` still binds one way by default; a two-way binding,
-    the app's own choice, is `RangeBase`'s. A maximum under the minimum makes an empty range, whose default label reads "0% Complete" (known difference 12).
+    the app's own choice, is `RangeBase`'s. A maximum under the minimum makes an empty range, drawn and named as Base Web's bar at its minimum (known difference 12).
     The tests keep Base Web's output for a value past the range as it recorded it, beside the clamped bar's, which is
     Base Web's own for the clamped value.
-12. **An empty range reads "0% Complete"** (#82; the developer's choice on 2026-11-21, against Base Web, for
-    usability). With the maximum at the minimum, Base Web's default label, `Math.round((value - minValue) / (maxValue -
-    minValue) * 100)`, divides zero by zero and reads "NaN% Complete", and so does its `aria-label`, which a screen
-    reader reads out. Here the default label and the accessible name read "0% Complete". The rest stays Base Web's: the
-    fill of a bar of one step is full (its `translateX(-NaN%)` isn't CSS, so a browser draws no transform), so it is
-    drawn full under "0% Complete"; a stepped
-    bar's name reads "Step NaN of 3" (its label, with `ShowLabel`, "0% Complete"), and an app's own `GetProgressLabel`
-    is given the range as it is. A range that opens from empty with the value at its minimum reads "0% Complete" before
-    and after, so no change of name is raised where Base Web's live region says the new one. The oracle keeps
-    Base Web's case as it rendered it ("NaN% Complete"), and the tests expect "0% Complete" for it by name.
+12. **An empty range is drawn and named as Base Web's bar at its minimum** (#82; the developer's choice on
+    2026-11-21, against Base Web, for usability, so that the label and the bar agree). With the maximum at the
+    minimum, each of Base Web's formulas divides zero by zero: its default label, `Math.round((value - minValue) /
+    (maxValue - minValue) * 100)`, reads "NaN% Complete", and so does its `aria-label`, which a screen reader reads
+    out; a stepped bar's `aria-label` reads "Step NaN of 3"; the fill of a bar of one step is full (its
+    `translateX(-NaN%)` isn't CSS, so a browser draws no transform); and every step of a stepped bar awaits. Here
+    Base Web's formulas are given a value at the minimum of a range (0 of 0 to 1) instead, so the bar is Base Web's
+    own at its minimum: "0% Complete" over an empty fill, or "Step 0 of 3" with the first step in progress (its label,
+    with `ShowLabel`, "0% Complete"). An app's own `GetProgressLabel` is still given the range as it is, and assistive
+    technology still reads the bar's own range. A range that opens from empty with the value at its minimum reads "0%
+    Complete" before and after, so no change of name is raised where Base Web's live region says the new one. The
+    oracle keeps Base Web's empty cases as it rendered them; the tests expect, by name, its cases for a bar at its
+    minimum (0 of 0 to 100) in their place.
