@@ -208,6 +208,7 @@ public class InputFrames
         });
         var shown = new Input { Type = InputType.Password, Text = "1234" };
         Add(right, "password, shown", shown);
+        // The scenario's value is Base Web's own example; Metered carries no Uber mark, so it reads "example" here.
         Add(right, "start enhancer, compact (input.scenario.tsx)", new Input { Text = "example", StartEnhancer = "@", EndEnhancer = ".com", Size = InputSize.Compact });
 
         var variant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
