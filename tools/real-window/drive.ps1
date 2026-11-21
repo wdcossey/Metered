@@ -81,6 +81,8 @@ public static class RealInput {
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
   public static void Down() { mouse_event(2, 0, 0, 0, IntPtr.Zero); }
   public static void Up() { mouse_event(4, 0, 0, 0, IntPtr.Zero); }
+  // The wheel (MOUSEEVENTF_WHEEL), in WHEEL_DELTA's 120 a notch: positive away from the user, which scrolls up.
+  public static void Wheel(int delta) { mouse_event(0x0800, 0, 0, unchecked((uint)delta), IntPtr.Zero); }
   [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
   [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
   [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
@@ -172,6 +174,8 @@ function Region($x, $y, $wd, $ht) {
 # Each read of the screen first makes sure the sample is in front, as a picture of another app's window would compare as
 # well as one of the sample's: a baseline of the wrong window passes or fails checks falsely.
 function Look($el) { Guard; $b = $el.Current.BoundingRectangle; Region $b.X $b.Y $b.Width $b.Height }
+# The left half of it: an input's text, away from its trailing icon and the icon's focus ring.
+function LeftHalf($el) { Guard; $b = $el.Current.BoundingRectangle; Region $b.X $b.Y ($b.Width / 2) $b.Height }
 function Shot($name) {
     Guard
     $r = $win.Current.BoundingRectangle
@@ -205,27 +209,91 @@ function ById($id) {
 # controls, as Base Web's are): searched in the raw view. Only for a container whose bounds a section aims along; a
 # control is found by ById, which would miss one left out of the control view, as it caught #56.
 function RawById($id) {
+    $el = RawFind $win (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)
+    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
+    $el
+}
+# The first element under $root that meets a condition, in UI Automation's raw view, or nothing.
+function RawFind($root, $cond) {
     $request = New-Object Windows.Automation.CacheRequest
     $request.TreeFilter = [Windows.Automation.Automation]::RawViewCondition
     $request.Push()
-    try { $el = $win.FindFirst($TS::Descendants, (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)) }
+    try { $root.FindFirst($TS::Descendants, $cond) }
     finally { $request.Pop() }
-    if (-not $el) { throw "Nothing on the page, in the raw view either, has the AutomationId $id" }
-    $el
+}
+# A part of a control's template by its Name, which Avalonia gives UI Automation as its AutomationId, inside the control,
+# in the raw view: a textarea's Root, whose box is the one that resizes. selftest.ps1 finds the name in the themes.
+function PartOf($el, $id) {
+    $found = RawFind $el (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, $id)
+    if (-not $found) { throw "$($el.Current.AutomationId) has no part $id inside it" }
+    $found
+}
+# The shell's Debug footer, laid over the page's foot, is hidden by a press on it, which reaches nothing it covers
+# (SampleShell's OnFooterTapped); so a control at the page's foot can be pressed. Nothing to do in Release, or once hidden.
+function NoFooter {
+    $footer = RawFind $win (New-Object Windows.Automation.PropertyCondition $AE::AutomationIdProperty, 'Footer')
+    if (-not $footer -or $footer.Current.IsOffscreen) { return }
+    $f = $footer.Current.BoundingRectangle
+    if ([double]::IsInfinity($f.Height) -or $f.Width -le 0 -or $f.Height -le 0) { return }
+    ClickAt ([int]($f.X + $f.Width / 2)) ([int]($f.Y + $f.Height / 2))
+    Away
+    $f = $footer.Current.BoundingRectangle
+    if (-not $footer.Current.IsOffscreen -and $f.Height -gt 0 -and -not [double]::IsInfinity($f.Height)) { throw 'The footer is still over the page after a press on it' }
+}
+# The page's scroll viewer: the first that UI Automation can scroll, as it holds every control on the page.
+function PageScroller {
+    $cond = New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true
+    $viewer = $win.FindFirst($TS::Descendants, $cond)
+    if (-not $viewer) { throw 'The page has no scroll viewer UI Automation can scroll' }
+    $viewer
 }
 # Scrolls the page's scroll viewer to its end through UI Automation's scroll pattern, which sends no input, so that a
 # control below the fold can be pressed inside the window.
 function ScrollToEnd {
-    $cond = New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true
-    $viewer = $win.FindFirst($TS::Descendants, $cond)
-    if (-not $viewer) { throw 'The page has no scroll viewer UI Automation can scroll' }
-    $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern).SetScrollPercent(-1, 100)
+    (PageScroller).GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern).SetScrollPercent(-1, 100)
     Start-Sleep -Milliseconds 400
+}
+# Scrolls the page through UI Automation's scroll pattern, as ScrollToEnd does, just far enough to show a control wholly in
+# its view, $margin view px from its edge (helpers.ps1's ScrollBy and ScrollPercentFor); fails if it still doesn't show.
+# A control's bounds are its whole box, scrolled out of view or not, so its top and bottom say how far.
+function Reveal($el, $margin = 4) {
+    NoFooter
+    $viewer = PageScroller
+    $scroll = $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
+    $v = $viewer.Current.BoundingRectangle
+    $b = $el.Current.BoundingRectangle
+    $by = ScrollBy $b.Y $b.Bottom $v.Y $v.Bottom (Px $margin)
+    if ($by) {
+        $scroll.SetScrollPercent(-1, (ScrollPercentFor $scroll.Current.VerticalScrollPercent $scroll.Current.VerticalViewSize $v.Height $by))
+        Start-Sleep -Milliseconds 400
+        $b = $el.Current.BoundingRectangle
+    }
+    if (-not (Wholly $b.Y $b.Bottom $v.Y $v.Bottom)) { throw "$($el.Current.AutomationId) doesn't show wholly in the page's view ($b in $v), so it can't be pressed" }
+}
+# The scroll viewer inside a control, as a textarea's text scroller, by UI Automation's scroll pattern: searched in the raw
+# view, as RawById does, since a template's part may be left out of the control view. Its pattern, read live by .Current.
+function ScrollerIn($el) {
+    $found = RawFind $el (New-Object Windows.Automation.PropertyCondition $AE::IsScrollPatternAvailableProperty, $true)
+    if (-not $found) { throw "$($el.Current.AutomationId) has no scroller inside it that UI Automation can read" }
+    $found.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
 }
 # A TextBlock on the page that a section reads, by its x:Name: UI Automation's name for it is its text, read live from
 # .Current.Name. ById by another name, so that selftest.ps1 can tell the two apart; a section finds it once, as a search
 # of the whole tree takes long enough to shift a timed read.
 function ReadOut($id) { ById $id }
+# A part of a control's template, inside it, by its type and its name to UI Automation: an input's clear icon and its mask
+# toggle, named by BaseInput's labels (Base Web's aria-labels), which selftest.ps1 finds in Metered.Controls. Find it again
+# once it has been hidden: a part shown again may be a new element.
+function Inner($el, $type, $name) {
+    $cond = New-Object Windows.Automation.PropertyCondition $AE::ControlTypeProperty, $type
+    $found = $el.FindAll($TS::Descendants, $cond) | ForEach-Object { $_ } | Where-Object { $_.Current.Name -ceq $name } | Select-Object -First 1
+    if (-not $found) { throw "$($el.Current.AutomationId) has no $name inside it" }
+    $found
+}
+# An input's or a textarea's text, through UI Automation's value pattern (Avalonia's text box is an edit with its value).
+# Whether a control's name to UI Automation is a label, case and all: as Inner's, one of Metered.Controls' (selftest.ps1).
+function Labelled($el, $name) { $el.Current.Name -ceq $name }
+function TextOf($el) { "$($el.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current.Value)" }
 function Texts { (All $CT::Text | ForEach-Object { $_.Current.Name } | Where-Object { $_ }) }
 function FirstText($like) { Texts | Where-Object { $_ -like $like } | Select-Object -First 1 }
 # A scroll bar's own buttons, which have no size at its ends and aren't the app's.
@@ -318,12 +386,14 @@ function Slide($x, $y, $steps = 10, $ms = 16) {
         Start-Sleep -Milliseconds $ms; TouchMove $at.X $at.Y
     }
 }
-# A drag in any direction, in screen pixels, by touch and by the mouse. From Cornflower's.
-function TouchDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16) {
+# A drag in any direction, in screen pixels, by touch and by the mouse. From Cornflower's. A touch drag may be held still
+# for $still ms at its end before the lift, so that it ends with no speed for a scroller's inertia to carry on.
+function TouchDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16, $still = 0) {
     # Windows refuses a touch off the screen (87) partway through.
     OnScreen ($x + $dx) ($y + $dy)
     TouchDown $x $y
     Slide ($x + $dx) ($y + $dy) $steps $ms
+    if ($still) { Hold $still }
     TouchUp
 }
 function MouseDrag($x, $y, $dx, $dy, $steps = 15, $ms = 16) {
@@ -342,6 +412,13 @@ function ClickAt($x, $y) {
     Press; Start-Sleep -Milliseconds 50; Release; Start-Sleep -Milliseconds 600
 }
 function Click($el) { $x, $y = Centre $el; ClickAt $x $y }
+# The wheel turned $notches over a point: positive towards the user, which scrolls down, as a page's end is below.
+function Wheel($x, $y, $notches) {
+    Within $x $y
+    Guard
+    [void][RealInput]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120
+    [RealInput]::Wheel(-120 * $notches); Start-Sleep -Milliseconds 500
+}
 # A tap and a click on a labelled control's mark (Mark).
 function TapMark($el, $in = 14) { $x, $y = Mark $el $in; Tap $x $y }
 function ClickMark($el, $in = 14) { $x, $y = Mark $el $in; ClickAt $x $y }
@@ -796,6 +873,289 @@ try {
         Shot 'slider-page-panned'
         Check 'a touch drag up off the slider scrolls the page' ((Top) -lt ($top - (Px 60))) "$(Top) against $top"
         Check 'and leaves the value' (Near 20) ($state.Current.Name)
+    }
+
+    # Base Web's input (docs/controls/Input): a click and the keyboard focus it, and its tab order is the input, its clear
+    # icon, its mask toggle, as in Base Web's markup. An input's text is read through UI Automation's value pattern, and the
+    # first input's from the page's line under it as well.
+    Section 'input: a click and Tab focus it, and typing goes in' {
+        Open 'Input'
+        $basic = ById 'Basic'
+        $state = ReadOut 'State'
+        function Said { After $state.Current.Name 'Value' }
+        Check 'the first input starts with its value' ((Said) -ceq 'Hello') $state.Current.Name
+        Click $basic
+        Check 'a click focuses it' (IsFocused $basic) "$($AE::FocusedElement.Current.Name)"
+        Key '{END}'
+        Key ' there'
+        Shot 'input-typed'
+        Check 'and what is typed goes in, at the caret' ((Said) -ceq 'Hello there') $state.Current.Name
+        Check 'as UI Automation reads it too' ((TextOf $basic) -ceq 'Hello there') (TextOf $basic)
+        Away
+
+        # At the foot of the page, below the fold of a phone's window.
+        $clearable = ById 'Clearable'
+        $password = ById 'Password'
+        Reveal $password
+        Reveal $clearable
+        Click $clearable
+        Check 'a click focuses the clearable input' (IsFocused $clearable) "$($AE::FocusedElement.Current.Name)"
+        $clear = Inner $clearable $CT::Button 'Clear value'
+        Key '{TAB}'
+        Check 'Tab moves the focus to its clear icon' (IsFocused $clear) "$($AE::FocusedElement.Current.Name)"
+        Key '{TAB}'
+        Check 'then to the next input, the password' (IsFocused $password) "$($AE::FocusedElement.Current.Name)"
+        $toggle = Inner $password $CT::Button 'Show password text'
+        Key '{TAB}'
+        Shot 'input-tab-toggle'
+        Check 'then to its mask toggle' (IsFocused $toggle) "$($AE::FocusedElement.Current.Name)"
+        Key '+{TAB}'
+        Check 'and Shift+Tab takes it back to the password' (IsFocused $password) "$($AE::FocusedElement.Current.Name)"
+    }
+
+    # base-input.js: the clear icon shows for a clearable input with a value; a click, a tap, or Space on it clears the
+    # value and focuses the input, and so does Escape in the input. A Space that clears types no space (preventDefault).
+    Section 'input: the clear icon by a click, a tap, Space and Escape' {
+        Open 'Input'
+        $field = ById 'Clearable'
+        Reveal $field
+        function Value { TextOf $field }
+        Check 'the clearable input starts with its value' ((Value) -ceq 'Clear me!') (Value)
+        Click (Inner $field $CT::Button 'Clear value')
+        Shot 'input-cleared'
+        Check 'a click on its clear icon clears it' ((Value) -ceq '') (Value)
+        Check 'and focuses the input' (IsFocused $field) "$($AE::FocusedElement.Current.Name)"
+        Away
+        Key 'abc'
+        Check 'typing fills it again' ((Value) -ceq 'abc') (Value)
+        Key '{ESC}'
+        Check 'Escape in it clears it' ((Value) -ceq '') (Value)
+        Key 'tap'
+        $cx, $cy = Centre (Inner $field $CT::Button 'Clear value')
+        Tap $cx $cy
+        Check 'a tap on the clear icon clears it' ((Value) -ceq '') (Value)
+        Check 'and leaves the input focused' (IsFocused $field) "$($AE::FocusedElement.Current.Name)"
+        Key 'key'
+        Key '{TAB}'
+        Check 'Tab from the input focuses its clear icon' (IsFocused (Inner $field $CT::Button 'Clear value')) "$($AE::FocusedElement.Current.Name)"
+        Shot 'input-clear-focused'
+        Key ' '
+        Check 'and Space on it clears the input, with no space typed' ((Value) -ceq '') "'$(Value)'"
+        Check 'and gives the input the focus' (IsFocused $field) "$($AE::FocusedElement.Current.Name)"
+    }
+
+    # base-input.js: a password is masked until its toggle is pressed, which relabels it; Enter on the toggle presses it,
+    # and Enter in the input doesn't. The text is compared in the input's left half, away from the toggle, with the text box
+    # unfocused each time, so that only the mask differs.
+    Section 'input: the password''s mask toggle by Enter and a click' {
+        Open 'Input'
+        $password = ById 'Password'
+        Reveal $password
+        $toggle = Inner $password $CT::Button 'Show password text'
+        function Label { $toggle.Current.Name }
+        Click $password
+        Key '{ENTER}'
+        Check 'Enter in the password leaves it masked' (Labelled $toggle 'Show password text') (Label)
+        Key '{TAB}'
+        Check 'Tab focuses its toggle' (IsFocused $toggle) "$($AE::FocusedElement.Current.Name)"
+        $masked = LeftHalf $password
+        try {
+            Key '{ENTER}'
+            Shot 'input-password-shown'
+            Check 'Enter on the toggle shows the text, and relabels it' (Labelled $toggle 'Hide password text') (Label)
+            $shown = Changed $masked (LeftHalf $password)
+            Check 'and the text is drawn unmasked' ($shown -gt $Moved) "$shown sampled pixels differ"
+            Key '{ENTER}'
+            Check 'a second Enter masks it again' (Labelled $toggle 'Show password text') (Label)
+            $again = Changed $masked (LeftHalf $password)
+            Check 'and it is drawn as it was' ($again -lt $Same) "$again sampled pixels differ"
+            Click $toggle
+            Check 'a click on the toggle shows the text' (Labelled $toggle 'Hide password text') (Label)
+            $clicked = Changed $masked (LeftHalf $password)
+            Check 'drawn unmasked' ($clicked -gt $Moved) "$clicked sampled pixels differ"
+            Click $toggle
+            Check 'and a second click masks it' (Labelled $toggle 'Show password text') (Label)
+        }
+        finally { $masked.Dispose() }
+        Away
+    }
+
+    # Metered's (docs/controls/Input, known difference 1): an enhancer is inside the text box's template, so a press on it
+    # focuses the input, where Base Web's enhancer is a div outside its <input>. On the start enhancer's text.
+    Section 'input: a press on an enhancer focuses its input' {
+        Open 'Input'
+        $start = ById 'Start'
+        Reveal $start
+        $b = $start.Current.BoundingRectangle
+        $ex, $ey = EnhancerAt $b.X $b.Y $b.Height $script:scale
+        ClickAt $ex $ey
+        Shot 'input-enhancer-clicked'
+        Check 'a click on the @ enhancer focuses its input' (IsFocused $start) "$($AE::FocusedElement.Current.Name)"
+        Key 'x'
+        Check 'and what is typed goes into it' ((TextOf $start) -ceq 'x') (TextOf $start)
+        Away
+        $both = ById 'Both'
+        Reveal $both
+        $b = $both.Current.BoundingRectangle
+        $ex, $ey = EnhancerAt $b.X $b.Y $b.Height $script:scale
+        Tap $ex $ey
+        Check 'a tap on the $ enhancer focuses its input' (IsFocused $both) "$($AE::FocusedElement.Current.Name)"
+    }
+
+    # #94: a finger's drag that starts on an input scrolls the page round it, focused or not, and leaves the caret where it
+    # was; only a tap places it (docs/controls/Input). Where the page is, read from where the input is on the screen; where
+    # the caret is, from where a typed letter goes. Each drag is held still before the lift, so the page has no inertia.
+    Section 'input: a finger''s drag on an input scrolls the page, and only a tap places the caret' {
+        Open 'Input'
+        $unfocused = ById 'Error'
+        Reveal $unfocused
+        function TopOf($el) { $el.Current.BoundingRectangle.Y }
+        $top = TopOf $unfocused
+        $b = $unfocused.Current.BoundingRectangle
+        $x, $y = TextAt $b.X $b.Y $b.Height $script:scale
+        TouchDrag $x $y 0 (-(Px 150)) 20 16 300
+        Start-Sleep -Milliseconds 600
+        Shot 'input-touch-drag'
+        Check 'a finger''s drag up on an input that isn''t focused scrolls the page' ((TopOf $unfocused) -lt ($top - (Px 60))) "$(TopOf $unfocused) against $top"
+
+        $field = ById 'Clearable'
+        Reveal $field
+        Click $field
+        Key '{END}'
+        Check 'a click focuses the clearable input' (IsFocused $field) "$($AE::FocusedElement.Current.Name)"
+        Away
+        $top = TopOf $field
+        $b = $field.Current.BoundingRectangle
+        # On its first letter, so that a caret put where the finger lifts would be at the start, not the end.
+        $x, $y = TextAt $b.X $b.Y $b.Height $script:scale
+        TouchDrag $x $y 0 (-(Px 150)) 20 16 300
+        Start-Sleep -Milliseconds 600
+        Shot 'input-touch-drag-focused'
+        Check 'a finger''s drag up on the focused input scrolls the page too' ((TopOf $field) -lt ($top - (Px 60))) "$(TopOf $field) against $top"
+        Check 'and leaves its text' ((TextOf $field) -ceq 'Clear me!') (TextOf $field)
+        Key 'Z'
+        Check 'and its caret where it was, at the end' ((TextOf $field) -ceq 'Clear me!Z') (TextOf $field)
+        $b = $field.Current.BoundingRectangle
+        $x, $y = TextAt $b.X $b.Y $b.Height $script:scale
+        Tap $x $y
+        Key 'Y'
+        $at = InsertedAt 'Clear me!Z' (TextOf $field) 'Y'
+        Shot 'input-tapped'
+        Check 'a tap on its first letter puts the caret there' (($at -ge 0) -and ($at -le 1)) (TextOf $field)
+    }
+
+    # Base Web's textarea (docs/controls/Textarea): Enter starts a line, as a browser's <textarea>; its clear icon and
+    # Escape are BaseInput's, as the input's. Its text through UI Automation's value pattern, and the page's line under it.
+    Section 'textarea: typing with Enter, and the clear icon by a click and Escape' {
+        Open 'Textarea'
+        $basic = ById 'Basic'
+        $state = ReadOut 'State'
+        function TwoLines($text) { $l = @(LinesOf $text); ($l.Count -eq 2) -and ($l[0] -ceq 'one') -and ($l[1] -ceq 'two') }
+        Click $basic
+        Check 'a click focuses it' (IsFocused $basic) "$($AE::FocusedElement.Current.Name)"
+        Key 'one{ENTER}two'
+        Shot 'textarea-typed'
+        Check 'Enter in it starts a new line' (TwoLines (TextOf $basic)) (TextOf $basic)
+        Check 'and leaves it focused' (IsFocused $basic) "$($AE::FocusedElement.Current.Name)"
+        Check 'and the page''s line says it' (TwoLines (After $state.Current.Name 'Value')) $state.Current.Name
+        Away
+
+        $clearable = ById 'Clearable'
+        Reveal $clearable
+        function Value { TextOf $clearable }
+        Check 'the clearable textarea starts with its value' ((Value) -ceq 'initial value') (Value)
+        Click (Inner $clearable $CT::Button 'Clear value')
+        Shot 'textarea-cleared'
+        Check 'a click on its clear icon clears it' ((Value) -ceq '') (Value)
+        Check 'and focuses the textarea' (IsFocused $clearable) "$($AE::FocusedElement.Current.Name)"
+        Away
+        Key 'again'
+        Check 'typing fills it again' ((Value) -ceq 'again') (Value)
+        Key '{ESC}'
+        Check 'Escape in it clears it' ((Value) -ceq '') (Value)
+    }
+
+    # A browser's textarea: a long text scrolls inside it by the wheel and a finger; a finger's drag is the textarea's
+    # unless it is at its end that way when the drag starts, and one that has moved it stays its own past its end, until
+    # the finger lifts (docs/controls/Textarea). The page is scrolled just far enough to show the textarea, so it can still
+    # scroll further down; where the textarea's text is, from its own scroller's scroll pattern; where the page is, from
+    # where the textarea is on the screen. Each drag is held still before the lift, so neither has inertia.
+    Section 'textarea: a long text scrolls by the wheel and a finger, latched at its end' {
+        Open 'Textarea'
+        $long = ById 'Long'
+        Reveal $long
+        $viewer = PageScroller
+        $page = $viewer.GetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern)
+        # The page's last control: what is left is its StackPanel's 32 view px margin below it, less Reveal's 4.
+        $room = RoomLeft $page.Current.VerticalScrollPercent $page.Current.VerticalViewSize $viewer.Current.BoundingRectangle.Height
+        Check 'the page can still scroll 16 view px further, so a drag that leaves it proves something' ($room -ge (Px 16)) "$room px at $($page.Current.VerticalScrollPercent) %"
+        $text = ScrollerIn $long
+        function Scrolled { $text.Current.VerticalScrollPercent }
+        function Top { $long.Current.BoundingRectangle.Y }
+        $top = Top
+        Check 'its text starts at its top' (((Scrolled) -ge 0) -and ((Scrolled) -le 0.5)) "$(Scrolled) %"
+        $x, $y = Centre $long
+        Wheel $x $y 1
+        Shot 'textarea-wheel'
+        Check 'a notch of the wheel over it scrolls its text' ((Scrolled) -gt 0.5) "$(Scrolled) %"
+        Check 'and not the page' ((Top) -eq $top) "$(Top) against $top"
+        Wheel $x $y -1
+        Check 'and a notch back scrolls it back to its top' (((Scrolled) -ge 0) -and ((Scrolled) -le 0.5)) "$(Scrolled) %"
+        Check 'still not the page' ((Top) -eq $top) "$(Top) against $top"
+        Away
+
+        TouchDrag $x $y 0 (-(Px 60)) 15 16 300
+        Start-Sleep -Milliseconds 400
+        Shot 'textarea-touch-drag'
+        $partway = Scrolled
+        Check 'a finger''s short drag up on it scrolls its text, partway' (($partway -gt 0.5) -and ($partway -lt 99.5)) "$partway %"
+        Check 'and not the page' ((Top) -eq $top) "$(Top) against $top"
+        # How far its text has left to go depends on how its lines wrap at the window's width, so it is dragged in long
+        # strokes until a stroke has taken it to its end, and past it: that last stroke is the latched one.
+        $strokes = 0
+        do {
+            TouchDrag $x $y 0 (-(Px 200)) 20 16 300
+            Start-Sleep -Milliseconds 400
+            $strokes++
+        } while (((Scrolled) -lt 99.5) -and ($strokes -lt 8))
+        Shot 'textarea-touch-drag-latched'
+        Check 'long drags up take its text to its end' ((Scrolled) -ge 99.5) "$(Scrolled) % after $strokes strokes"
+        Check 'and, latched to it past its end, leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
+        TouchDrag $x $y 0 (-(Px 150)) 20 16 300
+        Start-Sleep -Milliseconds 600
+        Shot 'textarea-page-scrolled'
+        Check 'a drag that starts with it at its end scrolls the page' ((Top) -lt ($top - (Px 8))) "$(Top) against $top"
+        Check 'and leaves its text at its end' ((Scrolled) -ge 99.5) "$(Scrolled) %"
+    }
+
+    # CSS's resize, a browser's grip in the textarea's end corner: a drag on it by any pointer sets the textarea's width and
+    # height (resize="both"), the size following the pointer, and a finger's is the grip's alone, which pans nothing
+    # (docs/controls/Textarea). Shown with room below it, so the drag's end is in the window.
+    Section 'textarea: the resize grip by the mouse and a finger' {
+        Open 'Textarea'
+        $resizable = ById 'Resizable'
+        Reveal $resizable 60
+        # The root's box, not the control's: a textarea that resizes has a fit-content root to the left
+        # (Textarea.StyledRoot's :resize-both), and the control stretches across the page.
+        $box = PartOf $resizable 'Root'
+        $before = $box.Current.BoundingRectangle
+        $gx, $gy = GripAt $before.Right $before.Bottom $script:scale
+        MouseDrag $gx $gy (Px 40) (Px 30)
+        Start-Sleep -Milliseconds 400
+        Away
+        Shot 'textarea-grip-mouse'
+        $after = $box.Current.BoundingRectangle
+        Check 'a mouse drag on its grip makes it 40 wider' (Grew $before.Width $after.Width (Px 40) (Px 2)) "$($before.Width) to $($after.Width)"
+        Check 'and 30 taller' (Grew $before.Height $after.Height (Px 30) (Px 2)) "$($before.Height) to $($after.Height)"
+        Check 'and leaves the page' ($after.Y -eq $before.Y) "$($after.Y) against $($before.Y)"
+        $gx, $gy = GripAt $after.Right $after.Bottom $script:scale
+        TouchDrag $gx $gy (-(Px 30)) (-(Px 20)) 15 16 200
+        Start-Sleep -Milliseconds 600
+        Shot 'textarea-grip-touch'
+        $touched = $box.Current.BoundingRectangle
+        Check 'a finger''s drag on its grip makes it 30 narrower' (Grew $after.Width $touched.Width (-(Px 30)) (Px 2)) "$($after.Width) to $($touched.Width)"
+        Check 'and 20 shorter' (Grew $after.Height $touched.Height (-(Px 20)) (Px 2)) "$($after.Height) to $($touched.Height)"
+        Check 'and pans nothing' ($touched.Y -eq $after.Y) "$($touched.Y) against $($after.Y)"
     }
 
     Section 'The window can be resized' {

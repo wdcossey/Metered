@@ -178,8 +178,9 @@ themes, and computes the block flow's positions from the style functions' margin
    `aria-describedby` would read its text.
 7. **The validation example** checks an address with a plain pattern, not the `email-validator` package, and leaves out
    its `After` override (an 18 px alert in the input).
-8. **On a phone, that a tap on a label opens the soft keyboard is untried**: it focuses the text box by a pointer, which
-   Avalonia's Android backend takes to show the keyboard: #102 (hands-on), with the drag from a label.
+8. **On a phone, tried on a Pixel 8** (Android 17 (API 37), 2026-11-21, #102): a tap on a label focuses its input and
+   opens the soft keyboard; a drag from a label scrolls the page and focuses nothing; a disabled one's label does nothing.
+   Not checked yet: the `HtmlFor` label (#102).
 9. **A Textarea is given the form control's error, as an Input is** (the developer, 2026-11-21 night, #105). Base Web's
    Textarea has `error: false` in its defaultProps, so under a form control in error its border stays as it is while the
    caption turns red: an accident of its defaults. The oracle keeps Base Web's case; the test expects, for a Textarea, what

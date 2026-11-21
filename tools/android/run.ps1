@@ -16,7 +16,8 @@
     the start Android timed, and each open's ready and cost lines; logcat.txt, the page's log. summary.json, beside
     the page folders, holds every page's run.json. Exits non-zero if any step fails, with logcat.txt kept.
 
-    The phone must be the only device `adb devices` lists, with USB or wireless debugging on. A phone with a secure
+    The phone must be the only device `adb devices` lists, or the one ANDROID_SERIAL names (adb then sends every
+    command to it, and other devices are left alone), with USB or wireless debugging on. A phone with a secure
     lock has to be unlocked by hand: the script wakes the screen and waits.
 
     PowerShell 7.4 or later, on Linux, macOS or Windows. adb is taken from ANDROID_HOME, then ANDROID_SDK_ROOT, then
@@ -190,6 +191,29 @@ function Get-ColdStartTime($am) {
     if ($am.TotalTimeMs -and ($null -eq $am.LaunchState -or $am.LaunchState -eq 'COLD')) { $am.TotalTimeMs } else { $null }
 }
 
+# The device to run on, from `adb devices`' output: the one ready device listed, or, with a serial (ANDROID_SERIAL), the
+# device of that serial, exactly as adb prints it, whatever else is attached (adb then sends every command to it).
+function Select-Device([string]$listing, [string]$serial) {
+    $lines = @($listing -split "`r?`n" | Where-Object { $_ -match '^\S+\s+\S+$' -and $_ -notmatch '^List of devices' })
+    if ($serial -and $serial.Trim()) {
+        $serial = $serial.Trim()
+        $named = @($lines | Where-Object { ($_ -split '\s+')[0] -ceq $serial })
+        if ($named.Count -ne 1) {
+            throw "ANDROID_SERIAL is '$serial', which 'adb devices' doesn't list. Give the serial exactly as 'adb devices' prints it."
+        }
+        $state = ($named[0] -split '\s+')[1]
+        if ($state -ne 'device') {
+            throw "ANDROID_SERIAL's device is $state, not ready: accept the debugging prompt on the phone, or reconnect it."
+        }
+        return $serial
+    }
+    $ready = @($lines | Where-Object { ($_ -split '\s+')[1] -eq 'device' })
+    if ($ready.Count -ne 1) {
+        throw "Expected one device in 'adb devices', found $($ready.Count). Is the phone connected (USB switch) or paired for wireless debugging? With several, set ANDROID_SERIAL to the phone's serial."
+    }
+    return ($ready[0] -split '\s+')[0]
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # -SelfTest: every parser above on tools/android/fixtures, which hold logcat and am output in the phone's own format.
 # The fixtures' ready and cost lines have the shape the sample's shell writes (tests/Metered.Tests/Sample/
@@ -225,6 +249,17 @@ function Invoke-SelfTest {
     Check 'a title with no letter still makes a folder' (Get-PageFolder '***') 'page'
     Check 'no two pages share a folder' (Get-PageFolders @('Button', 'button', 'Theme', 'BUTTON!')) @('button', 'button-2', 'theme', 'button-3')
     Check 'one page is a list of one folder, not its letters' (Get-PageFolders @('Button')) @('button')
+
+    Write-Host '-- The device: adb devices'
+    $two = "List of devices attached`r`n10.0.0.74:46715`tdevice`r`nemulator-5554`tdevice`r`n`r`n"
+    Check 'the one device listed' (Select-Device "* daemon started successfully`nList of devices attached`nR3CT10ABC`tdevice`n" '') 'R3CT10ABC'
+    Throws 'two devices and no serial is an error' { Select-Device $two '' }
+    Check 'ANDROID_SERIAL picks the phone beside an emulator' (Select-Device $two '10.0.0.74:46715') '10.0.0.74:46715'
+    Check 'and is trimmed' (Select-Device $two ' emulator-5554 ') 'emulator-5554'
+    Throws 'a serial adb doesn''t list is an error' { Select-Device $two '10.0.0.74' }
+    Throws 'a serial in the wrong case is an error, as adb''s are exact' { Select-Device "List of devices attached`nR3CT10ABC`tdevice`n" 'r3ct10abc' }
+    Throws 'an unauthorized device named is an error' { Select-Device "List of devices attached`n10.0.0.74:46715`tunauthorized`nemulator-5554`tdevice`n" '10.0.0.74:46715' }
+    Throws 'no ready device is an error' { Select-Device "List of devices attached`nR3CT10ABC`toffline`n" '' }
 
     Write-Host '-- A cold start, Release: one ready line among the phone''s own'
     $opens = Read-Opens (Fixture 'logcat-release.txt')
@@ -431,10 +466,9 @@ trap {
 }
 
 # 1. One phone.
-$devices = @((Adb devices) -split "`r?`n" | Where-Object { $_ -match "^\S+\s+device$" })
-if ($devices.Count -ne 1) {
-    throw "Expected one device in 'adb devices', found $($devices.Count). Is the phone connected (USB switch) or paired for wireless debugging?"
-}
+$serial = Select-Device (Adb devices) $env:ANDROID_SERIAL
+# adb reads ANDROID_SERIAL itself: give it the serial as checked (trimmed), so every command goes to that device.
+if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL = $serial }
 $model = (Adb shell getprop ro.product.model).Trim()
 $release = (Adb shell getprop ro.build.version.release).Trim()
 $sdk = (Adb shell getprop ro.build.version.sdk).Trim()
