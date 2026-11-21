@@ -148,4 +148,4 @@ themes, and computes the block flow's positions from the style functions' margin
 7. **The validation example** checks an address with a plain pattern, not the `email-validator` package, and leaves out
    its `After` override (an 18 px alert in the input).
 8. **On a phone, that a tap on a label opens the soft keyboard is untried**: it focuses the text box by a pointer, which
-   Avalonia's Android backend takes to show the keyboard. A hands-on follow-up, with the drag from a label.
+   Avalonia's Android backend takes to show the keyboard: #102 (hands-on), with the drag from a label.
