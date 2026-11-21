@@ -34,8 +34,8 @@ page shows it for two seconds after a click), the selected state, the tap area (
 48 px band), the fill width, and the start and end enhancers.
 
 <p>
-<img src="docs/preview/light__button-1.png" width="270" alt="Button, light: kinds, sizes, shapes, states and enhancers">
-<img src="docs/preview/dark__button-1.png" width="270" alt="Button, dark: kinds, sizes, shapes, states and enhancers">
+<img src="docs/preview/light__button-1.png" width="270" alt="Button, light: kinds, sizes, shapes, states (one button loading) and enhancers">
+<img src="docs/preview/dark__button-1.png" width="270" alt="Button, dark: kinds, sizes, shapes, states (one button loading) and enhancers">
 </p>
 
 ## ButtonGroup

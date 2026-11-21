@@ -10,6 +10,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Metered.Sample;
+using Metered.Sample.Pages;
 using Button = Metered.Controls.Button;
 
 namespace Metered.Tests.Sample;
@@ -114,13 +115,17 @@ public class PreviewGallery
     {
         shell.ShowIndex();
         Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{ListName}");
+        var staged = false;
         foreach (var page in shell.Catalogue)
         {
             shell.Open(page);
-            Stage(page.Title, shell.Shown);
-            Shoot(window, Scroller(shell.Shown), folder, $"{variant}__{PictureName(page.Title)}");
+            var shown = shell.Shown ?? throw new InvalidOperationException($"The shell shows nothing for '{page.Title}'.");
+            staged |= Stage(shown);
+            Shoot(window, Scroller(shown), folder, $"{variant}__{PictureName(page.Title)}");
         }
 
+        if (!staged)
+            throw new InvalidOperationException("The catalogue has no Button page to show its Loading button loading: update PreviewGallery.");
         shell.ShowIndex();
     }
 
@@ -128,15 +133,18 @@ public class PreviewGallery
     /// What a page shows in its pictures that it doesn't show when opened. The Button page's <c>Loading</c> button
     /// loading, as Base Web's <c>&lt;Button isLoading&gt;</c> shows (#83): the page itself shows it only for a while
     /// after a click, and a button of its own would wrap its row and make the page two screens. Its ring is held still,
-    /// as every endless motion is (<see cref="HoldStill"/>). A page without the button fails rather than drawing a
-    /// picture without it.
+    /// as every endless motion is (<see cref="HoldStill"/>); its label is hidden while it loads, as Base Web's is. It
+    /// is set as the page's own click sets it (<see cref="ButtonPage.Load"/>), with no timer to end it. A Button page
+    /// without the button, or a catalogue without the page, fails rather than drawing a picture without it. Returns
+    /// whether the page was staged.
     /// </summary>
-    private static void Stage(string title, Control? shown)
+    private static bool Stage(Control shown)
     {
-        if (title != "Button") return;
-        var loading = shown?.FindControl<Button>("Loading")
+        if (shown is not ButtonPage page) return false;
+        var loading = page.FindControl<Button>("Loading")
             ?? throw new InvalidOperationException("The Button page has no 'Loading' button: update PreviewGallery.");
         loading.IsLoading = true;
+        return true;
     }
 
     /// <summary>What the list's pictures are called.</summary>
