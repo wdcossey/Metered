@@ -543,8 +543,14 @@ public class TextareaTests
         var field = P<TextareaField>(textarea, BaseInput.InputPart);
         var start = field.Bounds.Height;
         var at = scene.CentreOf(Grip(textarea));
-        TouchDrag(scene, at, at - new Vector(0, -60));
+        TouchDrag(scene, at, at + new Vector(0, 60));
         Assert.Equal(start + 60, field.Bounds.Height);
+        Assert.Equal(0, page.Offset.Y);
+
+        // Up, the way the page could scroll: the textarea is shorter, and the page stays.
+        at = scene.CentreOf(Grip(textarea));
+        TouchDrag(scene, at, at - new Vector(0, 80));
+        Assert.Equal(start - 20, field.Bounds.Height);
         Assert.Equal(0, page.Offset.Y);
     }
 
