@@ -208,7 +208,7 @@ public class InputFrames
         });
         var shown = new Input { Type = InputType.Password, Text = "1234" };
         Add(right, "password, shown", shown);
-        Add(right, "start enhancer, compact (input.scenario.tsx)", new Input { Text = "uber", StartEnhancer = "@", EndEnhancer = ".com", Size = InputSize.Compact });
+        Add(right, "start enhancer, compact (input.scenario.tsx)", new Input { Text = "example", StartEnhancer = "@", EndEnhancer = ".com", Size = InputSize.Compact });
 
         var variant = dark ? ThemeVariant.Dark : ThemeVariant.Light;
         using var scene = new Scene(new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Children = { left, right } },
