@@ -167,8 +167,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    properties after a control is made, so here it is whether the type is a password until the toggle is clicked, and the
    toggle's after: the same for an input made a password, as every example and scenario does.
 9. **The text box's own controls.** The parts that take focus are inside the text box's template, so Metered keeps from
-   the text box what Avalonia would give it from them: keys, text, focus, a press, a menu asked for. A
-   finger's tap and a held finger on them still reach it: neither can be seen headless (#90). A Space that clears from the clear icon
+   the text box what Avalonia would give it from them: keys, text, focus, a press, a menu asked for. A finger's tap and
+   a held finger on them still reach it: neither can be seen headless (#90). A Space that clears from the clear icon
    doesn't type a space into the input it focuses (Base Web's `preventDefault`).
 10. **On a phone, untried.** The caret, the selection handles, the soft keyboard and the clear icon under a finger are
    Avalonia's and tested headless only; the device run is #90 (hands-on).
