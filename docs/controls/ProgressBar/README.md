@@ -168,6 +168,9 @@ dark themes: nothing of `progressbar.js` is ported to get the expected values.
     usability). With the maximum at the minimum, Base Web's default label, `Math.round((value - minValue) / (maxValue -
     minValue) * 100)`, divides zero by zero and reads "NaN% Complete", and so does its `aria-label`, which a screen
     reader reads out. Here the default label and the accessible name read "0% Complete". The rest stays Base Web's: the
-    fill of a bar of one step is full (its `translateX(-NaN%)` isn't CSS, so a browser draws no transform), a stepped
-    bar's name reads "Step NaN of 3", and an app's own `GetProgressLabel` is given the range as it is. The oracle keeps
+    fill of a bar of one step is full (its `translateX(-NaN%)` isn't CSS, so a browser draws no transform), so it is
+    drawn full under "0% Complete"; a stepped
+    bar's name reads "Step NaN of 3" (its label, with `ShowLabel`, "0% Complete"), and an app's own `GetProgressLabel`
+    is given the range as it is. A range that opens from empty with the value at its minimum reads "0% Complete" before
+    and after, so no change of name is raised where Base Web's live region says the new one. The oracle keeps
     Base Web's case as it rendered it ("NaN% Complete"), and the tests expect "0% Complete" for it by name.

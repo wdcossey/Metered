@@ -287,6 +287,9 @@ public class ProgressBarTests
         Assert.Equal(c.Bars[0].Offset, pb.Elements(ProgressBar.BarProgressPart).Cast<ProgressBarFill>().Single().Offset, 9);
         Assert.Equal("Step NaN of 3", stepped.Name);
         Assert.Equal(stepped.Name, ControlAutomationPeer.CreatePeerForElement(steps).GetName());
+        // Base Web shows a stepped bar's label as a bar of one step's: "0% Complete" here too.
+        steps.ShowLabel = true;
+        Assert.Equal("0% Complete", ((TextBlock)steps.Part(ProgressBar.LabelPart)!).Text);
 
         var calls = new List<(double, double, double)>();
         pb.GetProgressLabel = (value, max, min) => { calls.Add((value, max, min)); return $"{value} of {min} to {max}"; };
