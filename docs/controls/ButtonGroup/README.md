@@ -52,7 +52,8 @@ wrap (36 cases), and each behaviour above.
 ## Known differences
 
 1. Base Web's controlled and stateful groups are one: `Selected` is set by a click whatever bound it.
-2. `aria-checked` has no Avalonia equivalent on a Button's automation peer; the role is set.
+2. `aria-checked` has no Avalonia equivalent on a Button's automation peer; the role is set. A button's own role is kept in a plain group,
+   where Base Web's `child.props.role || isRadio ? 'radio' : …` reads "radio" (the developer's decision of 2026-11-21, #70).
 3. Base Web reads a child's own `isSelected` of true on every render. Here the group reads the
    button's own `IsSelected` each time it applies (a change to the group, or the button's place),
    and when the button's own value changes while the group holds none over it. Avalonia raises no

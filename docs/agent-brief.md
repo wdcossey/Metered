@@ -55,8 +55,8 @@ You're building one Metered issue while one or two other agents build others. Re
   Checkbox-v2 and Switch, and it had to be redone (#42). Also check the page for deprecated props.
 - **Every deviation from Base Web** goes in your control's README, with its measurement, and as a row of
   `docs/deviations.md` (Chosen, Forced or Not yet; "as built" until the developer decides). One Avalonia doesn't
-  force also goes under **For you to decide**, with the alternative. Add your rows in their control's place in the
-  table, not at its end.
+  force also goes under **For you to decide**, with the alternative. Add your rows after your control's last row; a
+  control with none goes at the table's end.
 - **Never hand-edit a generated file** (`CLAUDE.md`, rule 1): change the generator and run it, then both
   `--check` runs.
 - **A part's look lives only in its own `Styled{Part}` theme** (ADR 0001); a pseudoclass style outranks a
