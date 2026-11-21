@@ -17,7 +17,6 @@
 const { SIZE, ADJOINED } = require('baseui/input');
 const ta = require('baseui/textarea/styled-components');
 const sc = require('baseui/input/styled-components');
-const { evaluate } = require('../reference/oracle');
 const { px, check, colour } = require('./radio');
 const input = require('./input');
 
@@ -47,25 +46,14 @@ const shared = (c) => ({
   $size: c.size, $required: false, $resize: c.resize, $isReadOnly: false,
 });
 
-/** A styled component's declarations; its nested blocks only those it may have. */
-function declare(styled, t, p, nested = []) {
-  const s = evaluate(styled, t, p);
-  const flat = {};
-  for (const [k, v] of Object.entries(s)) {
-    if (v !== null && typeof v === 'object') {
-      if (!nested.includes(k)) throw new Error(`${styled.displayName}: a block this generator doesn't read: ${k}`);
-    } else flat[k] = v;
-  }
-  return { flat, s };
-}
-
 /** CSS's resize as the TextareaField's Resize: which way its grip drags, or none. */
 const RESIZE = { none: 'None', both: 'Both', horizontal: 'Horizontal', vertical: 'Vertical' };
 
 function parts() {
-  const base = Object.fromEntries(input.parts({ Root: ta.StyledTextAreaRoot, InputContainer: ta.StyledTextareaContainer, Input: ta.StyledTextarea })
-    .map((p) => [p.part, p]));
-  const { SIDES, RADII, TRANSITION, same, padding } = input;
+  // Input's parts: their conversions, and Before, After and the clear icon as they are; the others' declarations are the
+  // textarea's own components' with its own props.
+  const base = Object.fromEntries(input.parts().map((p) => [p.part, p]));
+  const { SIDES, RADII, TRANSITION, same, padding, declare } = input;
   return [
     {
       ...base.Root,

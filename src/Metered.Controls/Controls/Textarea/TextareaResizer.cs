@@ -14,9 +14,11 @@ namespace Metered.Controls;
 /// the textarea's own width and height. Hidden for <see cref="TextareaResize.None"/>.
 /// </summary>
 /// <remarks>
-/// <para>The size stays within the field's <c>MinWidth</c>, <c>MaxWidth</c>, <c>MinHeight</c> and <c>MaxHeight</c> (Base
-/// Web's docs: an override's minimum and maximum dimensions), never smaller than the grip, and no wider than the room the
-/// textarea has: a browser lets it overflow its parent; here the root would clip it, grip and all.</para>
+/// <para>The size, the field's <see cref="TextareaField.ResizedWidth"/> and <see cref="TextareaField.ResizedHeight"/>,
+/// stays within its <c>MinWidth</c>, <c>MaxWidth</c>, <c>MinHeight</c> and <c>MaxHeight</c> (Base Web's docs: an override's
+/// minimum and maximum dimensions), never smaller than the grip, and no wider than the width the field is given: a browser
+/// lets it overflow its parent; here the root would clip it, grip and all. Right to left, the grip is in the bottom-left
+/// corner, and a drag outward, to the left, widens it.</para>
 /// <para>Its look is a browser's, not Base Web's: two diagonal strokes, as Chrome draws its resizer, in
 /// <see cref="Foreground"/>. A drag on it is the grip's alone: it isn't the text's press, and no scroller pans.</para>
 /// </remarks>
@@ -31,7 +33,6 @@ public class TextareaResizer : Control, ICustomHitTest
     private IPointer? _dragging;
     private Point _from;
     private Size _start;
-    private double _room;
 
     static TextareaResizer()
     {
@@ -85,7 +86,6 @@ public class TextareaResizer : Control, ICustomHitTest
         _dragging = e.Pointer;
         _from = e.GetPosition(null);
         _start = field.Bounds.Size;
-        _room = Room(field);
         e.Pointer.Capture(this);
         e.PreventGestureRecognition();
         e.Handled = true;
@@ -98,16 +98,17 @@ public class TextareaResizer : Control, ICustomHitTest
         e.PreventGestureRecognition();
         e.Handled = true;
         var by = e.GetPosition(null) - _from;
+        if (field.FlowDirection == FlowDirection.RightToLeft) by = by.WithX(-by.X);
         if (Direction is TextareaResize.Both or TextareaResize.Horizontal)
         {
-            var most = Math.Min(field.MaxWidth, _start.Width + _room);
-            field.Width = Math.Clamp(_start.Width + by.X, Math.Min(Math.Max(field.MinWidth, Bounds.Width), most), most);
+            var most = Math.Min(field.MaxWidth, field.AvailableWidth);
+            field.ResizedWidth = Math.Clamp(_start.Width + by.X, Math.Min(Math.Max(field.MinWidth, Bounds.Width), most), most);
         }
 
         if (Direction is TextareaResize.Both or TextareaResize.Vertical)
         {
             var least = Math.Max(field.MinHeight, Bounds.Height);
-            field.Height = Math.Clamp(_start.Height + by.Y, Math.Min(least, field.MaxHeight), field.MaxHeight);
+            field.ResizedHeight = Math.Clamp(_start.Height + by.Y, Math.Min(least, field.MaxHeight), field.MaxHeight);
         }
     }
 
@@ -124,12 +125,5 @@ public class TextareaResizer : Control, ICustomHitTest
     {
         base.OnPointerCaptureLost(e);
         if (_dragging == e.Pointer) _dragging = null;
-    }
-
-    /// <summary>How much wider the field can be: the textarea's width its root doesn't fill.</summary>
-    private static double Room(TextareaField field)
-    {
-        if (field.FindAncestorOfType<Textarea>() is not { } textarea || textarea.Part(Textarea.RootPart) is not Visual root) return 0;
-        return Math.Max(0, textarea.Bounds.Width - root.Bounds.Width);
     }
 }

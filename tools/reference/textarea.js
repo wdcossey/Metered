@@ -9,10 +9,6 @@
 'use strict';
 
 const React = require('react');
-const { renderToStaticMarkup } = require('react-dom/server');
-const { Provider } = require('styletron-react');
-const { Server } = require('styletron-engine-monolithic');
-const { ThemeProvider } = require('baseui');
 const { Textarea, SIZE } = require('baseui/textarea');
 const BaseInput = require('baseui/input/base-input').default;
 const sc = require('baseui/input/styled-components');
@@ -20,7 +16,9 @@ const ta = require('baseui/textarea/styled-components');
 const { Svg } = require('baseui/icon/styled-components');
 const DeleteAlt = require('baseui/icon/delete-alt').default;
 const css = require('./css');
-const { THEMES, evaluate } = require('./oracle');
+const { THEMES } = require('./oracle');
+// Input's oracle's helpers: rendering, declarations, lengths, colours, the outline, the border, an icon, a transition.
+const { markup, declarations, sides, colour, outline, border, icon, transition } = require('./input');
 
 /**
  * Base Web's override keys a textarea can be given (types.d.ts's TextareaOverrides: Root and BaseInput's), in the order
@@ -28,10 +26,6 @@ const { THEMES, evaluate } = require('./oracle');
  */
 const PARTS = ['Root', 'InputContainer', 'Before', 'Input', 'ClearIconContainer', 'ClearIcon', 'MaskToggleButton',
   'MaskToggleShowIcon', 'MaskToggleHideIcon', 'After'];
-
-/** Renders an element of Base Web's in a theme, to static markup. */
-const markup = (element, theme) => renderToStaticMarkup(React.createElement(Provider, { value: new Server() },
-  React.createElement(ThemeProvider, { theme }, element)));
 
 /**
  * Renders Base Web's Textarea with these props, and returns, for each part, the props it was given; a part not rendered
@@ -53,18 +47,6 @@ function render(props, theme = THEMES.Light) {
   return seen;
 }
 
-/** A styled component's flat declarations for the props, and its nested blocks checked for what this file reads. */
-function declarations(styled, theme, props, nested = []) {
-  const s = evaluate(styled, theme, props);
-  const flat = {};
-  for (const [k, v] of Object.entries(s)) {
-    if (v !== null && typeof v === 'object') {
-      if (!nested.includes(k)) throw new Error(`${styled.displayName}: a block this oracle doesn't read: ${k}`);
-    } else flat[k] = v;
-  }
-  return { flat, s };
-}
-
 /** Each part's declarations for the props Base Web gave it: the component textarea.js or base-input.js renders there. */
 function style(part, theme, props) {
   switch (part) {
@@ -81,24 +63,7 @@ function style(part, theme, props) {
   }
 }
 
-const sides = (s, prefix, names = ['Left', 'Top', 'Right', 'Bottom']) => names.map((side) => css.px(s[prefix + side] ?? 0));
-const colour = (v) => (v === undefined ? null : css.color(v));
 const font = (s) => ({ fontSize: css.px(s.fontSize), fontWeight: css.fontWeight(s.fontWeight), lineHeight: css.px(s.lineHeight), family: css.fontFamily(s.fontFamily) });
-
-/** 'solid 3px <colour>' as { colour, thickness }, or null for none. */
-function outline(v) {
-  if (v === undefined || v === 'none') return null;
-  const m = /^solid (\S+) (.+)$/.exec(v);
-  if (!m) throw new Error(`outline ${v}`);
-  return { colour: css.color(m[2]), thickness: css.px(m[1]) };
-}
-
-/** The four border colours as one: they're the same in every state (getRootColors). */
-function border(s) {
-  const all = new Set(['Left', 'Right', 'Top', 'Bottom'].map((side) => s[`border${side}Color`]));
-  if (all.size !== 1) throw new Error('border colours differ');
-  return css.color([...all][0]);
-}
 
 /**
  * The states the tests drive: Base Web's props, and focus (autoFocus, which the tests give by a real Tab). Error and
@@ -223,21 +188,6 @@ function parts() {
     }
   }
   return cases;
-}
-
-/** An icon of Base Web's, rendered: its viewBox, its one path and the path's fill rule (SVG's default, nonzero, unless set). */
-function icon(Component) {
-  const html = markup(React.createElement(Component, { size: '24px' }), THEMES.Light);
-  const view = /<svg\b[^>]*\sviewBox="([^"]+)"/.exec(html);
-  const paths = [...html.matchAll(/<path\b([^>]*)>/g)];
-  if (!view || paths.length !== 1) throw new Error(`${Component.displayName}: not one path in a viewBox`);
-  const attr = (name) => (new RegExp(String.raw`\s${name}="([^"]*)"`).exec(paths[0][1]) || [])[1];
-  return { d: attr('d'), viewBox: view[1].split(/[\s,]+/).map(Number), fillRule: attr('fill-rule') ?? 'nonzero' };
-}
-
-/** A part's transition: its CSS properties, seconds and curve. */
-function transition(s) {
-  return { properties: s.transitionProperty.split(',').map((p) => p.trim()), seconds: css.seconds(s.transitionDuration), curve: css.cubicBezier(s.transitionTimingFunction) };
 }
 
 function oracle(version) {

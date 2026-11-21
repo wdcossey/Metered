@@ -74,7 +74,8 @@ From the browser, since Base Web renders a `<textarea>`:
   a drag extends the hold's selection, as the text box's.
 - `resize`: a grip in the textarea's end corner, two strokes as Chrome draws it; a drag on it by any pointer sets the
   textarea's width and height as the way allows, within the Input part's `MinWidth`, `MaxWidth`, `MinHeight` and
-  `MaxHeight` (the documentation: set by an override), never smaller than the grip.
+  `MaxHeight` (the documentation: set by an override), never smaller than the grip. Right to left, the grip is in the
+  bottom-left corner and widens it dragged outward, to the left.
 - Where nothing stretches it (its root `fit-content`), its width is a browser's for HTML's 20 columns (Base Web gives no
   `cols`): Chrome's 20 times the font's average character width (its `OS/2` table's `xAvgCharWidth`, rounded to a pixel)
   and its padding, with no scroll bar's width, as on a phone.
@@ -90,8 +91,10 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
   textarea's padding, resize and height, the text inside the padding, the grip, the clear icon at the top.
 - `Controls/TextareaTests`: Base Web's defaults; the parts it renders and their labels (16); typing, Enter, wrapping; a
   long text scrolled by the caret and the wheel, under the padding; rows; a finger's drag in a page that scrolls (it moves
-  the textarea, not the page; latched past its end; the page's at its top or when the text fits); a tap's caret; the clear
-  icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds, hidden when it doesn't resize;
+  the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a tap's
+  caret; the clear
+  icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later,
+  right to left, hidden when it doesn't resize; a layout that settles; the shared menu;
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
 - `Controls/TextareaFrames`: the drawn border, fill and focus ring, the clear icon at the top, text drawn in the padding
   when scrolled, the grip, and the gallery above.
@@ -111,7 +114,8 @@ recorder, on the real light and dark themes.
 2. **The grip is Metered's drawing of a browser's**, 16 px, in `colors.contentTertiary`: Base Web has none of its own.
    Chrome on a phone may draw none; Metered draws it wherever `resize` drags.
 3. **The grip keeps the textarea within its room.** A browser lets a resized textarea overflow its parent; here the root
-   would clip it, grip and all, so it stops at the width the textarea control has.
+   would clip it, grip and all, so it stops at the width the textarea is given, and a width dragged to shrinks with a
+   narrower space later (a phone turned upright).
 4. **A press anywhere on it focuses it**, as Input's (its known difference 1): the clear icon's container is inside the
    text box's template.
 5. **Its 20 columns' width is Chrome's rule**, read from the font's OS/2 table (Instrument Sans here, Uber Move on

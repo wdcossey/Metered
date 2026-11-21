@@ -84,7 +84,7 @@ public class Textarea : BaseInput
     // panning. After a hold, the drag extends the selection the hold made, as the text box's does.
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        if (e.Pointer.Type != PointerType.Mouse && !_held) return;
+        if (e.Pointer.Type == PointerType.Touch && !_held) return;
         base.OnPointerMoved(e);
     }
 

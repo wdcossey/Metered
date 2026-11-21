@@ -42,11 +42,20 @@ public class TextareaField : InputField
     private static readonly ConditionalWeakTable<GlyphTypeface, StrongBox<short?>> s_averageWidths = new();
 
     private Size _measuredWith;
+    private Size _arranged;
+    private Size _available;
+    private Size _arrangedFor = new(double.NaN, double.NaN);
+    private (Typeface Typeface, double Size)? _metricsOf;
+    private double _fontLine;
+    private double _average;
+    private double _resizedWidth = double.NaN;
+    private double _resizedHeight = double.NaN;
 
     static TextareaField()
     {
         AffectsMeasure<TextareaField>(RowsProperty, TextBlock.LineHeightProperty, TextElement.FontSizeProperty,
-            TextElement.FontFamilyProperty, TextElement.FontWeightProperty, TextElement.FontStyleProperty);
+            TextElement.FontFamilyProperty, TextElement.FontWeightProperty, TextElement.FontStyleProperty,
+            TextElement.FontStretchProperty);
     }
 
     /// <summary>HTML's <c>rows</c>: how many lines of text tall it is.</summary>
@@ -65,13 +74,33 @@ public class TextareaField : InputField
         {
             var line = GetValue(TextBlock.LineHeightProperty);
             if (!double.IsNaN(line) && line > 0) return line;
-            using var layout = new TextLayout(" ", Typeface, TextElement.GetFontSize(this), null);
-            return layout.Height;
+            Metrics();
+            return _fontLine;
         }
     }
 
     /// <summary>The width a browser gives a textarea of <see cref="Cols"/> columns in its font, and its padding.</summary>
     public double IntrinsicWidth => Cols * AverageCharWidth() + Padding.Left + Padding.Right;
+
+    /// <summary>
+    /// The width its grip has dragged it to, NaN until then: a browser's own width on the textarea, kept within the width
+    /// it is given, so that a narrower window never pushes the grip out of reach.
+    /// </summary>
+    public double ResizedWidth
+    {
+        get => _resizedWidth;
+        internal set { _resizedWidth = value; InvalidateMeasure(); }
+    }
+
+    /// <summary>The height its grip has dragged it to, NaN until then.</summary>
+    public double ResizedHeight
+    {
+        get => _resizedHeight;
+        internal set { _resizedHeight = value; InvalidateMeasure(); }
+    }
+
+    /// <summary>The width it was last given to lay out in: the most the grip can drag it to.</summary>
+    internal double AvailableWidth { get; private set; } = double.PositiveInfinity;
 
     private Typeface Typeface => new(TextElement.GetFontFamily(this), TextElement.GetFontStyle(this),
         TextElement.GetFontWeight(this), TextElement.GetFontStretch(this));
@@ -79,14 +108,26 @@ public class TextareaField : InputField
     protected override Size MeasureOverride(Size availableSize)
     {
         var padding = Padding;
-        var size = new Size(Math.Min(IntrinsicWidth, availableSize.Width), Lines * LineHeight + padding.Top + padding.Bottom);
-        MeasureChild(size);
+        AvailableWidth = availableSize.Width;
+        _available = availableSize;
+        var width = double.IsNaN(ResizedWidth) ? IntrinsicWidth : ResizedWidth;
+        var height = double.IsNaN(ResizedHeight) ? Lines * LineHeight + padding.Top + padding.Bottom : ResizedHeight;
+        var size = new Size(Math.Min(width, availableSize.Width), height);
+        // Its child at the size it will have: the size it was last laid out at in this space; else all the width there
+        // is, stretched, as a textarea of width 100% is. Measured at one size and laid out at another, the child would
+        // be measured again in the arrange, which measures the field again, and so on every pass.
+        MeasureChild(_arrangedFor == availableSize
+            ? _arranged
+            : new Size(double.IsFinite(availableSize.Width) ? availableSize.Width : size.Width, height));
         return size;
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        // Laid out at another size than it was measured at (stretched, or resized): its text wraps at the width it has.
+        // Laid out at another size than it was measured at (its root fit-content, or resized): its text wraps at the
+        // width it has, and the next measure in this space measures the child at that size.
+        _arranged = finalSize;
+        _arrangedFor = _available;
         if (_measuredWith != finalSize) MeasureChild(finalSize);
         Child?.Arrange(new Rect(finalSize));
         return finalSize;
@@ -101,20 +142,35 @@ public class TextareaField : InputField
     /// <summary>Chrome's average character width: the <c>OS/2</c> table's, rounded; else the width of <c>0</c>.</summary>
     internal double AverageCharWidth()
     {
+        Metrics();
+        return _average;
+    }
+
+    /// <summary>The font's line and average character width, worked out once for each typeface and size.</summary>
+    private void Metrics()
+    {
         var typeface = Typeface;
         var size = TextElement.GetFontSize(this);
+        if (_metricsOf == (typeface, size)) return;
+        _metricsOf = (typeface, size);
         var glyph = typeface.GlyphTypeface;
+        using (var line = new TextLayout(" ", typeface, size, null)) _fontLine = line.Height;
         var units = s_averageWidths.GetValue(glyph, g => new StrongBox<short?>(Os2AverageWidth(g))).Value;
         if (units is > 0 && glyph.Metrics.DesignEmHeight > 0)
         {
-            return Math.Round(units.Value * size / glyph.Metrics.DesignEmHeight, MidpointRounding.AwayFromZero);
+            _average = Math.Round(units.Value * size / glyph.Metrics.DesignEmHeight, MidpointRounding.AwayFromZero);
+            return;
         }
 
-        using var layout = new TextLayout("0", typeface, size, null);
-        return layout.WidthIncludingTrailingWhitespace;
+        using var zero = new TextLayout("0", typeface, size, null);
+        _average = zero.WidthIncludingTrailingWhitespace;
     }
 
-    /// <summary>A font file's <c>OS/2</c> <c>xAvgCharWidth</c>, in its design units; null where it can't be read.</summary>
+    /// <summary>
+    /// A font file's <c>OS/2</c> <c>xAvgCharWidth</c>, in its design units; null where it can't be read, as in a font
+    /// collection (<c>ttcf</c>), whose face isn't known here: then Chrome's own fallback, the width of <c>0</c>. The
+    /// stream is the typeface's file copied (Skia's <c>TryGetStream</c>), read once for each typeface.
+    /// </summary>
     internal static short? Os2AverageWidth(GlyphTypeface glyph)
     {
         try
@@ -124,6 +180,7 @@ public class TextareaField : InputField
             {
                 Span<byte> header = stackalloc byte[12];
                 if (!Read(stream, 0, header)) return null;
+                if (header[0] == 't' && header[1] == 't' && header[2] == 'c' && header[3] == 'f') return null;
                 var tables = BinaryPrimitives.ReadUInt16BigEndian(header[4..]);
                 Span<byte> record = stackalloc byte[16];
                 for (var i = 0; i < tables; i++)

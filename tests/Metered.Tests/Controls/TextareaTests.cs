@@ -121,6 +121,17 @@ public class TextareaTests
         Assert.Equal(TextWrapping.Wrap, Presenter(textarea).TextWrapping);
     }
 
+    // Input's cut, copy and paste menu, the one shared flyout (by a dynamic resource: Input.axaml is another dictionary).
+    [AvaloniaFact]
+    public void Its_menu_is_Inputs()
+    {
+        var textarea = new Textarea();
+        var input = new Input();
+        using var scene = Show(textarea, input);
+        Assert.NotNull(textarea.ContextFlyout);
+        Assert.Same(input.ContextFlyout, textarea.ContextFlyout);
+    }
+
     public static TheoryData<int> PartsCases => new(Enumerable.Range(0, TextareaOracle.Value.Parts.Length));
 
     [AvaloniaTheory]
@@ -333,6 +344,31 @@ public class TextareaTests
         Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
     }
 
+    // A drag the page took at the textarea's top stays the page's when it turns back up, as a browser latches it: the
+    // textarea doesn't take it over half way.
+    [AvaloniaFact]
+    public void A_drag_the_page_took_stays_the_pages_when_it_turns()
+    {
+        var (textarea, page, scene) = InAPage();
+        using var _ = scene;
+        page.Offset = new Vector(0, 120);
+        scene.Pump();
+        var scroller = Scroller(textarea);
+        var at = scene.CentreOf(textarea);
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        foreach (var dy in new[] { 10, 20, 30, 40, 50, 40, 30, 20, 10, 0, -10, -20 })
+        {
+            scene.Window.TouchMove(touch, new Point(at.X, at.Y + dy), RawInputModifiers.None);
+            scene.Pump();
+        }
+
+        scene.Window.TouchEnd(touch, new Point(at.X, at.Y - 20), RawInputModifiers.None);
+        scene.Pump();
+        Assert.Equal(0, scroller.Offset.Y);
+        Assert.True(page.Offset.Y > 80, $"the page is at {page.Offset.Y}");
+    }
+
     // A tap is the text's: it focuses the textarea and puts the caret there.
     [AvaloniaFact]
     public void A_tap_focuses_it_and_places_the_caret()
@@ -447,7 +483,8 @@ public class TextareaTests
         Assert.Equal(start.Height + (taller ? 30 : 0), field.Bounds.Height);
         Assert.Equal(field.Bounds.Width + root.BorderThickness.Left + root.BorderThickness.Right, root.Bounds.Width);
         Assert.Equal(field.Bounds.Height + root.BorderThickness.Top + root.BorderThickness.Bottom, textarea.Bounds.Height);
-        // The grip's drag isn't the text's: no caret moved, nothing selected, no focus taken.
+        // The grip's drag isn't the text's: no caret moved, nothing selected.
+        Assert.Equal(0, textarea.CaretIndex);
         Assert.Equal(0, textarea.SelectionEnd - textarea.SelectionStart);
         Assert.False(grip.IsDragging);
     }
@@ -488,6 +525,63 @@ public class TextareaTests
         TouchDrag(scene, at, at - new Vector(0, -60));
         Assert.Equal(start + 60, field.Bounds.Height);
         Assert.Equal(0, page.Offset.Y);
+    }
+
+    // A width dragged to is kept within the width the textarea is later given (a phone turned upright): never past its
+    // root, so the grip stays in reach.
+    [AvaloniaFact]
+    public void A_dragged_width_keeps_within_a_narrower_space()
+    {
+        var textarea = new Textarea { Resize = TextareaResize.Both, Text = "Resize me" };
+        var host = new StackPanel { Width = 350, Children = { textarea } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { host } });
+        var field = P<TextareaField>(textarea, BaseInput.InputPart);
+        var root = P<Border>(textarea, Textarea.RootPart);
+        var at = scene.CentreOf(Grip(textarea));
+        MouseDrag(scene, at, at + new Vector(1000, 0));
+        Assert.Equal(350, root.Bounds.Width);
+
+        host.Width = 250;
+        scene.Pump();
+        Assert.Equal(250, root.Bounds.Width);
+        Assert.Equal(250 - root.BorderThickness.Left - root.BorderThickness.Right, field.Bounds.Width);
+        var grip = Grip(textarea);
+        Assert.Equal(field.Bounds.Width, grip.TranslatePoint(new Point(grip.Bounds.Width, 0), field)!.Value.X);
+    }
+
+    // Right to left, the grip is in the bottom-left corner, and a drag outward, to the left, widens it.
+    [AvaloniaFact]
+    public void Right_to_left_a_drag_to_the_left_widens_it()
+    {
+        var textarea = new Textarea { Resize = TextareaResize.Horizontal, Text = "Resize me", FlowDirection = FlowDirection.RightToLeft };
+        using var scene = Show(textarea);
+        var field = P<TextareaField>(textarea, BaseInput.InputPart);
+        var start = field.Bounds.Width;
+        var grip = Grip(textarea);
+        Assert.True(scene.CentreOf(grip).X < scene.CentreOf(field).X);
+        var at = scene.CentreOf(grip);
+        MouseDrag(scene, at, at - new Vector(40, 0));
+        Assert.Equal(start + 40, field.Bounds.Width);
+    }
+
+    // Laid out once: a stretched textarea, or one as wide as its text box (its root fit-content), with text that wraps,
+    // doesn't measure itself again on every pass.
+    [AvaloniaTheory]
+    [InlineData(null)]
+    [InlineData(TextareaResize.Both)]
+    public void Its_layout_settles(TextareaResize? resize)
+    {
+        var textarea = new Textarea { Resize = resize, Text = string.Join(" ", Enumerable.Repeat("wrapping", 40)) };
+        using var scene = Show(textarea);
+        var field = P<TextareaField>(textarea, BaseInput.InputPart);
+        scene.Window.UpdateLayout();
+        Assert.True(field.IsMeasureValid && field.IsArrangeValid);
+        var presenter = Presenter(textarea);
+        textarea.InvalidateMeasure();
+        scene.Window.UpdateLayout();
+        scene.Window.UpdateLayout();
+        Assert.True(field.IsMeasureValid && field.IsArrangeValid);
+        Assert.True(presenter.TextLayout.WidthIncludingTrailingWhitespace <= field.Bounds.Width - field.Padding.Left - field.Padding.Right + 0.5);
     }
 
     [AvaloniaTheory]
