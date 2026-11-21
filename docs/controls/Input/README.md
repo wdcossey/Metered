@@ -106,7 +106,7 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 89: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 88: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept;
@@ -115,8 +115,8 @@ From base-input.js and input.js, and its e2e test:
   focus; enhancers (JavaScript's truth, NaN and 0) and adjoined; Before and After; overrides on six parts; the icons'
   paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
-- `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the show and
-  hide icons, and the gallery above: 5.
+- `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the toggle's ring, the show
+  and hide icons, and the gallery above: 6.
 - `Sample/InputPageTests`: the sample's page, 3, a finger's tap in the page's ScrollViewer and typing among them.
 
 The part themes are generated (`tools/tokens/input.js`): the input's style functions evaluated on Base Web's theme with
