@@ -131,7 +131,6 @@ public class RadioGroup : ItemsControl
         radio.Group = this;
     }
 
-
     protected override void ClearContainerForItemOverride(Control container)
     {
         base.ClearContainerForItemOverride(container);
