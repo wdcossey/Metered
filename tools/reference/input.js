@@ -309,4 +309,5 @@ function oracle(version) {
   };
 }
 
-module.exports = { oracle };
+// The helpers Textarea's oracle (textarea.js) shares.
+module.exports = { oracle, markup, declarations, sides, colour, outline, border, icon, transition };

@@ -1,7 +1,7 @@
 # Input
 
 Base Web's `Input` and its `BaseInput` (baseui 18.2.0, `input/`), as `Metered.Controls.Input`, an Avalonia `TextBox`,
-on `Metered.Controls.BaseInput`, the base Textarea (#85) will share.
+on `Metered.Controls.BaseInput`, the base Textarea (#85) shares ([`docs/controls/Textarea`](../Textarea/README.md)).
 
 <p>
 <img src="../../preview/light__input-1.png" width="270" alt="Input, light">

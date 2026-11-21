@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.TextareaPage">
+  <!-- Base Web's textarea, as its documentation's examples show it: basic, the states, the sizes and a resizable one;
+       and its scenario's clearable one, and a long text that scrolls inside it. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic usage" />
+      <b:Textarea x:Name="Basic" AutomationProperties.Name="Basic" />
+      <TextBlock Classes="label" x:Name="State" />
+
+      <TextBlock Classes="heading" Text="States" />
+      <StackPanel Spacing="8">
+        <b:Textarea x:Name="Positive" Positive="True" Text="Positive state..." PlaceholderText="Positive state..." />
+        <b:Textarea x:Name="Error" Error="True" Text="Error state..." PlaceholderText="Error state..." />
+        <b:Textarea x:Name="Disabled" IsEnabled="False" Text="Disabled state..." />
+        <b:Textarea x:Name="ReadOnly" IsReadOnly="True" Text="ReadOnly state..." />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <StackPanel Spacing="8">
+        <b:Textarea x:Name="Compact" Size="Compact" Text="Compact size..." PlaceholderText="Compact size..." />
+        <b:Textarea Text="Default size..." PlaceholderText="Default size..." />
+        <b:Textarea x:Name="Large" Size="Large" Text="Large size..." PlaceholderText="Large size..." />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Allow the user to resize" />
+      <b:Textarea x:Name="Resizable" Resize="Both" PlaceholderText="Try resizing me..." />
+
+      <TextBlock Classes="heading" Text="Clearable" />
+      <b:Textarea x:Name="Clearable" Clearable="True" Text="initial value" PlaceholderText="Uncontrolled textarea" />
+
+      <TextBlock Classes="heading" Text="A long text" />
+      <b:Textarea x:Name="Long" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

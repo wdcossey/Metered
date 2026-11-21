@@ -145,6 +145,20 @@ clearable, a password with its mask toggle, and the overrides example's root.
 <img src="docs/preview/dark__input-2.png" width="270" alt="Input, dark, scrolled: enhancers, clearable, a password, an override">
 </p>
 
+## Textarea
+
+Base Web's textarea, as its documentation's examples: basic with its value under it, the states, the sizes, one the user
+can resize (its grip in the corner), its scenario's clearable one, and a long text that scrolls inside its three rows.
+
+<p>
+<img src="docs/preview/light__textarea-1.png" width="270" alt="Textarea, light: basic, the states, the sizes">
+<img src="docs/preview/dark__textarea-1.png" width="270" alt="Textarea, dark: basic, the states, the sizes">
+</p>
+<p>
+<img src="docs/preview/light__textarea-2.png" width="270" alt="Textarea, light, scrolled: sizes, resizable, clearable, a long text">
+<img src="docs/preview/dark__textarea-2.png" width="270" alt="Textarea, dark, scrolled: sizes, resizable, clearable, a long text">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

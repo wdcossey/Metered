@@ -300,8 +300,8 @@ function parts(styled = { Root: sc.Root, InputContainer: sc.InputContainer, Inpu
 const CLEAR = icon(DeleteAlt), SHOW = icon(Show), HIDE = icon(Hide);
 
 /** A part's transition, once the input has loaded (CSS doesn't transition a page's first paint; Avalonia would). */
-function transition(p) {
-  const s = p.styled(L, Object.fromEntries(AXES.map((a) => [a.name, a.values[0]])));
+function transition(p, axes = AXES) {
+  const s = p.styled(L, Object.fromEntries(axes.map((a) => [a.name, a.values[0]])));
   if (s.transitionProperty !== p.transitionOf) throw new Error(`${p.part} transition ${s.transitionProperty}`);
   const { span, easing } = timing(s);
   return `    <Style Selector="^:loaded">
@@ -313,8 +313,8 @@ ${p.transitions.map(([type, prop]) => `          <${type} Property="${prop}" Dur
     </Style>`;
 }
 
-/** A part's theme: the fewest state styles that give Base Web's values in every combination. */
-const theme = (p) => write(p, AXES, (styled, t, c) => styled(t, c), { layered: true });
+/** A part's theme: the fewest state styles that give Base Web's values in every combination of the states. */
+const theme = (p, axes = AXES) => write(p, axes, (styled, t, c) => styled(t, c), { layered: true });
 
 const DESCRIBE = {
   Root: 'the box: its 2 px border, radius, fill and font by state and size; padding beside an enhancer and before a trailing icon.',
@@ -331,11 +331,14 @@ const DESCRIBE = {
   MaskToggleHideIcon: 'Base Web\'s hide icon, while it isn\'t.',
 };
 
-/** The themes of a control's parts, keyed `{component}.Styled{Part}`. */
-function themes(component, list, describe = DESCRIBE) {
+/**
+ * The themes of a control's parts, keyed `{component}.Styled{Part}`, for its states (`axes`, Input's by default:
+ * Textarea's have no adjoined or trailing flag, and have its resize).
+ */
+function themes(component, list, describe = DESCRIBE, axes = AXES) {
   return list.map((p) => {
-    const { plain, blocks } = theme(p);
-    const extra = p.transitions ? '\n' + transition(p) : '';
+    const { plain, blocks } = theme(p, axes);
+    const extra = p.transitions ? '\n' + transition(p, axes) : '';
     const body = [...plain.map((l) => l), ...(extra ? [extra.slice(1)] : []), ...blocks];
     return `  <!-- ${p.part}: ${describe[p.part]} -->
   <ControlTheme x:Key="${component}.Styled${p.part}" TargetType="${p.type}"${body.length ? `>\n${body.join('\n')}\n  </ControlTheme>` : ' />'}`;
@@ -359,4 +362,4 @@ ${themes('Input', parts()).join('\n')}
 `;
 }
 
-module.exports = { file, parts, themes, AXES, ICON_SIZES };
+module.exports = { file, parts, themes, AXES, ICON_SIZES, DESCRIBE, declare, padding, INHERITED, SIDES, RADII, TRANSITION, same };
