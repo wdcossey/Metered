@@ -130,6 +130,20 @@ a custom min, max and step, a custom label, and its scenario's labels always sho
 <img src="docs/preview/dark__slider-2.png" width="270" alt="Slider, dark, scrolled: a custom label and labels always shown">
 </p>
 
+## Input
+
+Base Web's input, as its documentation's examples: basic with its value under it, the states, the sizes, enhancers,
+clearable, a password with its mask toggle, and the overrides example's root.
+
+<p>
+<img src="docs/preview/light__input-1.png" width="270" alt="Input, light: basic, the states, the sizes">
+<img src="docs/preview/dark__input-1.png" width="270" alt="Input, dark: basic, the states, the sizes">
+</p>
+<p>
+<img src="docs/preview/light__input-2.png" width="270" alt="Input, light, scrolled: enhancers, clearable, a password, an override">
+<img src="docs/preview/dark__input-2.png" width="270" alt="Input, dark, scrolled: enhancers, clearable, a password, an override">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by
