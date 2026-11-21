@@ -123,10 +123,9 @@ public class KeyboardInset : Decorator
 
         _pane.StateChanged += OnStateChanged;
         _pane.InsetsChanged += OnInsetsChanged;
+        // Also how a keyboard already up is read: Avalonia raises the effective viewport's first change once the decorator
+        // is laid out, attached again in the same place or not.
         EffectiveViewportChanged += OnEffectiveViewportChanged;
-        // A keyboard already up, read once the decorator is laid out: attached again in the same place, its bounds don't
-        // change, and so don't ask.
-        PostRead();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
