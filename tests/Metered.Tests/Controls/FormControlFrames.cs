@@ -17,17 +17,29 @@ public class FormControlFrames
     private static FormControlColourCase Case(string state, string theme = "Light") =>
         FormControlOracle.Value.Colours.Single(c => c.Theme == theme && c.State == state);
 
-    /// <summary>Whether any pixel of the element's box is the colour (its text's ink, where a glyph's stem is solid).</summary>
+    /// <summary>
+    /// Whether the element's box has ink of the colour: a pixel that is the colour blended over the page (its box's top-left
+    /// pixel, above the text), at least half of it. Not the colour exactly: how much of a pixel a glyph's stem fills is the
+    /// platform's font rasterizer's (Windows' and Linux's Skia differ), but whatever it fills, the blend is of this colour.
+    /// </summary>
     private static bool Draws(Scene scene, Visual element, string colour)
     {
         var frame = scene.Capture();
         var want = Color.Parse(colour);
         var at = element.TranslatePoint(default, scene.Window)!.Value;
+        var page = Frames.PixelAt(frame, (int)at.X, (int)at.Y);
+        // The channel the colour and the page differ most in gives how much of the colour a pixel is.
+        var spans = new[] { want.R - page.R, want.G - page.G, want.B - page.B };
+        var main = Array.IndexOf(spans, spans.MaxBy(Math.Abs));
         for (var y = (int)at.Y; y < (int)(at.Y + element.Bounds.Height); y++)
         {
             for (var x = (int)at.X; x < (int)(at.X + element.Bounds.Width); x++)
             {
-                if (Frames.PixelAt(frame, x, y) == want) return true;
+                var p = Frames.PixelAt(frame, x, y);
+                var got = new[] { p.R - page.R, p.G - page.G, p.B - page.B };
+                var t = (double)got[main] / spans[main];
+                if (t < 0.5 || t > 1.05) continue;
+                if (Enumerable.Range(0, 3).All(i => Math.Abs(got[i] - t * spans[i]) <= 8)) return true;
             }
         }
 
