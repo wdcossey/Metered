@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.InputPage">
+  <!-- Base Web's input, as its documentation's examples show it: basic, the states, sizes, enhancers, clearable, a
+       password and an overridden one. Headings are the shell's. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic usage" />
+      <b:Input x:Name="Basic" Text="Hello" PlaceholderText="Controlled Input" AutomationProperties.Name="Basic" />
+      <TextBlock Classes="label" x:Name="State" />
+
+      <TextBlock Classes="heading" Text="States" />
+      <StackPanel Spacing="8">
+        <b:Input PlaceholderText="simple" />
+        <b:Input Text="uber" />
+        <b:Input x:Name="Error" PlaceholderText="Input in an error state" Error="True" />
+        <b:Input PlaceholderText="Input in an positive state" Positive="True" />
+        <b:Input x:Name="Disabled" PlaceholderText="Disabled input" IsEnabled="False" />
+        <b:Input PlaceholderText="ReadOnly input" IsReadOnly="True" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <StackPanel Spacing="8">
+        <b:Input x:Name="Mini" Size="Mini" PlaceholderText="mini" />
+        <b:Input Size="Compact" PlaceholderText="compact" />
+        <b:Input PlaceholderText="default" />
+        <b:Input x:Name="Large" Size="Large" PlaceholderText="large" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Enhancers" />
+      <StackPanel Spacing="8">
+        <b:Input x:Name="Start" StartEnhancer="@" PlaceholderText="Input with a start enhancer" />
+        <b:Input EndEnhancer=".00" PlaceholderText="Input with an end enhancer" />
+        <b:Input x:Name="Both" StartEnhancer="$" EndEnhancer=".00" PlaceholderText="Input with start and end enhancers" />
+      </StackPanel>
+
+      <TextBlock Classes="heading" Text="Clearable" />
+      <b:Input x:Name="Clearable" Text="Clear me!" Clearable="True" />
+
+      <TextBlock Classes="heading" Text="Input for passwords" />
+      <b:Input x:Name="Password" Text="1234" Type="Password" />
+
+      <TextBlock Classes="heading" Text="Overrides usage" />
+      <!-- The documentation's Root override: the border by state, a seagreen one while focused (here a token). -->
+      <b:Input x:Name="Custom" PlaceholderText="Input with a custom Root override">
+        <b:Input.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="Root">
+              <b:Override.Style>
+                <ControlTheme TargetType="Border">
+                  <Setter Property="BorderBrush" Value="{DynamicResource colors.borderOpaque}" />
+                  <Style Selector="^:is-focused">
+                    <Setter Property="BorderBrush" Value="{DynamicResource colors.positive}" />
+                  </Style>
+                  <Style Selector="^:error">
+                    <Setter Property="BorderBrush" Value="{DynamicResource colors.borderNegative}" />
+                  </Style>
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Input.Overrides>
+      </b:Input>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

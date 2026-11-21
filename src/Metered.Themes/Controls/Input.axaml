@@ -1,0 +1,138 @@
+<!--
+  Base Web's Input (baseui 18.2.0, input/input.js and input/base-input.js), as a template of named parts. Each part's
+  look is its own theme, Input.Styled<Part> (Input.Parts.g.axaml), which the input's Overrides merge over: this file
+  holds only the structure.
+
+  Root                       (a flex row: the enhancers at their size, the container the rest)
+    StartEnhancer            (shown only for one: Metered.Controls.Input)
+    InputContainer           (BaseInput's: a flex row too)
+      Before                 (the text box's InnerLeftContent)
+      Input                  (the text: its scroller, the placeholder, the text presenter)
+      ClearIconContainer     (only while there is something to clear: Metered.Controls.BaseInput)
+        ClearIcon
+      MaskToggleButton       (only for a password)
+        MaskToggleShowIcon   (while masked)
+        MaskToggleHideIcon   (after)
+      After                  (the text box's InnerRightContent)
+    EndEnhancer
+  The text box is Base Web's <input>: PART_ScrollViewer and PART_TextPresenter are Avalonia's TextBox's.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <!--
+    A browser's cut, copy and paste menu, which an <input> has and a text box takes from its theme: the app theme's
+    strings (Avalonia's Simple and Fluent themes both have them). On a phone it opens from a long press on a selection.
+  -->
+  <MenuFlyout x:Key="Input.ContextFlyout" ShowMode="{OnFormFactor Desktop=Standard, Mobile=Transient}" Placement="Bottom">
+    <MenuItem Header="{DynamicResource StringTextFlyoutCutText}" Command="{Binding $parent[TextBox].Cut}"
+              IsEnabled="{Binding $parent[TextBox].CanCut}" InputGesture="{x:Static TextBox.CutGesture}" />
+    <MenuItem Header="{DynamicResource StringTextFlyoutCopyText}" Command="{Binding $parent[TextBox].Copy}"
+              IsEnabled="{Binding $parent[TextBox].CanCopy}" InputGesture="{x:Static TextBox.CopyGesture}" />
+    <MenuItem Header="{DynamicResource StringTextFlyoutPasteText}" Command="{Binding $parent[TextBox].Paste}"
+              IsEnabled="{Binding $parent[TextBox].CanPaste}" InputGesture="{x:Static TextBox.PasteGesture}" />
+  </MenuFlyout>
+
+  <!-- The text's scroller: the text scrolls to keep the caret in view, with no bars (a single line's input has none). -->
+  <ControlTheme x:Key="Input.TextScrollViewer" TargetType="ScrollViewer">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ScrollContentPresenter Name="PART_ContentPresenter"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type b:Input}" TargetType="b:Input">
+    <!-- width: 100%. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <!-- Base Web leaves the selection to the browser: Metered's, by token (docs/controls/Input). -->
+    <Setter Property="SelectionBrush" Value="{DynamicResource colors.accent}" />
+    <Setter Property="SelectionForegroundBrush" Value="{DynamicResource colors.contentOnColor}" />
+    <Setter Property="ContextFlyout" Value="{StaticResource Input.ContextFlyout}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="Root" Theme="{DynamicResource Input.StyledRoot}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <ContentPresenter Name="StartEnhancer"
+                              Grid.Column="0"
+                              Theme="{DynamicResource Input.StyledStartEnhancer}"
+                              Content="{TemplateBinding StartEnhancer}" />
+            <Border Name="InputContainer" Grid.Column="1" Theme="{DynamicResource Input.StyledInputContainer}">
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <ContentPresenter Name="Before"
+                                  Grid.Column="0"
+                                  Theme="{DynamicResource Input.StyledBefore}"
+                                  Content="{TemplateBinding InnerLeftContent}" />
+                <b:InputField Name="Input" Grid.Column="1" Theme="{DynamicResource Input.StyledInput}">
+                  <ScrollViewer Name="PART_ScrollViewer"
+                                Theme="{StaticResource Input.TextScrollViewer}"
+                                VerticalAlignment="Center"
+                                HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                                VerticalScrollBarVisibility="Disabled"
+                                BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+                    <Panel>
+                      <TextBlock Name="PART_Placeholder"
+                                 Text="{TemplateBinding PlaceholderText}"
+                                 Foreground="{Binding #Input.PlaceholderForeground}"
+                                 TextAlignment="{TemplateBinding TextAlignment}"
+                                 TextWrapping="NoWrap">
+                        <TextBlock.IsVisible>
+                          <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding ElementName="PART_TextPresenter" Path="PreeditText" Converter="{x:Static StringConverters.IsNullOrEmpty}" />
+                            <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Text" Converter="{x:Static StringConverters.IsNullOrEmpty}" />
+                          </MultiBinding>
+                        </TextBlock.IsVisible>
+                      </TextBlock>
+                      <TextPresenter Name="PART_TextPresenter"
+                                     CaretBrush="{Binding #Input.CaretBrush}"
+                                     CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                                     CaretIndex="{TemplateBinding CaretIndex}"
+                                     PasswordChar="{TemplateBinding PasswordChar}"
+                                     RevealPassword="{TemplateBinding RevealPassword}"
+                                     SelectionBrush="{TemplateBinding SelectionBrush}"
+                                     SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                     SelectionStart="{TemplateBinding SelectionStart}"
+                                     SelectionEnd="{TemplateBinding SelectionEnd}"
+                                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                                     TextAlignment="{TemplateBinding TextAlignment}"
+                                     TextWrapping="NoWrap" />
+                    </Panel>
+                  </ScrollViewer>
+                </b:InputField>
+                <Border Name="ClearIconContainer" Grid.Column="2" Theme="{DynamicResource Input.StyledClearIconContainer}">
+                  <b:InputIcon Name="ClearIcon" Theme="{DynamicResource Input.StyledClearIcon}" />
+                </Border>
+                <b:InputMaskToggleButton Name="MaskToggleButton"
+                                         Grid.Column="3"
+                                         Theme="{DynamicResource Input.StyledMaskToggleButton}">
+                  <Panel>
+                    <b:InputIcon Name="MaskToggleShowIcon" Theme="{DynamicResource Input.StyledMaskToggleShowIcon}" />
+                    <b:InputIcon Name="MaskToggleHideIcon" Theme="{DynamicResource Input.StyledMaskToggleHideIcon}" />
+                  </Panel>
+                </b:InputMaskToggleButton>
+                <ContentPresenter Name="After"
+                                  Grid.Column="4"
+                                  Theme="{DynamicResource Input.StyledAfter}"
+                                  Content="{TemplateBinding InnerRightContent}" />
+              </Grid>
+            </Border>
+            <ContentPresenter Name="EndEnhancer"
+                              Grid.Column="2"
+                              Theme="{DynamicResource Input.StyledEndEnhancer}"
+                              Content="{TemplateBinding EndEnhancer}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

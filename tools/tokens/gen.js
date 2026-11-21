@@ -145,6 +145,9 @@ files['../Controls/ProgressBar.Parts.g.axaml'] = require('./progress-bar').file(
 // The theme of Spinner's part, from Base Web's spinner (spinner.js).
 files['../Controls/Spinner.Parts.g.axaml'] = require('./spinner').file(version);
 
+// The themes of Input's parts, from Base Web's input and its icons (input.js).
+files['../Controls/Input.Parts.g.axaml'] = require('./input').file(version);
+
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');
 files['../Controls/Slider.Parts.g.axaml'] = slider.file(version);
