@@ -43,6 +43,24 @@ public class PopoverFrames
         Assert.NotEqual(Color.Parse(c.Arrow.Background), Frames.PixelAt(frame, 195, (int)body.Top - 8));
     }
 
+    // Base Web's layer doesn't clip: the body's shadow (shadow600, 16 px of blur) is drawn beside it, past the popup's
+    // host, which has no margin on that side.
+    [AvaloniaFact]
+    public void The_bodys_shadow_is_drawn_past_its_box()
+    {
+        var (popover, _, _) = PopoverTests.Fixed(150, 400);
+        popover.Placement = PopoverPlacement.Bottom;
+        popover.IsOpen = true;
+        using var scene = Show(popover, ThemeVariant.Light);
+        scene.Window.Background = Brushes.White;
+        PopoverTests.Settle(scene);
+        var frame = scene.Capture();
+        var body = PopoverTests.BoxOf((Visual)popover.Part(Popover.BodyPart)!, scene);
+        var beside = Frames.PixelAt(frame, (int)body.Left - 3, (int)body.Center.Y);
+        Assert.True(beside.R < 255, $"no shadow beside the body: {beside}");
+        Assert.Equal(Colors.White, Frames.PixelAt(frame, (int)body.Left - 40, (int)body.Center.Y));
+    }
+
     [AvaloniaTheory]
     [InlineData("Light")]
     [InlineData("Dark")]
