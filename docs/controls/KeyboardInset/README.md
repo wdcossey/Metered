@@ -21,15 +21,24 @@ browser does, for the content an app puts in it. Opt-in; the sample's shell (`Sa
   `Padding` is kept, above the keyboard. A `ScrollViewer` inside ends above the keyboard, so its range grows by the
   inset and its last control can be scrolled clear. `Inset`, read-only, says by how much.
 - **When the keyboard opens, the focused control is brought into view** if it is inside the decorator
-  (`BringIntoView`, which the nearest `ScrollViewer` takes). A focus that moves while the keyboard is up is brought into
-  view by the `ScrollViewer` itself (`BringIntoViewOnFocusChange`, on by default).
+  (`BringIntoView`, which the nearest `ScrollViewer` takes), and then its caret, if it takes text (the input method's
+  `CursorRectangle`), so the line being typed in a text taller than the room left is above the keyboard too. Again
+  whenever the room left above the keyboard changes (a rotation, a taller keyboard). A focus that moves while the
+  keyboard is up is brought into view by the `ScrollViewer` itself (`BringIntoViewOnFocusChange`, on by default).
 - **When the keyboard closes, the child has its height back**, and the `ScrollViewer` clamps its offset.
 - **With no input pane** (Avalonia's headless platform, a desktop with no touch keyboard), it does nothing.
 
-The pane is read when the decorator is attached (a keyboard already up), when the pane says its state changed, and
-when the top level resizes: a rotation needn't animate the keyboard's insets, and on API 31 and later only an animation
-raises `StateChanged`. Each reading sets the inset once, never from a layout pass, so a decorator whose height follows
-its child's (in a `StackPanel`, say) can't feed its own inset back into itself; it just grows by it.
+The pane is read when it says its state changed, and, once laid out, when the decorator is attached (a keyboard already
+up), when the top level resizes, when the platform's insets change, and when the decorator moves or resizes while the
+keyboard is up. On API 31 and later Android raises `StateChanged` only as the keyboard's insets start to animate; a
+rotation, or a keyboard hidden while the app is in the background, changes the pane with no animation, and only the
+insets manager's `SafeAreaChanged` (raised from every `OnApplyWindowInsets`) says so. Each reading lays the tree out
+first, so a decorator inside another that has just made room is read in that room and pads nothing more.
+
+The inset is taken from the room the child is given, never added to the decorator's own size, so a reading can't feed
+its last inset back into the next. It is meant to be given its height (a page's or a view's root, a `Grid` row): one
+whose height follows its child's (in a `StackPanel`, say) stays as high as its child would have it, and its child is
+padded past its foot, overflowing it, so it keeps nothing clear.
 
 ## Why Avalonia doesn't do it
 
@@ -57,19 +66,28 @@ Read from Avalonia 12.1.4's Android backend (`Avalonia.Android`, `AndroidInsetsM
    wasn't measured.
 3. **Opt-in.** An app that doesn't use it, or content outside it (an overlay in another top level, the shell's Debug
    footer), stays under the keyboard, as before.
-4. **Not yet tried on a phone.** Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
+4. **Only an edge-to-edge window is reasoned through.** On Android 14 and earlier, or an app that targets less than
+   API 35, Avalonia's window isn't edge to edge (`DisplayEdgeToEdgePreference` is false), and Android chooses whether
+   to pan or resize it for the keyboard (no `WindowSoftInputMode` is set, so `adjustUnspecified`). A window resized for
+   the keyboard would be padded twice: Avalonia's `OccludedRect` is measured up from the bottom of the client area, which
+   would already end above the keyboard. Not tried; the sample's only device is an Android 17 phone.
+5. **Not yet tried on a phone.** Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
    Avalonia (its reference assembly carries a member user code can't write), so the tests drive the decorator through an
    internal seam (`KeyboardInset.InputPane`, a `KeyboardInset.IPane`), a fake that raises `StateChanged` as Android's
    backend does. The device run checks the rest (below).
 
 ## Tests
 
-`tests/Metered.Tests/Controls/KeyboardInsetTests.cs`: the padding by the overlap, nothing when closed (and for a closed
-pane with a rect, Avalonia's floating keyboard), nothing for a keyboard below it, no more than its height, its own
-padding kept, the focused input at a page's foot scrolled above the keyboard, the page's range grown by the inset, a
-focused control outside it left alone, a keyboard already up when it is attached, a resize, detach, and no pane.
+`tests/Metered.Tests/Controls/KeyboardInsetTests.cs`: the padding by the overlap, from the decorator's own place (under
+a bar, over a footer), nothing when closed (and for a closed pane with a rect, Avalonia's floating keyboard, or an open
+one with none), nothing for a keyboard below it, no more than its height, its own padding kept, the focused input at a
+page's foot scrolled above the keyboard, the caret of a text taller than the room left, the page's range grown by the
+inset, a focused control outside it left alone, a keyboard already up when it is attached, a resize (and the focused
+input brought back into view), a keyboard hidden with no animation, a decorator that moves, one whose height follows
+its child's read again and again, one inside another, detach, and no pane.
 `tests/Metered.Tests/Sample/ShellKeyboardTests.cs`: the shell's host is in one and its footer isn't, and the Input
-page's Clearable input, scrolled to the page's foot, is brought above the keyboard. Base Web has no value for any of
+page's Clearable input, scrolled to the page's foot, is brought above the keyboard; with `METERED_FRAMES`, a picture of
+the page under a stand-in keyboard before and after. Base Web has no value for any of
 these: what each expects is the scene's own geometry.
 
 ## On a phone

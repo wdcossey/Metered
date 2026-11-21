@@ -49,6 +49,40 @@ public class ShellKeyboardTests
         Assert.True(clearable.IsFocused);
     }
 
+    /// <summary>
+    /// With METERED_FRAMES naming a folder, the Input page scrolled to its foot with Clearable focused, under a stand-in
+    /// for the keyboard (a block in <c>colors.backgroundInverseSecondary</c>, as Avalonia's headless platform draws none):
+    /// <c>keyboard-before.png</c> as the Pixel showed it with nothing keeping the page clear (#108), and
+    /// <c>keyboard-after.png</c> with the shell's <see cref="KeyboardInset"/> told the keyboard is up. Asserts nothing.
+    /// </summary>
+    [AvaloniaFact]
+    public void Frames_Of_The_Keyboard_Over_The_Input_Page()
+    {
+        if (Environment.GetEnvironmentVariable(Metered.Tests.Controls.ButtonFrames.Variable) is not { Length: > 0 } folder)
+            return;
+
+        var pane = new FakeInputPane();
+        var shell = new SampleShell { Report = _ => { }, ShowsCost = false };
+        InShell<KeyboardInset>(shell, "Keyboard").InputPane = pane;
+        var keyboard = new Border { Height = Keyboard.Height, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom, IsHitTestVisible = false };
+        keyboard.Bind(Border.BackgroundProperty, keyboard.GetResourceObservable("colors.backgroundInverseSecondary"));
+        using var scene = new Scene(new Panel { Children = { shell, keyboard } }, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new BaseTheme()]);
+        shell.Open("Input");
+        Draw();
+        scene.Pump();
+        var page = ((Control)shell.Shown!).GetVisualDescendants().OfType<ScrollViewer>().First();
+        page.Offset = new Vector(0, page.Extent.Height - page.Viewport.Height);
+        scene.Pump();
+        shell.Shown!.FindControl<Input>("Clearable")!.Focus();
+        scene.Pump();
+        Directory.CreateDirectory(folder);
+        scene.Capture().Save(Path.Combine(folder, "keyboard-before.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+
+        pane.Open(Keyboard);
+        scene.Pump();
+        scene.Capture().Save(Path.Combine(folder, "keyboard-after.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+    }
+
     [AvaloniaFact]
     public void The_Host_Is_In_The_Inset_And_The_Footer_Is_Not()
     {

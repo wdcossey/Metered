@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
+using Avalonia.Input;
+using Avalonia.Input.TextInput;
 using Avalonia.Layout;
+using Avalonia.Reactive;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
@@ -12,8 +15,9 @@ namespace Metered.Controls;
 /// on (#108). While the platform's input pane (<see cref="TopLevel.InputPane"/>) is open, the child's foot is padded by
 /// as much of this decorator as the keyboard covers, on top of its own <see cref="Decorator.Padding"/>, so a
 /// <see cref="ScrollViewer"/> inside ends above the keyboard and can scroll its last control there. When the keyboard
-/// opens, the focused control is brought into view if it is inside. Opt-in: an app puts one round the content it wants
-/// kept clear, its page or its whole view. On a platform with no input pane, as Avalonia's headless one, it does nothing.
+/// opens, the focused control is brought into view if it is inside, and then its caret. Opt-in: an app puts one round
+/// the content it wants kept clear, its page or its whole view, given its height by its parent. On a platform with no
+/// input pane, as Avalonia's headless one, it does nothing.
 /// <para>
 /// Why an app needs it: Avalonia 12.1.4 reports the keyboard but moves nothing for it. On Android 15 and later an app
 /// that targets API 35 or later is always drawn edge to edge, and such a window is never resized for the keyboard, so
@@ -22,9 +26,18 @@ namespace Metered.Controls;
 /// the keyboard.
 /// </para>
 /// <para>
-/// The pane is read when the decorator is attached, when it says its state changed, and when its top level resizes.
-/// Android raises <see cref="IInputPane.StateChanged"/> as the keyboard's insets start to animate, with its final rect
-/// (<c>AndroidInsetsManager.OnStart</c>, API 31 and later), and a rotation needn't animate them. The inset is applied at
+/// The inset is taken from the room the child is given, never added to the decorator's own size: a decorator whose
+/// height follows its child's (in a <see cref="StackPanel"/>, say) stays as high as its child would have it, and so a
+/// reading can't feed its last inset back into the next. Its child is then arranged short of its own height, and
+/// overflows it, so such a decorator keeps nothing clear; it is meant to be given its height.
+/// </para>
+/// <para>
+/// The pane is read when it says its state changed, and, once laid out, when the decorator is attached, when its top
+/// level resizes, when the platform's insets change, and when the decorator moves or resizes while the keyboard is up.
+/// Android raises <see cref="IInputPane.StateChanged"/> only as the keyboard's insets start to animate, with its final
+/// rect (<c>AndroidInsetsManager.OnStart</c>, API 31 and later); a rotation, or a keyboard hidden while the app is in the
+/// background, changes the pane with no animation, and only the insets' change says so
+/// (<see cref="IInsetsManager.SafeAreaChanged"/>, raised from every <c>OnApplyWindowInsets</c>). The inset is applied at
 /// once, not over the keyboard's animation. A focus that moves while the keyboard is up is brought into view by the
 /// <see cref="ScrollViewer"/> itself (<see cref="ScrollViewer.BringIntoViewOnFocusChange"/>).
 /// </para>
@@ -38,6 +51,11 @@ public class KeyboardInset : Decorator
     private double _inset;
     private IPane? _pane;
     private TopLevel? _top;
+    private IDisposable? _sizeWatch;
+    private bool _readPosted;
+
+    /// <summary>The room left above the keyboard at the last reading: the decorator's height less its inset.</summary>
+    private double _room;
 
     static KeyboardInset()
     {
@@ -45,7 +63,7 @@ public class KeyboardInset : Decorator
     }
 
     /// <summary>
-    /// How far the child's foot is padded for the keyboard, beyond <see cref="Decorator.Padding"/>: as much of this
+    /// How far the child's foot is padded for the keyboard, beyond <see cref="Decorator.Padding"/>: as much of the
     /// decorator as the open keyboard covers, or 0.
     /// </summary>
     public double Inset
@@ -60,7 +78,7 @@ public class KeyboardInset : Decorator
     /// </summary>
     internal IPane? InputPane { get; set; }
 
-    /// <summary>What the decorator reads of an input pane: <see cref="IInputPane"/>'s members, which a test can stand in for.</summary>
+    /// <summary>What the decorator reads of the platform: an input pane's members, and when the insets change.</summary>
     internal interface IPane
     {
         InputPaneState State { get; }
@@ -68,11 +86,144 @@ public class KeyboardInset : Decorator
         Rect OccludedRect { get; }
 
         event EventHandler<InputPaneStateEventArgs>? StateChanged;
+
+        /// <summary>The platform's insets have changed, the keyboard's among them, whether or not it says so itself.</summary>
+        event EventHandler? InsetsChanged;
     }
 
-    /// <summary>The platform's input pane, as <see cref="IPane"/>.</summary>
-    private sealed class PlatformPane(IInputPane pane) : IPane
+    /// <summary>The child measured in the room left above the keyboard; the decorator wants what it would without one.</summary>
+    protected override Size MeasureOverride(Size availableSize)
     {
+        var desired = LayoutHelper.MeasureChild(Child, availableSize, Padded);
+        return desired.WithHeight(Math.Max(0, desired.Height - Inset));
+    }
+
+    protected override Size ArrangeOverride(Size finalSize) => LayoutHelper.ArrangeChild(Child, finalSize, Padded);
+
+    private Thickness Padded => Padding + new Thickness(0, 0, 0, Inset);
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _top = TopLevel.GetTopLevel(this);
+        _pane = InputPane ?? (_top?.InputPane is { } pane ? new PlatformPane(pane, _top.InsetsManager) : null);
+        if (_pane is null)
+            return;
+
+        _pane.StateChanged += OnStateChanged;
+        _pane.InsetsChanged += OnInsetsChanged;
+        // Gives the size it has at once, so a keyboard already up is read once the decorator is laid out.
+        _sizeWatch = _top?.GetObservable(TopLevel.ClientSizeProperty).Subscribe(new AnonymousObserver<Size>(_ => PostRead()));
+        if (_sizeWatch is null)
+            PostRead();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_pane is not null)
+        {
+            _pane.StateChanged -= OnStateChanged;
+            _pane.InsetsChanged -= OnInsetsChanged;
+        }
+        _sizeWatch?.Dispose();
+        _sizeWatch = null;
+        _pane = null;
+        _top = null;
+        Inset = 0;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        // Moved or resized under an open keyboard: the part it covers may have changed. The inset doesn't change the
+        // decorator's bounds, so this never follows from its own reading.
+        if (change.Property == BoundsProperty && _pane?.State == InputPaneState.Open)
+            PostRead();
+    }
+
+    private void OnStateChanged(object? sender, InputPaneStateEventArgs e)
+    {
+        var open = e.NewState == InputPaneState.Open;
+        Apply(open, e.EndRect);
+        if (open)
+            BringFocusIntoView();
+    }
+
+    private void OnInsetsChanged(object? sender, EventArgs e) => PostRead();
+
+    /// <summary>A reading after the layout and render under way, once however many ask for it before it runs.</summary>
+    private void PostRead()
+    {
+        if (_readPosted)
+            return;
+        _readPosted = true;
+        Dispatcher.UIThread.Post(Read, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>
+    /// The pane as it is now; if that changes the room left above an open keyboard (its inset, or the decorator's
+    /// height, as on a rotation), the focused control brought into view again, as a browser keeps the focused field in
+    /// view as its visual viewport changes.
+    /// </summary>
+    private void Read()
+    {
+        _readPosted = false;
+        if (_pane is not { } pane)
+            return;
+        var open = pane.State == InputPaneState.Open;
+        if (!open && Inset == 0)
+            return;
+        var before = _room;
+        Apply(open, pane.OccludedRect);
+        if (open && _room != before)
+            BringFocusIntoView();
+    }
+
+    /// <summary>
+    /// The inset for a keyboard <paramref name="open"/> or not, at <paramref name="occluded"/> in the top level's
+    /// coordinates: as much of the decorator as lies below the keyboard's top edge, as it is laid out now. Laid out first,
+    /// so that a decorator inside another that has just made room is read in that room, and pads nothing more.
+    /// </summary>
+    private void Apply(bool open, Rect occluded)
+    {
+        if (!open || occluded.Height <= 0 || _top is not { } top)
+        {
+            Inset = 0;
+            _room = 0;
+            return;
+        }
+
+        UpdateLayout();
+        Inset = this.TranslatePoint(default, top) is { } origin
+            ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
+            : 0;
+        _room = Bounds.Height - Inset;
+    }
+
+    /// <summary>
+    /// The focused control, if it is inside, brought into view once the inset is laid out, then its caret if it takes
+    /// text, as a phone's browser scrolls the focused field, and the caret in it, into the space above the keyboard. The
+    /// caret matters in a text taller than that space: the control alone would be brought in by its top.
+    /// </summary>
+    private void BringFocusIntoView()
+    {
+        if (_top?.FocusManager?.GetFocusedElement() is not Control focused || !this.IsVisualAncestorOf(focused))
+            return;
+        UpdateLayout();
+        focused.BringIntoView();
+
+        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
+        focused.RaiseEvent(request);
+        if (request.Client is { TextViewVisual: Control view } client && this.IsVisualAncestorOf(view))
+            view.BringIntoView(client.CursorRectangle);
+    }
+
+    /// <summary>The platform's input pane and insets manager, as <see cref="IPane"/>.</summary>
+    private sealed class PlatformPane(IInputPane pane, IInsetsManager? insets) : IPane
+    {
+        private EventHandler? _insetsChanged;
+
         public InputPaneState State => pane.State;
 
         public Rect OccludedRect => pane.OccludedRect;
@@ -82,89 +233,23 @@ public class KeyboardInset : Decorator
             add => pane.StateChanged += value;
             remove => pane.StateChanged -= value;
         }
-    }
 
-    protected override Size MeasureOverride(Size availableSize) =>
-        LayoutHelper.MeasureChild(Child, availableSize, Padded);
+        public event EventHandler? InsetsChanged
+        {
+            add
+            {
+                if (_insetsChanged is null && insets is not null)
+                    insets.SafeAreaChanged += OnSafeAreaChanged;
+                _insetsChanged += value;
+            }
+            remove
+            {
+                _insetsChanged -= value;
+                if (_insetsChanged is null && insets is not null)
+                    insets.SafeAreaChanged -= OnSafeAreaChanged;
+            }
+        }
 
-    protected override Size ArrangeOverride(Size finalSize) =>
-        LayoutHelper.ArrangeChild(Child, finalSize, Padded);
-
-    private Thickness Padded => Padding + new Thickness(0, 0, 0, Inset);
-
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        _top = TopLevel.GetTopLevel(this);
-        _pane = InputPane ?? (_top?.InputPane is { } pane ? new PlatformPane(pane) : null);
-        if (_pane is null)
-            return;
-
-        _pane.StateChanged += OnStateChanged;
-        if (_top is not null)
-            _top.PropertyChanged += OnTopPropertyChanged;
-        // After the first layout, so that the decorator's place is known: a keyboard already up stays clear of.
-        Dispatcher.UIThread.Post(Read, DispatcherPriority.Loaded);
-    }
-
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        if (_pane is not null)
-            _pane.StateChanged -= OnStateChanged;
-        if (_top is not null)
-            _top.PropertyChanged -= OnTopPropertyChanged;
-        _pane = null;
-        _top = null;
-        Inset = 0;
-        base.OnDetachedFromVisualTree(e);
-    }
-
-    private void OnStateChanged(object? sender, InputPaneStateEventArgs e)
-    {
-        if (_pane is null)
-            return;
-        var open = e.NewState == InputPaneState.Open;
-        Apply(open, e.EndRect);
-        if (open)
-            BringFocusIntoView();
-    }
-
-    private void OnTopPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property == TopLevel.ClientSizeProperty)
-            Dispatcher.UIThread.Post(Read, DispatcherPriority.Loaded);
-    }
-
-    /// <summary>The pane as it is now, against the decorator's place once it's laid out.</summary>
-    private void Read()
-    {
-        if (_pane is not { } pane)
-            return;
-        UpdateLayout();
-        Apply(pane.State == InputPaneState.Open, pane.OccludedRect);
-    }
-
-    /// <summary>
-    /// The inset for a keyboard <paramref name="open"/> or not, at <paramref name="occluded"/> in the top level's
-    /// coordinates: as much of the decorator as lies below the keyboard's top edge. Computed once per reading, never from
-    /// a layout pass, so a decorator whose height follows its child's can't feed its own inset back into it.
-    /// </summary>
-    private void Apply(bool open, Rect occluded)
-    {
-        Inset = open && occluded.Height > 0 && _top is { } top && this.TranslatePoint(default, top) is { } origin
-            ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
-            : 0;
-    }
-
-    /// <summary>
-    /// The focused control, if it is inside, brought into view once the inset is laid out, as a phone's browser scrolls
-    /// the focused field into the space above the keyboard.
-    /// </summary>
-    private void BringFocusIntoView()
-    {
-        if (_top?.FocusManager?.GetFocusedElement() is not Control focused || !this.IsVisualAncestorOf(focused))
-            return;
-        UpdateLayout();
-        focused.BringIntoView();
+        private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => _insetsChanged?.Invoke(this, EventArgs.Empty);
     }
 }

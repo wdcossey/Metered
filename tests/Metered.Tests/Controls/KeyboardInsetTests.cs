@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Input.TextInput;
 using Avalonia.Layout;
 using Avalonia.Styling;
 using Avalonia.Themes.Simple;
@@ -96,6 +98,39 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void A_Decorator_Below_A_Bar_Is_Padded_From_Its_Own_Place()
+    {
+        // As the shell's, under its 56 bar: the decorator is 788 high, from 56, and the keyboard covers its last 300.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("56,*") };
+        Grid.SetRow(inset, 1);
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+        Assert.Equal(Scene.Height - 56 - 300, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void An_Open_Pane_With_No_Rect_Pads_Nothing()
+    {
+        // Android's OccludedRect is empty, at the view's origin, while the window has no insets yet.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        using var scene = new Scene(inset);
+
+        pane.Open(default);
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Keyboard_Below_The_Decorator_Pads_Nothing()
     {
         var pane = new FakeInputPane();
@@ -174,22 +209,27 @@ public class KeyboardInsetTests
     [AvaloniaFact]
     public void A_Focused_Control_Outside_It_Is_Left_Where_It_Is()
     {
+        // The focused input is in another scroller, below the decorator, scrolled out of its view.
         var pane = new FakeInputPane();
-        var (_, inset, page, _) = PageOfInputs(pane);
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
         var outside = new TextBox { Height = 40 };
+        var other = new ScrollViewer { Height = 100, Content = new StackPanel { Children = { new Border { Height = 300 }, outside } } };
         var grid = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
         grid.Children.Add(inset);
-        Grid.SetRow(outside, 1);
-        grid.Children.Add(outside);
+        Grid.SetRow(other, 1);
+        grid.Children.Add(other);
         using var scene = new Scene(grid, themes: Themes);
         outside.Focus();
         scene.Pump();
+        other.Offset = default;
+        scene.Pump();
+        Assert.True(outside.IsFocused);
 
         pane.Open(Keyboard);
         scene.Pump();
 
-        Assert.True(outside.IsFocused);
-        Assert.Equal(0, page.Offset.Y);
+        Assert.Equal(200, inset.Inset);
+        Assert.Equal(0, other.Offset.Y);
     }
 
     [AvaloniaFact]
@@ -221,6 +261,129 @@ public class KeyboardInsetTests
         scene.Pump();
 
         Assert.Equal(200, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_Hidden_With_No_Animation_Is_Read_From_The_Insets()
+    {
+        // The keyboard hidden while the app is in the background: on API 31 and later the pane's state changes with no
+        // StateChanged, and only the insets' change is raised (OnApplyWindowInsets).
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        pane.ChangeInsets(InputPaneState.Closed, default);
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+        Assert.Equal(Scene.Height, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Decorator_Whose_Height_Follows_Its_Child_Never_Grows_By_Its_Inset()
+    {
+        // In a StackPanel, the decorator is as high as its child, 600, and the keyboard covers its last 56. Read again and
+        // again, it stays 600 high and pads 56.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border { Height = 600 } };
+        using var scene = new Scene(new StackPanel { Children = { inset } });
+
+        pane.Open(Keyboard);
+        scene.Pump();
+        pane.ChangeInsets(InputPaneState.Open, Keyboard);
+        scene.Pump();
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        Assert.Equal(600, inset.Bounds.Height);
+        Assert.Equal(56, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Decorator_That_Moves_Under_An_Open_Keyboard_Is_Read_Again()
+    {
+        // A banner under it, 100 high, is taken away: the decorator now reaches the view's foot, and the keyboard covers
+        // 300 of it, not 200.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var banner = new Border { Height = 100 };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+        grid.Children.Add(inset);
+        Grid.SetRow(banner, 1);
+        grid.Children.Add(banner);
+        using var scene = new Scene(grid);
+        pane.Open(Keyboard);
+        scene.Pump();
+        Assert.Equal(200, inset.Inset);
+
+        banner.IsVisible = false;
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void One_Inside_Another_Pads_Nothing_More()
+    {
+        // A page with its own, in a shell with one: the outer makes the room, and the inner, read in it, adds nothing.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inner = new KeyboardInset { InputPane = pane, Child = child };
+        var outer = new KeyboardInset { InputPane = pane, Child = inner };
+        using var scene = new Scene(outer);
+
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        Assert.Equal(300, outer.Inset);
+        Assert.Equal(0, inner.Inset);
+        Assert.Equal(Scene.Height - 300, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Rotation_Under_An_Open_Keyboard_Brings_The_Focused_Input_Back_Into_View()
+    {
+        // The view shrinks to 600 and the keyboard's top moves to 300, with no StateChanged: the focused input, in view
+        // above the keyboard before, is brought into view again.
+        var (pane, inset, _, last) = PageOfInputs();
+        using var scene = new Scene(inset, themes: Themes);
+        last.Focus();
+        scene.Pump();
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        var turned = new Rect(0, 600 - 300, Scene.Width, 300);
+        pane.Move(turned);
+        scene.Window.Height = 600;
+        scene.Pump();
+
+        Assert.True(BottomOf(last, scene) <= turned.Y, $"The focused input ends at {BottomOf(last, scene)}, under the keyboard's top at {turned.Y}.");
+    }
+
+    [AvaloniaFact]
+    public void The_Caret_Of_A_Text_Taller_Than_The_Room_Left_Is_Brought_Above_The_Keyboard()
+    {
+        // A text box 700 high, its caret on its last line: brought into view alone, it would show its top and leave the
+        // line being typed under the keyboard.
+        var pane = new FakeInputPane();
+        var text = new TextBox { Height = 700, AcceptsReturn = true, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Text = string.Join(Environment.NewLine, Enumerable.Range(1, 30).Select(line => $"line {line}")) };
+        var page = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 400 }, text } } };
+        var inset = new KeyboardInset { InputPane = pane, Child = page };
+        using var scene = new Scene(inset, themes: Themes);
+        text.Focus();
+        text.CaretIndex = text.Text.Length;
+        scene.Pump();
+
+        pane.Open(Keyboard);
+        scene.Pump();
+
+        var caret = CaretOf(text, scene);
+        Assert.True(caret.Height > 0);
+        Assert.True(caret.Bottom <= Keyboard.Y, $"The caret ends at {caret.Bottom}, under the keyboard's top at {Keyboard.Y}.");
+        Assert.True(caret.Top >= 0, $"The caret starts at {caret.Top}, above the view.");
     }
 
     [AvaloniaFact]
@@ -264,6 +427,15 @@ public class KeyboardInsetTests
         return (pane, new KeyboardInset { InputPane = pane, Child = page }, page, last);
     }
 
+    /// <summary>The caret of a focused text box, in the window's coordinates, as the input method reads it.</summary>
+    private static Rect CaretOf(TextBox text, Scene scene)
+    {
+        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
+        text.RaiseEvent(request);
+        var client = request.Client!;
+        return client.CursorRectangle.TransformToAABB(client.TextViewVisual.TransformToVisual(scene.Window)!.Value);
+    }
+
     private static double BottomOf(Visual visual, Scene scene) =>
         visual.TranslatePoint(new Point(0, visual.Bounds.Height), scene.Window)!.Value.Y;
 }
@@ -271,7 +443,8 @@ public class KeyboardInsetTests
 /// <summary>
 /// An input pane a test opens and closes, raising <see cref="IInputPane.StateChanged"/> as Avalonia's Android backend
 /// does: the new state, and the keyboard's final rect in the top level's coordinates, after the pane's own
-/// <see cref="State"/> and <see cref="OccludedRect"/> are the new ones.
+/// <see cref="State"/> and <see cref="OccludedRect"/> are the new ones. Or changed with no state event, as Android's
+/// pane changes when its insets change with no animation, and only the insets' change raised.
 /// </summary>
 internal sealed class FakeInputPane : KeyboardInset.IPane
 {
@@ -281,18 +454,14 @@ internal sealed class FakeInputPane : KeyboardInset.IPane
 
     public event EventHandler<InputPaneStateEventArgs>? StateChanged;
 
-    public bool HasListeners => StateChanged is not null;
+    public event EventHandler? InsetsChanged;
+
+    public bool HasListeners => StateChanged is not null || InsetsChanged is not null;
 
     public void Open(Rect keyboard) => Raise(InputPaneState.Open, keyboard);
 
     /// <summary>Closed, from <paramref name="from"/>: Android's end rect for a closing keyboard is its empty one.</summary>
-    public void Close(Rect from)
-    {
-        var start = OccludedRect;
-        State = InputPaneState.Closed;
-        OccludedRect = new Rect(from.X, from.Bottom, from.Width, 0);
-        Dispatcher.UIThread.Invoke(() => StateChanged?.Invoke(this, new InputPaneStateEventArgs(State, start, OccludedRect)));
-    }
+    public void Close(Rect from) => Raise(InputPaneState.Closed, new Rect(from.X, from.Bottom, from.Width, 0));
 
     public void Raise(InputPaneState state, Rect end)
     {
@@ -302,6 +471,14 @@ internal sealed class FakeInputPane : KeyboardInset.IPane
         Dispatcher.UIThread.Invoke(() => StateChanged?.Invoke(this, new InputPaneStateEventArgs(state, start, end)));
     }
 
-    /// <summary>The keyboard's rect changes with no event, as it does on a rotation with no insets animation.</summary>
+    /// <summary>The keyboard's rect changes with no event at all, as the view's size changes on a rotation.</summary>
     public void Move(Rect keyboard) => OccludedRect = keyboard;
+
+    /// <summary>The pane changes with no state event, and the platform's insets say they changed.</summary>
+    public void ChangeInsets(InputPaneState state, Rect keyboard)
+    {
+        State = state;
+        OccludedRect = keyboard;
+        Dispatcher.UIThread.Invoke(() => InsetsChanged?.Invoke(this, EventArgs.Empty));
+    }
 }
