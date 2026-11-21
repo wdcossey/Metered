@@ -94,8 +94,9 @@ From base-input.js and input.js, and its e2e test:
   text box, as a browser's).
 - The tab order is the input, the clear icon, the toggle: their order in Base Web's markup.
 - **A finger's (or a pen's) drag on the input scrolls the page round it**, focused or not, as a phone's browser does with
-  an `<input>`: the caret moves by a tap or its handle, never by a drag (Avalonia's text box would move it by a drag, and
-  keep the page from panning: #94). After a hold, a drag extends the hold's selection, as the text box's. A mouse's drag
+  an `<input>`: the caret moves by a tap or its handle, never by a drag, nor where a drag that nothing scrolled lifts
+  (Avalonia's text box would move it by a drag, and keep the page from panning: #94; a tap is Avalonia's, a release
+  within the platform's tap size of the press). After a hold, a drag extends the hold's selection, as the text box's. A mouse's drag
   selects, and a press anywhere on the box focuses it (known differences, 1). `BaseInput` does this, so Textarea's text
   has it too.
 - The icons are Base Web's own paths, rendered from its icons by the generator and the oracle, each drawn in its
@@ -111,13 +112,14 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 91: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 92: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept;
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
-  focus; a finger's drag that moves the page and not the caret, focused or not, and a mouse's that selects; enhancers (JavaScript's truth, NaN and 0) and adjoined; Before and After; overrides on six parts; the icons'
+  focus; a finger's drag that moves the page and not the caret, focused or not, one that nothing scrolls (and a tap that
+  does place it), and a mouse's that selects; enhancers (JavaScript's truth, NaN and 0) and adjoined; Before and After; overrides on six parts; the icons'
   paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
 - `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the toggle's ring, the show

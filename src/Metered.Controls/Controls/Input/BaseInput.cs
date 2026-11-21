@@ -32,9 +32,9 @@ namespace Metered.Controls;
 /// <c>:loaded</c> is set once the control is loaded, so a transition doesn't run on its first appearance.</para>
 /// <para>The parts that take focus are inside the text box's template, so the text box takes no key, text, focus or
 /// pointer of theirs: what they do is theirs alone, as their own elements in Base Web.</para>
-/// <para>A finger's or a pen's drag on it scrolls what is round it, as on a phone's browser, and never moves the caret
-/// (Avalonia's text box would move it, and keep the page from panning); after a hold it extends the hold's selection. A
-/// press still focuses it, and a mouse's drag selects.</para>
+/// <para>A finger's or a pen's drag on it scrolls what is round it, as on a phone's browser, and never moves the caret,
+/// by its moves or where it lifts (Avalonia's text box would move it, and keep the page from panning): a tap does. After
+/// a hold, that pointer's drag extends the hold's selection. A press still focuses it, and a mouse's drag selects.</para>
 /// </remarks>
 [TemplatePart(InputContainerPart, typeof(StyledElement))]
 [TemplatePart(InputPart, typeof(StyledElement))]
@@ -103,7 +103,8 @@ public abstract class BaseInput : TextBox
     private bool _maskState = true;
     private bool _masked;
     private bool _eatSpace;
-    private bool _held;
+    private IPointer? _held;
+    private (IPointer Pointer, Point At)? _press;
     private IDisposable? _mask;
     private IDisposable? _maskKeyboard;
     private readonly List<IDisposable> _labels = [];
@@ -312,31 +313,50 @@ public abstract class BaseInput : TextBox
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        _held = false;
+        if (_held == e.Pointer) _held = null;
         if (FromOwnControl(e.Source)) return;
+        if (e.Pointer.Type != PointerType.Mouse) _press = (e.Pointer, e.GetPosition(this));
         base.OnPointerPressed(e);
     }
 
     // A finger's or a pen's drag on the text is a scroll's, the page's (or a textarea's own), as in a browser on a phone,
-    // where the caret moves by its handle (and Avalonia's scroll gesture takes a pen's as a finger's). Avalonia's text box
-    // would take the drag to move its caret, and keep any scroller round it from panning (#94). After a hold, the drag
-    // extends the selection the hold made, as the text box's does. A mouse's drag selects, as before.
+    // where the caret moves by a tap or its handle (and Avalonia's scroll gesture takes a pen's as a finger's). Avalonia's
+    // text box would take the drag to move its caret, and keep any scroller round it from panning (#94). After a hold, that
+    // pointer's drag extends the selection the hold made, as the text box's does. A mouse's drag selects, as before.
     protected override void OnPointerMoved(PointerEventArgs e)
     {
-        if (e.Pointer.Type != PointerType.Mouse && !_held) return;
+        if (e.Pointer.Type != PointerType.Mouse && e.Pointer != _held) return;
         base.OnPointerMoved(e);
     }
 
+    // The text box puts the caret where a finger lifts. Only where it lifts from a tap: a drag that nothing scrolled
+    // (sideways, or in a page that can't move) isn't the caret's either.
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
+        var press = _press is { } p && p.Pointer == e.Pointer ? p.At : (Point?)null;
+        if (_press?.Pointer == e.Pointer) _press = null;
+        var held = _held == e.Pointer;
+        if (held) _held = null;
+        if (e.Pointer.Type != PointerType.Mouse && !held && press is { } at && !IsTap(e, at)) return;
         base.OnPointerReleased(e);
-        _held = false;
     }
 
     protected override void OnHolding(HoldingRoutedEventArgs e)
     {
         base.OnHolding(e);
-        if (e.HoldingState == HoldingState.Started) _held = true;
+        // Avalonia's hold is the last press's: here the text's own (a hold on a control of its own's had no press here).
+        if (e.HoldingState == HoldingState.Started && !FromOwnControl(e.Source) && _press is { } press
+            && press.Pointer.Type == e.PointerType)
+        {
+            _held = press.Pointer;
+        }
+    }
+
+    // Avalonia's tap (Gestures): a release within the platform's tap size of the press.
+    private bool IsTap(PointerReleasedEventArgs e, Point pressedAt)
+    {
+        var size = Application.Current?.PlatformSettings?.GetTapSize(e.Pointer.Type) ?? new Size(4, 4);
+        return new Rect(pressedAt, default(Size)).Inflate(new Thickness(size.Width, size.Height)).ContainsExclusive(e.GetPosition(this));
     }
 
     /// <summary>

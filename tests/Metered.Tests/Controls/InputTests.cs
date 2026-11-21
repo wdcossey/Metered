@@ -559,14 +559,44 @@ public class InputTests
             Assert.True(input.IsFocused);
         }
 
-        var caret = input.CaretIndex;
-        // From the start of the text, up and along it: the way a caret drag would go.
+        input.CaretIndex = 0;
+        scene.Pump();
+        // From the middle of the text, away from the caret, up and along it: the way a caret drag would go.
         var presenter = Presenter(input);
-        var at = presenter.TranslatePoint(new Point(4, presenter.Bounds.Height / 2), scene.Window)!.Value;
-        TouchDrag(scene, at, new Point(at.X + 120, at.Y - 150));
+        var at = presenter.TranslatePoint(new Point(presenter.TextLayout.Width / 2, presenter.Bounds.Height / 2), scene.Window)!.Value;
+        TouchDrag(scene, at, new Point(at.X + 60, at.Y - 150));
 
         Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
-        Assert.Equal(caret, input.CaretIndex);
+        Assert.Equal(0, input.CaretIndex);
+        Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
+    }
+
+    // A finger's drag that nothing scrolls (sideways, where nothing scrolls) still isn't the caret's: it doesn't move it, by
+    // its moves or where it lifts, and selects nothing. A tap there does.
+    [AvaloniaFact]
+    public void A_finger_drag_that_nothing_scrolls_leaves_the_caret()
+    {
+        var input = new Input { Text = "one two three four five" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { input } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        Tap(scene, P<Visual>(input, BaseInput.InputPart));
+        Assert.True(input.IsFocused);
+        input.CaretIndex = 0;
+        scene.Pump();
+
+        var presenter = Presenter(input);
+        var at = presenter.TranslatePoint(new Point(4, presenter.Bounds.Height / 2), scene.Window)!.Value;
+        var end = new Point(at.X + 120, at.Y);
+        TouchDrag(scene, at, end);
+
+        Assert.Equal(0, input.CaretIndex);
+        Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
+
+        var touch = scene.Window.TouchBegin(end, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(touch, end, RawInputModifiers.None);
+        scene.Pump();
+        Assert.InRange(input.CaretIndex, 1, input.Text!.Length);
         Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
     }
 
