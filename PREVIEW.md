@@ -159,6 +159,29 @@ can resize (its grip in the corner), its scenario's clearable one, and a long te
 <img src="docs/preview/dark__textarea-2.png" width="270" alt="Textarea, dark, scrolled: sizes, resizable, clearable, a long text">
 </p>
 
+## FormControl
+
+Base Web's form control round an input and a textarea, as its documentation's examples: basic, the validation example
+and the states; then its scenarios: the boolean states, the counters, a label for another control (`HtmlFor`), the
+input's form control states, and a checkbox and a radio group in one. A tap on a label focuses its control.
+
+<p>
+<img src="docs/preview/light__formcontrol-1.png" width="270" alt="FormControl, light: an input, a textarea, the validation example">
+<img src="docs/preview/dark__formcontrol-1.png" width="270" alt="FormControl, dark: an input, a textarea, the validation example">
+</p>
+<p>
+<img src="docs/preview/light__formcontrol-2.png" width="270" alt="FormControl, light, scrolled: the states and the counters">
+<img src="docs/preview/dark__formcontrol-2.png" width="270" alt="FormControl, dark, scrolled: the states and the counters">
+</p>
+<p>
+<img src="docs/preview/light__formcontrol-3.png" width="270" alt="FormControl, light, scrolled: the counters, a label for another control, the form control states">
+<img src="docs/preview/dark__formcontrol-3.png" width="270" alt="FormControl, dark, scrolled: the counters, a label for another control, the form control states">
+</p>
+<p>
+<img src="docs/preview/light__formcontrol-4.png" width="270" alt="FormControl, light, at its end: a checkbox and a radio group">
+<img src="docs/preview/dark__formcontrol-4.png" width="270" alt="FormControl, dark, at its end: a checkbox and a radio group">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

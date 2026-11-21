@@ -152,6 +152,8 @@ const files = {
   'input.oracle.json': require('./input').oracle(version),
   // Base Web's Textarea, rendered (textarea.js).
   'textarea.oracle.json': require('./textarea').oracle(version),
+  // Base Web's FormControl, rendered round each child it is given (form-control.js).
+  'form-control.oracle.json': require('./form-control').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

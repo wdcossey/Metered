@@ -54,6 +54,10 @@ These are the ones to revisit first.
 | Textarea | The browser's scroll bar | None | 2026-11-21 evening, #85 (PR #95) | [Textarea 1](controls/Textarea/README.md#known-differences) |
 | Textarea | 20 columns as the browser measures them (Uber Move on baseweb.design) | Chrome's rule, 20 of the font's OS/2 average character (Instrument Sans), only where the root is `fit-content`; with no OS/2 width, 20 widths of `0` | 2026-11-21 evening, #85 (PR #95) | [Textarea 5](controls/Textarea/README.md#known-differences) |
 | Textarea | A resized textarea can overflow its parent | The grip keeps it within the room it is given | As built | [Textarea 3](controls/Textarea/README.md#known-differences) |
+| FormControl | The label is for `htmlFor` or the child's `id`; with neither it labels nothing | The child is labelled unless `HtmlFor` names another (Avalonia has no `id`) | As built | [FormControl 2](controls/FormControl/README.md#known-differences) |
+| FormControl | A click on a label also activates a checkbox, a radio or a button it labels | The label focuses what it labels; it doesn't click it | As built | [FormControl 3](controls/FormControl/README.md#known-differences) |
+| FormControl | `disabled` is the form control's own prop | `IsEnabled`: a form control in a disabled panel is disabled too, its label greyed | As built | [FormControl 4](controls/FormControl/README.md#known-differences) |
+| FormControl (sample) | The validation example checks with `email-validator` and overrides the input's `After` with an alert | A plain pattern, and no `After` override | As built | [FormControl 7](controls/FormControl/README.md#known-differences) |
 
 ## Forced
 
@@ -75,6 +79,9 @@ These are the ones to revisit first.
 | **The text box's own behaviour:** the mask toggle disabled with the input, the app theme's cut/copy/paste strings, focus and keys kept from the parts inside its template | Avalonia's `TextBox` template | [Input 3, 4, 9](controls/Input/README.md#known-differences) |
 | **Cursors:** no grab cursors | Avalonia has none | [Slider 4](controls/Slider/README.md#known-differences) |
 | **XAML and names:** a number is a number; the names' lengths are written in the theme; Spinner's content box is read, not measured; `Transparent` is `#00FFFFFF`; Avalonia has a `Spinner` of its own | XAML and Avalonia's types | [Spinner 2, 4, 5, 9](controls/Spinner/README.md#known-differences), [Checkbox 11](controls/Checkbox/README.md#known-differences) |
+| **FormControl: two one under the other are 8 px further apart** (24 for a browser's collapsed 16) | Avalonia's layout has no margin collapsing between controls; inside one form control the margins collapse | [FormControl 1](controls/FormControl/README.md#known-differences) |
+| **FormControl: the end enhancer's min-content width breaks text at spaces only** | Avalonia's text layout gives no min-content width (`WrapWithOverflow` at no width breaks every word after the first): the words are measured | [FormControl 5](controls/FormControl/README.md#known-differences) |
+| **FormControl: the child's help text is the hint's text**, none for a hint that is another control | UI Automation's help text is a string; `aria-describedby` names an element | [FormControl 6](controls/FormControl/README.md#known-differences) |
 
 ## Not yet
 
@@ -84,3 +91,4 @@ These are the ones to revisit first.
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone:** the slider's touch drag (#64); Input's and Textarea's caret, selection handles, soft keyboard and drags, and the drag after a hold (#90) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences) |
+| **On a phone:** a tap on a FormControl's label opening the soft keyboard, and a drag from it (#102) | [FormControl 8](controls/FormControl/README.md#known-differences) |
