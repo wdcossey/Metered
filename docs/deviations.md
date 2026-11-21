@@ -60,6 +60,10 @@ These are the ones to revisit first.
 | FormControl (sample) | The validation example checks with `email-validator` and overrides the input's `After` with an alert | A plain pattern, and no `After` override | 2026-11-21 night (kept, #105) | [FormControl 7](controls/FormControl/README.md#known-differences) |
 | FormControl | A Textarea's defaultProps (`error: false`) keep the form control's error from it: its border stays while the caption turns red | A Textarea is given the error, as an Input is | 2026-11-21 night, #105 | [FormControl 9](controls/FormControl/README.md#known-differences) |
 | FormControl | The label's box is its hit area: the row's 16 px (20 with an end enhancer) | The hit area covers the row's 8 px margins, 32 px (36), nothing moved | 2026-11-21 night, #105 | [FormControl 10](controls/FormControl/README.md#known-differences) |
+| Popover | A controlled `Popover` changes nothing itself; a `StatefulPopover` its own state, its `onOpen` and `onClose` called for its own changes | One popover: a click on the anchor, a click outside and Escape set `IsOpen` whatever bound it; `Open` and `Close` raised on every change | as built (#106) | [Popover 1](controls/Popover/README.md#known-differences) |
+| Popover | A phone's browser fires `mouseenter` on a tap: a hover popover opens, until a tap elsewhere | A finger never hovers: a tap doesn't open a hover popover (keyboard focus does) | as built (#106) | [Popover 2](controls/Popover/README.md#known-differences) |
+| Popover | `preventOverflow` keeps the body in the anchor's scroll parent: in a page that scrolls as a document, the document, so it goes off the screen with its anchor | The page's scroll viewer is the scroll parent: a popover whose anchor scrolls away stays at the scroller's edge; the window without one | as built (#106) | [Popover 3](controls/Popover/README.md#known-differences) |
+| Popover (sample) | The placements example opens on hover | On a click, so a finger can open them | as built (#106) | [Popover 6](controls/Popover/README.md#known-differences) |
 
 ## Forced
 
@@ -84,6 +88,9 @@ These are the ones to revisit first.
 | **FormControl: two one under the other are 8 px further apart** (24 for a browser's collapsed 16) | Avalonia's layout has no margin collapsing between controls; inside one form control the margins collapse | [FormControl 1](controls/FormControl/README.md#known-differences) |
 | **FormControl: the end enhancer's min-content width breaks text at spaces only** | Avalonia's text layout gives no min-content width (`WrapWithOverflow` at no width breaks every word after the first): the words are measured | [FormControl 5](controls/FormControl/README.md#known-differences) |
 | **FormControl: the child's help text is the hint's text**, none for a hint that is another control | UI Automation's help text is a string; `aria-describedby` names an element | [FormControl 6](controls/FormControl/README.md#known-differences) |
+| **Popover: without a focus lock, focus goes back to the anchor when it closes** (Base Web's leaves it on the page) | Avalonia's popup gives focus back to what had it before it opened | [Popover 4](controls/Popover/README.md#known-differences) |
+| **Popover: a menu's anchor isn't marked as having a popup or expanded**; a tooltip describes its anchor by its text | Avalonia can't add an expand state to another control's automation peer; help text is a string | [Popover 5](controls/Popover/README.md#known-differences) |
+| **Popover: shown in the window's overlay layer**, none in a window without a template; closed on its window's `Closing` | Base Web's `mountNode` has no counterpart; Avalonia 12.1.4 fails closing a window with a popup open in another's | [Popover 7, 8](controls/Popover/README.md#known-differences) |
 
 ## Not yet
 
@@ -94,3 +101,5 @@ These are the ones to revisit first.
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** the keyboard covering a focused input (#108), handles left on an input the focus left (#109), the desktop menu (#110), the grip focusing the textarea (#111) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences) |
 | **On a phone:** a FormControl's `HtmlFor` label (#102) | [FormControl 8](controls/FormControl/README.md#known-differences) |
+| **Popover:** `stateReducer`, `renderAll`, `popperOptions`, `focusOptions`; Android's back button closing it | [Popover 9, 10](controls/Popover/README.md#known-differences) |
+| **On a phone and in a real window:** the Popover (#119) | [Popover 10](controls/Popover/README.md#known-differences) |
