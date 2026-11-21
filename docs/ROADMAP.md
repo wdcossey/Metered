@@ -46,6 +46,9 @@ Done since the pilot (2026-11-16):
 - [x] The sample as a library (#7, from Cornflower's): a shell that lists a page per control and
       times each to its first frame, `CatalogueTests` and a test per page, `PerformanceMonitor` (the
       Debug line) and the timing benchmark with its trend table (`docs/performance/README.md`)
+- [x] The soft keyboard (#108): `KeyboardInset`, an opt-in decorator that keeps its child clear of a phone's keyboard
+      and brings the focused control into view, as a browser does, which Base Web relies on; the sample's shell uses it
+      (`docs/controls/KeyboardInset/`). Tested headless through a fake pane; not yet run on the Pixel
 
 Borrowed from Cornflower and Avonic (2026-11-16):
 
