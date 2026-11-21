@@ -36,7 +36,9 @@ in Release and in Debug (whose code differs, for the cost line), after running t
 
 ## What `run.ps1` does
 
-1. Checks that `adb devices` lists exactly one phone, and reads its model, Android version, screen size and density.
+1. Checks that `adb devices` lists exactly one phone, or, with `ANDROID_SERIAL` set, that it lists the device it names
+   (adb then sends every command there, so an emulator also attached is left alone). Reads its model, Android version,
+   screen size and density.
 2. Builds the head (Release by default), and installs the signed APK. The project embeds its assemblies in the APK in
    every configuration, so `-Configuration Debug` installs with `adb install` too.
 3. For each page of `-Page`, in turn:

@@ -1110,10 +1110,16 @@ try {
         $partway = Scrolled
         Check 'a finger''s short drag up on it scrolls its text, partway' (($partway -gt 0.5) -and ($partway -lt 99.5)) "$partway %"
         Check 'and not the page' ((Top) -eq $top) "$(Top) against $top"
-        TouchDrag $x $y 0 (-(Px 400)) 30 16 300
-        Start-Sleep -Milliseconds 400
+        # How far its text has left to go depends on how its lines wrap at the window's width, so it is dragged in long
+        # strokes until a stroke has taken it to its end, and past it: that last stroke is the latched one.
+        $strokes = 0
+        do {
+            TouchDrag $x $y 0 (-(Px 200)) 20 16 300
+            Start-Sleep -Milliseconds 400
+            $strokes++
+        } while (((Scrolled) -lt 99.5) -and ($strokes -lt 8))
         Shot 'textarea-touch-drag-latched'
-        Check 'a long drag up takes its text to its end' ((Scrolled) -ge 99.5) "$(Scrolled) %"
+        Check 'long drags up take its text to its end' ((Scrolled) -ge 99.5) "$(Scrolled) % after $strokes strokes"
         Check 'and, latched to it past its end, leaves the page where it was' ((Top) -eq $top) "$(Top) against $top"
         TouchDrag $x $y 0 (-(Px 150)) 20 16 300
         Start-Sleep -Milliseconds 600
