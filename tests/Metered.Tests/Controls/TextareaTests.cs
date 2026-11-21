@@ -499,15 +499,36 @@ public class TextareaTests
         var grip = Grip(textarea);
         var at = scene.CentreOf(grip);
 
-        // No smaller than the override's minimum height, or the grip itself.
-        MouseDrag(scene, at, at - new Vector(1000, 1000));
+        // No smaller than the override's minimum height, or the grip itself; the size follows the pointer, so back 10 px
+        // in the same drag is still past it.
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseMove(at - new Vector(1000, 1000));
+        scene.Pump();
+        Assert.Equal(60, field.Bounds.Height);
+        Assert.Equal(grip.Bounds.Width, field.Bounds.Width);
+        scene.Window.MouseMove(at - new Vector(1000, 1000) + new Vector(10, 10));
+        scene.Window.MouseUp(at - new Vector(1000, 1000) + new Vector(10, 10), MouseButton.Left);
+        scene.Pump();
         Assert.Equal(60, field.Bounds.Height);
         Assert.Equal(grip.Bounds.Width, field.Bounds.Width);
 
-        // No wider than the room the textarea has: its own width, inside the root's border.
+        // No wider than the room the textarea has: its own width, inside the root's border; back 40 px in the same drag is
+        // still past it.
+        at = scene.CentreOf(grip);
+        var root = P<Border>(textarea, Textarea.RootPart);
+        scene.Window.MouseMove(at);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseMove(at + new Vector(1000, 0));
+        scene.Pump();
+        Assert.Equal(textarea.Bounds.Width, root.Bounds.Width);
+        var widest = field.Bounds.Width;
+        scene.Window.MouseMove(at + new Vector(1000 - 40, 0));
+        scene.Window.MouseUp(at + new Vector(1000 - 40, 0), MouseButton.Left);
+        scene.Pump();
+        Assert.Equal(widest, field.Bounds.Width);
         at = scene.CentreOf(grip);
         MouseDrag(scene, at, at + new Vector(1000, 0));
-        var root = P<Border>(textarea, Textarea.RootPart);
         Assert.Equal(textarea.Bounds.Width, root.Bounds.Width);
         Assert.True(grip.IsEffectivelyVisible);
         Assert.Equal(root.Bounds.Width, grip.TranslatePoint(new Point(grip.Bounds.Width, 0), root)!.Value.X + root.BorderThickness.Right, 1);
@@ -582,6 +603,8 @@ public class TextareaTests
         scene.Window.UpdateLayout();
         Assert.True(field.IsMeasureValid && field.IsArrangeValid);
         Assert.True(presenter.TextLayout.WidthIncludingTrailingWhitespace <= field.Bounds.Width - field.Padding.Left - field.Padding.Right + 0.5);
+        // The scroller's extent is the text as laid out at that width, and its padding: the last line can be reached.
+        Assert.Equal(presenter.TextLayout.Height + field.Padding.Top + field.Padding.Bottom, Scroller(textarea).Extent.Height, 1);
     }
 
     [AvaloniaTheory]

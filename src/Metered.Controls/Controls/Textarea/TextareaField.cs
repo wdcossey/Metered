@@ -123,22 +123,19 @@ public class TextareaField : InputField
         if (change.Property == RowsProperty) Resized();
     }
 
-    /// <summary>The width it was last given to lay out in: the most the grip can drag it to.</summary>
-    internal double AvailableWidth { get; private set; } = double.PositiveInfinity;
-
     private Typeface Typeface => new(TextElement.GetFontFamily(this), TextElement.GetFontStyle(this),
         TextElement.GetFontWeight(this), TextElement.GetFontStretch(this));
 
     protected override Size MeasureOverride(Size availableSize)
     {
         var padding = Padding;
-        AvailableWidth = availableSize.Width;
         _available = availableSize;
         var width = double.IsNaN(ResizedWidth) ? IntrinsicWidth : ResizedWidth;
         var height = double.IsNaN(ResizedHeight)
             ? Lines * LineHeight + padding.Top + padding.Bottom + BorderThickness.Top + BorderThickness.Bottom
             : ResizedHeight;
-        var size = new Size(Math.Min(width, availableSize.Width), height);
+        // Layout keeps it within the space it is given (a dragged width too, once the space narrows).
+        var size = new Size(width, height);
         // Its child at the size it will have: the size it was last laid out at in this space; else all the width there
         // is, stretched, as a textarea of width 100% is. Measured at one size and laid out at another, the child would
         // be measured again in the arrange, which measures the field again, and so on every pass.

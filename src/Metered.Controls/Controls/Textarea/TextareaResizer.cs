@@ -90,7 +90,6 @@ public class TextareaResizer : Control, ICustomHitTest
         _from = e.GetPosition(null);
         _start = field.Bounds.Size;
         e.Pointer.Capture(this);
-        e.PreventGestureRecognition();
         e.Handled = true;
     }
 
@@ -102,17 +101,9 @@ public class TextareaResizer : Control, ICustomHitTest
         e.Handled = true;
         var by = e.GetPosition(null) - _from;
         if (field.FlowDirection == FlowDirection.RightToLeft) by = by.WithX(-by.X);
-        if (Direction is TextareaResize.Both or TextareaResize.Horizontal)
-        {
-            var most = Math.Min(field.MaxWidth, field.AvailableWidth);
-            field.ResizedWidth = Math.Clamp(_start.Width + by.X, Math.Min(Math.Max(field.MinWidth, Bounds.Width), most), most);
-        }
-
-        if (Direction is TextareaResize.Both or TextareaResize.Vertical)
-        {
-            var least = Math.Max(field.MinHeight, Bounds.Height);
-            field.ResizedHeight = Math.Clamp(_start.Height + by.Y, Math.Min(least, field.MaxHeight), field.MaxHeight);
-        }
+        // Never smaller than the grip; layout keeps the rest, the field's minimum and maximum and the width it is given.
+        if (Direction is TextareaResize.Both or TextareaResize.Horizontal) field.ResizedWidth = Math.Max(_start.Width + by.X, Bounds.Width);
+        if (Direction is TextareaResize.Both or TextareaResize.Vertical) field.ResizedHeight = Math.Max(_start.Height + by.Y, Bounds.Height);
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
