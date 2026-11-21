@@ -84,9 +84,9 @@ public class TextareaResizer : Control, ICustomHitTest
     {
         base.OnPointerPressed(e);
         if (_dragging is not null || Direction == TextareaResize.None || Field is not { } field) return;
-        _field = field;
         if (e.Pointer.Type == PointerType.Mouse && !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         _dragging = e.Pointer;
+        _field = field;
         _from = e.GetPosition(null);
         _start = field.Bounds.Size;
         e.Pointer.Capture(this);
