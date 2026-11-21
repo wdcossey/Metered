@@ -168,8 +168,9 @@ foreach ($title in $sections) {
 # Not bin/ or obj/, where a stale copy could keep a name the source has lost; matched on the path below samples/, so a
 # clone that sits under a folder called bin or obj is still read.
 function Sources($filter) { Get-ChildItem $sample -Recurse -Filter $filter | Where-Object { $_.FullName.Substring($sample.Length) -notmatch '[\\/](bin|obj)[\\/]' } }
-# Each page's title, from its [SamplePage], and the XAML beside its code.
-$pageFile = @{}
+# Each page's title, from its [SamplePage], and the XAML beside its code. Keyed case and all, as drive.ps1 matches a title
+# (Named): PowerShell's own @{} would take 'TextArea' for 'Textarea'.
+$pageFile = New-Object Collections.Hashtable ([StringComparer]::Ordinal)
 foreach ($cs in @(Sources *.axaml.cs)) {
     $m = Select-String -Path $cs.FullName -Pattern '\[SamplePage\("([^"]+)"' | Select-Object -First 1
     if ($m) { $pageFile[$m.Matches[0].Groups[1].Value] = $cs.FullName -replace '\.cs$', '' }
