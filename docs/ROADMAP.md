@@ -113,3 +113,9 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       not a press, so a finger's drag from it scrolls the page; the label names it to UI Automation
       (`docs/controls/FormControl/`). On the Pixel: #102. Then (#105): the label also clicks what it labels (a checkbox
       toggles, a button is clicked), its hit area covers its row's margins, and a Textarea is given the error
+- [x] Popover (#106): Base Web's `baseui/popover` (no v2), `Popover` and `StatefulPopover` in one, on Avalonia's
+      `Popup` in the window's overlay layer: opened by a click or a hover, placed as popper.js places it (`Tether`, against
+      popper.js itself run headless), the arrow, dismissed by a press or a finger's tap outside and Escape by the top layer
+      (`Layers`), its entrance and exit, focus and the focus lock, content of any kind or a function of `close`, its three
+      parts and overrides (`docs/controls/Popover/`). `Tether` and `Layers` are for Select (#97) and Menu (#107). On
+      the Pixel and in a real window: #119

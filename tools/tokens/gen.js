@@ -151,6 +151,8 @@ files['../Controls/Input.Parts.g.axaml'] = require('./input').file(version);
 files['../Controls/Textarea.Parts.g.axaml'] = require('./textarea').file(version);
 // The themes of FormControl's parts, from Base Web's form control and its two icons (form-control.js).
 files['../Controls/FormControl.Parts.g.axaml'] = require('./form-control').file(version);
+// The themes of Popover's parts, from Base Web's popover (popover.js).
+files['../Controls/Popover.Parts.g.axaml'] = require('./popover').file(version);
 
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');

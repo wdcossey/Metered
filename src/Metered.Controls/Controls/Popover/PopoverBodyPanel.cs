@@ -1,0 +1,78 @@
+using Avalonia;
+using Avalonia.Controls;
+using System.Runtime.CompilerServices;
+
+namespace Metered.Controls;
+
+/// <summary>
+/// The popover's body as CSS lays it out: its children in flow (Base Web's <c>Inner</c>, <c>position: relative</c>) fill
+/// it and size it, and a child marked <see cref="IsAbsoluteProperty"/> (the <c>Arrow</c>, <c>position: absolute</c>) is
+/// placed by <see cref="Canvas.LeftProperty"/>, <see cref="Canvas.TopProperty"/>, <see cref="Canvas.RightProperty"/> and
+/// <see cref="Canvas.BottomProperty"/> against the body's padding box, as CSS's <c>left</c>, <c>top</c>, <c>right</c> and
+/// <c>bottom</c>, its margin added, and takes no room. Later children are drawn over earlier ones, as positioned boxes in
+/// CSS are.
+/// </summary>
+public class PopoverBodyPanel : Panel
+{
+    public static readonly AttachedProperty<bool> IsAbsoluteProperty =
+        AvaloniaProperty.RegisterAttached<PopoverBodyPanel, Control, bool>("IsAbsolute");
+
+    static PopoverBodyPanel()
+    {
+        // A child's position changed (a placement's state style): its panel arranges it again.
+        AffectsParentArrange<PopoverBodyPanel>(Canvas.LeftProperty, Canvas.TopProperty, Canvas.RightProperty, Canvas.BottomProperty, IsAbsoluteProperty);
+    }
+
+    /// <summary>The box each absolute child was last arranged in, kept no longer than the child.</summary>
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, StrongBox<Size>> _arranged = new();
+
+    public static bool GetIsAbsolute(Control element) => element.GetValue(IsAbsoluteProperty);
+
+    public static void SetIsAbsolute(Control element, bool value) => element.SetValue(IsAbsoluteProperty, value);
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var size = default(Size);
+        foreach (var child in Children)
+        {
+            if (GetIsAbsolute(child))
+            {
+                child.Measure(Size.Infinity);
+                // A new size or margin (the arrow's offset) moves it without changing the panel's size: Avalonia would
+                // arrange it again in its old box, so the panel arranges it.
+                if (!_arranged.TryGetValue(child, out var was) || was.Value != child.DesiredSize) InvalidateArrange();
+                continue;
+            }
+
+            child.Measure(availableSize);
+            size = new Size(Math.Max(size.Width, child.DesiredSize.Width), Math.Max(size.Height, child.DesiredSize.Height));
+        }
+
+        return size;
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        foreach (var child in Children)
+        {
+            if (!GetIsAbsolute(child))
+            {
+                child.Arrange(new Rect(finalSize));
+                continue;
+            }
+
+            // The margin box: DesiredSize holds the margins, which Arrange takes off again.
+            var box = child.DesiredSize;
+            _arranged.AddOrUpdate(child, new StrongBox<Size>(box));
+            var left = Canvas.GetLeft(child);
+            var top = Canvas.GetTop(child);
+            var right = Canvas.GetRight(child);
+            var bottom = Canvas.GetBottom(child);
+            var x = !double.IsNaN(left) ? left : !double.IsNaN(right) ? finalSize.Width - right - box.Width : 0;
+            var y = !double.IsNaN(top) ? top : !double.IsNaN(bottom) ? finalSize.Height - bottom - box.Height : 0;
+            child.Arrange(new Rect(new Point(x, y), box));
+        }
+
+        return finalSize;
+    }
+}

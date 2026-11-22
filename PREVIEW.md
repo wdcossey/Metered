@@ -182,6 +182,21 @@ input's form control states, and a checkbox and a radio group in one. A tap on a
 <img src="docs/preview/dark__formcontrol-4.png" width="270" alt="FormControl, dark, at its end: a checkbox and a radio group">
 </p>
 
+## Popover
+
+Base Web's popover, as its documentation's examples: always open, opened by a click and with an arrow, by a hover, closed
+from its content, each placement, and the overrides example open. A tap on an anchor opens its popover and a tap outside
+closes it; a hover popover opens under a mouse or by keyboard focus.
+
+<p>
+<img src="docs/preview/light__popover-1.png" width="270" alt="Popover, light: always open, the click, hover and dismiss examples' anchors">
+<img src="docs/preview/dark__popover-1.png" width="270" alt="Popover, dark: always open, the click, hover and dismiss examples' anchors">
+</p>
+<p>
+<img src="docs/preview/light__popover-2.png" width="270" alt="Popover, light, at its end: the placements' anchors and the overrides example, open">
+<img src="docs/preview/dark__popover-2.png" width="270" alt="Popover, dark, at its end: the placements' anchors and the overrides example, open">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

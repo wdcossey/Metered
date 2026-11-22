@@ -1,0 +1,46 @@
+<!--
+  Base Web's Popover (baseui 18.2.0, popover/popover.js), as a template of named parts. Each part's look is its own
+  theme, Popover.Styled<Part> (Popover.Parts.g.axaml), which the popover's Overrides merge over: this file holds only
+  the structure.
+
+    the anchor               (the popover's Anchor, Base Web's children: the popover is its size)
+    Popup                    (Base Web's Layer: the window's overlay layer, placed by Metered.Controls.Tether)
+      Body                   (the box placed against the anchor)
+        PopoverBodyPanel     (CSS's flow: the arrow positioned absolutely, Inner over it)
+          Arrow              (only with ShowArrow)
+          Inner              (the popover's Content)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Popover}" TargetType="b:Popover">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <ContentPresenter Name="PART_AnchorPresenter"
+                            Content="{TemplateBinding Anchor}"
+                            ContentTemplate="{TemplateBinding AnchorTemplate}" />
+          <!-- Light dismiss and Avalonia's placement are off: the Popover does Base Web's (Layers, Tether). -->
+          <Popup Name="PART_Popup"
+                 ShouldUseOverlayLayer="True"
+                 IsLightDismissEnabled="False"
+                 Placement="AnchorAndGravity"
+                 PlacementAnchor="TopLeft"
+                 PlacementGravity="BottomRight"
+                 PlacementConstraintAdjustment="None">
+            <Border Name="Body" Theme="{DynamicResource Popover.StyledBody}">
+              <b:PopoverBodyPanel>
+                <Border Name="Arrow" b:PopoverBodyPanel.IsAbsolute="True" Theme="{DynamicResource Popover.StyledArrow}" />
+                <ContentPresenter Name="Inner"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Theme="{DynamicResource Popover.StyledInner}" />
+              </b:PopoverBodyPanel>
+            </Border>
+          </Popup>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

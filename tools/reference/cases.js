@@ -154,6 +154,8 @@ const files = {
   'textarea.oracle.json': require('./textarea').oracle(version),
   // Base Web's FormControl, rendered round each child it is given (form-control.js).
   'form-control.oracle.json': require('./form-control').oracle(version),
+  // Base Web's Popover: its style functions, and popper.js's placements (popover.js, tether.g.json).
+  'popover.oracle.json': require('./popover').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

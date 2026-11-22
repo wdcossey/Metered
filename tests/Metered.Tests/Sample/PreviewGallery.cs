@@ -211,14 +211,16 @@ public class PreviewGallery
 
     /// <summary>
     /// Avalonia's transitions run on the render loop's clock, which is real time: draw frames over
-    /// <see cref="RealTimeSettle"/> of it, so the picture is at rest.
+    /// <see cref="RealTimeSettle"/> of it, so the picture is at rest. Between frames the dispatcher's loop runs, so its
+    /// timers fire as an app's do (headless, RunJobs doesn't fire them): a popover's entrance starts on one.
     /// </summary>
     private static void Settle(Window window)
     {
         var settled = DateTime.UtcNow + RealTimeSettle;
         while (DateTime.UtcNow < settled)
         {
-            Thread.Sleep(50);
+            using var stop = new CancellationTokenSource(50);
+            Dispatcher.UIThread.MainLoop(stop.Token);
             Draw(window).Dispose();
         }
     }
