@@ -12,7 +12,7 @@ by Uber or the AvaloniaUI team.
 
 The sample's pages, drawn headless. More in [PREVIEW.md](PREVIEW.md).
 
-> **Status: early, not yet published.** Two controls, Button and ButtonGroup, on the tokens, the
+> **Status: early, not yet published.** Twelve controls, from Button to Popover (see [PREVIEW.md](PREVIEW.md)), on the tokens, the
 > parts and states, Base Web's overrides API and its theme builder. The inventory of controls is
 > next; see [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
