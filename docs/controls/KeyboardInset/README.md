@@ -83,7 +83,7 @@ Read from Avalonia 12.1.4's Android backend (`Avalonia.Android`, `AndroidInsetsM
 5. **Tried on a Pixel 8** (Android 17, Gboard, 2026-11-23, #108): a textarea near the page's foot ends just above the
    keyboard and its last line is brought into view; the same in landscape and back; Back closes the keyboard and leaves
    no gap; Home and back again, the keyboard is closed and nothing is left padded. Not tried: Gboard's own height
-   changing. Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
+   changing, nor the focus moved to another input with the keyboard up (below). Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
    Avalonia (its reference assembly carries a member user code can't write), so the tests drive the decorator through an
    internal seam (`KeyboardInset.InputPane`, a `KeyboardInset.IPane`), a fake that raises `StateChanged` as Android's
    backend does. The device run checks the rest (below).
@@ -105,15 +105,18 @@ scene's own geometry.
 
 ## On a phone
 
-What the Pixel run should check, on the Input, Textarea and FormControl pages:
+What the Pixel run checks, on the Input, Textarea and FormControl pages, and where each stands (Pixel 8, Android 17):
 
 - an input in the page's last screen (the Input page's Clearable), tapped: the page scrolls it above the keyboard, and
-  the page can be scrolled by hand to its foot, which ends above the keyboard;
-- the keyboard closed (Back, or Gboard's own close): the page has its height back and no gap is left at its foot;
-- the focus moved to another input with the keyboard up: it is scrolled into view, and the keyboard stays;
-- a rotation with the keyboard up, and Gboard's height changed (its emoji panel, or the suggestions strip), the page
-  still ending at the keyboard's top, and the focused input brought back into view;
+  the page can be scrolled by hand to its foot, which ends above the keyboard: **passed** (the run for PR #118);
+- the keyboard closed (Back, or Gboard's own close): the page has its height back and no gap is left at its foot:
+  **passed** (then, and Back again on 2026-11-23);
+- the focus moved to another input with the keyboard up: it is scrolled into view, and the keyboard stays: **not tried**;
+- a rotation with the keyboard up: **passed** (2026-11-23); Gboard's height changed (its emoji panel, or the suggestions
+  strip), the page still ending at the keyboard's top: **not tried**;
 - the Textarea page: a long text with the caret on its last line, tapped near the foot: the caret's line above the
-  keyboard;
-- Home with the keyboard up, then back to the app with the keyboard gone: no gap at the page's foot;
-- the bar at the top and the system bars untouched, and the ready line's `page=` the same as before with no keyboard.
+  keyboard: **passed** (2026-11-23);
+- Home with the keyboard up, then back to the app with the keyboard gone: no gap at the page's foot: **passed**
+  (2026-11-23);
+- the bar at the top and the system bars untouched: **passed** (2026-11-23); the ready line's `page=` the same as before
+  with no keyboard: **not tried** (the run used the preview build, not `run.ps1`).
