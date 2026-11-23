@@ -1,0 +1,3624 @@
+{
+ "baseui": "18.2.0",
+ "lists": {
+  "BASIC": [
+   {
+    "label": "Item One"
+   },
+   {
+    "label": "Item Two"
+   },
+   {
+    "label": "Item Three",
+    "disabled": true
+   },
+   {
+    "label": "Item Four",
+    "disabled": true
+   },
+   {
+    "label": "Item Five"
+   },
+   {
+    "label": "Item Six"
+   },
+   {
+    "label": "Item Seven"
+   },
+   {
+    "label": "Item Eight"
+   },
+   {
+    "label": "Item Nine"
+   },
+   {
+    "label": "Item Ten"
+   },
+   {
+    "label": "Item Eleven"
+   },
+   {
+    "label": "Item Twelve"
+   }
+  ],
+  "DIVIDERS": [
+   {
+    "label": "Menu option A"
+   },
+   {
+    "label": "Menu option B"
+   },
+   {
+    "divider": true
+   },
+   {
+    "label": "Menu option X"
+   },
+   {
+    "label": "Menu option Y"
+   },
+   {
+    "label": "Menu option Z"
+   },
+   {
+    "divider": true
+   },
+   {
+    "label": "Menu option 1"
+   },
+   {
+    "label": "Menu option 2"
+   },
+   {
+    "label": "Menu option 3"
+   }
+  ],
+  "GROUPED": {
+   "__ungrouped": [
+    {
+     "id": "Black",
+     "color": "#000000"
+    }
+   ],
+   "Blueish": [
+    {
+     "id": "AliceBlue",
+     "color": "#F0F8FF"
+    },
+    {
+     "id": "Aqua",
+     "color": "#00FFFF"
+    },
+    {
+     "id": "Aquamarine",
+     "color": "#7FFFD4"
+    }
+   ],
+   "Whiteish": [
+    {
+     "id": "AntiqueWhite",
+     "color": "#FAEBD7"
+    },
+    {
+     "id": "Azure",
+     "color": "#F0FFFF"
+    },
+    {
+     "id": "Beige",
+     "color": "#F5F5DC"
+    }
+   ]
+  },
+  "HREF": [
+   {
+    "label": "Apple",
+    "href": "//www.example.com/apple"
+   },
+   {
+    "label": "Orange",
+    "href": "//www.example.com/orange"
+   },
+   {
+    "label": "Strawberry",
+    "href": "//www.example.com/strawberry"
+   }
+  ],
+  "FRUIT": [
+   {
+    "label": "Apple"
+   },
+   {
+    "label": "Apricot"
+   },
+   {
+    "label": "Banana"
+   },
+   {
+    "label": "Blueberry"
+   },
+   {
+    "label": "Cherry"
+   },
+   {
+    "label": "Pineapple"
+   }
+  ],
+  "PROFILE": [
+   {
+    "title": "David Smith",
+    "subtitle": "Senior Engineering Manager",
+    "body": "Uber Everything"
+   },
+   {
+    "title": "David Smith",
+    "subtitle": "Senior Engineering Manager",
+    "body": "Uber Everything"
+   },
+   {
+    "title": "David Smith",
+    "subtitle": "Senior Engineering Manager",
+    "body": "Uber Everything"
+   },
+   {
+    "title": "David Smith",
+    "subtitle": "Senior Engineering Manager",
+    "body": "Uber Everything"
+   }
+  ]
+ },
+ "colours": [
+  {
+   "theme": "Light",
+   "state": "rest",
+   "foreground": "#FF000000",
+   "background": "#00000000",
+   "cursor": "pointer",
+   "anchor": "#FF000000"
+  },
+  {
+   "theme": "Light",
+   "state": "highlighted",
+   "foreground": "#FF000000",
+   "background": "#FFF3F3F3",
+   "cursor": "pointer",
+   "anchor": "#FF000000"
+  },
+  {
+   "theme": "Light",
+   "state": "highlightedFocused",
+   "foreground": "#FF000000",
+   "background": "#FFF3F3F3",
+   "cursor": "pointer",
+   "anchor": "#FF000000"
+  },
+  {
+   "theme": "Light",
+   "state": "disabled",
+   "foreground": "#FFA6A6A6",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  },
+  {
+   "theme": "Light",
+   "state": "disabledHighlighted",
+   "foreground": "#FFA6A6A6",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  },
+  {
+   "theme": "Light",
+   "state": "disabledHighlightedFocused",
+   "foreground": "#FFA6A6A6",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  },
+  {
+   "theme": "Dark",
+   "state": "rest",
+   "foreground": "#FFDEDEDE",
+   "background": "#00000000",
+   "cursor": "pointer",
+   "anchor": "#FFDEDEDE"
+  },
+  {
+   "theme": "Dark",
+   "state": "highlighted",
+   "foreground": "#FFDEDEDE",
+   "background": "#FF292929",
+   "cursor": "pointer",
+   "anchor": "#FFDEDEDE"
+  },
+  {
+   "theme": "Dark",
+   "state": "highlightedFocused",
+   "foreground": "#FFDEDEDE",
+   "background": "#FF292929",
+   "cursor": "pointer",
+   "anchor": "#FFDEDEDE"
+  },
+  {
+   "theme": "Dark",
+   "state": "disabled",
+   "foreground": "#FF5D5D5D",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  },
+  {
+   "theme": "Dark",
+   "state": "disabledHighlighted",
+   "foreground": "#FF5D5D5D",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  },
+  {
+   "theme": "Dark",
+   "state": "disabledHighlightedFocused",
+   "foreground": "#FF5D5D5D",
+   "background": "#00000000",
+   "cursor": "not-allowed",
+   "anchor": null
+  }
+ ],
+ "surfaces": [
+  {
+   "theme": "Light",
+   "list": "#FFFFFFFF",
+   "listShadow": "0 4 16 0 #29000000",
+   "listFocusOutline": "#FF276EF1",
+   "header": "#FF000000",
+   "divider": "#1F000000",
+   "empty": "#FFA6A6A6",
+   "profileHover": "#FFF3F3F3",
+   "profileTitle": "#FF000000",
+   "profileSubtitle": "#FF000000",
+   "profileBody": "#FF000000"
+  },
+  {
+   "theme": "Dark",
+   "list": "#FF161616",
+   "listShadow": "0 4 16 0 #29000000",
+   "listFocusOutline": "#FF3F6EC5",
+   "header": "#FFDEDEDE",
+   "divider": "#1FFFFFFF",
+   "empty": "#FF5D5D5D",
+   "profileHover": "#FF292929",
+   "profileTitle": "#FFDEDEDE",
+   "profileSubtitle": "#FFDEDEDE",
+   "profileBody": "#FFDEDEDE"
+  }
+ ],
+ "layout": {
+  "options": [
+   {
+    "size": "default",
+    "padding": [
+     16,
+     8,
+     16,
+     8
+    ],
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   {
+    "size": "compact",
+    "padding": [
+     32,
+     4,
+     32,
+     4
+    ],
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   }
+  ],
+  "list": {
+   "padding": [
+    0,
+    8,
+    0,
+    8
+   ],
+   "radius": 8,
+   "focusOutlineWidth": 3
+  },
+  "header": {
+   "padding": [
+    8,
+    6,
+    8,
+    6
+   ],
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Medium",
+    "lineHeight": 16
+   }
+  },
+  "divider": {
+   "margin": [
+    12,
+    4,
+    12,
+    4
+   ],
+   "borderWidth": 1,
+   "height": 0
+  },
+  "empty": {
+   "padding": [
+    24,
+    24,
+    24,
+    24
+   ],
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "textAlign": "center"
+  },
+  "profile": {
+   "padding": [
+    24,
+    8,
+    24,
+    8
+   ],
+   "imgContainer": [
+    60,
+    60
+   ],
+   "imgRadius": "50%",
+   "labelsMarginLeft": 16,
+   "title": {
+    "fontSize": 16,
+    "fontWeight": "Medium",
+    "lineHeight": 20
+   },
+   "subtitle": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "body": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   }
+  },
+  "transition": {
+   "property": "color, background-color",
+   "seconds": 0.2,
+   "curve": [
+    0.2,
+    0.8,
+    0.4,
+    1
+   ]
+  },
+  "locale": {
+   "noResultsMsg": "No results",
+   "parentMenuItemAriaLabel": "You are currently at an item that opens a nested listbox. Press right arrow to enter that element and left arrow to return."
+  }
+ },
+ "structure": [
+  {
+   "name": "basic",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Item One",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Two",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Three",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Four",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Five",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Six",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Seven",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eight",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Nine",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Ten",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eleven",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Twelve",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "basic highlighted",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 4
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Item One",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Two",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Three",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Four",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Five",
+     "size": "default",
+     "highlighted": true,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Six",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Seven",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eight",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Nine",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Ten",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eleven",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Twelve",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "basic highlighted and focused",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 4,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Item One",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Two",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Three",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Four",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Five",
+     "size": "default",
+     "highlighted": true,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": true,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Six",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Seven",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eight",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Nine",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Ten",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eleven",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Twelve",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "basic, a disabled item highlighted and focused",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 2,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Item One",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Two",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Three",
+     "size": "default",
+     "highlighted": true,
+     "focused": true,
+     "disabled": true,
+     "ariaSelected": true,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Four",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Five",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Six",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Seven",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eight",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Nine",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Ten",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eleven",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Twelve",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "compact",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "size": "compact",
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Item One",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Two",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Three",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Four",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": true,
+     "ariaSelected": false,
+     "ariaDisabled": true,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Five",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Six",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Seven",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eight",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Nine",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Ten",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Eleven",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Item Twelve",
+     "size": "compact",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "dividers",
+   "items": "DIVIDERS",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 3,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Menu option A",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option B",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "MenuDivider"
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option X",
+     "size": "default",
+     "highlighted": true,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": true,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option Y",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option Z",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "MenuDivider"
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option 1",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option 2",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Menu option 3",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "grouped",
+   "items": "GROUPED",
+   "itemsGiven": null,
+   "size": null,
+   "label": "id",
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 1,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Black",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "OptgroupHeader",
+     "text": "Blueish"
+    },
+    {
+     "part": "ListItem",
+     "text": "AliceBlue",
+     "size": "default",
+     "highlighted": true,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": true,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Aqua",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Aquamarine",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "OptgroupHeader",
+     "text": "Whiteish"
+    },
+    {
+     "part": "ListItem",
+     "text": "AntiqueWhite",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Azure",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Beige",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "empty",
+   "items": null,
+   "itemsGiven": [],
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "EmptyState",
+     "text": "No results",
+     "ariaLive": "polite"
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "empty groups",
+   "items": null,
+   "itemsGiven": {
+    "__ungrouped": [],
+    "Blueish": []
+   },
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "EmptyState",
+     "text": "No results",
+     "ariaLive": "polite"
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "empty, with a message",
+   "items": null,
+   "itemsGiven": [],
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": "Nothing here",
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "EmptyState",
+     "text": "Nothing here",
+     "ariaLive": "polite"
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "href",
+   "items": "HREF",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": {
+    "highlightedIndex": 0,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Apple",
+     "size": "default",
+     "highlighted": true,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": true,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": "//www.example.com/apple"
+    },
+    {
+     "part": "ListItem",
+     "text": "Orange",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": "//www.example.com/orange"
+    },
+    {
+     "part": "ListItem",
+     "text": "Strawberry",
+     "size": "default",
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": "//www.example.com/strawberry"
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "href, not as an anchor",
+   "items": "HREF",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": false,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Apple",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Orange",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Strawberry",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "named",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": false,
+   "initialState": null,
+   "noResultsMsg": null,
+   "ariaLabelGiven": "Fruit",
+   "role": "listbox",
+   "ariaLabel": "Fruit",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItem",
+     "text": "Apple",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Apricot",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Banana",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Blueberry",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Cherry",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItem",
+     "text": "Pineapple",
+     "size": "default",
+     "highlighted": false,
+     "focused": false,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": []
+  },
+  {
+   "name": "profile",
+   "items": "PROFILE",
+   "itemsGiven": null,
+   "size": null,
+   "label": null,
+   "renderHrefAsAnchor": true,
+   "profile": true,
+   "initialState": {
+    "highlightedIndex": 1,
+    "isFocused": true
+   },
+   "noResultsMsg": null,
+   "ariaLabelGiven": null,
+   "role": "listbox",
+   "ariaLabel": "Menu",
+   "tabIndex": 0,
+   "elements": [
+    {
+     "part": "ListItemProfile",
+     "text": "David SmithSenior Engineering ManagerUber Everything",
+     "size": null,
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItemProfile",
+     "text": "David SmithSenior Engineering ManagerUber Everything",
+     "size": null,
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": true,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItemProfile",
+     "text": "David SmithSenior Engineering ManagerUber Everything",
+     "size": null,
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    },
+    {
+     "part": "ListItemProfile",
+     "text": "David SmithSenior Engineering ManagerUber Everything",
+     "size": null,
+     "highlighted": false,
+     "focused": true,
+     "disabled": false,
+     "ariaSelected": false,
+     "ariaDisabled": false,
+     "role": "option",
+     "href": null
+    }
+   ],
+   "profileText": [
+    {
+     "part": "ProfileTitle",
+     "text": "David Smith"
+    },
+    {
+     "part": "ProfileSubtitle",
+     "text": "Senior Engineering Manager"
+    },
+    {
+     "part": "ProfileBody",
+     "text": "Uber Everything"
+    },
+    {
+     "part": "ProfileTitle",
+     "text": "David Smith"
+    },
+    {
+     "part": "ProfileSubtitle",
+     "text": "Senior Engineering Manager"
+    },
+    {
+     "part": "ProfileBody",
+     "text": "Uber Everything"
+    },
+    {
+     "part": "ProfileTitle",
+     "text": "David Smith"
+    },
+    {
+     "part": "ProfileSubtitle",
+     "text": "Senior Engineering Manager"
+    },
+    {
+     "part": "ProfileBody",
+     "text": "Uber Everything"
+    },
+    {
+     "part": "ProfileTitle",
+     "text": "David Smith"
+    },
+    {
+     "part": "ProfileSubtitle",
+     "text": "Senior Engineering Manager"
+    },
+    {
+     "part": "ProfileBody",
+     "text": "Uber Everything"
+    }
+   ]
+  }
+ ],
+ "behaviour": [
+  {
+   "name": "arrows, Home and End",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 11,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 11,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Home",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "ArrowLeft",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowRight",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    }
+   ]
+  },
+  {
+   "name": "keys before focus do nothing",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": -1,
+     "isFocused": false,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "End",
+     "highlightedIndex": -1,
+     "isFocused": false,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Enter selects, not a disabled item",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [
+      0
+     ],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 11,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 11,
+     "isFocused": true,
+     "selected": [
+      11
+     ],
+     "changes": []
+    }
+   ]
+  },
+  {
+   "name": "blur keeps the highlight, focus again keeps it",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "blur": true,
+     "highlightedIndex": 1,
+     "isFocused": false,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": false,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "focus": true,
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dividers take an index",
+   "items": "DIVIDERS",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [
+      2
+     ],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 9,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 8,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 7,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "grouped: Tab then ArrowDown highlights AliceBlue",
+   "items": "GROUPED",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [
+      6
+     ],
+     "changes": []
+    }
+   ]
+  },
+  {
+   "name": "type-ahead: prefix, then infix",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "b",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "l",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "c",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "a",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "p",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "n",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "e",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "z",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "P",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "type-ahead: letters less than 500 ms apart add up",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "a",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 300,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "p",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 300,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "r",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "b",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "type-ahead: a key name joins the letters",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "Shift",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "B",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "C",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "Escape",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "a",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "Control",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "wait": 700,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "Backspace",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "b",
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "type-ahead: a space joins the words",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "i",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "t",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "e",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "m",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": " ",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "t",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "h",
+     "highlightedIndex": 2,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "type-ahead: none without labels",
+   "items": "GROUPED",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "a",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "b",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    }
+   ]
+  },
+  {
+   "name": "type-ahead off",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": false,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "c",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "a mouse over the menu, over options, clicks",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "over": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus",
+      "focus"
+     ]
+    },
+    {
+     "enter": 5,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "mouseEnter"
+     ]
+    },
+    {
+     "enter": 2,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "click": 2,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "enter": 6,
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "mouseEnter"
+     ]
+    },
+    {
+     "click": 6,
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [
+      6
+     ],
+     "changes": [
+      "click"
+     ]
+    },
+    {
+     "enter": 8,
+     "highlightedIndex": 8,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "mouseEnter"
+     ]
+    },
+    {
+     "blur": true,
+     "highlightedIndex": 8,
+     "isFocused": false,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "enter": 9,
+     "highlightedIndex": 9,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus",
+      "focus",
+      "mouseEnter"
+     ]
+    },
+    {
+     "click": 9,
+     "highlightedIndex": 9,
+     "isFocused": true,
+     "selected": [
+      9
+     ],
+     "changes": [
+      "click"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 10,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "a click on the list blurred focuses it, then chooses",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": {
+    "highlightedIndex": 3
+   },
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "enter": 4,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus",
+      "focus",
+      "mouseEnter"
+     ]
+    },
+    {
+     "click": 4,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [
+      4
+     ],
+     "changes": [
+      "click"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "blur": true,
+     "highlightedIndex": 5,
+     "isFocused": false,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "click": 4,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [
+      4
+     ],
+     "changes": [
+      "focus",
+      "click"
+     ]
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 3,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "initial highlight, focused but not the list",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": {
+    "highlightedIndex": 5,
+    "isFocused": true
+   },
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "over": true,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "focus": true,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Home",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveUp"
+     ]
+    },
+    {
+     "blur": true,
+     "highlightedIndex": 0,
+     "isFocused": false,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "initial highlight, unfocused",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": {
+    "highlightedIndex": 5
+   },
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 5,
+     "isFocused": false,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "focus": true,
+     "highlightedIndex": 5,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 6,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "forceHighlight, focused at first",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": {
+    "isFocused": true
+   },
+   "typeAhead": true,
+   "forceHighlight": true,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "z",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character",
+      "enter"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "no forceHighlight, focused at first",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": {
+    "isFocused": true
+   },
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "z",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "fewer items: the highlight back to the first",
+   "items": "BASIC",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 11,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "items": "FRUIT",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "enter"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "items": [],
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "enter"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "items": "FRUIT",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "an empty menu",
+   "items": null,
+   "itemsGiven": [],
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": null,
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus",
+      "enter"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "End",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "key": "Enter",
+     "highlightedIndex": -1,
+     "isFocused": true,
+     "selected": [],
+     "changes": []
+    }
+   ]
+  },
+  {
+   "name": "a reducer that refuses type-ahead",
+   "items": "FRUIT",
+   "itemsGiven": null,
+   "initialState": null,
+   "typeAhead": true,
+   "forceHighlight": false,
+   "reducer": "noCharacter",
+   "steps": [
+    {
+     "focus": true,
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    },
+    {
+     "key": "c",
+     "highlightedIndex": 0,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "character"
+     ]
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "moveDown"
+     ]
+    },
+    {
+     "enter": 4,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [],
+     "changes": [
+      "mouseEnter"
+     ]
+    },
+    {
+     "click": 4,
+     "highlightedIndex": 4,
+     "isFocused": true,
+     "selected": [
+      4
+     ],
+     "changes": [
+      "click"
+     ]
+    },
+    {
+     "blur": true,
+     "highlightedIndex": 4,
+     "isFocused": false,
+     "selected": [],
+     "changes": [
+      "focus"
+     ]
+    }
+   ]
+  }
+ ],
+ "scroll": [
+  {
+   "name": "basic.tsx: down to the end and back",
+   "count": 12,
+   "size": "default",
+   "cssHeight": 250,
+   "boxHeight": 266,
+   "start": -1,
+   "item": 36,
+   "initialScrollTop": 0,
+   "steps": [
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 0,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 2,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 3,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 4,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 5,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 6,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 7,
+     "scrollTop": 30
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 8,
+     "scrollTop": 66
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 9,
+     "scrollTop": 102
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 10,
+     "scrollTop": 138
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 11,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 10,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 9,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 8,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 7,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 6,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 5,
+     "scrollTop": 182
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 4,
+     "scrollTop": 152
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 3,
+     "scrollTop": 116
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 2,
+     "scrollTop": 80
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 1,
+     "scrollTop": 44
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 0,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 0,
+     "scrollTop": 0
+    }
+   ]
+  },
+  {
+   "name": "compact: End, Home",
+   "count": 30,
+   "size": "compact",
+   "cssHeight": 200,
+   "boxHeight": 216,
+   "start": -1,
+   "item": 28,
+   "initialScrollTop": 0,
+   "steps": [
+    {
+     "key": "End",
+     "highlightedIndex": 29,
+     "scrollTop": 640
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 28,
+     "scrollTop": 640
+    },
+    {
+     "key": "Home",
+     "highlightedIndex": 0,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 1,
+     "scrollTop": 0
+    }
+   ]
+  },
+  {
+   "name": "menu-stateful.scenario.tsx: item 5 in view, then down",
+   "count": 12,
+   "size": "default",
+   "cssHeight": 300,
+   "boxHeight": 316,
+   "start": 5,
+   "item": 36,
+   "initialScrollTop": 0,
+   "steps": [
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 6,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 7,
+     "scrollTop": 0
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 8,
+     "scrollTop": 16
+    },
+    {
+     "key": "End",
+     "highlightedIndex": 11,
+     "scrollTop": 132
+    },
+    {
+     "key": "Home",
+     "highlightedIndex": 0,
+     "scrollTop": 0
+    }
+   ]
+  },
+  {
+   "name": "item 8 centred in 150 px, then up and down",
+   "count": 12,
+   "size": "default",
+   "cssHeight": 150,
+   "boxHeight": 166,
+   "start": 8,
+   "item": 36,
+   "initialScrollTop": 231,
+   "steps": [
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 7,
+     "scrollTop": 231
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 6,
+     "scrollTop": 224
+    },
+    {
+     "key": "ArrowUp",
+     "highlightedIndex": 5,
+     "scrollTop": 188
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 6,
+     "scrollTop": 188
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 7,
+     "scrollTop": 188
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 8,
+     "scrollTop": 188
+    },
+    {
+     "key": "ArrowDown",
+     "highlightedIndex": 9,
+     "scrollTop": 202
+    }
+   ]
+  }
+ ]
+}

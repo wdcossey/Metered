@@ -153,6 +153,8 @@ files['../Controls/Textarea.Parts.g.axaml'] = require('./textarea').file(version
 files['../Controls/FormControl.Parts.g.axaml'] = require('./form-control').file(version);
 // The themes of Popover's parts, from Base Web's popover (popover.js).
 files['../Controls/Popover.Parts.g.axaml'] = require('./popover').file(version);
+// The themes of Menu's parts, from Base Web's menu (menu.js).
+files['../Controls/Menu.Parts.g.axaml'] = require('./menu').file(version);
 
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');
