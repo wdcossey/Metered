@@ -359,6 +359,8 @@ public class Popover : TemplatedControl
             EndExit();
             if (_mounted)
             {
+                // Opened again while its exit runs: its layer, kept, takes the click or not as this opening's does.
+                if (_layerClicks != LayerClicks) Relayer();
                 UpdateStates();
                 UpdateParts();
                 Retether();
@@ -376,6 +378,7 @@ public class Popover : TemplatedControl
         _animateIn = null;
         _enter?.Dispose();
         _enter = null;
+        // The opening a tap made is over: one after it, by a mouse or keyboard focus, is Base Web's hover layer again.
         _tapOpened = false;
         RaiseEvent(new RoutedEventArgs(CloseEvent, this));
         if (!_mounted) return;
@@ -439,11 +442,13 @@ public class Popover : TemplatedControl
     /// finger's tap elsewhere is its mouseleave on a phone: #123). A new trigger type while it is shown is a new layer
     /// (Base Web's Layer is rendered again with its new handlers), on top. Every layer takes Avalonia's back request (#123).
     /// </summary>
+    private bool LayerClicks => TriggerType != PopoverTriggerType.Hover || _tapOpened;
+
     private void Relayer()
     {
         if (!_mounted || _top is null) return;
         _layer?.Dispose();
-        var clicks = TriggerType != PopoverTriggerType.Hover || _tapOpened;
+        var clicks = LayerClicks;
         _layerClicks = clicks;
         _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, clicks ? OnDocumentClick : null, OnLayerBack));
     }
@@ -478,7 +483,6 @@ public class Popover : TemplatedControl
         _layer?.Dispose();
         _layer = null;
         _layerClicks = null;
-        _tapOpened = false;
         if (_top is not null) _top.LayoutUpdated -= OnTopLayoutUpdated;
         if (_top is Window window) window.Closing -= OnWindowClosing;
         if (closePopup && _popup is not null) _popup.IsOpen = false;
@@ -816,8 +820,6 @@ public class Popover : TemplatedControl
 
         _tapOpened = true;
         SetCurrentValue(IsOpenProperty, true);
-        // Opened again while its exit runs, it keeps its layer: a hover layer takes the click from now on.
-        if (_mounted && _layerClicks == false) Relayer();
     }
 
     /// <summary>stateful-container.js's onClick: a click trigger's toggle.</summary>

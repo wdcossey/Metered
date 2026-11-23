@@ -66,7 +66,20 @@ internal sealed class Layers
         top.AddHandler(InputElement.KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         top.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         top.AddHandler(InputElement.PointerReleasedEvent, OnReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
-        top.AddHandler(TopLevel.BackRequestedEvent, OnBackRequested);
+    }
+
+    /// <summary>
+    /// The back request, before an app's own handlers on its top level: a class handler runs before an element's own
+    /// (Avalonia's event route), so an app that goes back in its window's <c>BackRequested</c>, added before any popover
+    /// opened, still has the top popover closed first. A handler on the request's route below the top level (on the page)
+    /// sees it first, and one that handles it leaves the popovers alone.
+    /// </summary>
+    static Layers()
+    {
+        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>((top, e) =>
+        {
+            if (All.TryGetValue(top, out var layers)) layers.OnBackRequested(top, e);
+        });
     }
 
     /// <summary>The layers of a top level, made the first time it is asked for.</summary>
@@ -121,6 +134,9 @@ internal sealed class Layers
             return;
         }
 
+        // A mouse's back button is Avalonia's back request (#123), which closes the top popover: its press clicks nothing,
+        // or it would close a popover first and leave the request to go back.
+        if (e.GetCurrentPoint(_top).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed) return;
         DocumentClick(e.Source as Visual);
     }
 
