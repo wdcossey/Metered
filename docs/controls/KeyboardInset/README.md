@@ -80,7 +80,10 @@ Read from Avalonia 12.1.4's Android backend (`Avalonia.Android`, `AndroidInsetsM
    to pan or resize it for the keyboard (no `WindowSoftInputMode` is set, so `adjustUnspecified`). A window resized for
    the keyboard would be padded twice: Avalonia's `OccludedRect` is measured up from the bottom of the client area, which
    would already end above the keyboard. Not tried; the sample's only device is an Android 17 phone.
-5. **Not yet tried on a phone.** Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
+5. **Tried on a Pixel 8** (Android 17, Gboard, 2026-11-23, #108): a textarea near the page's foot ends just above the
+   keyboard and its last line is brought into view; the same in landscape and back; Back closes the keyboard and leaves
+   no gap; Home and back again, the keyboard is closed and nothing is left padded. Not tried: Gboard's own height
+   changing. Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
    Avalonia (its reference assembly carries a member user code can't write), so the tests drive the decorator through an
    internal seam (`KeyboardInset.InputPane`, a `KeyboardInset.IPane`), a fake that raises `StateChanged` as Android's
    backend does. The device run checks the rest (below).

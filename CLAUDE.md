@@ -59,7 +59,8 @@ pwsh -NoProfile -File tools/real-window/selftest.ps1
 2. **A part's look lives only in its own `Styled{Part}` theme**, never in the owner's
    `/template/` styles, which would outrank an app's override (ADR 0001).
 3. **Every value a test expects comes from Base Web**: the oracle, or a value read from its source
-   with the file named.
+   with the file named. A helper Base Web doesn't have, as it relies on the browser (`KeyboardInset`), is tested
+   against its scene's own geometry, and its test class says so.
 4. **Avalonia's style priority**: a style with a pseudoclass outranks a plain setter whatever the
    order. A plain setter that must win goes in a style (ADR 0001, item 6).
 5. **No literal colours outside `src/Metered.Themes/Tokens/`.** `LiteralColourGuardTests` fails on
