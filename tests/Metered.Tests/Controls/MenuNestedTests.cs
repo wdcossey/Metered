@@ -225,11 +225,34 @@ public class MenuNestedTests
         Assert.Equal(2, chosen.Count);
         Assert.True(Open(n.Parent));
         Assert.Equal(0, closes);
+    }
+
+    // A finger alone (a mouse's leaving the menus is the nested hover's, a finger's isn't): its taps choose the option and
+    // keep the child open, as a controlled popover's anchor click changes nothing.
+    [AvaloniaFact]
+    public void A_tap_on_an_option_with_a_child_chooses_it_and_keeps_the_child_open()
+    {
+        var n = Make();
+        var chosen = new List<object>();
+        n.Parent.ItemSelect += (_, e) => chosen.Add(e.Item);
+        using var scene = Show(n);
         MenuTests.Tap(scene, scene.CentreOf(n.Parent.OptionAt(4)!));
         PopoverTests.Settle(scene);
-        Assert.Equal(3, chosen.Count);
+        Assert.Equal(OpenRecent, ((MenuItemData)Assert.Single(chosen)).Label);
+        Assert.True(Open(n.Parent));
+        var closes = 0;
+        Popover(n.Parent).Close += (_, _) => closes++;
+        MenuTests.Tap(scene, scene.CentreOf(n.Parent.OptionAt(4)!));
+        PopoverTests.Settle(scene);
+        Assert.Equal(2, chosen.Count);
         Assert.True(Open(n.Parent));
         Assert.Equal(0, closes);
+        // A tap on the child chooses there; the child stays open.
+        var inChild = new List<object>();
+        n.Child.ItemSelect += (_, e) => inChild.Add(e.Item);
+        MenuTests.Tap(scene, scene.CentreOf(n.Child.OptionAt(2)!));
+        Assert.Equal("~/workspace/styletron", ((MenuItemData)Assert.Single(inChild)).Label);
+        Assert.True(Open(n.Parent));
     }
 
     [AvaloniaFact]

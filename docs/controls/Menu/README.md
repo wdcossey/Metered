@@ -111,7 +111,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 95 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 96 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -128,8 +128,9 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
   option's own, its template), the profile option by override (a picture that isn't an image: none), links (followed
   whatever `ItemSelect` does), UI Automation, items that change, options made again taking their controls, a menu following
   its collection only in the tree and letting its letters go out of it, the empty state's content, keys by name.
-- `MenuNestedTests` (8): a child open while highlighted, the arrow keys between menus, a child opened again afresh, Escape,
-  the nested hover, a hidden menu not nested, a click on a parent option, the `ChildMenuPopover` override.
+- `MenuNestedTests` (9): a child open while highlighted, the arrow keys between menus, a child opened again afresh, Escape,
+  the nested hover, a hidden menu not nested, a click and a tap on a parent option (its popover never closed), the
+  `ChildMenuPopover` override.
 - `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (4): the sample's
   page.
 
