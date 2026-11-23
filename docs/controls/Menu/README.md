@@ -92,8 +92,9 @@ From `stateful-container.js`, `menu.js` and `utils.js`:
   whatever the option's state: option-list.js gives the anchor none of the option's props). A click on the link chooses the
   item and opens the link with the platform's launcher; Enter chooses it only.
 - **Nested menus** (maybe-child-menu.js, nested-menus.js): an option's `GetChildMenu` gives its child menu, shown in a
-  Popover at the option's right, its top, while the option is highlighted (its `IsOpen` held to the highlight, a click on
-  the option choosing it, not toggling the popover). `NestedMenus` keeps the menus shown in order; a mouse back over a
+  Popover at the option's right, its top, while the option is highlighted (its `IsOpen` held to the highlight, as a
+  controlled Base Web popover's: a click or a tap on the option chooses it and doesn't toggle or close the popover, even for
+  a moment). `NestedMenus` keeps the menus shown in order; a mouse back over a
   shallower menu lets a deeper one's highlight go, and 200 ms after it has left them all, every one's. Escape in a child
   resets its parent (onEsc: resetMenu), which closes it; the focus Avalonia's popup gives back as it closes is let go, as a
   browser leaves it on the page. Tab stays in a child menu. A menu hidden when it is shown isn't nested (addMenuToNesting's
@@ -166,3 +167,7 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     `LocaleProvider`. `NoResultsMsg` and `AutomationProperties.Name` replace them.
 13. **Right to left** (not yet).
 14. **On a phone and in a real window** (not yet): tested headless only (#126).
+15. **Android's back request with a child menu open goes on to the page** (chosen, as built; Base Web has no back request):
+    Metered's popover closes on it when Escape would close it (#123), and a child menu's Escape resets its parent rather
+    than closing its popover, which is held to the highlight. The alternative: the back request resets the parent as
+    Escape does.

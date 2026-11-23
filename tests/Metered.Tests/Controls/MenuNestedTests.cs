@@ -217,10 +217,19 @@ public class MenuNestedTests
         PopoverTests.Settle(scene);
         Assert.Equal(OpenRecent, ((MenuItemData)Assert.Single(chosen)).Label);
         Assert.True(Open(n.Parent));
+        // A controlled popover's anchor click changes nothing: it doesn't close, even for a moment.
+        var closes = 0;
+        Popover(n.Parent).Close += (_, _) => closes++;
         scene.Click(n.Parent.OptionAt(4)!);
         PopoverTests.Settle(scene);
         Assert.Equal(2, chosen.Count);
         Assert.True(Open(n.Parent));
+        Assert.Equal(0, closes);
+        MenuTests.Tap(scene, scene.CentreOf(n.Parent.OptionAt(4)!));
+        PopoverTests.Settle(scene);
+        Assert.Equal(3, chosen.Count);
+        Assert.True(Open(n.Parent));
+        Assert.Equal(0, closes);
     }
 
     [AvaloniaFact]

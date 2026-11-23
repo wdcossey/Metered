@@ -56,7 +56,7 @@ public abstract class MenuOptionBase : TemplatedControl
 
     private Parts? _parts;
     private IPointer? _pressed;
-    private Popover? _popover;
+    private MenuChildPopover? _popover;
     private object? _childMenu;
     private InputElement? _tabTarget;
     private bool _templated;
@@ -131,11 +131,9 @@ public abstract class MenuOptionBase : TemplatedControl
             return root;
         }
 
-        // maybe-child-menu.js: a Popover round the option, open while it is highlighted, at its right, its top. A click on
-        // the option is the option's: the anchor's tap doesn't toggle it.
-        root.AddHandler(TappedEvent, (_, e) => e.Handled = true);
-        root.AddHandler(DoubleTappedEvent, (_, e) => e.Handled = true);
-        var popover = new Popover { Name = ChildMenuPopoverPart, Anchor = root, Content = _childMenu };
+        // maybe-child-menu.js: a Popover round the option, open while it is highlighted, at its right, its top, whatever its
+        // anchor's click or its dismissals would make it (a controlled popover's isOpen).
+        var popover = new MenuChildPopover { Name = ChildMenuPopoverPart, Anchor = root, Content = _childMenu, Held = IsHighlighted };
         popover.SetValue(Popover.PlacementProperty, PopoverPlacement.RightTop, BindingPriority.Template);
         popover.SetValue(Popover.IgnoreBoundaryProperty, true, BindingPriority.Template);
         popover.SetValue(Popover.FocusLockProperty, false, BindingPriority.Template);
@@ -145,13 +143,8 @@ public abstract class MenuOptionBase : TemplatedControl
         // Controlled: Base Web gives it no onClickOutside, and Escape is onEsc, which resets the parent menu.
         popover.SetValue(Popover.DismissOnClickOutsideProperty, false, BindingPriority.Template);
         popover.SetValue(Popover.DismissOnEscProperty, false, BindingPriority.Template);
-        popover.IsOpen = IsHighlighted;
+        popover.CoerceValue(Popover.IsOpenProperty);
         popover.Esc += (_, _) => Owner?.ResetFromChild();
-        popover.PropertyChanged += (_, e) =>
-        {
-            // Held to the highlight, whatever else set it.
-            if (e.Property == Popover.IsOpenProperty && popover.IsOpen != IsHighlighted) popover.IsOpen = IsHighlighted;
-        };
         // maybe-child-menu.js's Body onKeyDown: Tab stays in the child menu.
         _tabTarget = _childMenu as InputElement;
         _tabTarget?.AddHandler(KeyDownEvent, OnChildKeyDown);
@@ -240,7 +233,7 @@ public abstract class MenuOptionBase : TemplatedControl
         if (p == IsHighlightedProperty)
         {
             SetState(":is-highlighted", IsHighlighted);
-            if (_popover is not null) _popover.IsOpen = IsHighlighted;
+            _popover?.Hold(IsHighlighted);
         }
         else if (p == IsMenuFocusedProperty) SetState(":is-focused", IsMenuFocused);
         else if (p == DisabledProperty) SetState(":is-disabled", Disabled);
@@ -340,4 +333,28 @@ public abstract class MenuOptionBase : TemplatedControl
 
     /// <summary>What the option says to UI Automation: its label's text, or Base Web's aria-label for an option with a child menu.</summary>
     internal abstract string? AccessibleText { get; }
+}
+
+/// <summary>
+/// A child menu's popover (maybe-child-menu.js): Base Web's controlled Popover, its <c>isOpen</c> the option's highlight. Its
+/// open state is held there (coerced), so neither a click on its anchor nor a dismissal changes it, as a controlled Base Web
+/// popover calls its handlers and changes nothing. Its look and template are the Popover's.
+/// </summary>
+internal sealed class MenuChildPopover : Popover
+{
+    static MenuChildPopover()
+    {
+        IsOpenProperty.OverrideMetadata<MenuChildPopover>(new StyledPropertyMetadata<bool>(
+            defaultBindingMode: BindingMode.TwoWay, coerce: (o, _) => ((MenuChildPopover)o).Held));
+    }
+
+    /// <summary>Whether it is open: the option's highlight.</summary>
+    internal bool Held { get; set; }
+
+    /// <summary>Open or closed as the option's highlight is.</summary>
+    internal void Hold(bool open)
+    {
+        Held = open;
+        CoerceValue(IsOpenProperty);
+    }
 }
