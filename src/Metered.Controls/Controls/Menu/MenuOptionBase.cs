@@ -141,7 +141,7 @@ public abstract class MenuOptionBase : TemplatedControl
         popover.SetValue(Popover.DismissOnClickOutsideProperty, false, BindingPriority.Template);
         popover.SetValue(Popover.DismissOnEscProperty, false, BindingPriority.Template);
         popover.IsOpen = IsHighlighted;
-        popover.Esc += (_, _) => Owner?.ResetMenu();
+        popover.Esc += (_, _) => Owner?.ResetFromChild();
         popover.PropertyChanged += (_, e) =>
         {
             // Held to the highlight, whatever else set it.

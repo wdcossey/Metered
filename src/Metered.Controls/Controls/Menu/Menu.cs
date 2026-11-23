@@ -181,6 +181,9 @@ public class Menu : TemplatedControl
     /// <summary>The list, the menu's focusable element.</summary>
     internal MenuList? List => _list;
 
+    /// <summary>The elements the menu made, in order.</summary>
+    internal IReadOnlyList<Control> Rendered => _host?.Children ?? (IReadOnlyList<Control>)[];
+
     protected override Type StyleKeyOverride => typeof(Menu);
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -461,6 +464,23 @@ public class Menu : TemplatedControl
     /// <summary>resetMenu: unfocused, nothing highlighted (a child menu's popover's Escape).</summary>
     internal void ResetMenu() => SetState(MenuStateChangeType.Reset, highlightedIndex: -1, isFocused: false);
 
+    private bool _childClosing;
+
+    /// <summary>
+    /// A child menu's Escape: resetMenu. Its popover closes, and Avalonia's popup gives the focus back to the list, where a
+    /// browser leaves it on the page (the child's list, focused, is gone): that focus isn't the menu's, and is let go.
+    /// </summary>
+    internal void ResetFromChild()
+    {
+        _childClosing = true;
+        ResetMenu();
+        // The popup gives the focus back as it closes; if it doesn't come, the next focus is the menu's again.
+        DispatcherTimer.RunOnce(() => _childClosing = false, ChildClosingTime);
+    }
+
+    /// <summary>How long a child's closing may take to give the focus back.</summary>
+    private static readonly TimeSpan ChildClosingTime = TimeSpan.FromMilliseconds(300);
+
     /// <summary>focusMenu: focused, the first item highlighted if none is, the list focused.</summary>
     private void FocusMenu(NavigationMethod how)
     {
@@ -484,6 +504,17 @@ public class Menu : TemplatedControl
         if (e.Source != _list) return;
         var finger = e.NavigationMethod == NavigationMethod.Pointer && _pressing is { Type: not PointerType.Mouse };
         _pressing = null;
+        if (_childClosing)
+        {
+            // The focus a closing child's popup gives back: a browser leaves it on the page.
+            _childClosing = false;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_list is { IsFocused: true } && !IsMenuFocused) TopLevel.GetTopLevel(this)?.FocusManager?.Focus(null);
+            });
+            return;
+        }
+
         if (!finger) FocusMenu(e.NavigationMethod);
     }
 
@@ -497,6 +528,8 @@ public class Menu : TemplatedControl
     /// <summary>onMouseEnter and onMouseOver: focusMenu, a mouse's only.</summary>
     private void OnListPointer(object? sender, PointerEventArgs e)
     {
+        // A child menu's popup routes its pointer events through its option to this list: they aren't this list's.
+        if (e.Source is not Visual source || (source != _list && !_list!.IsVisualAncestorOf(source))) return;
         if (e.Pointer.Type != PointerType.Mouse || e.Pointer.Captured is { } c && c != _list && c is Visual v && !_list!.IsVisualAncestorOf(v)) return;
         FocusMenu(NavigationMethod.Pointer);
     }

@@ -19,9 +19,27 @@ public class MenuAutomationPeer(Menu owner) : ControlAutomationPeer(owner)
     protected override bool IsContentElementCore() => false;
 }
 
-/// <summary>The list of a menu: a list, named as the menu is (<c>aria-label</c>, "Menu" by default), its options its items.</summary>
+/// <summary>
+/// The list of a menu: a list, named as the menu is (<c>aria-label</c>, "Menu" by default), its children what Base Web's
+/// listbox holds: the options, each group's header, and the empty state's message (its scroller and boxes are nothing of
+/// their own).
+/// </summary>
 public class MenuListAutomationPeer(MenuList owner) : ControlAutomationPeer(owner)
 {
+    protected override IReadOnlyList<AutomationPeer>? GetChildrenCore()
+    {
+        var menu = ((MenuList)Owner).Owner;
+        if (menu is null) return base.GetChildrenCore();
+        var peers = new List<AutomationPeer>();
+        foreach (var child in menu.Rendered)
+        {
+            if (child is Avalonia.Controls.Presenters.ContentPresenter { Child: { } content }) peers.Add(GetOrCreate(content));
+            else if (child is not Border) peers.Add(GetOrCreate(child));
+        }
+
+        return peers;
+    }
+
     protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.List;
 
     protected override bool IsControlElementCore() => true;
