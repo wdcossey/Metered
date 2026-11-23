@@ -4,8 +4,9 @@
              x:Class="Metered.Sample.Pages.PopoverPage">
   <!-- Base Web's popover, as its documentation's examples show it: always open, opened by a click and by a hover, with
        an arrow, its placements, closed from its content, and its overrides. Headings are the shell's. A tap outside a
-       popover closes it; a drag that scrolls the page doesn't; a finger never hovers, so the hover popovers open only
-       under a mouse or by keyboard focus. -->
+       popover closes it; a drag that scrolls the page doesn't; a finger never hovers, so a tap on the hover example's
+       anchor opens it and another closes it (#123). Back closes the top popover that Escape would close before the shell
+       goes back (#123). -->
   <UserControl.Styles>
     <!-- Base Web's ParagraphSmall, padded scale500, the examples' content. -->
     <Style Selector="TextBlock.paragraph">
@@ -60,7 +61,7 @@
       </WrapPanel>
 
       <TextBlock Classes="heading" Text="Opens on hover" />
-      <!-- stateful-hover.tsx: a mouse over the text, or keyboard focus on it. -->
+      <!-- stateful-hover.tsx: a mouse over the text, keyboard focus on it, or a tap on it (#123). -->
       <b:Popover x:Name="Hover" AccessibilityType="Tooltip" TriggerType="Hover" HorizontalAlignment="Left">
         <b:Popover.Content>
           <TextBlock Classes="paragraph" Text="hello world" />

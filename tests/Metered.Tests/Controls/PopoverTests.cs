@@ -410,18 +410,15 @@ public class PopoverTests
         Assert.False(popover.IsOpen);
     }
 
-    // Touch first: a finger never hovers (as the v2 controls' :is-hovered), so a tap doesn't open a hover popover, nor a
-    // finger's pointer entering the anchor (as a phone's browser's emulated mouseenter would).
+    // Touch first: a finger never hovers (as the v2 controls' :is-hovered), so a finger's pointer entering the anchor (as a
+    // phone's browser's emulated mouseenter would) doesn't open a hover popover; a mouse's does.
     [AvaloniaFact]
-    public void A_finger_doesnt_open_a_hover_popover()
+    public void A_fingers_pointer_entering_doesnt_open_a_hover_popover()
     {
         var (popover, anchor, _) = Fixed(150, 400);
         popover.TriggerType = PopoverTriggerType.Hover;
         popover.MouseEnterDelay = 0;
         using var scene = Show(popover);
-        Tap(scene, scene.CentreOf(anchor));
-        Settle(scene, 100);
-        Assert.False(popover.IsOpen);
 
         var presenter = (Visual)Avalonia.VisualTree.VisualExtensions.GetVisualParent(anchor)!;
         var finger = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
@@ -434,6 +431,230 @@ public class PopoverTests
             scene.CentreOf(anchor), 0, new PointerPointProperties(), KeyModifiers.None));
         Settle(scene, 50);
         Assert.True(popover.IsOpen);
+    }
+
+    // ---- A tap toggles a hover popover (Metered's, #123) ----
+
+    // A phone's browser opens a hover popover on a tap (its emulated mouseenter) and closes it on a tap elsewhere; Metered's
+    // tap on the anchor toggles it, and a tap elsewhere closes one a tap opened, by the top layer.
+    [AvaloniaFact]
+    public void A_tap_on_a_hover_anchor_toggles_it_and_a_tap_elsewhere_closes_it()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        var outside = 0;
+        popover.ClickOutside += (_, _) => outside++;
+        using var scene = Show(popover);
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        Assert.True(Shown(popover));
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene, 50);
+        Assert.False(popover.IsOpen);
+        Assert.Equal(0, outside);
+
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        // A tap in the body is inside it.
+        Tap(scene, scene.CentreOf(Body(popover)));
+        Assert.True(popover.IsOpen);
+        Tap(scene, new Point(20, 700));
+        Assert.False(popover.IsOpen);
+        Assert.Equal(1, outside);
+    }
+
+    // A tap opened it, so its layer takes the click outside; opened by a mouse's hover, it is Base Web's hover layer again,
+    // which a press outside leaves open.
+    [AvaloniaFact]
+    public void A_hover_popover_opened_by_a_mouse_after_a_tap_is_a_hover_layer_again()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        popover.MouseEnterDelay = 0;
+        popover.MouseLeaveDelay = 0;
+        using var scene = Show(popover);
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene);
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene, 100);
+        Assert.False(popover.IsOpen);
+
+        scene.Hover(anchor);
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        // The mouse leaves the anchor to press outside: its leave delay made long, so only the press could close it.
+        popover.MouseLeaveDelay = 5000;
+        Press(scene, new Point(20, 20));
+        Assert.True(popover.IsOpen);
+    }
+
+    // A button anchor's Click doesn't say which pointer: its tap is the anchor's tap, once, and a mouse's click on it opens
+    // nothing.
+    [AvaloniaFact]
+    public void A_button_anchor_of_a_hover_popover_toggles_once_on_a_tap_and_not_on_a_mouse_click()
+    {
+        var button = new MeteredButton { Content = "Hover" };
+        var popover = new Popover
+        {
+            Anchor = button, Content = "content", TriggerType = PopoverTriggerType.Hover, MouseEnterDelay = 5000,
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(100),
+        };
+        using var scene = Show(popover);
+        scene.Click(button);
+        Settle(scene, 50);
+        Assert.False(popover.IsOpen);
+        Tap(scene, scene.CentreOf(button));
+        Settle(scene, 50);
+        Assert.True(popover.IsOpen);
+        Tap(scene, scene.CentreOf(button));
+        Settle(scene, 50);
+        Assert.False(popover.IsOpen);
+    }
+
+    // A pen's tap is a tap: Avalonia's Tapped with a pen's pointer (Avalonia.Headless injects no pen).
+    [AvaloniaFact]
+    public void A_pens_tap_toggles_a_hover_popover_and_a_mouses_doesnt()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        popover.MouseEnterDelay = 5000;
+        using var scene = Show(popover);
+
+        void TapBy(PointerType type)
+        {
+            var pointer = new Pointer(Pointer.GetNextFreeId(), type, true);
+            var released = new PointerReleasedEventArgs(anchor, pointer, scene.Window, scene.CentreOf(anchor), 0,
+                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left);
+            anchor.RaiseEvent(new TappedEventArgs(InputElement.TappedEvent, released));
+            Settle(scene, 50);
+        }
+
+        TapBy(PointerType.Mouse);
+        Assert.False(popover.IsOpen);
+        TapBy(PointerType.Pen);
+        Assert.True(popover.IsOpen);
+        TapBy(PointerType.Pen);
+        Assert.False(popover.IsOpen);
+    }
+
+    // A drag isn't a tap: a finger that scrolls the page from a hover anchor opens nothing.
+    [AvaloniaFact]
+    public void A_fingers_drag_from_a_hover_anchor_that_scrolls_the_page_doesnt_open_it()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        var page = new ScrollViewer { Content = new Panel { Height = 2000, Children = { popover } } };
+        using var scene = Show(page);
+        var from = scene.CentreOf(anchor);
+        var touch = scene.Window.TouchBegin(from, RawInputModifiers.None);
+        scene.Pump();
+        for (var dy = 10; dy <= 120; dy += 10)
+        {
+            scene.Window.TouchMove(touch, from - new Point(0, dy), RawInputModifiers.None);
+            scene.Pump();
+        }
+
+        scene.Window.TouchEnd(touch, from - new Point(0, 120), RawInputModifiers.None);
+        scene.Pump();
+        Settle(scene, 100);
+        Assert.True(page.Offset.Y > 0, $"the page scrolled: {page.Offset}");
+        Assert.False(popover.IsOpen);
+    }
+
+    // ---- Back closes the top popover first (Metered's, #123) ----
+
+    /// <summary>Avalonia's back request, as the platform raises it (Sample/ShellFrames): whether it was handled.</summary>
+    private static bool Back(Scene scene) => Metered.Tests.Sample.ShellFrames.Back(scene.Window);
+
+    [AvaloniaFact]
+    public void Back_closes_the_top_popover_then_the_next_then_is_left_alone()
+    {
+        var (lower, _, _) = Fixed(20, 100);
+        var (upper, _, _) = Fixed(20, 500);
+        var escapes = 0;
+        lower.Esc += (_, _) => escapes++;
+        upper.Esc += (_, _) => escapes++;
+        using var scene = Show(new Panel { Children = { lower, upper } });
+        // Opened one after the other by the app: a click on the second's anchor would be a press outside the first.
+        lower.IsOpen = true;
+        Settle(scene);
+        upper.IsOpen = true;
+        Settle(scene);
+        Assert.True(lower.IsOpen && upper.IsOpen);
+
+        Assert.True(Back(scene));
+        Assert.False(upper.IsOpen);
+        Assert.True(lower.IsOpen);
+        // The one closing still has its layer (20 ms): it passes the request on.
+        Assert.True(Back(scene));
+        Assert.False(lower.IsOpen);
+        Settle(scene, 100);
+        Assert.False(Back(scene));
+        // Not Escape.
+        Assert.Equal(0, escapes);
+    }
+
+    // A popover Escape wouldn't close (DismissOnEsc false), above another, leaves the request to the one below; alone, to the app.
+    [AvaloniaFact]
+    public void Back_passes_over_a_popover_that_Escape_wouldnt_close()
+    {
+        var (lower, _, _) = Fixed(20, 100);
+        var (upper, _, _) = Fixed(20, 500);
+        upper.DismissOnEsc = false;
+        using var scene = Show(new Panel { Children = { lower, upper } });
+        // Opened one after the other by the app: a click on the second's anchor would be a press outside the first.
+        lower.IsOpen = true;
+        Settle(scene);
+        upper.IsOpen = true;
+        Settle(scene);
+
+        Assert.True(Back(scene));
+        Assert.False(lower.IsOpen);
+        Assert.True(upper.IsOpen);
+        Settle(scene, 100);
+        Assert.False(Back(scene));
+        Assert.True(upper.IsOpen);
+    }
+
+    // A hover popover too, and one a tap opened; a request the app handled first is left alone.
+    [AvaloniaFact]
+    public void Back_closes_a_hover_popover_and_leaves_a_handled_request_alone()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        var page = new Panel { Children = { popover } };
+        using var scene = Show(page);
+        Tap(scene, scene.CentreOf(anchor));
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        // Something on the page handles the request first, as it bubbles up from where it was raised.
+        EventHandler<RoutedEventArgs> handled = (_, e) => e.Handled = true;
+        page.AddHandler(TopLevel.BackRequestedEvent, handled);
+        var request = new RoutedEventArgs(TopLevel.BackRequestedEvent);
+        anchor.RaiseEvent(request);
+        Assert.True(request.Handled);
+        Assert.True(popover.IsOpen);
+        page.RemoveHandler(TopLevel.BackRequestedEvent, handled);
+
+        Assert.True(Back(scene));
+        Assert.False(popover.IsOpen);
+    }
+
+    // Alt+Left is Avalonia's back on desktop, through the same request.
+    [AvaloniaFact]
+    public void Alt_Left_closes_the_top_popover()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        using var scene = Show(popover);
+        scene.Click(anchor);
+        Settle(scene);
+        Assert.True(popover.IsOpen);
+        scene.Window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.Alt);
+        scene.Window.KeyReleaseQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.Alt);
+        scene.Pump();
+        Assert.False(popover.IsOpen);
     }
 
     // A window with no template has no overlay layer: the popover shows nothing, where Avalonia's popup would throw.

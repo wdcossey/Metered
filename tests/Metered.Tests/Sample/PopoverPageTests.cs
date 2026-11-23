@@ -14,8 +14,9 @@ namespace Metered.Tests.Sample;
 
 /// <summary>
 /// The sample's Popover page: its place in the catalogue (its issue's number, 106, after FormControl and before the
-/// theme), the documentation's examples as set; a finger's tap opening a popover and its tap outside closing it; the
-/// dismiss example closed from its content and by nothing else; each placement.
+/// theme), the documentation's examples as set; a finger's tap opening a popover and its tap outside closing it; a tap
+/// toggling the hover example (#123); the dismiss example closed from its content and by nothing else; each placement;
+/// in the shell, Back closing the open popovers Escape would close before it goes back (#123).
 /// </summary>
 public class PopoverPageTests
 {
@@ -79,6 +80,55 @@ public class PopoverPageTests
         Assert.True(page.Click.IsOpen);
         Tap(scene, new Point(370, 830));
         Assert.False(page.Click.IsOpen);
+    }
+
+    // A finger never hovers: a tap on the hover example's anchor toggles it (#123).
+    [AvaloniaFact]
+    public void A_Tap_Toggles_The_Hover_Example()
+    {
+        var page = new PopoverPage();
+        using var scene = Show(page);
+        var anchor = (Control)page.Hover.Anchor!;
+        Into(scene, anchor);
+        PopoverTests.Settle(scene);
+        Tap(scene, scene.CentreOf(anchor));
+        PopoverTests.Settle(scene);
+        Assert.True(page.Hover.IsOpen);
+        Tap(scene, scene.CentreOf(anchor));
+        PopoverTests.Settle(scene, 60);
+        Assert.False(page.Hover.IsOpen);
+    }
+
+    // Back closes the top popover that Escape would close, and the shell stays on the page: the overrides example, open
+    // from the start, then one a tap opened; the always-open example (DismissOnEsc false) is passed over, and the shell
+    // goes back (#123).
+    [AvaloniaFact]
+    public void Back_Closes_The_Open_Popovers_Escape_Would_Close_Before_The_Shell_Goes_Back()
+    {
+        var shell = new SampleShell { Report = _ => { } };
+        using var scene = PopoverTests.Show(shell);
+        shell.Open("Popover");
+        ShellFrames.Draw();
+        var page = Assert.IsType<PopoverPage>(shell.Shown);
+        PopoverTests.Settle(scene);
+        Assert.True(page.AlwaysOpen.IsOpen);
+        Assert.True(page.Overridden.IsOpen);
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(page.Overridden.IsOpen);
+        Assert.True(page.AlwaysOpen.IsOpen);
+        Assert.True(shell.IsShowingPage);
+
+        var open = (MeteredButton)page.Click.Anchor!;
+        Tap(scene, scene.CentreOf(open));
+        PopoverTests.Settle(scene);
+        Assert.True(page.Click.IsOpen);
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(page.Click.IsOpen);
+        Assert.True(shell.IsShowingPage);
+
+        PopoverTests.Settle(scene, 60);
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(shell.IsShowingPage);
     }
 
     [AvaloniaFact]
