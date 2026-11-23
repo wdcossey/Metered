@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -57,7 +56,6 @@ internal sealed class Layers
     private readonly TopLevel _top;
     private readonly List<Layer> _layers = [];
     private readonly Dictionary<long, (Point At, Visual? Source)> _touches = [];
-    private bool _tookBack;
 
     /// <summary>The fingers down at once that are remembered; a touch cancelled by the system leaves its entry.</summary>
     private const int MaxTouches = 10;
@@ -119,11 +117,9 @@ internal sealed class Layers
         {
             if (layer.OnBack is { } back && back())
             {
+                // Handled, a mouse's back button's press isn't routed (Avalonia 12.1.4 raises the request first, and routes
+                // the press only if it went unhandled), so it is no press outside as well.
                 e.Handled = true;
-                // A mouse's back button: Avalonia 12.1.4 raises the request before it routes the button's press, which
-                // follows in the same input; that press is the request a layer took, not a press outside as well.
-                _tookBack = true;
-                Dispatcher.UIThread.Post(() => _tookBack = false, DispatcherPriority.Input);
                 return;
             }
         }
@@ -136,14 +132,6 @@ internal sealed class Layers
             // A touch the system cancels never comes up: no more fingers are down than a hand has, so older ones go.
             if (_touches.Count >= MaxTouches) _touches.Clear();
             _touches[e.Pointer.Id] = (e.GetPosition(_top), e.Source as Visual);
-            return;
-        }
-
-        // A mouse's back button whose request a layer took (#123) clicks nothing more. One no layer took (a popover Escape
-        // wouldn't close) is a press as any other, as a browser's mousedown is.
-        if (_tookBack && e.GetCurrentPoint(_top).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed)
-        {
-            _tookBack = false;
             return;
         }
 

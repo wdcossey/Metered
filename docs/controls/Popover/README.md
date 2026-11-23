@@ -252,7 +252,7 @@ entrance's transition and the hover body's pointer as Base Web's.
     `TopLevel`, before an app's own `BackRequested` on its window, however early that was added. `Esc` isn't raised.
     A popover that Escape wouldn't close is passed over, even one in the content of the popover below it, which closes
     and takes it with it. A hover popover open under a mouse closes on a desktop's Alt+Left as on Escape. A mouse's back
-    button is Avalonia's back request, raised (Avalonia 12.1.4) before the button's press is routed: a press whose
-    request a layer took clicks nothing more, so the popover closes and the app doesn't go back; one no layer took (a
-    popover Escape wouldn't close) is a press as any other, which closes a click popover outside it, as a browser's
-    `mousedown` would, and the request goes on to the app.
+    button is Avalonia's back request, raised (Avalonia 12.1.4) before the button's press, which is routed only if the
+    request went unhandled: one a popover took closes it and goes no further; one no layer took (a popover Escape
+    wouldn't close) goes on to the app, and its press, as any other, closes a click popover outside it, as a browser's
+    `mousedown` would.

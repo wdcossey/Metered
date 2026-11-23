@@ -761,8 +761,8 @@ public class PopoverTests
         Assert.Equal(1, wentBack);
     }
 
-    // A mouse's back button is Avalonia's back request: its press isn't a press outside, which would close the popover
-    // before the request came and leave the request to go back; the request closes it.
+    // A mouse's back button is Avalonia's back request, raised before its press, which Avalonia routes only if the request
+    // went unhandled: the popover closes as Back, with no press outside, and the app doesn't go back.
     [AvaloniaFact]
     public void A_mouses_back_button_closes_the_popover_as_Back_and_goes_no_further()
     {
