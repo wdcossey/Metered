@@ -166,6 +166,7 @@ public class Popover : TemplatedControl
     private bool _unclipped;
     private bool _tapOpened;
     private bool? _layerClicks;
+    private (long Id, Point At)? _tapDown;
 
     public Popover()
     {
@@ -450,7 +451,8 @@ public class Popover : TemplatedControl
         _layer?.Dispose();
         var clicks = LayerClicks;
         _layerClicks = clicks;
-        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, clicks ? OnDocumentClick : null, OnLayerBack));
+        Action<Visual?>? click = !clicks ? null : TriggerType == PopoverTriggerType.Hover ? OnTapOutside : OnDocumentClick;
+        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, click, OnLayerBack));
     }
 
     /// <summary>
@@ -768,6 +770,8 @@ public class Popover : TemplatedControl
         // Every click that reaches the anchor, as Base Web's onClick on it: one its content handled too.
         anchor.AddHandler(InputElement.TappedEvent, OnAnchorTapped, handledEventsToo: true);
         anchor.AddHandler(InputElement.DoubleTappedEvent, OnAnchorTapped, handledEventsToo: true);
+        anchor.AddHandler(InputElement.PointerPressedEvent, OnAnchorPressed, handledEventsToo: true);
+        anchor.AddHandler(InputElement.PointerReleasedEvent, OnAnchorReleased, handledEventsToo: true);
         anchor.PointerEntered += OnAnchorEntered;
         anchor.PointerExited += OnAnchorExited;
         anchor.GotFocus += OnAnchorGotFocus;
@@ -779,6 +783,8 @@ public class Popover : TemplatedControl
         anchor.RemoveHandler(Button.ClickEvent, OnAnchorButtonClick);
         anchor.RemoveHandler(InputElement.TappedEvent, OnAnchorTapped);
         anchor.RemoveHandler(InputElement.DoubleTappedEvent, OnAnchorTapped);
+        anchor.RemoveHandler(InputElement.PointerPressedEvent, OnAnchorPressed);
+        anchor.RemoveHandler(InputElement.PointerReleasedEvent, OnAnchorReleased);
         anchor.PointerEntered -= OnAnchorEntered;
         anchor.PointerExited -= OnAnchorExited;
         anchor.GotFocus -= OnAnchorGotFocus;
@@ -790,20 +796,37 @@ public class Popover : TemplatedControl
 
     /// <summary>
     /// Any other anchor's click or tap; a button's comes as its Click instead. A second click soon after the first is
-    /// Avalonia's double tap, and a browser's click all the same. A hover popover's anchor, a button's too (its Click
-    /// doesn't say which pointer), is toggled by a finger's or a pen's tap (#123); a drag isn't a tap, nor a press a
-    /// scroll viewer's gesture took.
+    /// Avalonia's double tap, and a browser's click all the same. A hover popover's tap is its own (OnAnchorReleased).
     /// </summary>
     private void OnAnchorTapped(object? sender, TappedEventArgs e)
     {
-        if (TriggerType == PopoverTriggerType.Hover)
-        {
-            if (e.Pointer.Type is PointerType.Touch or PointerType.Pen) TapToggle();
-            return;
-        }
-
+        if (TriggerType == PopoverTriggerType.Hover) return;
         if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(x => x != _anchorPresenter).OfType<Avalonia.Controls.Button>().Any()) return;
         AnchorClick();
+    }
+
+    /// <summary>A finger or a pen down on a hover popover's anchor: where, for its release (#123).</summary>
+    private void OnAnchorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (TriggerType != PopoverTriggerType.Hover || e.Pointer.Type is not (PointerType.Touch or PointerType.Pen) || _top is null) return;
+        _tapDown = (e.Pointer.Id, e.GetPosition(_top));
+    }
+
+    /// <summary>
+    /// A hover popover's anchor is toggled by a finger's or a pen's tap (#123), a button anchor's too (its Click doesn't
+    /// say which pointer): its release on the anchor within the platform's tap distance of its press. Not Avalonia's
+    /// Tapped, whose second within the double-tap time is a DoubleTapped at the press, before a drag from it is known. A
+    /// drag isn't a tap, nor a press a scroll viewer's gesture took (its release isn't the anchor's).
+    /// </summary>
+    private void OnAnchorReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_tapDown is not { } down || down.Id != e.Pointer.Id || _top is null) return;
+        _tapDown = null;
+        if (TriggerType != PopoverTriggerType.Hover) return;
+        var tap = Application.Current?.PlatformSettings?.GetTapSize(e.Pointer.Type) ?? new Size(10, 10);
+        var at = e.GetPosition(_top);
+        if (Math.Abs(at.X - down.At.X) > tap.Width / 2 || Math.Abs(at.Y - down.At.Y) > tap.Height / 2) return;
+        TapToggle();
     }
 
     /// <summary>
@@ -911,6 +934,17 @@ public class Popover : TemplatedControl
         if (!IsOpen || !DismissOnEsc) return false;
         SetCurrentValue(IsOpenProperty, false);
         return true;
+    }
+
+    /// <summary>
+    /// A hover popover a tap opened, and a tap (or a press) outside it: closed, as a phone's browser's mouseleave closes
+    /// Base Web's whatever <see cref="DismissOnClickOutside"/> says, and with no <see cref="ClickOutside"/>, which a
+    /// hover layer has none of (#123).
+    /// </summary>
+    private void OnTapOutside(Visual? source)
+    {
+        if (Layers.IsWithin(source, _parts[BodyPart] as Visual) || Layers.IsWithin(source, _anchorPresenter)) return;
+        SetCurrentValue(IsOpenProperty, false);
     }
 
     /// <summary>popover.js's onDocumentClick: a press in the body or the anchor isn't outside.</summary>

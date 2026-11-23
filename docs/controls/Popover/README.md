@@ -100,11 +100,11 @@ From `stateful-container.js` and `popover.js`:
   first 0.1 s each time it opens (`animationName`). A finger never hovers: a finger's or a pen's tap on its anchor toggles
   it instead (known difference 2).
 - **Dismissal** (`layer.js`, `layers-manager.js`): a press outside the anchor and the body closes a click popover
-  (`onClickOutside`, `DismissOnClickOutside`); a hover popover has no such handler, unless a tap opened it (known
-  difference 2). Escape's release closes it
-  (`onEsc`, `DismissOnEsc`). Each goes to the layer on top only: of two popovers open, the later; of a popover in
+  (`onClickOutside`, `DismissOnClickOutside`); a hover popover has no such handler, unless a tap opened it (known difference 2).
+  Escape's release closes it (`onEsc`, `DismissOnEsc`). Each goes to the layer on top only: of two popovers open, the later; of a popover in
   another's content, the inner one, and a press in its body is inside it and never reaches the outer. A popover that
-  closes keeps its layer until it is gone (20 ms on), and one opened again in that time keeps its place in the stack.
+  closes keeps its layer until it is gone (20 ms on), and one opened again in that time keeps its place in the stack
+  (unless it then takes the document click where it didn't, or the other way: known difference 2).
   **Touch:** a mouse's or a pen's press is Base Web's `mousedown`; a finger's is a tap (its release within the
   platform's tap distance), as a phone's browser sends `mousedown` only for a tap, so a finger's drag outside (a page
   scrolled) leaves it open.
@@ -174,9 +174,11 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   trigger type, a new anchor), a tab put away and back, a window close that is cancelled; a press in a combo box's
   drop-down in the content; an anchor that handles its own tap; focus in Tab's order; a finger's pointer entering a hover
   anchor; a tap toggling a hover popover, a button anchor's (not a mouse's click) and a pen's, a tap elsewhere closing one
-  a tap opened and a press outside not one a mouse opened, a finger's drag that scrolls the page opening nothing; Back
+  a tap opened (whatever `DismissOnClickOutside`, no `ClickOutside`) and a press outside not one a mouse opened, a
+  finger's drag that scrolls the page opening nothing, nor a second touch soon after a tap that drags; Back
   closing the top popover then the next, passing over one without `DismissOnEsc` and one closing, left alone with none
-  or when handled first, a hover popover, before the window's own handler, a mouse's back button, Alt+Left; a popover a
+  or when handled first, a hover popover, before the window's own handler, a mouse's back button (and one no layer
+  takes, a press outside), Alt+Left; a popover a
   tap opened put away and back, opened again by a tap or a mouse as it fades out; a window with no overlay layer; an arrow shown under an override's margin; a placement changed while open.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
 - `Sample/PopoverPageTests`: the sample's page, 7: its place, the examples as set, a tap opening and closing, a tap
@@ -201,14 +203,18 @@ entrance's transition and the hover body's pointer as Base Web's.
    included, where StatefulPopover's `onOpen` and `onClose` are called for its own changes.
 2. **A tap toggles a hover popover** (the developer, 2026-11-23, #123). A finger never hovers (touch first; as Radio's,
    Checkbox's and Switch's `:is-hovered`), so a finger's pointer entering the anchor opens nothing; a finger's or a
-   pen's tap on the anchor (its press and release within the tap distance, not a drag a scroll viewer takes) opens a
-   hover popover and a second closes it, a button anchor's tap included. Opened by a tap, its layer takes the document
-   click as a click popover's does, so a tap elsewhere closes it (`ClickOutside`, `DismissOnClickOutside`); opened by a
-   mouse or keyboard focus, it is Base Web's hover layer, which a press outside leaves open (also when it opens so while
-   one a tap opened fades out). As a click layer on top, a tap outside goes to it alone, not to a click popover below it
-   (one a tap outside doesn't close, as a tap outside the hover anchor would first have closed any other). A mouse is unchanged: hover
-   opens and closes it, a click does nothing. A phone's browser fires `mouseenter` on a tap, so Base Web's opens on a
-   tap and stays open until a tap elsewhere (its `mouseleave`), and a second tap on the anchor leaves it open.
+   pen's tap on the anchor opens a hover popover and a second closes it. A tap is the anchor's own press and release,
+   the release within the platform's tap distance: a button anchor's too, a control's in the anchor's content too (as a
+   click popover's anchor takes every click), not a drag, nor one a scroll viewer took. Not Avalonia's `Tapped`, whose
+   second touch within the double-tap time is a `DoubleTapped` at its press, before a drag from it is known. Opened by a
+   tap, its layer takes the document click, so a tap (or a press) elsewhere closes it, as a phone's browser's
+   `mouseleave` closes Base Web's: at once, whatever `DismissOnClickOutside` says, and with no `ClickOutside`, which a
+   hover layer has none of. Opened by a mouse or keyboard focus, it is Base Web's hover layer, which a press outside
+   leaves open (also when it opens so while one a tap opened fades out). As a click layer on top, a tap outside goes to
+   it alone, not to a click popover below it (one a tap outside doesn't close, as the tap on the hover anchor would
+   first have closed any other). A mouse is unchanged: hover opens and closes it, a click does nothing. A phone's
+   browser fires `mouseenter` on a tap, so Base Web's opens on a tap and stays open until a tap elsewhere (its
+   `mouseleave`, after `onMouseLeaveDelay`), and a second tap on the anchor leaves it open.
 3. **`preventOverflow` keeps the body inside what the anchor's scroll viewer scrolls, all of it.** popper.js keeps it
    inside the anchor's scroll parent: in a page that scrolls as a document (Base Web's layer is in the body), the whole
    document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
@@ -246,5 +252,7 @@ entrance's transition and the hover body's pointer as Base Web's.
     `TopLevel`, before an app's own `BackRequested` on its window, however early that was added. `Esc` isn't raised.
     A popover that Escape wouldn't close is passed over, even one in the content of the popover below it, which closes
     and takes it with it. A hover popover open under a mouse closes on a desktop's Alt+Left as on Escape. A mouse's back
-    button is Avalonia's back request: its press isn't a press outside, so the request closes the popover and goes no
-    further (a browser's `mousedown` would close a click popover, and its back button leave the page).
+    button is Avalonia's back request, raised (Avalonia 12.1.4) before the button's press is routed: a press whose
+    request a layer took clicks nothing more, so the popover closes and the app doesn't go back; one no layer took (a
+    popover Escape wouldn't close) is a press as any other, which closes a click popover outside it, as a browser's
+    `mousedown` would, and the request goes on to the app.

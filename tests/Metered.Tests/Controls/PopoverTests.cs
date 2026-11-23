@@ -435,13 +435,15 @@ public class PopoverTests
 
     // ---- A tap toggles a hover popover (Metered's, #123) ----
 
-    // A phone's browser opens a hover popover on a tap (its emulated mouseenter) and closes it on a tap elsewhere; Metered's
-    // tap on the anchor toggles it, and a tap elsewhere closes one a tap opened, by the top layer.
+    // A phone's browser opens a hover popover on a tap (its emulated mouseenter) and closes it on a tap elsewhere (its
+    // mouseleave), whatever dismissOnClickOutside says and with no onClickOutside (a hover layer has none); Metered's tap
+    // on the anchor toggles it, and a tap elsewhere closes one a tap opened, by the top layer.
     [AvaloniaFact]
     public void A_tap_on_a_hover_anchor_toggles_it_and_a_tap_elsewhere_closes_it()
     {
         var (popover, anchor, _) = Fixed(150, 400);
         popover.TriggerType = PopoverTriggerType.Hover;
+        popover.DismissOnClickOutside = false;
         var outside = 0;
         popover.ClickOutside += (_, _) => outside++;
         using var scene = Show(popover);
@@ -462,7 +464,26 @@ public class PopoverTests
         Assert.True(popover.IsOpen);
         Tap(scene, new Point(20, 700));
         Assert.False(popover.IsOpen);
-        Assert.Equal(1, outside);
+        Assert.Equal(0, outside);
+    }
+
+    // A second touch soon after a tap is Avalonia's double tap at its press: one that drags from the anchor isn't a tap,
+    // and leaves the popover as it was.
+    [AvaloniaFact]
+    public void A_touch_soon_after_a_tap_that_drags_from_a_hover_anchor_doesnt_toggle_it()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.TriggerType = PopoverTriggerType.Hover;
+        using var scene = Show(popover);
+        var at = scene.CentreOf(anchor);
+        Tap(scene, at);
+        Assert.True(popover.IsOpen);
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchMove(touch, at + new Point(0, 60), RawInputModifiers.None);
+        scene.Window.TouchEnd(touch, at + new Point(0, 60), RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(popover.IsOpen);
     }
 
     // A tap opened it, so its layer takes the click outside; opened by a mouse's hover, it is Base Web's hover layer again,
@@ -584,7 +605,7 @@ public class PopoverTests
         Assert.False(popover.IsOpen);
     }
 
-    // A pen's tap is a tap: Avalonia's Tapped with a pen's pointer (Avalonia.Headless injects no pen).
+    // A pen's tap is a tap: its press and release on the anchor (Avalonia.Headless injects no pen: raised as Avalonia would).
     [AvaloniaFact]
     public void A_pens_tap_toggles_a_hover_popover_and_a_mouses_doesnt()
     {
@@ -596,9 +617,11 @@ public class PopoverTests
         void TapBy(PointerType type)
         {
             var pointer = new Pointer(Pointer.GetNextFreeId(), type, true);
-            var released = new PointerReleasedEventArgs(anchor, pointer, scene.Window, scene.CentreOf(anchor), 0,
-                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left);
-            anchor.RaiseEvent(new TappedEventArgs(InputElement.TappedEvent, released));
+            var at = scene.CentreOf(anchor);
+            anchor.RaiseEvent(new PointerPressedEventArgs(anchor, pointer, scene.Window, at, 0,
+                new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+            anchor.RaiseEvent(new PointerReleasedEventArgs(anchor, pointer, scene.Window, at, 0,
+                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased), KeyModifiers.None, MouseButton.Left));
             Settle(scene, 50);
         }
 
@@ -766,6 +789,29 @@ public class PopoverTests
         Assert.Equal(0, wentBack);
         Settle(scene, 100);
         BackButton();
+        Assert.Equal(1, wentBack);
+    }
+
+    // A mouse's back button no layer takes (a popover Escape wouldn't close) is a press as any other: outside, it closes a
+    // click popover, as a browser's mousedown does, and the request goes on to the app.
+    [AvaloniaFact]
+    public void A_mouses_back_button_no_layer_takes_is_a_press_outside()
+    {
+        var (popover, anchor, _) = Fixed(150, 400);
+        popover.DismissOnEsc = false;
+        using var scene = Show(new Panel { Children = { popover } });
+        var wentBack = 0;
+        var outside = 0;
+        popover.ClickOutside += (_, _) => outside++;
+        scene.Window.AddHandler(TopLevel.BackRequestedEvent, (_, _) => wentBack++);
+        scene.Click(anchor);
+        Settle(scene);
+        scene.Window.MouseMove(new Point(20, 20));
+        scene.Window.MouseDown(new Point(20, 20), MouseButton.XButton1);
+        scene.Window.MouseUp(new Point(20, 20), MouseButton.XButton1);
+        scene.Pump();
+        Assert.False(popover.IsOpen);
+        Assert.Equal(1, outside);
         Assert.Equal(1, wentBack);
     }
 
@@ -1368,4 +1414,5 @@ public class PopoverTests
         // Base Web's state's placement goes back to the one asked for once it is gone.
         Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
     }
+
 }

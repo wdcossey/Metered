@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -56,6 +57,7 @@ internal sealed class Layers
     private readonly TopLevel _top;
     private readonly List<Layer> _layers = [];
     private readonly Dictionary<long, (Point At, Visual? Source)> _touches = [];
+    private bool _tookBack;
 
     /// <summary>The fingers down at once that are remembered; a touch cancelled by the system leaves its entry.</summary>
     private const int MaxTouches = 10;
@@ -111,7 +113,6 @@ internal sealed class Layers
 
     private void OnBackRequested(object? sender, RoutedEventArgs e)
     {
-        if (e.Handled) return;
         // From the top down: a layer that doesn't take it (a popover Escape wouldn't close) lets the one below have it.
         // A copy, as a layer that closes may take itself away.
         foreach (var layer in _layers.AsEnumerable().Reverse().ToArray())
@@ -119,6 +120,10 @@ internal sealed class Layers
             if (layer.OnBack is { } back && back())
             {
                 e.Handled = true;
+                // A mouse's back button: Avalonia 12.1.4 raises the request before it routes the button's press, which
+                // follows in the same input; that press is the request a layer took, not a press outside as well.
+                _tookBack = true;
+                Dispatcher.UIThread.Post(() => _tookBack = false, DispatcherPriority.Input);
                 return;
             }
         }
@@ -134,9 +139,14 @@ internal sealed class Layers
             return;
         }
 
-        // A mouse's back button is Avalonia's back request (#123), which closes the top popover: its press clicks nothing,
-        // or it would close a popover first and leave the request to go back.
-        if (e.GetCurrentPoint(_top).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed) return;
+        // A mouse's back button whose request a layer took (#123) clicks nothing more. One no layer took (a popover Escape
+        // wouldn't close) is a press as any other, as a browser's mousedown is.
+        if (_tookBack && e.GetCurrentPoint(_top).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed)
+        {
+            _tookBack = false;
+            return;
+        }
+
         DocumentClick(e.Source as Visual);
     }
 
