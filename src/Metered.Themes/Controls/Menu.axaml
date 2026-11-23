@@ -1,0 +1,32 @@
+<!--
+  Base Web's Menu (baseui 18.2.0, menu/menu.js), as a template of named parts. Each part's look is its own theme,
+  Menu.Styled<Part> (Menu.Parts.g.axaml), which the menu's Overrides merge over: this file holds only the structure.
+
+  List                       (the focusable, scrolled box: Metered.Controls.MenuList, its own template)
+    PART_Items               (the menu makes its children, in menu.js's order)
+      OptgroupHeader         (a group's header)
+      Option                 (an option: Metered.Controls.MenuOptionList, or MenuOptionProfile; their parts in code)
+        ChildMenuPopover     (only for an option with a child menu: a Popover round its parts)
+        ListItem             (OptionList's box)
+          ListItemAnchor     (only for an href)
+        ListItemProfile      (OptionProfile's: ProfileImgContainer, ProfileImg, ProfileLabelsContainer,
+                              ProfileTitle, ProfileSubtitle, ProfileBody)
+      MenuDivider            (a divider)
+      EmptyState             (only when no group has an item)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Menu}" TargetType="b:Menu">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:MenuList Name="List" Theme="{DynamicResource Menu.StyledList}">
+          <StackPanel Name="PART_Items" />
+        </b:MenuList>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

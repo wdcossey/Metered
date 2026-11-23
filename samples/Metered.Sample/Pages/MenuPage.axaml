@@ -1,0 +1,174 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.MenuPage">
+  <!-- Base Web's menu, as its documentation's examples show it: basic, compact, profile, a child menu, grouped, a long
+       list, links and dividers, and its empty state. Headings are the shell's. A finger's drag over a menu scrolls it; a
+       tap highlights an option and chooses it; a mouse over a menu focuses it and highlights the option under it. A CSS
+       height is the list's content box: its 16 px of padding are added to it here. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basic" />
+      <!-- basic.tsx: 250 px high (266 with its padding); 350 wide there, the column's width here. Item Three and Item Four
+           disabled. -->
+      <b:Menu x:Name="Basic">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+                  <Setter Property="Height" Value="266" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+        <b:MenuItemData Label="Item One" />
+        <b:MenuItemData Label="Item Two" />
+        <b:MenuItemData Label="Item Three" Disabled="True" />
+        <b:MenuItemData Label="Item Four" Disabled="True" />
+        <b:MenuItemData Label="Item Five" />
+        <b:MenuItemData Label="Item Six" />
+        <b:MenuItemData Label="Item Seven" />
+        <b:MenuItemData Label="Item Eight" />
+        <b:MenuItemData Label="Item Nine" />
+        <b:MenuItemData Label="Item Ten" />
+        <b:MenuItemData Label="Item Eleven" />
+        <b:MenuItemData Label="Item Twelve" />
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Compact" />
+      <!-- compact.tsx: the options' size compact (its first six). -->
+      <b:Menu x:Name="Compact">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+            <b:Override Part="Option">
+              <b:Override.Props>
+                <ControlTheme TargetType="b:MenuOptionList">
+                  <Setter Property="Size" Value="Compact" />
+                </ControlTheme>
+              </b:Override.Props>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+        <b:MenuItemData Label="Item One" />
+        <b:MenuItemData Label="Item Two" />
+        <b:MenuItemData Label="Item Three" />
+        <b:MenuItemData Label="Item Four" />
+        <b:MenuItemData Label="Item Five" />
+        <b:MenuItemData Label="Item Six" />
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Profile" />
+      <!-- profile.tsx: OptionProfile, by the Option override (MenuPage.axaml.cs); its pictures are boxes here. -->
+      <b:Menu x:Name="Profile" />
+
+      <TextBlock Classes="heading" Text="Child menu" />
+      <!-- child.tsx: Open Recent and New Breakpoint open a child menu at their right while highlighted
+           (MenuPage.axaml.cs); narrower than the example's, so a child fits on a phone beside its parent. -->
+      <b:NestedMenus x:Name="Nested" HorizontalAlignment="Left">
+        <b:Menu x:Name="Child" />
+      </b:NestedMenus>
+
+      <TextBlock Classes="heading" Text="Grouped" />
+      <!-- grouped.tsx: 200 wide; a header for each group, none for the ungrouped. -->
+      <b:Menu x:Name="Grouped" HorizontalAlignment="Left">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+                  <Setter Property="Width" Value="200" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+        <b:MenuItemData Label="Black" />
+        <b:MenuGroup Label="Blueish">
+          <b:MenuItemData Label="AliceBlue" />
+          <b:MenuItemData Label="Aqua" />
+          <b:MenuItemData Label="Aquamarine" />
+        </b:MenuGroup>
+        <b:MenuGroup Label="Whiteish">
+          <b:MenuItemData Label="AntiqueWhite" />
+          <b:MenuItemData Label="Azure" />
+          <b:MenuItemData Label="Beige" />
+        </b:MenuGroup>
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Long list" />
+      <!-- virtual-list.tsx: a list 500 px high; its 1500 items in react-virtualized, here 100 (MenuPage.axaml.cs). -->
+      <b:Menu x:Name="Long">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+                  <Setter Property="Height" Value="516" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Links" />
+      <!-- href.tsx: each label a link. -->
+      <b:Menu x:Name="Href">
+        <b:MenuItemData Label="Apple" Href="//www.example.com/apple" />
+        <b:MenuItemData Label="Orange" Href="//www.example.com/orange" />
+        <b:MenuItemData Label="Strawberry" Href="//www.example.com/strawberry" />
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Dividers" />
+      <!-- dividers.tsx: 250 px high; 350 wide there, the column's width here. -->
+      <b:Menu x:Name="Dividers">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+                  <Setter Property="Height" Value="266" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+        <b:MenuItemData Label="Menu option A" />
+        <b:MenuItemData Label="Menu option B" />
+        <b:MenuItemData Divider="True" />
+        <b:MenuItemData Label="Menu option X" />
+        <b:MenuItemData Label="Menu option Y" />
+        <b:MenuItemData Label="Menu option Z" />
+        <b:MenuItemData Divider="True" />
+        <b:MenuItemData Label="Menu option 1" />
+        <b:MenuItemData Label="Menu option 2" />
+        <b:MenuItemData Label="Menu option 3" />
+      </b:Menu>
+
+      <TextBlock Classes="heading" Text="Empty" />
+      <!-- menu-empty.scenario.tsx: 270 wide. -->
+      <b:Menu x:Name="Empty" HorizontalAlignment="Left">
+        <b:Menu.Overrides>
+          <b:OverrideCollection>
+            <b:Override Part="List">
+              <b:Override.Style>
+                <ControlTheme TargetType="b:MenuList">
+                  <Setter Property="Width" Value="270" />
+                </ControlTheme>
+              </b:Override.Style>
+            </b:Override>
+          </b:OverrideCollection>
+        </b:Menu.Overrides>
+      </b:Menu>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

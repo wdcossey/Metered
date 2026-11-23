@@ -66,6 +66,12 @@ These are the ones to revisit first.
 | Popover | popper.js runs again only at the next scroll or resize: a body opened with `auto` above or to the left of its anchor touches it until then (its margin is on the far side) | The margin at the placement chosen is placed at once: popper.js's next update | as built (#106) | [Popover 11](controls/Popover/README.md#known-differences) |
 | Popover | No counterpart: a browser's back button leaves the page | Avalonia's back request closes the topmost open popover that Escape would close (`DismissOnEsc`) and is handled, so the sample's shell stays on its page; with none, the shell goes back | 2026-11-23, #123 | [Popover 12](controls/Popover/README.md#known-differences) |
 | Popover (sample) | The placements example opens on hover | On a click, so a finger can open them | as built (#106) | [Popover 6](controls/Popover/README.md#known-differences) |
+| Menu | `Menu` and `StatefulMenu` are separate | One menu: the keys, the pointer and focus set `HighlightedIndex` and `IsMenuFocused` whatever bound them | as built (#107) | [Menu 1](controls/Menu/README.md#known-differences) |
+| Menu | Any object is an item, read for `label`, `disabled`, `divider` and `href`; grouped items an object of keys | A `MenuItemData` has those; any other object is its own label; a `MenuGroup` a key, ungrouped items anywhere among them | as built (#107) | [Menu 2](controls/Menu/README.md#known-differences) |
+| Menu | `stateReducer`'s `changes` are the keys that change | The whole state the change would make, with its type | as built (#107) | [Menu 3](controls/Menu/README.md#known-differences) |
+| Menu | A desktop browser draws `overflow: auto`'s scroll bar in the list | No scroll bars, as Metered's other scrollers | as built (#107) | [Menu 6](controls/Menu/README.md#known-differences) |
+| Menu | The profile option's plain `:hover`, kept after a tap on a phone; a pen's hover | A mouse's only | as built (#107) | [Menu 7](controls/Menu/README.md#known-differences) |
+| Menu | A profile picture's `<img src>` loads any address; a link without a scheme is resolved against the page | A string is a resource or a file, never fetched; such a link is opened by https | as built (#107) | [Menu 8, 11](controls/Menu/README.md#known-differences) |
 
 ## Forced
 
@@ -93,15 +99,20 @@ These are the ones to revisit first.
 | **Popover: focus goes back to the anchor when it closes, with or without a focus lock, whatever `ReturnFocus` says** (Base Web's leaves it on the page without the lock) | Avalonia's popup gives focus back to what had it before it opened | [Popover 4](controls/Popover/README.md#known-differences) |
 | **Popover: a menu's anchor isn't marked as having a popup or expanded**; a tooltip describes its anchor by its text | Avalonia can't add an expand state to another control's automation peer; help text is a string | [Popover 5](controls/Popover/README.md#known-differences) |
 | **Popover: shown in the window's overlay layer**, none in a window without a template; closed on its window's `Closing` | Base Web's `mountNode` has no counterpart; Avalonia 12.1.4 fails closing a window with a popup open in another's | [Popover 7, 8](controls/Popover/README.md#known-differences) |
+| **Menu: the reducer sees focusMenu's change once**, where React's batched state calls it twice | Avalonia applies a state at once | [Menu 4](controls/Menu/README.md#known-differences) |
+| **Menu: `ItemSelect` gives the item, not a DOM event**; a relative `href` isn't opened | Avalonia's routed event; no page to resolve it against | [Menu 5, 11](controls/Menu/README.md#known-differences) |
+| **Menu: no `renderAll`, and no `List` of another element** (the virtualized example) | Nothing reads hidden content; an override is a theme (ADR 0001) | [Menu 9](controls/Menu/README.md#known-differences) |
 
 ## Not yet
 
 | What | Detail |
 |---|---|
-| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences) |
+| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences) |
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** the keyboard covering a focused input (#108: the sample's shell keeps its page clear with `KeyboardInset`, not yet run on the Pixel), handles left on an input the focus left (#109), the desktop menu (#110), the grip focusing the textarea (#111) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences), [KeyboardInset 4, 5](controls/KeyboardInset/README.md#known-differences) |
 | **On a phone:** a FormControl's `HtmlFor` label (#102) | [FormControl 8](controls/FormControl/README.md#known-differences) |
 | **Popover:** `stateReducer`, `renderAll`, `popperOptions`, `focusOptions` | [Popover 9](controls/Popover/README.md#known-differences) |
 | **On a phone and in a real window:** the Popover (#119) | [Popover 10](controls/Popover/README.md#known-differences) |
+| **Menu:** `rootRef`, `getRequiredItemProps`, `onActiveDescendantChange` and the options' ids; Base Web's locale | [Menu 10, 12](controls/Menu/README.md#known-differences) |
+| **On a phone and in a real window:** the Menu (#126) | [Menu 14](controls/Menu/README.md#known-differences) |
