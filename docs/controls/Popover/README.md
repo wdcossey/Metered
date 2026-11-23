@@ -83,7 +83,9 @@ The template is the anchor's presenter and a `Popup` whose child is `Body`, its 
   Popover (Select renders its dropdown in one, with `PopoverMargin` 0) or calls `Tether` itself.
 - **`Layers.Of(topLevel).Add(new Layer(onEscape, onDocumentClick))`** (`internal`): Base Web's `LayersManager`. A layer
   added is on top; Escape's release goes to the top layer's handler, a press (a finger's tap) to the top click layer's
-  with the element pressed, which decides whether it was outside (`Layers.IsWithin`). Dispose the result to take it off.
+  with the element pressed, which decides whether it was outside (`Layers.IsWithin`), and Avalonia's back request, not yet
+  handled below the top level, to the top layer whose `onBack` (optional, Metered's) returns true, which handles it. Dispose the result to take
+  it off.
 
 ## Behaviour, as Base Web's
 
@@ -95,15 +97,22 @@ From `stateful-container.js` and `popover.js`:
   leaves, unless it reaches the body first; leaving the body closes it after the same delay. Keyboard focus on the anchor
   (Tab or the arrow keys, Base Web's `isFocusVisible`) opens it; losing it closes it unless `AutoFocus` or `FocusLock`
   (which is why a default hover popover stays open when the anchor loses focus). Its body takes no pointer for its
-  first 0.1 s each time it opens (`animationName`).
+  first 0.1 s each time it opens (`animationName`). A finger never hovers: a finger's or a pen's tap on its anchor toggles
+  it instead (known difference 2).
 - **Dismissal** (`layer.js`, `layers-manager.js`): a press outside the anchor and the body closes a click popover
-  (`onClickOutside`, `DismissOnClickOutside`); a hover popover has no such handler. Escape's release closes it
-  (`onEsc`, `DismissOnEsc`). Each goes to the layer on top only: of two popovers open, the later; of a popover in
+  (`onClickOutside`, `DismissOnClickOutside`); a hover popover has no such handler, unless a tap opened it (known difference 2).
+  Escape's release closes it (`onEsc`, `DismissOnEsc`). Each goes to the layer on top only: of two popovers open, the later; of a popover in
   another's content, the inner one, and a press in its body is inside it and never reaches the outer. A popover that
-  closes keeps its layer until it is gone (20 ms on), and one opened again in that time keeps its place in the stack.
+  closes keeps its layer until it is gone (20 ms on), and one opened again in that time keeps its place in the stack
+  (unless it then takes the document click where it didn't, or the other way: known difference 2).
   **Touch:** a mouse's or a pen's press is Base Web's `mousedown`; a finger's is a tap (its release within the
   platform's tap distance), as a phone's browser sends `mousedown` only for a tap, so a finger's drag outside (a page
   scrolled) leaves it open.
+- **Back** (Metered's, known difference 12): Avalonia's back request (a phone's back button or gesture, Alt+Left on
+  desktop), if nothing on its route has handled it, closes the topmost open popover that Escape would close
+  (`DismissOnEsc`) and is handled, so an app's own Back (the sample's shell) doesn't run; a popover without
+  `DismissOnEsc`, or already closing, is passed over for the one below. With none, the request is left to the app.
+  `Esc` isn't raised.
 - **Placement** (`tether.js`, popper.js): `Tether` is popper.js's first update with Base Web's options, ported, its
   quirks kept (a side read after a modifier moved the other is the one computed before, sizes are whole pixels, `auto`'s
   areas are the viewport's unpadded size): `auto` (the side with the most room that the body fits), the placement's start
@@ -164,10 +173,17 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   near the window's foot; changes while it is shown (an Avalonia toggle button as the anchor, the arrow shown, the
   trigger type, a new anchor), a tab put away and back, a window close that is cancelled; a press in a combo box's
   drop-down in the content; an anchor that handles its own tap; focus in Tab's order; a finger's pointer entering a hover
-  anchor; a window with no overlay layer; an arrow shown under an override's margin; a placement changed while open.
+  anchor; a tap toggling a hover popover, a button anchor's (not a mouse's click) and a pen's, a tap elsewhere closing one
+  a tap opened (whatever `DismissOnClickOutside`, no `ClickOutside`) and a press outside not one a mouse opened, a
+  finger's drag that scrolls the page opening nothing, nor a second touch soon after a tap that drags; Back
+  closing the top popover then the next, passing over one without `DismissOnEsc` and one closing, left alone with none
+  or when handled first, a hover popover, before the window's own handler, a mouse's back button (and one no layer
+  takes, a press outside), Alt+Left; a popover a
+  tap opened put away and back, opened again by a tap or a mouse as it fades out; a window with no overlay layer; an arrow shown under an override's margin; a placement changed while open.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
-- `Sample/PopoverPageTests`: the sample's page, 5: its place, the examples as set, a tap opening and closing, the dismiss
-  example, each placement.
+- `Sample/PopoverPageTests`: the sample's page, 7: its place, the examples as set, a tap opening and closing, a tap
+  toggling the hover example, the dismiss example, each placement; in the shell, Back closing the overrides example and
+  then a popover a tap opened, passing over the always-open example, then going back.
 
 The oracle: `tools/reference/tether.js` runs popper.js 1.16.1 (`node_modules/popper.js`) in headless Chromium on plain
 boxes in a 390 × 844 page with `TetherBehavior`'s and `Popover`'s options and the margin Base Web's Body has before
@@ -185,9 +201,20 @@ entrance's transition and the hover body's pointer as Base Web's.
    `onEsc`; its `StatefulPopover` changes its own state. `DismissOnClickOutside` and `DismissOnEsc` false give the
    controlled behaviour for those two. `Open` and `Close` are raised whenever it opens or closes, an app's change
    included, where StatefulPopover's `onOpen` and `onClose` are called for its own changes.
-2. **A finger never hovers** (touch first; as Radio's, Checkbox's and Switch's `:is-hovered`): a hover popover isn't
-   opened by a tap. A phone's browser fires `mouseenter` on a tap, so Base Web's opens and stays open until a tap
-   elsewhere. Keyboard focus still opens it. The alternative: a tap toggles a hover popover.
+2. **A tap toggles a hover popover** (the developer, 2026-11-23, #123). A finger never hovers (touch first; as Radio's,
+   Checkbox's and Switch's `:is-hovered`), so a finger's pointer entering the anchor opens nothing; a finger's or a
+   pen's tap on the anchor opens a hover popover and a second closes it. A tap is the anchor's own press and release,
+   the release within the platform's tap distance: a button anchor's too, a control's in the anchor's content too (as a
+   click popover's anchor takes every click), not a drag, nor one a scroll viewer took. Not Avalonia's `Tapped`, whose
+   second touch within the double-tap time is a `DoubleTapped` at its press, before a drag from it is known. Opened by a
+   tap, its layer takes the document click, so a tap (or a press) elsewhere closes it, as a phone's browser's
+   `mouseleave` closes Base Web's: at once, whatever `DismissOnClickOutside` says, and with no `ClickOutside`, which a
+   hover layer has none of. Opened by a mouse or keyboard focus, it is Base Web's hover layer, which a press outside
+   leaves open (also when it opens so while one a tap opened fades out). As a click layer on top, a tap outside goes to
+   it alone, not to a click popover below it (one a tap outside doesn't close, as the tap on the hover anchor would
+   first have closed any other). A mouse is unchanged: hover opens and closes it, a click does nothing. A phone's
+   browser fires `mouseenter` on a tap, so Base Web's opens on a tap and stays open until a tap elsewhere (its
+   `mouseleave`, after `onMouseLeaveDelay`), and a second tap on the anchor leaves it open.
 3. **`preventOverflow` keeps the body inside what the anchor's scroll viewer scrolls, all of it.** popper.js keeps it
    inside the anchor's scroll parent: in a page that scrolls as a document (Base Web's layer is in the body), the whole
    document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
@@ -211,10 +238,21 @@ entrance's transition and the hover body's pointer as Base Web's.
 9. **Not ported:** `mountNode` (the overlay layer is the window's), `renderAll` (server-side rendering), `popperOptions`
    (popper.js's own modifiers), `stateReducer`, `focusOptions`, `id` and `data-baseweb`.
 10. **Not tried on a phone or in a real window** yet (#119): a tap and a drag outside, the hover trigger under a mouse,
-    focus, the overlay over the soft keyboard. Android's back button doesn't close a popover (Base Web has none).
+    focus, the overlay over the soft keyboard, Android's back button (known difference 12).
 11. **A new margin is placed at once.** When popper.js has chosen a placement, Base Web's body takes the margin at it,
     but popper.js runs again only at the next scroll, resize or change of size: a body that opens with `auto` and goes
     above or to the left of its anchor touches it until then (Base Web's margin is on the far side), and a flip near an
     edge can leave it a few pixels off. Metered runs popper.js's next update at once (`tether.g.json`'s `steady`, which
     the drawn cases are held to), so it never shows that. The alternative: Base Web's first update kept until the
     anchor moves.
+12. **Back closes the top popover first** (the developer, 2026-11-23, #123). Base Web has no counterpart: a browser's
+    back button leaves the page. Avalonia's back request closes the topmost open popover that Escape would close
+    (`DismissOnEsc`) and is marked handled, so the sample's shell stays on its page; with none open the shell goes back.
+    It is a request nothing on its route below the top level has handled: `Layers` takes it by a class handler on
+    `TopLevel`, before an app's own `BackRequested` on its window, however early that was added. `Esc` isn't raised.
+    A popover that Escape wouldn't close is passed over, even one in the content of the popover below it, which closes
+    and takes it with it. A hover popover open under a mouse closes on a desktop's Alt+Left as on Escape. A mouse's back
+    button is Avalonia's back request, raised (Avalonia 12.1.4) before the button's press, which is routed only if the
+    request went unhandled: one a popover took closes it and goes no further; one no layer took (a popover Escape
+    wouldn't close) goes on to the app, and its press, as any other, closes a click popover outside it, as a browser's
+    `mousedown` would.

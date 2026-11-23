@@ -10,22 +10,28 @@ namespace Metered.Controls;
 
 /// <summary>
 /// One open layer: Base Web's <c>Layer</c> (<c>layer/layer.js</c>), its escape handler and, for a layer a click opened,
-/// its document-click handler. Given to <see cref="Layers.Add"/>; disposed to take it away.
+/// its document-click handler; and Metered's back handler, which Base Web has no counterpart for. Given to
+/// <see cref="Layers.Add"/>; disposed to take it away.
 /// </summary>
 internal sealed class Layer
 {
     /// <param name="onEscape">Base Web's <c>onEscape</c>: an Escape key released anywhere in the window.</param>
     /// <param name="onDocumentClick">Base Web's <c>onDocumentClick</c>, with the element pressed; null for a hover layer
     /// (<c>isHoverLayer</c>), which has none.</param>
-    public Layer(Action? onEscape, Action<Visual?>? onDocumentClick)
+    /// <param name="onBack">Avalonia's back request (a phone's back button or gesture, Alt+Left on desktop): true if the
+    /// layer took it (it closed), which handles the request; false, or null, passes it to the layer below.</param>
+    public Layer(Action? onEscape, Action<Visual?>? onDocumentClick, Func<bool>? onBack = null)
     {
         OnEscape = onEscape;
         OnDocumentClick = onDocumentClick;
+        OnBack = onBack;
     }
 
     public Action? OnEscape { get; }
 
     public Action<Visual?>? OnDocumentClick { get; }
+
+    public Func<bool>? OnBack { get; }
 }
 
 /// <summary>
@@ -39,6 +45,9 @@ internal sealed class Layer
 /// Touch first: a mouse's or a pen's press is the document click, as a browser's <c>mousedown</c>; a finger's is a tap,
 /// its release within the platform's tap distance of where it went down, as a phone's browser sends <c>mousedown</c>
 /// only for a tap. A finger that drags (a page scrolled) clicks nothing, and the layer stays.
+/// <para>Back (Metered's, #123: Base Web has none): Avalonia's back request, not yet handled when it reaches the top level,
+/// goes to the layers from the top down, to the first whose back handler takes it, and is handled; none takes it, it is
+/// left for the app (the sample's shell goes back).</para>
 /// </remarks>
 internal sealed class Layers
 {
@@ -57,6 +66,20 @@ internal sealed class Layers
         top.AddHandler(InputElement.KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
         top.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         top.AddHandler(InputElement.PointerReleasedEvent, OnReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    /// <summary>
+    /// The back request, before an app's own handlers on its top level: a class handler runs before an element's own
+    /// (Avalonia's event route), so an app that goes back in its window's <c>BackRequested</c>, added before any popover
+    /// opened, still has the top popover closed first. A handler on the request's route below the top level (on the page)
+    /// sees it first, and one that handles it leaves the popovers alone.
+    /// </summary>
+    static Layers()
+    {
+        TopLevel.BackRequestedEvent.AddClassHandler<TopLevel>((top, e) =>
+        {
+            if (All.TryGetValue(top, out var layers)) layers.OnBackRequested(top, e);
+        });
     }
 
     /// <summary>The layers of a top level, made the first time it is asked for.</summary>
@@ -81,6 +104,22 @@ internal sealed class Layers
             if (_layers[i].OnEscape is { } escape)
             {
                 escape();
+                return;
+            }
+        }
+    }
+
+    private void OnBackRequested(object? sender, RoutedEventArgs e)
+    {
+        // From the top down: a layer that doesn't take it (a popover Escape wouldn't close) lets the one below have it.
+        // A copy, as a layer that closes may take itself away.
+        foreach (var layer in _layers.AsEnumerable().Reverse().ToArray())
+        {
+            if (layer.OnBack is { } back && back())
+            {
+                // Handled, a mouse's back button's press isn't routed (Avalonia 12.1.4 raises the request first, and routes
+                // the press only if it went unhandled), so it is no press outside as well.
+                e.Handled = true;
                 return;
             }
         }
