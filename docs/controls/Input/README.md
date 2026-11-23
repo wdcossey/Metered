@@ -193,5 +193,6 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    Holding isn't raised headless, so the drag after a hold is tested only on the phone.
 11. **A long value doesn't scroll sideways under a finger.** The text's scroller has no scroll gesture, and a finger's
    drag no longer moves the caret (#94), so a sideways drag on a value longer than the box moves nothing; the text still
-   scrolls to keep the caret in view (a tap, typing, the keys). Whether a phone's browser scrolls an `<input>`'s
-   overflowing text under a finger wasn't checked in the Pixel run (#90) and is still open.
+   scrolls to keep the caret in view (a tap, typing, the keys). Chrome on the Pixel 8 does scroll an `<input>`'s
+   overflowing text sideways under a finger, focused or not, without focusing it (2026-11-23, #117); the choice is the
+   developer's.

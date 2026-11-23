@@ -187,7 +187,11 @@ themes, and computes the block flow's positions from the style functions' margin
    its `After` override (an 18 px alert in the input).
 8. **On a phone, tried on a Pixel 8** (Android 17 (API 37), 2026-11-21, #102): a tap on a label focuses its input and
    opens the soft keyboard; a drag from a label scrolls the page and focuses nothing; a disabled one's label does nothing.
-   Not checked yet: the `HtmlFor` label (#102).
+   Again on 2026-11-23 (#102, #114): the `HtmlFor` label focuses the other input and opens the keyboard; a tap on a
+   label's top margin does too; a Checkbox's label toggles it and toggles it back; the counter follows the soft keyboard
+   and draws its digits whole; the validation example's error shows once the field is left. Found: a tap on the label of
+   an input that already has the focus, after Back closed the keyboard, doesn't open it again (a tap on the input does):
+   #124.
 9. **A Textarea is given the form control's error, as an Input is** (the developer, 2026-11-21 night, #105). Base Web's
    Textarea has `error: false` in its defaultProps, so under a form control in error its border stays as it is while the
    caption turns red: an accident of its defaults. The oracle keeps Base Web's case; the test expects, for a Textarea, what

@@ -237,8 +237,12 @@ entrance's transition and the hover body's pointer as Base Web's.
    `Closing`, and is shown again if a handler cancels the close.
 9. **Not ported:** `mountNode` (the overlay layer is the window's), `renderAll` (server-side rendering), `popperOptions`
    (popper.js's own modifiers), `stateReducer`, `focusOptions`, `id` and `data-baseweb`.
-10. **Not tried on a phone or in a real window** yet (#119): a tap and a drag outside, the hover trigger under a mouse,
-    focus, the overlay over the soft keyboard, Android's back button (known difference 12).
+10. **On a phone, tried on a Pixel 8** (Android 17, 2026-11-23, #119, the build before #123): a tap on a click anchor
+    opens it, a drag that scrolls the page leaves it open and it goes with its anchor, a tap elsewhere closes it. Found:
+    an anchor scrolled out of view *below* leaves its popover drawn at the screen's foot over Android's navigation bar
+    (the overlay isn't limited to the page's viewport; a browser's would be below the fold): #129. Not tried yet: the
+    placements' flips near the edges, a text field in a popover under the keyboard, #123's tap and Back on the phone,
+    and everything in a real window (the hover trigger under a mouse, focus, the overlay unclipped).
 11. **A new margin is placed at once.** When popper.js has chosen a placement, Base Web's body takes the margin at it,
     but popper.js runs again only at the next scroll, resize or change of size: a body that opens with `auto` and goes
     above or to the left of its anchor touches it until then (Base Web's margin is on the far side), and a flip near an

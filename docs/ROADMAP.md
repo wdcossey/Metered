@@ -48,7 +48,8 @@ Done since the pilot (2026-11-16):
       Debug line) and the timing benchmark with its trend table (`docs/performance/README.md`)
 - [x] The soft keyboard (#108): `KeyboardInset`, an opt-in decorator that keeps its child clear of a phone's keyboard
       and brings the focused control into view, as a browser does, which Base Web relies on; the sample's shell uses it
-      (`docs/controls/KeyboardInset/`). Tested headless through a fake pane; not yet run on the Pixel
+      (`docs/controls/KeyboardInset/`). Tested headless through a fake pane, and on the Pixel 8 on 2026-11-23 (Gboard's height changing and the focus moved
+      with the keyboard up not yet)
 
 Borrowed from Cornflower and Avonic (2026-11-16):
 
@@ -118,7 +119,7 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       popper.js itself run headless), the arrow, dismissed by a press or a finger's tap outside and Escape by the top layer
       (`Layers`), its entrance and exit, focus and the focus lock, content of any kind or a function of `close`, its three
       parts and overrides (`docs/controls/Popover/`). `Tether` and `Layers` are for Select (#97) and Menu (#107). On
-      the Pixel and in a real window: #119. Then (#123): a finger's or a pen's tap toggles a hover popover, and
+      the Pixel (partly, 2026-11-23) and in a real window: #119; its popover over Android's navigation bar: #129. Then (#123): a finger's or a pen's tap toggles a hover popover, and
       Avalonia's back request closes the top popover that Escape would close before the shell goes back
 - [x] Menu (#107): Base Web's `baseui/menu` (no v2), `StatefulMenu` and `Menu` in one: items, groups, dividers, the empty
       state, the keyboard highlight, type-ahead and scrolling as its own container and `scrollItemIntoView` do (against
