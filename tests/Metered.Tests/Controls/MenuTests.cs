@@ -121,6 +121,24 @@ public class MenuTests
         Assert.Single(chosen);
     }
 
+    // menu.js's onKeyDown: the keys are the container's only while the menu is focused, its list's focus or not (here a
+    // reducer refuses the focus its list's onFocus asks for).
+    [AvaloniaFact]
+    public void Keys_on_the_list_do_nothing_while_the_menu_isnt_focused()
+    {
+        var menu = MenuKit.Make(Numbered(5));
+        menu.StateReducer = (type, next, current) => type == MenuStateChangeType.Focus ? current : next;
+        using var scene = new Scene(menu);
+        var list = (MenuList)menu.Part(Menu.ListPart)!;
+        list.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(list.IsFocused);
+        Assert.False(menu.IsMenuFocused);
+        scene.Key(Key.Down);
+        MenuKit.Press(scene, "i");
+        Assert.Equal(-1, menu.HighlightedIndex);
+    }
+
     // Base Web doesn't prevent Page Up, Page Down or Space: a browser scrolls the focused list by them.
     [AvaloniaFact]
     public void Page_Down_and_Space_scroll_the_focused_list_as_a_browser_does_and_move_no_highlight()

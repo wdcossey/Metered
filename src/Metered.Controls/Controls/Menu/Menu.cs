@@ -197,7 +197,6 @@ public class Menu : TemplatedControl
             _list.PointerEntered -= OnListPointer;
             _list.PointerMoved -= OnListPointer;
             _list.PointerExited -= OnListExited;
-            _list.RemoveHandler(PointerPressedEvent, OnListPressed);
         }
 
         _parts.Attach(e.NameScope);
@@ -212,7 +211,6 @@ public class Menu : TemplatedControl
             _list.PointerEntered += OnListPointer;
             _list.PointerMoved += OnListPointer;
             _list.PointerExited += OnListExited;
-            _list.AddHandler(PointerPressedEvent, OnListPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             UpdateName();
         }
 
@@ -514,20 +512,13 @@ public class Menu : TemplatedControl
         if (_list is { IsFocused: false } list) list.Focus(how);
     }
 
-    private IPointer? _pressing;
-
-    /// <summary>A press in the list: which pointer, so that the focus a press gives the list is a mouse's only.</summary>
-    private void OnListPressed(object? sender, PointerPressedEventArgs e) => _pressing = e.Pointer;
-
     /// <summary>
-    /// onFocus: focusMenu. Not for a finger's or a pen's press, which focuses the list as it lands, before it is a tap or a
-    /// drag: a browser focuses nothing for a drag, and the tap's own mouse events come as it lifts (OptionClicked).
+    /// onFocus: focusMenu. (A finger's press doesn't focus the list in Avalonia: as a browser focuses nothing for a drag, the
+    /// tap's own mouse events come as it lifts: OptionClicked.)
     /// </summary>
     private void OnListGotFocus(object? sender, FocusChangedEventArgs e)
     {
         if (e.Source != _list) return;
-        var finger = e.NavigationMethod == NavigationMethod.Pointer && _pressing is { Type: not PointerType.Mouse };
-        _pressing = null;
         if (_childClosing)
         {
             // The focus a closing child's popup gives back: a browser leaves it on the page.
@@ -539,7 +530,7 @@ public class Menu : TemplatedControl
             return;
         }
 
-        if (!finger) FocusMenu(e.NavigationMethod);
+        FocusMenu(e.NavigationMethod);
     }
 
     /// <summary>onBlur: unfocusMenu.</summary>
