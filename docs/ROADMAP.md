@@ -118,4 +118,5 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       popper.js itself run headless), the arrow, dismissed by a press or a finger's tap outside and Escape by the top layer
       (`Layers`), its entrance and exit, focus and the focus lock, content of any kind or a function of `close`, its three
       parts and overrides (`docs/controls/Popover/`). `Tether` and `Layers` are for Select (#97) and Menu (#107). On
-      the Pixel and in a real window: #119
+      the Pixel and in a real window: #119. Then (#123): a finger's or a pen's tap toggles a hover popover, and
+      Avalonia's back request closes the top popover that Escape would close before the shell goes back

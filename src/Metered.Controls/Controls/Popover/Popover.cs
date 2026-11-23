@@ -38,8 +38,10 @@ namespace Metered.Controls;
 /// on the anchor (or a hover), and cleared by a click outside and Escape (<see cref="DismissOnClickOutside"/>,
 /// <see cref="DismissOnEsc"/>), whatever bound it. <see cref="Open"/> and <see cref="Close"/> are raised as it changes,
 /// <see cref="ClickOutside"/> and <see cref="Esc"/> as Base Web's <c>onClickOutside</c> and <c>onEsc</c> are.</para>
-/// <para>Touch first: a finger never hovers, so a hover popover isn't opened by a tap; a mouse press outside closes a
-/// popover, a finger's tap outside does, and a finger's drag (the page scrolled) doesn't (docs/controls/Popover).</para>
+/// <para>Touch first: a finger never hovers, so a finger's or a pen's tap on a hover popover's anchor toggles it, and a tap
+/// elsewhere closes one a tap opened (Metered's, #123); a mouse press outside closes a click popover, a finger's tap
+/// outside does, and a finger's drag (the page scrolled) doesn't. Avalonia's back request closes the top popover that
+/// Escape would close (#123) (docs/controls/Popover).</para>
 /// </remarks>
 [TemplatePart(AnchorPresenterPart, typeof(ContentPresenter))]
 [TemplatePart(PopupPart, typeof(Popup))]
@@ -162,6 +164,9 @@ public class Popover : TemplatedControl
     private Animatable? _exiting;
     private (Point At, TransformOperations Operations)? _translate;
     private bool _unclipped;
+    private bool _tapOpened;
+    private bool? _layerClicks;
+    private (long Id, Point At)? _tapDown;
 
     public Popover()
     {
@@ -187,7 +192,7 @@ public class Popover : TemplatedControl
     /// <summary>Base Web's <c>isOpen</c>, and StatefulPopover's state: set by the anchor and the dismissals whatever bound it.</summary>
     public bool IsOpen { get => GetValue(IsOpenProperty); set => SetValue(IsOpenProperty, value); }
 
-    /// <summary>Base Web's <c>triggerType</c>: a click (its default) or a mouse's hover opens it.</summary>
+    /// <summary>Base Web's <c>triggerType</c>: a click (its default) or a mouse's hover opens it; a hover popover is toggled by a finger's or a pen's tap.</summary>
     public PopoverTriggerType TriggerType { get => GetValue(TriggerTypeProperty); set => SetValue(TriggerTypeProperty, value); }
 
     /// <summary>Base Web's <c>placement</c>: where it goes against the anchor, <see cref="PopoverPlacement.Auto"/> by default.</summary>
@@ -355,6 +360,8 @@ public class Popover : TemplatedControl
             EndExit();
             if (_mounted)
             {
+                // Opened again while its exit runs: its layer, kept, takes the click or not as this opening's does.
+                if (_layerClicks != LayerClicks) Relayer();
                 UpdateStates();
                 UpdateParts();
                 Retether();
@@ -372,6 +379,8 @@ public class Popover : TemplatedControl
         _animateIn = null;
         _enter?.Dispose();
         _enter = null;
+        // The opening a tap made is over: one after it, by a mouse or keyboard focus, is Base Web's hover layer again.
+        _tapOpened = false;
         RaiseEvent(new RoutedEventArgs(CloseEvent, this));
         if (!_mounted) return;
         if (!_animating)
@@ -430,14 +439,20 @@ public class Popover : TemplatedControl
     }
 
     /// <summary>
-    /// Base Web's layer for the trigger type: a hover layer has no document-click handler. A new trigger type while it is
-    /// shown is a new layer (Base Web's Layer is rendered again with its new handlers), on top.
+    /// Base Web's layer for the trigger type: a hover layer has no document-click handler, unless a tap opened it (a
+    /// finger's tap elsewhere is its mouseleave on a phone: #123). A new trigger type while it is shown is a new layer
+    /// (Base Web's Layer is rendered again with its new handlers), on top. Every layer takes Avalonia's back request (#123).
     /// </summary>
+    private bool LayerClicks => TriggerType != PopoverTriggerType.Hover || _tapOpened;
+
     private void Relayer()
     {
         if (!_mounted || _top is null) return;
         _layer?.Dispose();
-        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, TriggerType == PopoverTriggerType.Hover ? null : OnDocumentClick));
+        var clicks = LayerClicks;
+        _layerClicks = clicks;
+        Action<Visual?>? click = !clicks ? null : TriggerType == PopoverTriggerType.Hover ? OnTapOutside : OnDocumentClick;
+        _layer = Layers.Of(_top).Add(new Layer(OnLayerEscape, click, OnLayerBack));
     }
 
     /// <summary>
@@ -469,6 +484,7 @@ public class Popover : TemplatedControl
         _animateIn = null;
         _layer?.Dispose();
         _layer = null;
+        _layerClicks = null;
         if (_top is not null) _top.LayoutUpdated -= OnTopLayoutUpdated;
         if (_top is Window window) window.Closing -= OnWindowClosing;
         if (closePopup && _popup is not null) _popup.IsOpen = false;
@@ -754,6 +770,8 @@ public class Popover : TemplatedControl
         // Every click that reaches the anchor, as Base Web's onClick on it: one its content handled too.
         anchor.AddHandler(InputElement.TappedEvent, OnAnchorTapped, handledEventsToo: true);
         anchor.AddHandler(InputElement.DoubleTappedEvent, OnAnchorTapped, handledEventsToo: true);
+        anchor.AddHandler(InputElement.PointerPressedEvent, OnAnchorPressed, handledEventsToo: true);
+        anchor.AddHandler(InputElement.PointerReleasedEvent, OnAnchorReleased, handledEventsToo: true);
         anchor.PointerEntered += OnAnchorEntered;
         anchor.PointerExited += OnAnchorExited;
         anchor.GotFocus += OnAnchorGotFocus;
@@ -765,6 +783,8 @@ public class Popover : TemplatedControl
         anchor.RemoveHandler(Button.ClickEvent, OnAnchorButtonClick);
         anchor.RemoveHandler(InputElement.TappedEvent, OnAnchorTapped);
         anchor.RemoveHandler(InputElement.DoubleTappedEvent, OnAnchorTapped);
+        anchor.RemoveHandler(InputElement.PointerPressedEvent, OnAnchorPressed);
+        anchor.RemoveHandler(InputElement.PointerReleasedEvent, OnAnchorReleased);
         anchor.PointerEntered -= OnAnchorEntered;
         anchor.PointerExited -= OnAnchorExited;
         anchor.GotFocus -= OnAnchorGotFocus;
@@ -776,12 +796,53 @@ public class Popover : TemplatedControl
 
     /// <summary>
     /// Any other anchor's click or tap; a button's comes as its Click instead. A second click soon after the first is
-    /// Avalonia's double tap, and a browser's click all the same.
+    /// Avalonia's double tap, and a browser's click all the same. A hover popover's tap is its own (OnAnchorReleased).
     /// </summary>
     private void OnAnchorTapped(object? sender, TappedEventArgs e)
     {
+        if (TriggerType == PopoverTriggerType.Hover) return;
         if (e.Source is Visual source && source.GetSelfAndVisualAncestors().TakeWhile(x => x != _anchorPresenter).OfType<Avalonia.Controls.Button>().Any()) return;
         AnchorClick();
+    }
+
+    /// <summary>A finger or a pen down on a hover popover's anchor: where, for its release (#123).</summary>
+    private void OnAnchorPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (TriggerType != PopoverTriggerType.Hover || e.Pointer.Type is not (PointerType.Touch or PointerType.Pen) || _top is null) return;
+        _tapDown = (e.Pointer.Id, e.GetPosition(_top));
+    }
+
+    /// <summary>
+    /// A hover popover's anchor is toggled by a finger's or a pen's tap (#123), a button anchor's too (its Click doesn't
+    /// say which pointer): its release on the anchor within the platform's tap distance of its press. Not Avalonia's
+    /// Tapped, whose second within the double-tap time is a DoubleTapped at the press, before a drag from it is known. A
+    /// drag isn't a tap, nor a press a scroll viewer's gesture took (its release isn't the anchor's).
+    /// </summary>
+    private void OnAnchorReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_tapDown is not { } down || down.Id != e.Pointer.Id || _top is null) return;
+        _tapDown = null;
+        if (TriggerType != PopoverTriggerType.Hover) return;
+        var tap = Application.Current?.PlatformSettings?.GetTapSize(e.Pointer.Type) ?? new Size(10, 10);
+        var at = e.GetPosition(_top);
+        if (Math.Abs(at.X - down.At.X) > tap.Width / 2 || Math.Abs(at.Y - down.At.Y) > tap.Height / 2) return;
+        TapToggle();
+    }
+
+    /// <summary>
+    /// A hover popover's tap on its anchor (Metered's, #123): opens it, its layer taking a tap elsewhere, which closes it;
+    /// a second tap closes it.
+    /// </summary>
+    private void TapToggle()
+    {
+        if (IsOpen)
+        {
+            SetCurrentValue(IsOpenProperty, false);
+            return;
+        }
+
+        _tapOpened = true;
+        SetCurrentValue(IsOpenProperty, true);
     }
 
     /// <summary>stateful-container.js's onClick: a click trigger's toggle.</summary>
@@ -861,6 +922,29 @@ public class Popover : TemplatedControl
     {
         RaiseEvent(new RoutedEventArgs(EscEvent, this));
         if (DismissOnEsc) SetCurrentValue(IsOpenProperty, false);
+    }
+
+    /// <summary>
+    /// Avalonia's back request (Metered's, #123: Base Web has none): an open popover that Escape would close closes, and
+    /// takes the request; one that wouldn't, or is already closing, leaves it to the layer below. <see cref="Esc"/> isn't
+    /// raised: it wasn't Escape.
+    /// </summary>
+    private bool OnLayerBack()
+    {
+        if (!IsOpen || !DismissOnEsc) return false;
+        SetCurrentValue(IsOpenProperty, false);
+        return true;
+    }
+
+    /// <summary>
+    /// A hover popover a tap opened, and a tap (or a press) outside it: closed, as a phone's browser's mouseleave closes
+    /// Base Web's whatever <see cref="DismissOnClickOutside"/> says, and with no <see cref="ClickOutside"/>, which a
+    /// hover layer has none of (#123).
+    /// </summary>
+    private void OnTapOutside(Visual? source)
+    {
+        if (Layers.IsWithin(source, _parts[BodyPart] as Visual) || Layers.IsWithin(source, _anchorPresenter)) return;
+        SetCurrentValue(IsOpenProperty, false);
     }
 
     /// <summary>popover.js's onDocumentClick: a press in the body or the anchor isn't outside.</summary>
