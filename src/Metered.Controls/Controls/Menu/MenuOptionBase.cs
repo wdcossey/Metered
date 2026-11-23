@@ -222,7 +222,9 @@ public abstract class MenuOptionBase : TemplatedControl
     protected void Rebuild()
     {
         if (!_templated || Template is not { } template) return;
+        // A template is applied again only when it is another: none is applied in between.
         SetCurrentValue(TemplateProperty, null);
+        ApplyTemplate();
         SetCurrentValue(TemplateProperty, template);
     }
 

@@ -74,18 +74,22 @@ public class MenuTests
         Assert.Empty(chosen);
     }
 
-    // A tap is the mouse events a phone's browser sends as the finger lifts: mouseover (focusMenu), mouseenter, click.
+    // A tap is the mouse events a phone's browser sends as the finger lifts: mouseover (focusMenu), mouseenter (the
+    // highlight: stateful-container.js's mouseEnter change), then the click.
     [AvaloniaFact]
     public void A_tap_highlights_an_option_and_chooses_it_and_a_disabled_one_neither()
     {
         var menu = MenuKit.Make(Numbered(6, i => i == 2));
         var chosen = new List<object>();
+        var changes = new List<MenuStateChangeType>();
         menu.ItemSelect += (_, e) => chosen.Add(e.Item);
+        menu.StateReducer = (type, next, _) => { changes.Add(type); return next; };
         using var scene = new Scene(menu);
         Tap(scene, scene.CentreOf(menu.OptionAt(3)!));
         Assert.Equal(3, menu.HighlightedIndex);
         Assert.True(menu.IsMenuFocused);
         Assert.Same(menu.FlatItems[3], Assert.Single(chosen));
+        Assert.Equal([MenuStateChangeType.Focus, MenuStateChangeType.MouseEnter, MenuStateChangeType.Click], changes);
         // A finger's tap isn't a keyboard's focus: no outline.
         Assert.DoesNotContain(":focus-visible", ((MenuList)menu.Part(Menu.ListPart)!).Classes);
 
@@ -119,6 +123,27 @@ public class MenuTests
         scene.Window.MouseUp(at, MouseButton.Right);
         scene.Pump();
         Assert.Single(chosen);
+    }
+
+    // menu.js gives every option the menu's $isFocused as it changes: the highlighted one's text and its selection follow.
+    [AvaloniaFact]
+    public void The_menus_focus_reaches_every_option_as_it_changes()
+    {
+        var menu = MenuKit.Make(Numbered(3), initial: new MenuInitialState(1, null));
+        var elsewhere = new Border { Focusable = true, Height = 20 };
+        using var scene = new Scene(new StackPanel { Children = { elsewhere, menu } });
+        var boxes = Enumerable.Range(0, 3).Select(i => (StyledElement)((MenuOptionList)menu.OptionAt(i)!).Part(MenuOptionList.ListItemPart)!).ToList();
+        var selected = MenuKit.Peer(menu.OptionAt(1)!).GetProvider<ISelectionItemProvider>()!;
+        Assert.All(boxes, b => Assert.DoesNotContain(":is-focused", b.Classes));
+        Assert.False(selected.IsSelected);
+        ((MenuList)menu.Part(Menu.ListPart)!).Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.All(boxes, b => Assert.Contains(":is-focused", b.Classes));
+        Assert.True(selected.IsSelected);
+        elsewhere.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.All(boxes, b => Assert.DoesNotContain(":is-focused", b.Classes));
+        Assert.False(selected.IsSelected);
     }
 
     // menu.js's onKeyDown: the keys are the container's only while the menu is focused, its list's focus or not (here a
@@ -209,6 +234,24 @@ public class MenuTests
         var menu = MenuKit.Make(["a", "b"], [new Override { Part = Menu.OptionPart, Style = style }]);
         using var scene = new Scene(menu);
         Assert.Equal("custom a", Assert.IsType<TextBlock>(menu.OptionAt(0)!.GetVisualChildren().Single()).Text);
+    }
+
+    // Made again (a new label function here), an option's template is still a theme's to give: no local value over it.
+    [AvaloniaFact]
+    public void An_option_made_again_still_takes_a_themes_template()
+    {
+        var menu = MenuKit.Make(["a", "b"]);
+        using var scene = new Scene(menu);
+        var option = (MenuOptionList)menu.OptionAt(0)!;
+        option.GetItemLabel = item => "label " + item;
+        scene.Pump();
+        Assert.Equal("label a", ((ContentPresenter)option.Part(MenuOptionList.ListItemPart)!).Content);
+        var theme = new ControlTheme(typeof(MenuOptionList));
+        theme.Setters.Add(new Setter(TemplatedControl.TemplateProperty,
+            new Avalonia.Controls.Templates.FuncControlTemplate<MenuOptionList>((o, _) => new TextBlock { Text = "themed" })));
+        option.Theme = theme;
+        scene.Pump();
+        Assert.Equal("themed", Assert.IsType<TextBlock>(option.GetVisualChildren().Single()).Text);
     }
 
     // A control has one parent: the options made again for the same items take their labels, their child menus and the
