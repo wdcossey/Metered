@@ -197,6 +197,29 @@ closes it; a hover popover opens under a mouse or by keyboard focus.
 <img src="docs/preview/dark__popover-2.png" width="270" alt="Popover, dark, at its end: the placements' anchors and the overrides example, open">
 </p>
 
+## Menu
+
+Base Web's menu, as its documentation's examples: basic (250 px high, two options disabled), compact, the profile option,
+a child menu, grouped, a long list, links, dividers, and the empty state. A finger's drag over a menu scrolls it; a tap
+highlights an option and chooses it, and a tap on Open Recent or New Breakpoint opens its child menu beside it.
+
+<p>
+<img src="docs/preview/light__menu-1.png" width="270" alt="Menu, light: basic, compact, the profile option">
+<img src="docs/preview/dark__menu-1.png" width="270" alt="Menu, dark: basic, compact, the profile option">
+</p>
+<p>
+<img src="docs/preview/light__menu-2.png" width="270" alt="Menu, light, scrolled: the profile option, a child menu's parent, grouped">
+<img src="docs/preview/dark__menu-2.png" width="270" alt="Menu, dark, scrolled: the profile option, a child menu's parent, grouped">
+</p>
+<p>
+<img src="docs/preview/light__menu-3.png" width="270" alt="Menu, light, scrolled: grouped, the long list">
+<img src="docs/preview/dark__menu-3.png" width="270" alt="Menu, dark, scrolled: grouped, the long list">
+</p>
+<p>
+<img src="docs/preview/light__menu-4.png" width="270" alt="Menu, light, at its end: links, dividers, the empty state">
+<img src="docs/preview/dark__menu-4.png" width="270" alt="Menu, dark, at its end: links, dividers, the empty state">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

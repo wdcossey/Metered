@@ -115,14 +115,21 @@ public class MenuList : ScrollViewer
     protected override Avalonia.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new MenuListAutomationPeer(this);
 
     /// <summary>
-    /// The menu's keys first (menu.js's onKeyDown on the list). A browser scrolls a focused box by Page Up and Page Down,
-    /// which Base Web doesn't prevent: those go on to the scroller. Its arrows, Home and End are the menu's, never the
-    /// scroller's, whether the menu took them or not (a key before the menu is focused does nothing, as Base Web's).
+    /// The menu's keys first (menu.js's onKeyDown on the list). A browser scrolls a focused box by Page Up, Page Down and
+    /// Space (Shift and Space up), which Base Web doesn't prevent: those scroll it a page after the menu has had them
+    /// (Space is a letter of type-ahead's too). Its arrows, Home and End are the menu's, never the scroller's, whether the
+    /// menu took them or not (a key before the menu is focused does nothing, as Base Web's).
     /// </summary>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         Owner?.ListKeyDown(e);
         if (e.Handled) return;
         if (e.Key is Key.PageUp or Key.PageDown) base.OnKeyDown(e);
+        else if (e.Key == Key.Space)
+        {
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) PageUp();
+            else PageDown();
+            e.Handled = true;
+        }
     }
 }

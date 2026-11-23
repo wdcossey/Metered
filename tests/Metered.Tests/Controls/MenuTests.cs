@@ -120,9 +120,9 @@ public class MenuTests
         Assert.Single(chosen);
     }
 
-    // Base Web doesn't prevent Page Up and Page Down: a browser scrolls the focused list by them.
+    // Base Web doesn't prevent Page Up, Page Down or Space: a browser scrolls the focused list by them.
     [AvaloniaFact]
-    public void Page_Down_scrolls_the_focused_list_as_a_browser_does_and_moves_no_highlight()
+    public void Page_Down_and_Space_scroll_the_focused_list_as_a_browser_does_and_move_no_highlight()
     {
         var menu = MenuKit.Make(Numbered(30), Height(300));
         using var scene = new Scene(menu);
@@ -131,8 +131,16 @@ public class MenuTests
         scene.Pump();
         Assert.Equal(0, menu.HighlightedIndex);
         scene.Key(Key.PageDown);
-        Assert.True(list.Offset.Y > 0);
+        var page = list.Offset.Y;
+        Assert.True(page > 0);
         Assert.Equal(0, menu.HighlightedIndex);
+        // Each is a letter of type-ahead's too ("PageDown", then "PageDown "), which matches nothing and keeps the
+        // highlight, scrolled into view as handleAlphaDown does (to the top), before the browser's page.
+        MenuKit.Press(scene, " ");
+        Assert.Equal(page, list.Offset.Y);
+        Assert.Equal(0, menu.HighlightedIndex);
+        scene.Key(Key.PageUp);
+        Assert.Equal(0, list.Offset.Y);
     }
 
     // ---- keyboardControlNode (dropdown.js: Select's input keeps the focus, the menu follows its keys) ----
