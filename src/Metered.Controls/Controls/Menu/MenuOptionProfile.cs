@@ -46,6 +46,8 @@ public class MenuOptionProfile : MenuOptionBase
         AvaloniaProperty.Register<MenuOptionProfile, Func<object?, string?>?>(nameof(GetProfileItemImgText));
 
     private Border? _box;
+    private Border? _picture;
+    private Bitmap? _bitmap;
 
     /// <summary>Base Web's <c>getProfileItemLabels</c>: the item's title, subtitle and body.</summary>
     public Func<object?, MenuProfileLabels?>? GetProfileItemLabels { get => GetValue(GetProfileItemLabelsProperty); set => SetValue(GetProfileItemLabelsProperty, value); }
@@ -65,10 +67,10 @@ public class MenuOptionProfile : MenuOptionBase
 
     protected override Control Build(INameScope scope)
     {
-        var container = Themed(new Border(), ProfileImgContainerPart, scope);
+        var container = _picture = Themed(new Border(), ProfileImgContainerPart, scope);
         var picture = GetProfileItemImg?.Invoke(Item);
         if (picture is Control control) container.Child = control;
-        else if (Source(picture) is { } image)
+        else if (Source(picture, out _bitmap) is { } image)
         {
             var view = new Image { Source = image, Stretch = Stretch.Fill };
             if (GetProfileItemImgText?.Invoke(Item) is { } alt) AutomationProperties.SetName(view, alt);
@@ -87,20 +89,32 @@ public class MenuOptionProfile : MenuOptionBase
         return _box;
     }
 
-    /// <summary>A picture given as a source: an image as it is, a string from a resource or a file; anything else none.</summary>
-    private static IImage? Source(object? picture)
+    /// <summary>
+    /// A picture given as a source: an image as it is, a string from a resource or a file (the bitmap it made, which the
+    /// option disposes when its parts are made again); anything else none.
+    /// </summary>
+    private static IImage? Source(object? picture, out Bitmap? made)
     {
+        made = null;
         switch (picture)
         {
             case IImage image:
                 return image;
             case string { Length: > 0 } text when Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme == "avares" && AssetLoader.Exists(uri):
-                using (var stream = AssetLoader.Open(uri)) return new Bitmap(stream);
+                using (var stream = AssetLoader.Open(uri)) return made = new Bitmap(stream);
             case string { Length: > 0 } text when File.Exists(text):
-                return new Bitmap(text);
+                return made = new Bitmap(text);
             default:
                 return null;
         }
+    }
+
+    protected override void ReleaseParts()
+    {
+        if (_picture is not null) _picture.Child = null;
+        _picture = null;
+        _bitmap?.Dispose();
+        _bitmap = null;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

@@ -123,7 +123,8 @@ public class MenuList : ScrollViewer
     protected override void OnKeyDown(KeyEventArgs e)
     {
         Owner?.ListKeyDown(e);
-        if (e.Handled) return;
+        // A child menu's popup routes its keys through its option to this list: only its own are a browser's to scroll by.
+        if (e.Handled || e.Source != this) return;
         if (e.Key is Key.PageUp or Key.PageDown) base.OnKeyDown(e);
         else if (e.Key == Key.Space)
         {

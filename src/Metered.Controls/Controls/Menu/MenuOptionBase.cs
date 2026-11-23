@@ -58,6 +58,9 @@ public abstract class MenuOptionBase : TemplatedControl
     private IPointer? _pressed;
     private Popover? _popover;
     private object? _childMenu;
+    private InputElement? _tabTarget;
+    private bool _templated;
+    private bool _mouseIn;
 
     static MenuOptionBase()
     {
@@ -118,6 +121,8 @@ public abstract class MenuOptionBase : TemplatedControl
 
     private Control MakeTemplate(INameScope scope)
     {
+        // The last template's parts let their content go, which the new ones take.
+        Release();
         var root = Build(scope);
         _childMenu = Item is { } item ? GetChildMenu?.Invoke(item) : null;
         if (_childMenu is null)
@@ -148,15 +153,44 @@ public abstract class MenuOptionBase : TemplatedControl
             if (e.Property == Popover.IsOpenProperty && popover.IsOpen != IsHighlighted) popover.IsOpen = IsHighlighted;
         };
         // maybe-child-menu.js's Body onKeyDown: Tab stays in the child menu.
-        if (_childMenu is InputElement content) content.AddHandler(KeyDownEvent, (_, e) => { if (e.Key == Key.Tab) e.Handled = true; });
+        _tabTarget = _childMenu as InputElement;
+        _tabTarget?.AddHandler(KeyDownEvent, OnChildKeyDown);
         scope.Register(ChildMenuPopoverPart, popover);
         _popover = popover;
         return popover;
     }
 
+    private static void OnChildKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Tab) e.Handled = true;
+    }
+
+    /// <summary>
+    /// The parts let their content go (the label, a control in its place, the child menu), so a new template or a new
+    /// option for the same item can take it: a control has one parent.
+    /// </summary>
+    internal void Release()
+    {
+        _tabTarget?.RemoveHandler(KeyDownEvent, OnChildKeyDown);
+        _tabTarget = null;
+        if (_popover is not null)
+        {
+            _popover.Content = null;
+            _popover.Anchor = null;
+        }
+
+        ReleaseParts();
+    }
+
+    /// <summary>A subclass's parts let their content go.</summary>
+    protected virtual void ReleaseParts()
+    {
+    }
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        _templated = true;
         _parts = new Parts(this, "Menu", [.. PartNames, ChildMenuPopoverPart]);
         _parts.Attach(e.NameScope);
         _parts.SetOverrides(Overrides);
@@ -188,14 +222,15 @@ public abstract class MenuOptionBase : TemplatedControl
     /// <summary>Whether a state goes to the option's parts too, as Base Web gives them its prop.</summary>
     protected virtual bool Mirrors(string pseudo) => true;
 
-    /// <summary>The template made again, as its parts depend on what changed.</summary>
+    /// <summary>
+    /// The template made again, as its parts depend on what changed, once it has been applied. Set as its current value,
+    /// not a local one, so a theme's template keeps its priority.
+    /// </summary>
     protected void Rebuild()
     {
-        if (Template is null) return;
-        // The same template object would be kept: a fresh one makes the parts again.
-        var template = Template;
-        Template = null;
-        Template = template;
+        if (!_templated || Template is not { } template) return;
+        SetCurrentValue(TemplateProperty, null);
+        SetCurrentValue(TemplateProperty, template);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -224,6 +259,7 @@ public abstract class MenuOptionBase : TemplatedControl
         base.OnUnloaded(e);
         SetState(":loaded", false);
         _pressed = null;
+        _mouseIn = false;
     }
 
     /// <summary>Whether a pointer event is this option's own, not one from its child menu, whose popup routes it here.</summary>
@@ -234,22 +270,28 @@ public abstract class MenuOptionBase : TemplatedControl
     {
         base.OnPointerEntered(e);
         if (e.Pointer.Type != PointerType.Mouse || !Own(e)) return;
+        _mouseIn = true;
         Owner?.OptionMouseEnter(this);
         MouseOver(true);
     }
 
+    /// <summary>A mouse let go after a press elsewhere enters it on its first move; a move inside it is no new entry.</summary>
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        // A mouse that came in pressed, captured elsewhere, enters when it moves over it.
-        if (e.Pointer.Type != PointerType.Mouse || !Own(e) || e.Pointer.Captured is not null) return;
-        if (new Rect(Bounds.Size).Contains(e.GetPosition(this))) Owner?.OptionMouseEnter(this);
+        if (_mouseIn || e.Pointer.Type != PointerType.Mouse || !Own(e) || e.Pointer.Captured is not null) return;
+        if (!new Rect(Bounds.Size).Contains(e.GetPosition(this))) return;
+        _mouseIn = true;
+        Owner?.OptionMouseEnter(this);
+        MouseOver(true);
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
-        if (e.Pointer.Type == PointerType.Mouse) MouseOver(false);
+        if (e.Pointer.Type != PointerType.Mouse) return;
+        _mouseIn = false;
+        MouseOver(false);
     }
 
     /// <summary>A mouse over the option or not: the profile option's own <c>:hover</c>.</summary>

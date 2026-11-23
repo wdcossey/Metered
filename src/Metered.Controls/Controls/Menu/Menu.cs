@@ -196,6 +196,7 @@ public class Menu : TemplatedControl
             _list.LostFocus -= OnListLostFocus;
             _list.PointerEntered -= OnListPointer;
             _list.PointerMoved -= OnListPointer;
+            _list.PointerExited -= OnListExited;
             _list.RemoveHandler(PointerPressedEvent, OnListPressed);
         }
 
@@ -210,6 +211,7 @@ public class Menu : TemplatedControl
             _list.LostFocus += OnListLostFocus;
             _list.PointerEntered += OnListPointer;
             _list.PointerMoved += OnListPointer;
+            _list.PointerExited += OnListExited;
             _list.AddHandler(PointerPressedEvent, OnListPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             UpdateName();
         }
@@ -222,6 +224,14 @@ public class Menu : TemplatedControl
         base.OnAttachedToLogicalTree(e);
         // Mounted: React renders the items it has, and runs componentDidUpdate only after a change.
         ItemsChanged(update: false);
+    }
+
+    /// <summary>Out of the tree, it holds on to no collection of the app's, which would keep it.</summary>
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromLogicalTree(e);
+        foreach (var w in _watched) w.CollectionChanged -= OnSourceChanged;
+        _watched.Clear();
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -240,6 +250,7 @@ public class Menu : TemplatedControl
         _keyboardNode?.RemoveHandler(KeyDownEvent, OnKeyboardNodeKeyDown);
         _keyboardNode = null;
         _typeAheadTimer?.Stop();
+        _typeAhead = "";
     }
 
     /// <summary>componentDidMount: the highlighted option, if any, scrolled to the list's centre, once laid out.</summary>
@@ -344,6 +355,9 @@ public class Menu : TemplatedControl
         var sections = Sections();
         _flat.Clear();
         foreach (var (_, items) in sections) _flat.AddRange(items);
+        // The options and the empty state made before let their content go: the new ones take the same items' and message.
+        foreach (var old in _options) old?.Release();
+        foreach (var old in _parts.All(EmptyStatePart)) ((ContentPresenter)old).Content = null;
         _options.Clear();
         if (_host is null) return;
         _host.Children.Clear();
@@ -525,14 +539,21 @@ public class Menu : TemplatedControl
         SetState(MenuStateChangeType.Focus, isFocused: false);
     }
 
-    /// <summary>onMouseEnter and onMouseOver: focusMenu, a mouse's only.</summary>
+    /// <summary>The element a mouse was last over in the list: mouseover fires as it comes onto another.</summary>
+    private object? _over;
+
+    /// <summary>onMouseEnter and onMouseOver: focusMenu, a mouse's only, as it comes onto the list and onto each element in it.</summary>
     private void OnListPointer(object? sender, PointerEventArgs e)
     {
         // A child menu's popup routes its pointer events through its option to this list: they aren't this list's.
         if (e.Source is not Visual source || (source != _list && !_list!.IsVisualAncestorOf(source))) return;
         if (e.Pointer.Type != PointerType.Mouse || e.Pointer.Captured is { } c && c != _list && c is Visual v && !_list!.IsVisualAncestorOf(v)) return;
+        if (e.RoutedEvent == PointerMovedEvent && source == _over) return;
+        _over = source;
         FocusMenu(NavigationMethod.Pointer);
     }
+
+    private void OnListExited(object? sender, PointerEventArgs e) => _over = null;
 
     /// <summary>
     /// A mouse onto an option: the mouseover that bubbles to the list first (focusMenu), then the option's mouseenter,
@@ -581,12 +602,14 @@ public class Menu : TemplatedControl
         if (node == _keyboardNode) return;
         _keyboardNode?.RemoveHandler(KeyDownEvent, OnKeyboardNodeKeyDown);
         _keyboardNode = node;
-        // addEventListener('keydown'): every key on the node, whatever else took it.
-        _keyboardNode?.AddHandler(KeyDownEvent, OnKeyboardNodeKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+        // addEventListener('keydown'): every key on the node, whatever else took it, before the node's own handling, so a
+        // key the menu takes (its preventDefault) is the node's no more: a text box's caret doesn't move with the highlight.
+        _keyboardNode?.AddHandler(KeyDownEvent, OnKeyboardNodeKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private void OnKeyboardNodeKeyDown(object? sender, KeyEventArgs e)
     {
+        // Its own keys and its descendants', as a keydown listener hears them.
         if (IsMenuFocused) HandleKey(e);
     }
 

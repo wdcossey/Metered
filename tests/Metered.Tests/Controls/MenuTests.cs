@@ -5,6 +5,7 @@ using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -143,6 +144,139 @@ public class MenuTests
         Assert.Equal(0, list.Offset.Y);
     }
 
+
+    // ---- A mouse at rest ----
+
+    // mouseenter and mouseover fire as the mouse comes onto an element, not as it moves on it: the keys' highlight stays.
+    [AvaloniaFact]
+    public void A_mouse_moving_on_one_option_doesnt_take_the_highlight_back_from_the_keys_nor_focus_the_menu_again()
+    {
+        var menu = MenuKit.Make(Numbered(8));
+        var elsewhere = new Border { Focusable = true, Height = 20 };
+        using var scene = new Scene(new StackPanel { Children = { elsewhere, menu } });
+        var at = scene.CentreOf(menu.OptionAt(2)!);
+        scene.Window.MouseMove(at);
+        scene.Pump();
+        Assert.Equal(2, menu.HighlightedIndex);
+        Assert.True(menu.IsMenuFocused);
+        scene.Key(Key.Down);
+        scene.Key(Key.Down);
+        Assert.Equal(4, menu.HighlightedIndex);
+        scene.Window.MouseMove(at + new Vector(1, 1));
+        scene.Pump();
+        Assert.Equal(4, menu.HighlightedIndex);
+
+        elsewhere.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.False(menu.IsMenuFocused);
+        scene.Window.MouseMove(at + new Vector(2, 2));
+        scene.Pump();
+        Assert.False(menu.IsMenuFocused);
+        // Onto another option: mouseover, then mouseenter.
+        scene.Window.MouseMove(scene.CentreOf(menu.OptionAt(3)!));
+        scene.Pump();
+        Assert.True(menu.IsMenuFocused);
+        Assert.Equal(3, menu.HighlightedIndex);
+    }
+
+    // ---- Made again ----
+
+    // An option's template is a theme's to replace, after its item has come: it keeps the theme's priority.
+    [AvaloniaFact]
+    public void An_Option_overrides_template_replaces_the_options_own()
+    {
+        var style = new ControlTheme(typeof(MenuOptionList));
+        style.Setters.Add(new Setter(TemplatedControl.TemplateProperty,
+            new Avalonia.Controls.Templates.FuncControlTemplate<MenuOptionList>((o, _) => new TextBlock { Text = "custom " + o.Item })));
+        var menu = MenuKit.Make(["a", "b"], [new Override { Part = Menu.OptionPart, Style = style }]);
+        using var scene = new Scene(menu);
+        Assert.Equal("custom a", Assert.IsType<TextBlock>(menu.OptionAt(0)!.GetVisualChildren().Single()).Text);
+    }
+
+    // A control has one parent: the options made again for the same items take their labels, their child menus and the
+    // empty state's message from the ones before.
+    [AvaloniaFact]
+    public void Made_again_the_options_take_the_controls_of_the_ones_before()
+    {
+        var label = new TextBlock { Text = "a control" };
+        var child = new Menu { ItemsSource = new List<object> { "x", "y" } };
+        var props = new ControlTheme(typeof(MenuOptionList));
+        props.Setters.Add(new Setter(MenuOptionBase.GetChildMenuProperty, (Func<object, object?>)(item => item is "parent" ? child : null)));
+        var items = new ObservableCollection<object> { new MenuItemData { Label = label }, "parent" };
+        var menu = new Menu { ItemsSource = items, Overrides = [new Override { Part = Menu.OptionPart, Props = props }] };
+        using var scene = PopoverTests.Show(menu);
+        items.Add("more");
+        scene.Pump();
+        Assert.Same(label, ((ContentPresenter)((MenuOptionList)menu.OptionAt(0)!).Part(MenuOptionList.ListItemPart)!).Content);
+        Assert.True(label.IsAttachedToVisualTree());
+        menu.HighlightedIndex = 1;
+        PopoverTests.Settle(scene);
+        Assert.Same(child, menu.OptionAt(1)!.ChildMenuPopover!.Content);
+        Assert.True(child.IsAttachedToVisualTree());
+
+        var message = new TextBlock { Text = "none" };
+        var empty = new Menu { NoResultsMsg = message };
+        using var other = new Scene(empty);
+        empty.Overrides = [];
+        other.Pump();
+        Assert.Same(message, ((ContentPresenter)empty.Part(Menu.EmptyStatePart)!).Content);
+        Assert.True(message.IsAttachedToVisualTree());
+    }
+
+    // ---- Leaving the tree ----
+
+    [AvaloniaFact]
+    public void Out_of_the_tree_a_menu_lets_its_letters_and_its_collection_go()
+    {
+        var items = new ObservableCollection<object>(MenuOracle.Items("FRUIT", null));
+        var menu = new Menu { ItemsSource = items };
+        var host = new Border { Child = menu };
+        using var scene = new Scene(host);
+        var list = (MenuList)menu.Part(Menu.ListPart)!;
+        list.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        MenuKit.Press(scene, "b");
+        Assert.Equal(2, menu.HighlightedIndex);
+        host.Child = null;
+        scene.Pump();
+        items.Add(new MenuItemData { Label = "Date" });
+        Assert.Equal(6, menu.Elements(Menu.OptionPart).Count);
+        host.Child = menu;
+        scene.Pump();
+        Assert.Equal(7, menu.Elements(Menu.OptionPart).Count);
+        // Within type-ahead's 500 ms, but its letters went with it: "c", not "bc".
+        ((MenuList)menu.Part(Menu.ListPart)!).Focus(NavigationMethod.Tab);
+        scene.Pump();
+        MenuKit.Press(scene, "c");
+        Assert.Equal(4, menu.HighlightedIndex);
+    }
+
+    // ---- A child's keys ----
+
+    // A key the child's content leaves goes through its option to the parent's list: not the parent's to scroll by.
+    [AvaloniaFact]
+    public void Space_in_a_child_menus_content_doesnt_scroll_the_parent()
+    {
+        var field = new Input();
+        var props = new ControlTheme(typeof(MenuOptionList));
+        props.Setters.Add(new Setter(MenuOptionBase.GetChildMenuProperty, (Func<object, object?>)(item => item is "Item 1" ? field : null)));
+        var parent = new Menu
+        {
+            ItemsSource = Enumerable.Range(0, 30).Select(i => (object)("Item " + i)).ToList(),
+            Overrides = Height(200, [new Override { Part = Menu.OptionPart, Props = props }]),
+            Width = 200, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
+        using var scene = new Scene(parent, width: 600, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        parent.HighlightedIndex = 1;
+        PopoverTests.Settle(scene);
+        field.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(field.IsFocused);
+        MenuKit.Press(scene, " ");
+        scene.Key(Key.PageDown);
+        Assert.Equal(0, ((MenuList)parent.Part(Menu.ListPart)!).Offset.Y);
+    }
+
     // ---- keyboardControlNode (dropdown.js: Select's input keeps the focus, the menu follows its keys) ----
 
     [AvaloniaFact]
@@ -172,12 +306,23 @@ public class MenuTests
         scene.Key(Key.Down);
         Assert.Equal(3, menu.HighlightedIndex);
 
+        // A key the menu takes is its own (Base Web's preventDefault): the text's caret stays.
+        input.Focus(NavigationMethod.Tab);
+        input.Text = "abc";
+        input.CaretIndex = 3;
+        menu.IsMenuFocused = true;
+        scene.Pump();
+        scene.Key(Key.Home);
+        Assert.Equal(0, menu.HighlightedIndex);
+        Assert.Equal(3, input.CaretIndex);
+
         // Unfocused, the menu follows no key of the node's.
+        list.Focus(NavigationMethod.Tab);
         input.Focus(NavigationMethod.Tab);
         scene.Pump();
         Assert.False(menu.IsMenuFocused);
         scene.Key(Key.Down);
-        Assert.Equal(3, menu.HighlightedIndex);
+        Assert.Equal(0, menu.HighlightedIndex);
     }
 
     // ---- Overrides ----

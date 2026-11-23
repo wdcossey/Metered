@@ -108,7 +108,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 85 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 90 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -120,9 +120,11 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 - `MenuBehaviourTests` (21): Base Web's container's state after each step of 21 sequences, replayed with real keys, focus
   and a real mouse: highlight, focus, the items chosen, the reducer's change types.
 - `MenuScrollTests` (4): the list's offset after each key, against `scrollItemIntoView`'s scrollTop.
-- `MenuTests` (13): a finger's drag and a tap, a press let go elsewhere, Page Down and Space, `keyboardControlNode` as
-  Select uses it, overrides (and an option's own), the profile option by override, links, UI Automation, items that change,
-  the empty state's content, keys by name.
+- `MenuTests` (18): a finger's drag and a tap, a press let go elsewhere, a mouse moving on one option, Page Down and Space
+  (not the parent's, from a child's content), `keyboardControlNode` as Select uses it (the text's caret kept), overrides (an
+  option's own, its template), the profile option by override, links, UI Automation, items that change, options made again
+  taking their controls, a menu out of the tree letting its letters and collection go, the empty state's content, keys by
+  name.
 - `MenuNestedTests` (6): a child open while highlighted, the arrow keys between menus, Escape, the nested hover, a click on
   a parent option, the `ChildMenuPopover` override.
 - `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (4): the sample's

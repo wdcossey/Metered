@@ -75,6 +75,13 @@ public class MenuOptionList : MenuOptionBase
         return item;
     }
 
+    protected override void ReleaseParts()
+    {
+        if (Part(ListItemPart) is ContentPresenter item) item.Content = null;
+        if (_anchor is not null) _anchor.Content = null;
+        _anchor = null;
+    }
+
     protected override IEnumerable<(string, bool)> States()
     {
         foreach (var s in base.States()) yield return s;
