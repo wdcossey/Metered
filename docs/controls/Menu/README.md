@@ -96,7 +96,9 @@ From `stateful-container.js`, `menu.js` and `utils.js`:
   the option choosing it, not toggling the popover). `NestedMenus` keeps the menus shown in order; a mouse back over a
   shallower menu lets a deeper one's highlight go, and 200 ms after it has left them all, every one's. Escape in a child
   resets its parent (onEsc: resetMenu), which closes it; the focus Avalonia's popup gives back as it closes is let go, as a
-  browser leaves it on the page. Tab stays in a child menu.
+  browser leaves it on the page. Tab stays in a child menu. A menu hidden when it is shown isn't nested (addMenuToNesting's
+  offsetHeight). A menu taken out of the tree (a child's popover closed) starts again at its first state when it is shown
+  again, as Base Web's unmounted container does, and an input method's keys ("Process") are type-ahead's, never Enter's.
 - **UI Automation**: the list is a list named by `aria-label` ("Menu"), its children the options, the headers and the empty
   state's message; an option a list item, selected while highlighted and the menu focused (`aria-selected`), not enabled
   when disabled (`aria-disabled`), named by its label or, with a child menu, by Base Web's `parentMenuItemAriaLabel`;
@@ -108,7 +110,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 90 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 95 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -120,13 +122,13 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 - `MenuBehaviourTests` (21): Base Web's container's state after each step of 21 sequences, replayed with real keys, focus
   and a real mouse: highlight, focus, the items chosen, the reducer's change types.
 - `MenuScrollTests` (4): the list's offset after each key, against `scrollItemIntoView`'s scrollTop.
-- `MenuTests` (18): a finger's drag and a tap, a press let go elsewhere, a mouse moving on one option, Page Down and Space
+- `MenuTests` (21): a finger's drag and a tap, a press let go elsewhere, a mouse moving on one option, Page Down and Space
   (not the parent's, from a child's content), `keyboardControlNode` as Select uses it (the text's caret kept), overrides (an
-  option's own, its template), the profile option by override, links, UI Automation, items that change, options made again
-  taking their controls, a menu out of the tree letting its letters and collection go, the empty state's content, keys by
-  name.
-- `MenuNestedTests` (6): a child open while highlighted, the arrow keys between menus, Escape, the nested hover, a click on
-  a parent option, the `ChildMenuPopover` override.
+  option's own, its template), the profile option by override (a picture that isn't an image: none), links (followed
+  whatever `ItemSelect` does), UI Automation, items that change, options made again taking their controls, a menu following
+  its collection only in the tree and letting its letters go out of it, the empty state's content, keys by name.
+- `MenuNestedTests` (8): a child open while highlighted, the arrow keys between menus, a child opened again afresh, Escape,
+  the nested hover, a hidden menu not nested, a click on a parent option, the `ChildMenuPopover` override.
 - `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (4): the sample's
   page.
 

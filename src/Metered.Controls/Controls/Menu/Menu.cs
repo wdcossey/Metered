@@ -234,10 +234,15 @@ public class Menu : TemplatedControl
         _watched.Clear();
     }
 
+    /// <summary>The state it had when it was first shown: its initialState, which a menu shown again starts from.</summary>
+    private MenuState? _initial;
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _nesting = NestedMenus.Of(this);
+        _initial ??= State;
+        // addMenuToNesting: a menu shown (its offsetHeight not 0), not one hidden.
+        _nesting = IsEffectivelyVisible ? NestedMenus.Of(this) : null;
         _nesting?.Add(this);
         WatchKeyboardNode();
     }
@@ -251,6 +256,9 @@ public class Menu : TemplatedControl
         _keyboardNode = null;
         _typeAheadTimer?.Stop();
         _typeAhead = "";
+        // Base Web unmounts a menu that is no longer shown (a child menu's closed popover): shown again, it is a new one, at
+        // its initialState. Not through the reducer: it is a new container, not a change.
+        if (_initial is { } initial) Apply(initial);
     }
 
     /// <summary>componentDidMount: the highlighted option, if any, scrolled to the list's centre, once laid out.</summary>
@@ -308,8 +316,10 @@ public class Menu : TemplatedControl
         if (update) Updated();
     }
 
+    /// <summary>The app's collection followed, only while the menu is in the tree: out of it, nothing of the app's holds it.</summary>
     private void Watch(IEnumerable source)
     {
+        if (!((Avalonia.LogicalTree.ILogical)this).IsAttachedToLogicalTree) return;
         if (source is INotifyCollectionChanged c && source != Items && _watched.Add(c)) c.CollectionChanged += OnSourceChanged;
     }
 
@@ -747,6 +757,9 @@ public class Menu : TemplatedControl
         return (top, option.Bounds.Height);
     }
 
+    /// <summary>JavaScript's Math.round: the nearest integer, a half towards +∞.</summary>
+    private static double JsRound(double x) => Math.Floor(x + 0.5);
+
     /// <summary>
     /// scrollItemIntoView: below the view, the list scrolled so that it is at the bottom (the last option: to the end), or
     /// centred; above the view, at the top (the first: to the start), or centred. A divider's index scrolls nothing.
@@ -766,12 +779,12 @@ public class Menu : TemplatedControl
         if (childBottom > view)
         {
             if (isLast) to = _list.Extent.Height - view;
-            else to = top + height - (center ? Math.Round((view + height) / 2, MidpointRounding.AwayFromZero) : view);
+            else to = top + height - (center ? JsRound((view + height) / 2) : view);
         }
         else if (childTop < 0)
         {
             if (isFirst) to = 0;
-            else to = top - (center ? Math.Round((view - height) / 2, MidpointRounding.AwayFromZero) : 0);
+            else to = top - (center ? JsRound((view - height) / 2) : 0);
         }
 
         if (to is { } y) _list.Offset = new Vector(_list.Offset.X, Math.Max(0, Math.Min(y, Math.Max(0, _list.Extent.Height - view))));

@@ -40,6 +40,9 @@ internal static class MenuKeys
             Key.Pause => "Pause",
             Key.PrintScreen => "PrintScreen",
             Key.Apps => "ContextMenu",
+            // A key an input method takes, its Enter that commits a composition too: the DOM's "Process" (keyCode 229),
+            // which stateful-container.js never takes for Enter.
+            Key.ImeProcessed => "Process",
             >= Key.F1 and <= Key.F24 => "F" + (e.Key - Key.F1 + 1),
             >= Key.A and <= Key.Z => ((char)('a' + (e.Key - Key.A))).ToString(),
             >= Key.D0 and <= Key.D9 => ((char)('0' + (e.Key - Key.D0))).ToString(),

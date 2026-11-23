@@ -318,8 +318,10 @@ public abstract class MenuOptionBase : TemplatedControl
         var at = e.GetPosition(this);
         if (!new Rect(Bounds.Size).Contains(at)) return;
         e.Handled = true;
+        // What the click follows is decided before the menu has it: its ItemSelect may make the menu again, or close it.
+        var follow = Clicked(at);
         Owner?.OptionClicked(this, e.Pointer.Type != PointerType.Mouse);
-        Clicked(at);
+        follow?.Invoke();
     }
 
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -328,10 +330,11 @@ public abstract class MenuOptionBase : TemplatedControl
         if (e.Pointer == _pressed) _pressed = null;
     }
 
-    /// <summary>A click on the option at that point, after the menu has had it: an href option's anchor opens its link.</summary>
-    protected virtual void Clicked(Point at)
-    {
-    }
+    /// <summary>
+    /// A click on the option at that point: what it does after the menu has had it (an href option's anchor opens its
+    /// link), worked out now; null for nothing.
+    /// </summary>
+    protected virtual Action? Clicked(Point at) => null;
 
     protected override AutomationPeer OnCreateAutomationPeer() => new MenuOptionAutomationPeer(this);
 

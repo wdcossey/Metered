@@ -410,6 +410,79 @@ public class MenuTests
         Assert.Null(MenuOptionList.LinkOf("/apple"));
     }
 
+
+    // A browser follows the link a click was on whatever onItemSelect does: here it makes the menu again.
+    [AvaloniaFact]
+    public void A_links_click_follows_it_though_ItemSelect_makes_the_menu_again()
+    {
+        var menu = MenuKit.Make(MenuOracle.Items("HREF", null));
+        menu.ItemSelect += (_, _) => menu.ItemsSource = new List<object> { "other" };
+        var followed = new List<Uri>();
+        void Follow(Uri u) => followed.Add(u);
+        MenuOptionList.Followed += Follow;
+        try
+        {
+            using var scene = new Scene(menu);
+            scene.Click((Visual)((MenuOptionList)menu.OptionAt(2)!).Part(MenuOptionList.ListItemAnchorPart)!);
+            Assert.Equal(new Uri("https://www.example.com/strawberry"), Assert.Single(followed));
+            Assert.Equal("other", Assert.Single(menu.FlatItems));
+        }
+        finally
+        {
+            MenuOptionList.Followed -= Follow;
+        }
+    }
+
+    /// <summary>A collection that counts who follows it.</summary>
+    private sealed class Counted : List<object>, System.Collections.Specialized.INotifyCollectionChanged
+    {
+        private System.Collections.Specialized.NotifyCollectionChangedEventHandler? _changed;
+
+        public int Followers { get; private set; }
+
+        public event System.Collections.Specialized.NotifyCollectionChangedEventHandler? CollectionChanged
+        {
+            add { _changed += value; Followers++; }
+            remove { _changed -= value; Followers--; }
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_menu_follows_its_collection_only_while_it_is_in_the_tree()
+    {
+        var items = new Counted { "a" };
+        var menu = new Menu { ItemsSource = items };
+        Assert.Equal(0, items.Followers);
+        var host = new Border { Child = menu };
+        using var scene = new Scene(host);
+        Assert.Equal(1, items.Followers);
+        host.Child = null;
+        Assert.Equal(0, items.Followers);
+    }
+
+    // A picture that isn't an image is a browser's broken image: no picture, the option drawn.
+    [AvaloniaFact]
+    public void A_profile_picture_that_isnt_an_image_is_none()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"metered-menu-{Guid.NewGuid():N}.txt");
+        File.WriteAllText(path, "not an image");
+        try
+        {
+            var props = new ControlTheme(typeof(MenuOptionProfile));
+            props.Setters.Add(new Setter(MenuOptionProfile.GetProfileItemLabelsProperty, (Func<object?, MenuProfileLabels?>)(_ => new MenuProfileLabels("Title"))));
+            props.Setters.Add(new Setter(MenuOptionProfile.GetProfileItemImgProperty, (Func<object?, object?>)(_ => path)));
+            var menu = MenuKit.Make(["a"], [new Override { Part = Menu.OptionPart, Props = props }]);
+            using var scene = new Scene(menu);
+            var option = (MenuOptionProfile)menu.OptionAt(0)!;
+            Assert.Null(option.Part(MenuOptionProfile.ProfileImgPart));
+            Assert.Equal("Title", ((TextBlock)option.Part(MenuOptionProfile.ProfileTitlePart)!).Text);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     // ---- UI Automation ----
 
     [AvaloniaFact]
@@ -495,5 +568,7 @@ public class MenuTests
         Assert.Equal("Escape", Name(Key.Escape, "\x1b"));
         Assert.Equal("Backspace", Name(Key.Back, "\b"));
         Assert.Equal("7", Name(Key.D7));
+        // An input method's key, its committing Enter too: "Process" (keyCode 229), never Enter's choice.
+        Assert.Equal("Process", Name(Key.ImeProcessed));
     }
 }

@@ -40,12 +40,19 @@ public class NestedMenus : Decorator
         menu.PointerExited += OnMenuExited;
     }
 
-    /// <summary>removeMenuFromNesting: a menu gone.</summary>
+    /// <summary>removeMenuFromNesting: a menu gone; with the last, the leave timer.</summary>
     internal void Remove(Menu menu)
     {
         if (!_menus.Remove(menu)) return;
         menu.PointerEntered -= OnMenuEntered;
         menu.PointerExited -= OnMenuExited;
+        if (_menus.Count == 0) _leave?.Stop();
+    }
+
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _leave?.Stop();
     }
 
     /// <summary>getParentMenu: the menu shown before it.</summary>

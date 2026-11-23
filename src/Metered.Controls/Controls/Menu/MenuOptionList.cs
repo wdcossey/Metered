@@ -102,13 +102,18 @@ public class MenuOptionList : MenuOptionBase
         else if (change.Property == GetItemLabelProperty || change.Property == RenderHrefAsAnchorProperty) Rebuild();
     }
 
-    /// <summary>A click within the anchor: its link opened, as a browser follows it.</summary>
-    protected override void Clicked(Point at)
+    /// <summary>A click within the anchor: its link opened, as a browser follows it, whatever the menu's ItemSelect did.</summary>
+    protected override Action? Clicked(Point at)
     {
-        if (_anchor is null || Href is not { } href || this.TranslatePoint(at, _anchor) is not { } inside) return;
-        if (!new Rect(_anchor.Bounds.Size).Contains(inside) || LinkOf(href) is not { } uri) return;
-        _ = TopLevel.GetTopLevel(this)?.Launcher.LaunchUriAsync(uri);
+        if (_anchor is null || Href is not { } href || this.TranslatePoint(at, _anchor) is not { } inside) return null;
+        if (!new Rect(_anchor.Bounds.Size).Contains(inside) || LinkOf(href) is not { } uri) return null;
+        var launcher = TopLevel.GetTopLevel(this)?.Launcher;
+        Followed?.Invoke(uri);
+        return launcher is null ? null : () => _ = launcher.LaunchUriAsync(uri);
     }
+
+    /// <summary>The links a click followed, for tests.</summary>
+    internal static event Action<Uri>? Followed;
 
     /// <summary>The link an href opens: an absolute one as it is, one without a scheme by https; a relative one none.</summary>
     internal static Uri? LinkOf(string href)

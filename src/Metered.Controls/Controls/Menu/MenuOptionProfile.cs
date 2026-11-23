@@ -96,16 +96,24 @@ public class MenuOptionProfile : MenuOptionBase
     private static IImage? Source(object? picture, out Bitmap? made)
     {
         made = null;
-        switch (picture)
+        try
         {
-            case IImage image:
-                return image;
-            case string { Length: > 0 } text when Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme == "avares" && AssetLoader.Exists(uri):
-                using (var stream = AssetLoader.Open(uri)) return made = new Bitmap(stream);
-            case string { Length: > 0 } text when File.Exists(text):
-                return made = new Bitmap(text);
-            default:
-                return null;
+            switch (picture)
+            {
+                case IImage image:
+                    return image;
+                case string { Length: > 0 } text when Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme == "avares" && AssetLoader.Exists(uri):
+                    using (var stream = AssetLoader.Open(uri)) return made = new Bitmap(stream);
+                case string { Length: > 0 } text when File.Exists(text):
+                    return made = new Bitmap(text);
+                default:
+                    return null;
+            }
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            // A source that isn't an image a decoder reads: no picture, as a browser shows a broken image.
+            return null;
         }
     }
 

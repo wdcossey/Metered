@@ -114,6 +114,42 @@ public class MenuNestedTests
         Assert.True(Open(n.Parent));
     }
 
+    // A closed child is unmounted (renderAll false): opened again, it is a new container, at its initialState.
+    [AvaloniaFact]
+    public void A_child_menu_opened_again_starts_afresh()
+    {
+        var n = Make();
+        using var scene = Show(n);
+        List(n.Parent).Focus(NavigationMethod.Tab);
+        scene.Pump();
+        foreach (var _ in Enumerable.Range(0, 4)) scene.Key(Key.Down);
+        PopoverTests.Settle(scene);
+        scene.Key(Key.Right);
+        scene.Key(Key.Down);
+        scene.Key(Key.Down);
+        Assert.Equal(2, n.Child.HighlightedIndex);
+        scene.Key(Key.Left);
+        scene.Key(Key.Down);
+        PopoverTests.Settle(scene);
+        Assert.False(Open(n.Parent));
+        scene.Key(Key.Up);
+        PopoverTests.Settle(scene);
+        Assert.True(Open(n.Parent));
+        Assert.Equal(-1, n.Child.HighlightedIndex);
+        Assert.False(n.Child.IsMenuFocused);
+    }
+
+    // nested-menus.js's addMenuToNesting: only a menu shown (its offsetHeight not 0).
+    [AvaloniaFact]
+    public void A_hidden_menu_isnt_nested()
+    {
+        var shown = new Menu { ItemsSource = new List<object> { "a" } };
+        var hidden = new Menu { ItemsSource = new List<object> { "b" }, IsVisible = false };
+        var nest = new NestedMenus { Child = new StackPanel { Children = { shown, hidden } } };
+        using var scene = new Scene(nest);
+        Assert.Equal(new[] { shown }, nest.Menus);
+    }
+
     // maybe-child-menu.js: the popover's onEsc is the parent's resetMenu.
     [AvaloniaFact]
     public void Escape_in_the_child_resets_the_parent_and_closes_the_child()
