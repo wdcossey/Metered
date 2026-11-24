@@ -73,18 +73,18 @@ internal static class SelectKit
         scene.Pump();
     }
 
+    /// <summary>A finger's tap. Nothing runs between its down and its up: a machine under load would make it a hold (Avalonia's Holding), which no tap follows.</summary>
     public static void Tap(Scene scene, Point at)
     {
         var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
-        scene.Pump();
         scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
         scene.Pump();
     }
 
+    /// <summary>A finger's drag, its first move straight after its down, before a hold could start.</summary>
     public static void Drag(Scene scene, Point at, double dy = -90)
     {
         var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
-        scene.Pump();
         for (var i = 1; i <= 10; i++)
         {
             scene.Window.TouchMove(touch, at + new Vector(0, dy * i / 10), RawInputModifiers.None);
