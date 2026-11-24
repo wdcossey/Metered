@@ -170,7 +170,8 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 14. **On a phone, tried on a Pixel 8** (Android 17, 2026-11-24, #126): a tap highlights an option, a tap on a disabled one
     does nothing, a finger's drag in the long list scrolls the list, and a tap opens a child menu. Found: a tap on an
     option of a menu partly below the screen's foot scrolls the page to bring the whole menu into view (#132); the
-    child menu's popover reaches over Android's navigation bar (#129). Not tried yet: the keys, the profile pictures,
+    child menu's popover reaches over Android's navigation bar (#129: since cut to the safe area, as every popover is,
+    tried headless only). Not tried yet: the keys, the profile pictures,
     links, and everything in a real window.
 15. **Android's back request with a child menu open goes on to the page** (chosen; decided 2026-11-24 to change, #131;
     Base Web has no back request). Metered's popover closes on it when Escape would close it (#123), and a child menu's

@@ -74,6 +74,16 @@ The template is the anchor's presenter and a `Popup` whose child is `Body`, its 
 - **Light dismiss and Avalonia's placement are off**: Metered does Base Web's own. The popup's host clips its child and
   keeps Tab inside it; Base Web's layer does neither, so the host's clip is turned off (the body's shadow reaches past its
   box) and Tab may leave it unless the focus is locked.
+- **Cut to the window's safe area** (#129, the developer, 2026-11-24): the overlay layer covers the whole screen, a
+  phone's status and navigation bars included, where a phone's browser ends its page above them. So the safe area (the
+  client area less `TopLevel.InsetsManager`'s `SafeAreaPadding`: on the Pixel 8, 50.29 at the top and 24 at the foot)
+  is popper.js's viewport, which `auto` and `flip` keep to, and the popup's host is clipped to it: nothing of the body,
+  its arrow or its shadow is drawn over the bars, and the part cut off takes no press. It still follows its anchor, so
+  one whose anchor has scrolled under a bar or out of view is cut away with it, as a browser's below the fold. Read
+  again when the safe area changes (`SafeAreaChanged`: a rotation, the bars shown or hidden); with no bars (a desktop
+  window), no clip. Select's dropdown and Menu's child menu, both Popovers, are cut the same. Whatever else might be done
+  with a popover whose anchor is out of view (kept in view, or hidden until its anchor is back) would be chosen where
+  the area is read and the cut made (`Popover.Seen` and `Cut`); nothing else is done.
 
 ### For Select and Menu
 
@@ -118,7 +128,8 @@ From `stateful-container.js` and `popover.js`:
   quirks kept (a side read after a modifier moved the other is the one computed before, sizes are whole pixels, `auto`'s
   areas are the viewport's unpadded size): `auto` (the side with the most room that the body fits), the placement's start
   or end, `preventOverflow` (padding 0, Base Web's; off with `IgnoreBoundary`), `keepTogether`, the arrow, and `flip` (to
-  the other side when the body overlaps the anchor or leaves the viewport less 5 px). The body's margin is read as
+  the other side when the body overlaps the anchor or leaves the viewport less 5 px); the viewport is the window's safe
+  area (above). The body's margin is read as
   popper.js reads it, its own: the margin at Base Web's state's placement, which is the one asked for until popper.js
   has run (none for `auto`) and the one chosen after. The new margin is popper.js's next update at once (known
   difference 11). When it has gone, the state's placement goes back to the one asked for.
@@ -182,6 +193,12 @@ theme's entrance, so its opacity goes over them the moment the state changes.
   takes, a press outside), Alt+Left; a popover a
   tap opened put away and back, opened again by a tap or a mouse as it fades out; a window with no overlay layer; an arrow shown under an override's margin; a placement changed while open.
 - `Controls/PopoverFrames`: the body and the arrow's tip drawn in Base Web's fill, light and dark; the gallery above.
+- `Controls/PopoverSafeAreaTests`: the safe area, through a fake the tests set (`SafeArea.Fake`, as KeyboardInset's
+  tests fake the input pane: Avalonia.Headless has no bars), the Pixel 8's bars: an anchor scrolled out of view below
+  (the issue's case) and one under the status bar, each body cut off at the bar, its drawn pixels the window's there and
+  a press there not the body's, and still following its anchor; a flip near the navigation bar as `Tether` places it in
+  the safe area; the safe area changing while it is shown, to none, to side bars; opened again; Select's dropdown
+  flipped above the navigation bar and cut, and Menu's child menu cut off at it.
 - `Sample/PopoverPageTests`: the sample's page, 7: its place, the examples as set, a tap opening and closing, a tap
   toggling the hover example, the dismiss example, each placement; in the shell, Back closing the overrides example and
   then a popover a tap opened, passing over the always-open example, then going back.
@@ -221,9 +238,10 @@ entrance's transition and the hover body's pointer as Base Web's.
    document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
    is a scroll viewer: Metered takes what it scrolls as the document, so a popover goes with its anchor, as on
    baseweb.design (`flip` keeps to the window, the viewport). A popover in a small scrolling box inside a page leaves
-   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the window. The overlay layer is the
+   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the viewport: the window's safe area (#129). The overlay layer is the
    window's: a popover whose anchor scrolls under something above the page (an app's bar) is drawn over it, where a
-   browser's page takes it off the top of the screen.
+   browser's page takes it off the top of the screen. The system's bars are not: nothing is drawn over them (#129: Built
+   on Avalonia's `Popup`).
 4. **Focus goes back to the anchor when it closes, with or without a focus lock, whatever `ReturnFocus` says.** Base Web's leaves focus on the page when the
    focused element inside goes; Avalonia's popup gives focus back to what had it before it opened.
 5. **A menu's anchor isn't marked as having a popup or expanded** (`aria-haspopup`, `aria-expanded`,
@@ -241,8 +259,13 @@ entrance's transition and the hover body's pointer as Base Web's.
 10. **On a phone, tried on a Pixel 8** (Android 17, 2026-11-23, #119, the build before #123): a tap on a click anchor
     opens it, a drag that scrolls the page leaves it open and it goes with its anchor, a tap elsewhere closes it. Found:
     an anchor scrolled out of view *below* leaves its popover drawn at the screen's foot over Android's navigation bar
-    (the overlay isn't limited to the page's viewport; a browser's would be below the fold). To change, decided
-    2026-11-24 (#129): nothing is drawn over the system bars. Again on 2026-11-24 (main with #123): a tap on a hover
+    (the overlay isn't limited to the page's viewport; a browser's would be below the fold). Decided 2026-11-24 (#129):
+    nothing is drawn over the system bars; since, the popover is cut to the safe area (above), tried headless only, with a
+    fake safe area. Still to check on the phone: the cut at the Pixel's own bars (the issue's case, the Overrides
+    example, and one under the status bar), a flip against the navigation bar (a Select near the screen's foot), a
+    rotation, gesture and three-button navigation, and the keyboard up (the safe area is read as the bars alone: Avalonia's
+    `SafeAreaPadding`, which `AutoSafeAreaPadding` pads the page by, holds no keyboard, as its Android backend was read for
+    KeyboardInset, docs/controls/KeyboardInset). Again on 2026-11-24 (main with #123): a tap on a hover
     anchor opens it and a second closes it; with one open, Back closes it and the page stays. Not tried yet: the
     placements' flips near the edges, a text field in a popover under the keyboard, and everything in a real window (the
     hover trigger under a mouse, focus, the overlay unclipped).
