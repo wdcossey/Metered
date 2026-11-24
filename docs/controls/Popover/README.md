@@ -122,8 +122,8 @@ From `stateful-container.js` and `popover.js`:
   desktop), if nothing on its route has handled it, closes the topmost open popover that Escape would close
   (`DismissOnEsc`) and is handled, so an app's own Back (the sample's shell) doesn't run; a popover without
   `DismissOnEsc`, or already closing, is passed over for the one below. With none, the request is left to the app.
-  `Esc` isn't raised; but a controlled popover whose Escape handler closes it (Select's dropdown, #97: the internal
-  `EscOnBack`) takes the request as its Escape: `Esc` is raised and the request handled.
+  `Esc` isn't raised; but a controlled popover whose Escape handler closes it (Select's dropdown, #97, and a child menu's,
+  #131: the internal `EscOnBack`) takes the request as its Escape: `Esc` is raised and the request handled.
 - **Placement** (`tether.js`, popper.js): `Tether` is popper.js's first update with Base Web's options, ported, its
   quirks kept (a side read after a modifier moved the other is the one computed before, sizes are whole pixels, `auto`'s
   areas are the viewport's unpadded size): `auto` (the side with the most room that the body fits), the placement's start

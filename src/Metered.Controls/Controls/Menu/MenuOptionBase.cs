@@ -145,6 +145,9 @@ public abstract class MenuOptionBase : TemplatedControl
         popover.SetValue(Popover.DismissOnEscProperty, false, BindingPriority.Template);
         popover.CoerceValue(Popover.IsOpenProperty);
         popover.Esc += (_, _) => Owner?.ResetFromChild();
+        // Avalonia's back request (Metered's, #131: Base Web has none) is that Escape while the child is open: the parent
+        // reset, the child closed, the request handled before any popover below and before the app goes back.
+        popover.EscOnBack = true;
         // maybe-child-menu.js's Body onKeyDown: Tab stays in the child menu.
         _tabTarget = _childMenu as InputElement;
         _tabTarget?.AddHandler(KeyDownEvent, OnChildKeyDown);

@@ -7,6 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Metered.Controls;
+using Metered.Tests.Sample;
 using Menu = Metered.Controls.Menu;
 
 namespace Metered.Tests.Controls;
@@ -14,7 +15,7 @@ namespace Metered.Tests.Controls;
 /// <summary>
 /// Nested menus (nested-menus.js, maybe-child-menu.js, stateful-container.js), as child.tsx builds them: an option's child
 /// menu in a Popover at its right, its top, open while the option is highlighted; ArrowRight and ArrowLeft between the
-/// menus shown; Escape in a child resetting its parent; a mouse back over the parent letting a deeper menu's highlight go,
+/// menus shown; Escape in a child resetting its parent, and Avalonia's back request as that Escape (#131); a mouse back over the parent letting a deeper menu's highlight go,
 /// and 200 ms after it has left them all, every one's; a click on an option with a child choosing it; Tab kept in the
 /// child; its name; the ChildMenuPopover override.
 /// </summary>
@@ -166,6 +167,85 @@ public class MenuNestedTests
         Assert.Equal(-1, n.Parent.HighlightedIndex);
         Assert.False(n.Parent.IsMenuFocused);
         Assert.False(Open(n.Parent));
+    }
+
+    // Avalonia's back request (Metered's, #131: Base Web has none) is that Escape while a child is open, as a phone's tap
+    // opens it: the parent reset and the child closed, the request handled, so the window's own Back doesn't run; with the
+    // child closed, the request is the app's.
+    [AvaloniaFact]
+    public void The_back_request_resets_the_parent_and_closes_the_child_as_Escape_does()
+    {
+        var n = Make();
+        using var scene = Show(n);
+        var wentBack = 0;
+        scene.Window.BackRequested += (_, e) =>
+        {
+            wentBack++;
+            e.Handled = true;
+        };
+        var escapes = 0;
+        Popover(n.Parent).Esc += (_, _) => escapes++;
+        MenuTests.Tap(scene, scene.CentreOf(n.Parent.OptionAt(4)!));
+        PopoverTests.Settle(scene);
+        Assert.Equal(4, n.Parent.HighlightedIndex);
+        Assert.True(Open(n.Parent));
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        PopoverTests.Settle(scene);
+        Assert.Equal(-1, n.Parent.HighlightedIndex);
+        Assert.False(n.Parent.IsMenuFocused);
+        Assert.False(Open(n.Parent));
+        Assert.Equal(1, escapes);
+        Assert.Equal(0, wentBack);
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.Equal(1, wentBack);
+        Assert.Equal(1, escapes);
+    }
+
+    // The keyboard's way in, the child focused: Back as Escape there, the parent unfocused too.
+    [AvaloniaFact]
+    public void The_back_request_with_the_child_focused_resets_the_parent()
+    {
+        var n = Make();
+        using var scene = Show(n);
+        List(n.Parent).Focus(NavigationMethod.Tab);
+        scene.Pump();
+        foreach (var _ in Enumerable.Range(0, 4)) scene.Key(Key.Down);
+        PopoverTests.Settle(scene);
+        scene.Key(Key.Right);
+        Assert.True(List(n.Child).IsFocused);
+        Assert.True(ShellFrames.Back(scene.Window));
+        PopoverTests.Settle(scene);
+        Assert.Equal(-1, n.Parent.HighlightedIndex);
+        Assert.False(n.Parent.IsMenuFocused);
+        Assert.False(Open(n.Parent));
+        Assert.False(ShellFrames.Back(scene.Window));
+    }
+
+    // The child's layer is above the popover the menu is in: Back closes the child first, then that popover, as Escape would.
+    [AvaloniaFact]
+    public void The_back_request_closes_the_child_before_the_popover_the_menu_is_in()
+    {
+        var n = Make();
+        var outer = new Popover { Anchor = new Border { Width = 40, Height = 20 }, Content = n.Root, Placement = PopoverPlacement.BottomLeft };
+        using var scene = new Scene(new Panel { Children = { outer } }, width: 900, height: 700, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        outer.IsOpen = true;
+        PopoverTests.Settle(scene);
+        MenuTests.Tap(scene, scene.CentreOf(n.Parent.OptionAt(4)!));
+        PopoverTests.Settle(scene);
+        Assert.True(Open(n.Parent));
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        PopoverTests.Settle(scene);
+        Assert.False(Open(n.Parent));
+        Assert.Equal(-1, n.Parent.HighlightedIndex);
+        Assert.True(outer.IsOpen);
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(outer.IsOpen);
+        PopoverTests.Settle(scene);
+        Assert.False(ShellFrames.Back(scene.Window));
     }
 
     [AvaloniaFact]
