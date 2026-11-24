@@ -59,20 +59,16 @@ public class SpinnerTests
             });
     }
 
-    // The turn runs on Avalonia's clock, real time: the ring's angle moves between two frames 150 ms apart.
+    // The turn runs on Avalonia's clock, here the test's: the ring's angle moves between two frames 150 ms apart.
     [AvaloniaFact]
     public void The_ring_turns()
     {
         var (_, ring, scene) = Make(new Spinner());
         using var _ = scene;
         var first = Angle(ring, scene);
-        // A few tries, so a slow runner's frame can't make it flaky: a turn that never runs stays at its first angle.
-        var moved = false;
-        for (var i = 0; i < 5 && !moved; i++)
-        {
-            Thread.Sleep(150);
-            moved = Angle(ring, scene) != first;
-        }
+        // 150 ms on the test's clock: a turn that never runs stays at its first angle.
+        scene.Advance(150);
+        var moved = Angle(ring, scene) != first;
 
         Assert.True(moved, $"the ring stayed at {first} degrees");
     }
@@ -83,18 +79,14 @@ public class SpinnerTests
     {
         var (_, ring, scene) = Make(new Spinner());
         using var _ = scene;
-        // Turning first (a few tries, for a slow runner), so standing at 0 below is the hold's doing.
-        var turned = false;
-        for (var i = 0; i < 5 && !turned; i++)
-        {
-            Thread.Sleep(150);
-            turned = Angle(ring, scene) != SpinnerOracle.Data.Motion.From;
-        }
+        // Turning first, so standing at 0 below is the hold's doing.
+        scene.Advance(150);
+        var turned = Angle(ring, scene) != SpinnerOracle.Data.Motion.From;
 
         Assert.True(turned, "the ring never turned");
         SpinnerColourTests.Still(ring);
         Assert.Equal(SpinnerOracle.Data.Motion.From, Angle(ring, scene));
-        Thread.Sleep(150);
+        scene.Advance(150);
         Assert.Equal(SpinnerOracle.Data.Motion.From, Angle(ring, scene));
     }
 

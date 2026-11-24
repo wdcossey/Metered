@@ -47,15 +47,10 @@ public class PopoverTests
     }
 
     /// <summary>
-    /// Runs the dispatcher's loop for a while, so its timers fire (the entrance's 20 ms, the hover delays) and transitions
-    /// run: headless, a timer fires only in the loop, not from RunJobs.
+    /// Moves the test's clock on by <paramref name="ms"/>, so the timers due by then fire (the entrance's 20 ms, the hover
+    /// delays) and transitions run to that time, the same on any machine (#127).
     /// </summary>
-    internal static void Settle(Scene scene, int ms = 200)
-    {
-        using var stop = new CancellationTokenSource(ms);
-        Dispatcher.UIThread.MainLoop(stop.Token);
-        scene.Pump();
-    }
+    internal static void Settle(Scene scene, int ms = 200) => scene.Advance(ms);
 
     internal static Rect BoxOf(Visual v, Scene scene) => new(v.TranslatePoint(default, scene.Window)!.Value, v.Bounds.Size);
 

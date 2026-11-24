@@ -13,6 +13,8 @@ namespace Metered.Tests;
 /// A shown window with <see cref="BaseTheme"/>, at a phone's view (390 × 844, Avonic's reference
 /// viewport) and render scaling 1, light unless dark is asked for. Closed on dispose. The themes are
 /// the window's, not the application's, so a scene changes no other; another list can be given.
+/// Its time is the test's <see cref="TestClock"/>, which moves only by <see cref="Advance"/>, unless the
+/// scene is asked for real time, as a test that measures real time is.
 /// </summary>
 internal sealed class Scene : IDisposable
 {
@@ -21,15 +23,21 @@ internal sealed class Scene : IDisposable
 
     public Window Window { get; }
 
+    /// <summary>The test's clock, or null for a scene on real time.</summary>
+    public TestClock? Clock { get; }
+
     public Scene(Control? content = null, ThemeVariant? variant = null, double width = Width, double height = Height,
-        IEnumerable<IStyle>? themes = null)
+        IEnumerable<IStyle>? themes = null, bool realTime = false)
     {
+        if (realTime && TestClock.IsInstalled)
+            throw new InvalidOperationException("This test's dispatcher is already on a test clock: a real-time scene can't be made in it.");
         Window = new Window
         {
             Width = width,
             Height = height,
             RequestedThemeVariant = variant ?? ThemeVariant.Light,
         };
+        Clock = realTime ? null : TestClock.Of(Window);
         Window.Styles.AddRange(themes ?? [new BaseTheme()]);
         try
         {
@@ -51,6 +59,25 @@ internal sealed class Scene : IDisposable
         Window.UpdateLayout();
         Window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <summary>
+    /// Moves the test's clock on by <paramref name="ms"/>, a millisecond at a time, running at each what comes due then:
+    /// the timers at their own times, and the frames at theirs (the media context's and the render timer's, 16 ms apart),
+    /// as an app's loop does; then a <see cref="Pump"/>.
+    /// </summary>
+    public void Advance(int ms)
+    {
+        var clock = Clock ?? throw new InvalidOperationException("A scene on real time has no clock to advance.");
+        for (var i = 0; i < ms; i++)
+        {
+            clock.Advance(1);
+            // The dispatcher runs the timers that are due after each job it runs: one job sets it going.
+            Dispatcher.UIThread.Post(static () => { }, DispatcherPriority.Send);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Pump();
     }
 
     /// <summary>The centre of a control, in the window's coordinates.</summary>
