@@ -172,6 +172,9 @@ public class SelectLayoutTests
         var value = single.P<ContentPresenter>(Select.SingleValuePart);
         var row = single.P<SelectValueContainer>(Select.ValueContainerPart);
         Assert.True(value.Bounds.Right <= row.Bounds.Width - row.Padding.Right + 0.01);
+        // It shrinks so that the input's box after it is in the row too.
+        var box = single.P<SelectInputContainer>(Select.InputContainerPart);
+        Assert.True(box.Bounds.Right <= row.Bounds.Width - row.Padding.Right + 0.01, "the input's box ends at " + box.Bounds.Right);
         Assert.Equal(48, single.Bounds.Height);
     }
 }

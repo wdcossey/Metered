@@ -127,6 +127,22 @@ public class SelectTests
     }
 
     [AvaloniaFact]
+    public void Spaces_key_doesnt_open_a_searchable_select_its_text_does()
+    {
+        var (select, scene, _) = Make();
+        using var _s = scene;
+        select.SetInputFocus();
+        scene.Pump();
+        // handleKeyDown's space: a searchable select's is the input's, a character, which opens it as typing does.
+        SelectKit.Key(scene, Key.Space);
+        Assert.False(select.IsOpen);
+        scene.Window.KeyTextInput(" ");
+        scene.Pump();
+        Assert.True(select.IsOpen);
+        Assert.Equal(" ", select.InputValue);
+    }
+
+    [AvaloniaFact]
     public void Opened_by_a_key_the_dropdown_highlights_the_value()
     {
         var (select, scene, _) = Make(value: ["Bisque"]);
