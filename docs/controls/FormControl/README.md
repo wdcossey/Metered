@@ -104,7 +104,8 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   labels. A text box's soft keyboard is asked for too, as a tap on the text box asks for it (Avalonia's input method
   client's `InputPaneActivationRequested`, which Android's input method answers with `ShowSoftInput`), so a tap on the
   label of an input that already has the focus opens the keyboard again after Back put it away, as a browser's does
-  (#124); focusing a focused text box alone asks for nothing. The click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its
+  (#124); focusing a focused text box alone asks for nothing. It is asked of the focused element when that is what the
+  label is for or inside it (a searchable Select's input), as Avalonia's input method manager asks it for its client. The click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its
   `Click`, its `Command`, and a radio group's value. A disabled target is neither focused nor clicked. A click is a press of the main
   button (a mouse's left, a finger, a pen's tip) on the label and its release on it, the pointer not taken from it in
   between, as a browser's `click`; another button let go meanwhile clicks nothing, and a second finger neither clicks
@@ -142,7 +143,7 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   Checkbox and a Switch, checking a Radio and its group's value, clicking a Button, each focused, with its `Click` and
   `Command`, not on a press alone, not for a disabled target, and a button in the label's content keeping its own press;
   a click or a tap on the label of a focused Input or Textarea asking for its keyboard again, as a tap on it does, and
-  not for one it couldn't focus;
+  of a focused input inside what it labels, and not for one it couldn't focus, nor for another input left focused;
   the label's hit area over its row's margins, the oracle's `controlTop`, taking no press from the control above or the
   child below, nor from a Button's tap band reaching over the margin, and no click let go over the child; a label outside
   the row keeping its box; another button's release clicking nothing, and the main one's clicking once, or not at all
