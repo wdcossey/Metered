@@ -84,8 +84,12 @@ public class KeyboardInset : Decorator
     }
 
     /// <summary>
-    /// The input pane read in place of the top level's, for a test: Avalonia's headless platform has none, and Avalonia's
-    /// <see cref="IInputPane"/> can't be implemented outside it. Set before the decorator is attached.
+    /// The input pane read in place of the top level's, for a test: Avalonia's headless platform has none, and a top
+    /// level's <see cref="TopLevel.InputPane"/> can't be set, so a test needs a way in. An interface of its own, as C#
+    /// can't implement <see cref="IInputPane"/> (its reference assembly is <c>[NotClientImplementable]</c>, with an
+    /// internal member), and it carries the insets' change too. A pane made at runtime by <c>DispatchProxy</c>, as Avonic's
+    /// tests make one, would also do, with an <see cref="IInsetsManager"/> made the same way. Set before the decorator is
+    /// attached.
     /// </summary>
     internal IPane? InputPane { get; set; }
 
@@ -95,6 +99,15 @@ public class KeyboardInset : Decorator
         InputPaneState State { get; }
 
         Rect OccludedRect { get; }
+
+        /// <summary>
+        /// Whether the keyboard is the screen's own, docked across the view, as on Android and iOS: its rect is then read
+        /// for its top alone. Android's spans the client's width as it was when the insets came, which a rotation can leave
+        /// stale, and iOS's is UIKit's keyboard frame in the screen's coordinates, which an iPad's window in Split View
+        /// doesn't share (Avonic's <c>KeyboardAssist.CoveredHeight</c>). Elsewhere (Windows' touch keyboard, which can
+        /// float beside the window) its sides are read too.
+        /// </summary>
+        bool Docked { get; }
 
         event EventHandler<InputPaneStateEventArgs>? StateChanged;
 
@@ -211,8 +224,9 @@ public class KeyboardInset : Decorator
 
     /// <summary>
     /// The inset for a keyboard <paramref name="open"/> or not, at <paramref name="occluded"/> in the top level's
-    /// coordinates: as much of the decorator as lies below the keyboard's top edge, as it is laid out now. Laid out first,
-    /// so that a decorator inside another that has just made room is read in that room, and pads nothing more.
+    /// coordinates: as much of the decorator as lies below the keyboard's top edge, if the keyboard reaches across it
+    /// or is docked (#120), as it is laid out now. Laid out first, so that a decorator inside another that has just made room is read
+    /// in that room, and pads nothing more.
     /// </summary>
     private void Apply(bool open, Rect occluded)
     {
@@ -235,9 +249,7 @@ public class KeyboardInset : Decorator
             }
 
             UpdateLayout();
-            Inset = this.TranslatePoint(default, top) is { } origin
-                ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
-                : 0;
+            Inset = this.TranslatePoint(default, top) is { } origin ? Covered(new Rect(origin, Bounds.Size), occluded, top.RenderScaling, _pane?.Docked == true) : 0;
             _room = Bounds.Height - Inset;
             UpdateLayout();
         }
@@ -245,6 +257,21 @@ public class KeyboardInset : Decorator
         {
             _applying = false;
         }
+    }
+
+    /// <summary>
+    /// How much of <paramref name="decorator"/> the keyboard at <paramref name="occluded"/> keeps its child out of, both in
+    /// the top level's coordinates: all of it below the keyboard's top, the room under a keyboard being no room for the
+    /// child even where the keyboard's rect ends above the decorator's foot (Android's ends above the navigation bar), if
+    /// a keyboard that isn't <paramref name="docked"/> reaches across it; nothing for one beside it, as Windows' touch
+    /// keyboard floating beside the window, or under another column. Across less than a device pixel is beside it: the
+    /// keyboard's rect is converted from the screen's pixels and the decorator's bounds rounded by layout, so edges that
+    /// meet can overlap by a fraction.
+    /// </summary>
+    private static double Covered(Rect decorator, Rect occluded, double scaling, bool docked)
+    {
+        var across = Math.Min(decorator.Right, occluded.Right) - Math.Max(decorator.Left, occluded.Left);
+        return docked || across * scaling >= 1 ? Math.Clamp(decorator.Bottom - occluded.Top, 0, decorator.Height) : 0;
     }
 
     /// <summary>
@@ -285,6 +312,8 @@ public class KeyboardInset : Decorator
         public InputPaneState State => pane.State;
 
         public Rect OccludedRect => pane.OccludedRect;
+
+        public bool Docked { get; } = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
 
         public event EventHandler<InputPaneStateEventArgs>? StateChanged
         {
