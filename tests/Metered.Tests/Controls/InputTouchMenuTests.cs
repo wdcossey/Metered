@@ -7,6 +7,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Metered.Controls;
 
@@ -37,6 +38,20 @@ public class InputTouchMenuTests
         public Thickness Padding { get; } = padding;
 
         public event EventHandler? Changed { add { } remove { } }
+    }
+
+    /// <summary>A soft keyboard a test opens and closes.</summary>
+    private sealed class Keyboard : TouchMenu.IKeyboard
+    {
+        public Rect? Occluded { get; private set; }
+
+        public event EventHandler? Changed;
+
+        public void Set(Rect? occluded)
+        {
+            Occluded = occluded;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     // ---- The place: refreshCoordinatesAndOverflowDirection with no overflow, worked by hand from its source ----
@@ -148,12 +163,16 @@ public class InputTouchMenuTests
         var input = new Input { Text = "hello world", CoarsePointer = true };
         using var scene = Show(input);
 
-        Assert.Same(input.FindResource("Input.TouchContextFlyout"), input.ContextFlyout);
-        Assert.All(Items(input), item => Assert.Null(item.InputGesture));
+        Assert.Same(input.FindResource("Input.ContextFlyout"), input.ContextFlyout);
         Hold(scene, input, 7);
         Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.All(Items(input), item => Assert.Null(item.InputGesture));
         Assert.Equal(["Cut", "Copy", "Paste"], MenuText(scene));
+
+        // The theme's one menu has them back once it closes, for a desktop's input.
         input.ContextFlyout.Hide();
+        scene.Pump();
+        Assert.Equal([TextBox.CutGesture, TextBox.CopyGesture, TextBox.PasteGesture], Items(input).Select(i => i.InputGesture));
     }
 
     // A fine pointer keeps the desktop's menu: the shortcuts, and Avalonia's place for a right click (at the pointer).
@@ -258,7 +277,9 @@ public class InputTouchMenuTests
     {
         var input = new Input { Text = "hello world", CoarsePointer = true };
         using var scene = Show(input, top: 10);
-        TouchMenu.FakeKeyboard(scene.Window, () => new Rect(0, 150, Scene.Width, Scene.Height - 150));
+        var keyboard = new Keyboard();
+        keyboard.Set(new Rect(0, 150, Scene.Width, Scene.Height - 150));
+        TouchMenu.FakeKeyboard(scene.Window, keyboard);
         try
         {
             Hold(scene, input, 7);
@@ -286,7 +307,9 @@ public class InputTouchMenuTests
         Hold(scene, input, 7);
 
         Assert.True(menu.IsOpen);
-        Assert.Equal(PlacementMode.Top, menu.Placement);
+        // The theme's: Placement="Bottom", and a desktop's show mode (Avalonia.Headless is one).
+        Assert.Equal(PlacementMode.Bottom, menu.Placement);
+        Assert.Equal(FlyoutShowMode.Standard, menu.ShowMode);
         Assert.Null(menu.CustomPopupPlacementCallback);
         menu.Hide();
     }
@@ -307,10 +330,169 @@ public class InputTouchMenuTests
         scene.Pump();
 
         Assert.True(input.ContextFlyout!.IsOpen);
+        // Shown without taking the focus: the soft keyboard stays.
+        Assert.True(input.IsFocused);
         var line = presenter.TextLayout.HitTestTextPosition(0);
         var lineTop = presenter.TranslatePoint(line.TopLeft, scene.Window)!.Value.Y;
         Assert.Equal(lineTop - Above, Menu(scene).Bottom, tolerance: 0.5);
         input.ContextFlyout.Hide();
+    }
+
+    // A long value selected whole, past the box's end: the menu is centred on the part the box shows, as Blink clips an
+    // input's selection, not on the whole value's.
+    [AvaloniaFact]
+    public void A_selection_past_the_box_is_placed_by_the_part_shown()
+    {
+        var input = new Input { Text = string.Concat(Enumerable.Repeat("a long value ", 8)), CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Click(input);
+        input.SelectAll();
+        scene.Pump();
+        var scroller = input.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var shown = new Rect(scroller.TranslatePoint(default, scene.Window)!.Value, scroller.Bounds.Size);
+        var whole = Selection(scene, input);
+        Assert.True(whole.Right > shown.Right + 200);
+
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout!.IsOpen);
+        var menu = Menu(scene);
+        Assert.Equal(Math.Max(whole.Left, shown.Left) + (shown.Right - Math.Max(whole.Left, shown.Left)) / 2, menu.Center.X, tolerance: 1);
+        Assert.Equal(whole.Top - Above, menu.Bottom, tolerance: 0.5);
+        input.ContextFlyout.Hide();
+    }
+
+    // Placed again while it is open as the input moves: the page scrolled under it (a keyboard making room scrolls it so).
+    [AvaloniaFact]
+    public void It_follows_the_word_as_the_page_scrolls()
+    {
+        var input = new Input { Text = "hello world", CoarsePointer = true };
+        var page = new ScrollViewer
+        {
+            Content = new StackPanel { Margin = new Thickness(20, 400, 20, 0), Height = 2000, Children = { input } },
+        };
+        using var scene = new Scene(page, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        Hold(scene, input, 7);
+        Assert.Equal(Selection(scene, input).Top - Above, Menu(scene).Bottom, tolerance: 0.5);
+
+        page.Offset = new Vector(0, 150);
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.Equal(Selection(scene, input).Top - Above, Menu(scene).Bottom, tolerance: 0.5);
+        input.ContextFlyout.Hide();
+    }
+
+    // And as the keyboard opens: below the handles, where there was room, until the keyboard covers it.
+    [AvaloniaFact]
+    public void It_is_placed_again_as_the_keyboard_opens()
+    {
+        var input = new Input { Text = "hello world", CoarsePointer = true };
+        using var scene = Show(input, top: 10);
+        var keyboard = new Keyboard();
+        TouchMenu.FakeKeyboard(scene.Window, keyboard);
+        try
+        {
+            Hold(scene, input, 7);
+            Assert.Equal(Handles(scene).Max(h => h.Bottom) + Above, Menu(scene).Top, tolerance: 0.5);
+
+            keyboard.Set(new Rect(0, 150, Scene.Width, Scene.Height - 150));
+            scene.Pump();
+
+            Assert.Equal(Above, Menu(scene).Top, tolerance: 0.5);
+            input.ContextFlyout!.Hide();
+        }
+        finally
+        {
+            TouchMenu.FakeKeyboard(scene.Window, null);
+        }
+    }
+
+    // A selection the box doesn't show at all (scrolled out of a long value): the menu goes by the box.
+    [AvaloniaFact]
+    public void A_selection_the_box_doesnt_show_is_placed_by_the_box()
+    {
+        var input = new Input { Text = string.Concat(Enumerable.Repeat("a long value ", 8)), CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Click(input);
+        input.CaretIndex = input.Text!.Length;
+        scene.Pump();
+        input.SelectionStart = 0;
+        input.SelectionEnd = 1;
+        var scroller = input.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var shown = new Rect(scroller.TranslatePoint(default, scene.Window)!.Value, scroller.Bounds.Size);
+        Assert.True(Selection(scene, input).Right < shown.Left);
+
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+
+        var menu = Menu(scene);
+        Assert.Equal(shown.Center.X, menu.Center.X, tolerance: 1);
+        Assert.Equal(shown.Top - Above, menu.Bottom, tolerance: 0.5);
+        input.ContextFlyout!.Hide();
+    }
+
+    // An app that cancels the menu's opening: it stays shut, and isn't opened after all in Avalonia's place.
+    [AvaloniaFact]
+    public void A_cancelled_opening_stays_shut()
+    {
+        var mine = new MenuFlyout { Items = { new MenuItem { Header = "Mine" } } };
+        var asked = 0;
+        mine.Opening += (_, e) =>
+        {
+            asked++;
+            if (asked == 1 && e is System.ComponentModel.CancelEventArgs cancel) cancel.Cancel = true;
+        };
+        var input = new Input { Text = "hello world", CoarsePointer = true, ContextFlyout = mine };
+        using var scene = Show(input);
+        var request = new ContextRequestedEventArgs();
+
+        Presenter(input).RaiseEvent(request);
+        scene.Pump();
+
+        Assert.Equal(1, asked);
+        Assert.False(mine.IsOpen);
+        Assert.True(request.Handled);
+    }
+
+    // An app's placement rect on its menu's popup doesn't move the menu off its place.
+    [AvaloniaFact]
+    public void A_placement_rect_on_its_popup_is_no_matter()
+    {
+        var mine = new MenuFlyout { Items = { new MenuItem { Header = "Mine" } } };
+        mine.Popup.PlacementRect = new Rect(0, 30, 100, 10);
+        var input = new Input { Text = "hello world", CoarsePointer = true, ContextFlyout = mine };
+        using var scene = Show(input);
+
+        Hold(scene, input, 7);
+
+        Assert.True(mine.IsOpen);
+        Assert.Equal(Selection(scene, input).Top - Above, Menu(scene).Bottom, tolerance: 0.5);
+        mine.Hide();
+    }
+
+    // An app's own style for its inputs' menu is kept on a phone, as on a desktop: only the theme's own menu loses its
+    // shortcuts there.
+    [AvaloniaFact]
+    public void An_apps_styled_menu_is_kept_on_a_phone()
+    {
+        var mine = new MenuFlyout { Items = { new MenuItem { Header = "Mine", InputGesture = TextBox.CopyGesture } } };
+        var input = new Input { Text = "hello world", CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Window.Styles.Add(new Style(x => x.OfType<Input>())
+        {
+            Setters = { new Setter(Control.ContextFlyoutProperty, mine) },
+        });
+        scene.Pump();
+
+        Assert.Same(mine, input.ContextFlyout);
+        Hold(scene, input, 7);
+        Assert.True(mine.IsOpen);
+        Assert.Equal(Selection(scene, input).Top - Above, Menu(scene).Bottom, tolerance: 0.5);
+        // Its own items as it made them.
+        Assert.Same(TextBox.CopyGesture, ((MenuItem)mine.Items[0]!).InputGesture);
+        mine.Hide();
     }
 
     // An app's own menu is placed the same: the place is the selection's, not the theme's menu's.
@@ -365,7 +547,7 @@ public class InputTouchMenuTests
         var textarea = new Textarea { Text = "hello world", CoarsePointer = true };
         using var scene = Show(textarea);
 
-        Assert.Same(textarea.FindResource("Input.TouchContextFlyout"), textarea.ContextFlyout);
+        Assert.Same(textarea.FindResource("Input.ContextFlyout"), textarea.ContextFlyout);
         Hold(scene, textarea, 7);
 
         Assert.Equal((6, 11), (textarea.SelectionStart, textarea.SelectionEnd));

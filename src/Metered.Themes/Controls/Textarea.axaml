@@ -70,9 +70,6 @@
     <Setter Property="SelectionBrush" Value="{DynamicResource colors.accent}" />
     <Setter Property="SelectionForegroundBrush" Value="{DynamicResource colors.contentOnColor}" />
     <Setter Property="ContextFlyout" Value="{DynamicResource Input.ContextFlyout}" />
-    <Style Selector="^:pointer-coarse">
-      <Setter Property="ContextFlyout" Value="{DynamicResource Input.TouchContextFlyout}" />
-    </Style>
     <Setter Property="Template">
       <ControlTemplate>
         <Border Name="Root" Theme="{DynamicResource Textarea.StyledRoot}">

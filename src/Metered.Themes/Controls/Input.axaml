@@ -23,7 +23,8 @@
 
   <!--
     A browser's cut, copy and paste menu, which an <input> has and a text box takes from its theme: the app theme's
-    strings (Avalonia's Simple and Fluent themes both have them). On a phone it opens from a long press on a selection.
+    strings (Avalonia's Simple and Fluent themes both have them). On a phone it opens from a long press on a selection, and
+    on a coarse pointer BaseInput opens it without its shortcuts, above the selection (Metered.Controls.TouchMenu, #110).
   -->
   <MenuFlyout x:Key="Input.ContextFlyout" ShowMode="{OnFormFactor Desktop=Standard, Mobile=Transient}" Placement="Bottom">
     <MenuItem Header="{DynamicResource StringTextFlyoutCutText}" Command="{Binding $parent[TextBox].Cut}"
@@ -32,19 +33,6 @@
               IsEnabled="{Binding $parent[TextBox].CanCopy}" InputGesture="{x:Static TextBox.CopyGesture}" />
     <MenuItem Header="{DynamicResource StringTextFlyoutPasteText}" Command="{Binding $parent[TextBox].Paste}"
               IsEnabled="{Binding $parent[TextBox].CanPaste}" InputGesture="{x:Static TextBox.PasteGesture}" />
-  </MenuFlyout>
-
-  <!--
-    The same menu on a coarse pointer (a phone, :pointer-coarse, #110): no shortcuts, as a phone's browser's text toolbar
-    has none, and shown without taking the focus. BaseInput places it above the selection (Metered.Controls.TouchMenu).
-  -->
-  <MenuFlyout x:Key="Input.TouchContextFlyout" ShowMode="Transient" Placement="Top">
-    <MenuItem Header="{DynamicResource StringTextFlyoutCutText}" Command="{Binding $parent[TextBox].Cut}"
-              IsEnabled="{Binding $parent[TextBox].CanCut}" />
-    <MenuItem Header="{DynamicResource StringTextFlyoutCopyText}" Command="{Binding $parent[TextBox].Copy}"
-              IsEnabled="{Binding $parent[TextBox].CanCopy}" />
-    <MenuItem Header="{DynamicResource StringTextFlyoutPasteText}" Command="{Binding $parent[TextBox].Paste}"
-              IsEnabled="{Binding $parent[TextBox].CanPaste}" />
   </MenuFlyout>
 
   <!--
@@ -86,9 +74,6 @@
     <Setter Property="SelectionBrush" Value="{DynamicResource colors.accent}" />
     <Setter Property="SelectionForegroundBrush" Value="{DynamicResource colors.contentOnColor}" />
     <Setter Property="ContextFlyout" Value="{StaticResource Input.ContextFlyout}" />
-    <Style Selector="^:pointer-coarse">
-      <Setter Property="ContextFlyout" Value="{StaticResource Input.TouchContextFlyout}" />
-    </Style>
     <Setter Property="Template">
       <ControlTemplate>
         <Border Name="Root" Theme="{DynamicResource Input.StyledRoot}">

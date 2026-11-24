@@ -494,13 +494,14 @@ public abstract class BaseInput : TextBox
             return;
         }
 
-        // On a phone the menu opens above the selection, as a phone's browser's (#110), whoever asked for it (a hold, a
-        // handle, a mouse); Avalonia's flyout handler, after this one, would open it at the pointer or over the selection.
-        // A context menu is Avalonia's to open.
+        // On a phone the menu opens above the selection without the theme's shortcuts, as a phone's browser's (#110),
+        // whoever asked for it (a hold, a handle, a mouse); Avalonia's flyout handler, after this one, would open it at the
+        // pointer or over the selection, with them. Taken even when an app cancels its opening, so it isn't opened there
+        // after all. A context menu is Avalonia's to open. The hold's feedback is the text box's own (its hold, a handle's
+        // request): the flyout handler's would be a second.
         if (CoarsePointer && ContextMenu is null && ContextFlyout is PopupFlyoutBase menu
             && TouchMenu.Show(this, menu, _textPresenter, _scroller))
         {
-            // The hold's feedback is the text box's own (its hold, a handle's request): the flyout handler's is a second.
             e.Handled = true;
         }
     }

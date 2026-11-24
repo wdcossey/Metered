@@ -115,8 +115,9 @@ From base-input.js and input.js, and its e2e test:
   its own menu keeps them: a menu open for another input is left to that one, and its own, open as the focus goes
   anywhere else (its clear icon too, or nowhere), closes first.
 - On a phone (a coarse pointer, `:pointer-coarse`, as the v2 controls read Base Web's `@media (pointer: coarse)`: Android
-  and iOS) the cut, copy and paste menu is the same menu without shortcuts (`Input.TouchContextFlyout`), and it opens
-  above the selection, clear of it, as a phone's browser places Android's floating text toolbar (#110; known
+  and iOS) the cut, copy and paste menu opens without its shortcuts (the theme's `Input.ContextFlyout`, its items'
+  `InputGesture` held empty while it is open there, without taking the focus, so the keyboard stays), and above the
+  selection, clear of it, as a phone's browser places Android's floating text toolbar (#110; known
   differences, 12). The place is Android's (`aosp-mirror/platform_frameworks_base` at `1cdfff555f`,
   `LocalFloatingToolbarPopup.refreshCoordinatesAndOverflowDirection` with no overflow): 8 above the selection
   (`floating_toolbar_vertical_margin`, 8 dp), or with no room there 8 below its touch handles, or just below them, or
@@ -124,8 +125,11 @@ From base-input.js and input.js, and its e2e test:
   selection is Chrome's content rect (`SelectionPopupControllerImpl`: its bounds, their bottom extended by the
   handles' height), the part of it the text's box shows, kept inside the page (`FloatingActionMode`, 20 dp below it
   allowed); with nothing selected, the caret's line. The room is the window's safe area above the soft keyboard (Android's
-  visible display frame). An app's own `ContextFlyout` replaces the menu and is placed the same; a fine pointer keeps
-  the desktop's menu, its shortcuts and Avalonia's place. `BaseInput` does this (`TouchMenu`), so Textarea's text has
+  visible display frame). While it is open it is placed again as the input moves (a page's scroll, the keyboard making
+  room) and as the keyboard or the bars change, as Android's toolbar follows its content. A selection the box doesn't
+  show at all places it by the box. An app's own `ContextFlyout` (local or by a style) replaces the menu, keeps its
+  items as they are, and is placed the same; one whose opening the app cancels stays shut. A fine pointer keeps the
+  desktop's menu, its shortcuts and Avalonia's place. `BaseInput` does this (`TouchMenu`), so Textarea's text has
   it too.
 - The icons are Base Web's own paths, rendered from its icons by the generator and the oracle, each drawn in its
   `viewBox` (24 × 24) at the size base-input.js gives it, filled with the colour its container passes down
@@ -160,13 +164,15 @@ From base-input.js and input.js, and its e2e test:
   after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
-- `Controls/InputTouchMenuTests`: 25: the place against Android's in each of its cases (8, worked by hand from its
-  source); a coarse pointer by platform and `:pointer-coarse`; on a phone the menu without shortcuts, above the word a
-  long press selects and centred on it, below the handles near the top, 16 from the side, below the handles under the
-  Pixel's status bar, as high as it fits above a keyboard, above the caret of an empty input, an app's own menu placed the
-  same, the menu's own place left as it was, #109's work round with the touch menu, a Textarea's; a fine pointer's
-  shortcuts and place; the word drawn selected under the open menu; and, when `METERED_FRAMES` names a folder, the menu
-  above, below and a desktop's (3).
+- `Controls/InputTouchMenuTests`: 32: the place against Android's in each of its cases (8, worked by hand from its
+  source); a coarse pointer by platform and `:pointer-coarse`; on a phone the theme's menu without shortcuts while open
+  and with them again after, above the word a long press selects and centred on it, below the handles near the top, 16
+  from the side, below the handles under the Pixel's status bar, as high as it fits above a keyboard, placed again as the
+  page scrolls and as the keyboard opens, above the caret of an empty input (the focus kept), a long selection by the
+  part the box shows and one it doesn't show by the box, an app's own menu (local, or by a style, its items untouched)
+  placed the same, a cancelled opening left shut, a placement rect on its popup, the menu's own place left as it was,
+  #109's work round on a phone, a Textarea's; a fine pointer's shortcuts and place; the word drawn selected under the
+  open menu; and, when `METERED_FRAMES` names a folder, the menu above, below and a desktop's (3).
 - `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the toggle's ring, the show
   and hide icons, and the gallery above: 6.
 - `Sample/InputPageTests`: the sample's page, 4, a finger's tap in the page's ScrollViewer and typing, and a finger's drag
@@ -192,8 +198,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
 - `tools/tokens/input.js`: `parts({ Root, InputContainer, Input })` makes the part definitions for other styled
   components, and `themes('Textarea', list)` writes them keyed `Textarea.Styled<Part>`; `AXES` is the states. The
   textarea's own differences (`resize`, `$alignTop`, no `$size` on its root) are its generator's.
-- `Input.ContextFlyout` (Input.axaml), the cut, copy and paste menu, by its key, and `Input.TouchContextFlyout`, a
-  phone's, without shortcuts, chosen by `:pointer-coarse` in Input's and Textarea's control themes.
+- `Input.ContextFlyout` (Input.axaml), the cut, copy and paste menu, by its key; `BaseInput` opens it on a phone
+  without its shortcuts and above the selection.
 
 ## Known differences
 
@@ -248,7 +254,7 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
 12. **A phone's menu is Avalonia's menu, placed as Android's toolbar** (#110, option 1 of the 2026-11-21 late decisions
    page; Android's place as built). A phone's browser shows the platform's floating text toolbar: a row (Android's: Cut, Copy, Paste,
    Select all) above the selection. Here it is the same cut, copy and paste menu as on a desktop, a column, without its
-   shortcuts, placed where Android places its toolbar (Behaviour). Avalonia's own place for a touch's menu hangs it over
+   shortcuts while it is open there, placed where Android places its toolbar (Behaviour). Avalonia's own place for a touch's menu hangs it over
    the selection ([Avalonia's issues](../../avalonia-issues.md), 2), and a fine pointer keeps it: a Windows touch screen
    still gets the desktop's menu, its shortcuts and that place. The menu's items are no taller for a finger, and it has no
    Select all. Not tried on the phone. The alternatives on the decisions page: a row-shaped toolbar of Metered's own, or

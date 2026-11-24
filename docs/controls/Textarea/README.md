@@ -31,8 +31,8 @@ examples (`documentation-site/pages/components/textarea.mdx`, `components/yard/c
 `textarea.js` renders `StyledTextAreaRoot` round Input's `BaseInput` with `type="textarea"`, its `Input` and
 `InputContainer` overridden by `StyledTextarea` and `StyledTextareaContainer`, which call Input's `getInputStyles` and
 `getInputContainerStyles`. So `Textarea` derives from `BaseInput` and reuses `InputField` (as `TextareaField`),
-`InputIcon` and `Input.ContextFlyout` (on a phone `Input.TouchContextFlyout`, without shortcuts and placed above the
-selection: Input's behaviour, #110); the clear icon, Escape, the states, the parts' guards and the overrides are
+`InputIcon` and `Input.ContextFlyout` (on a phone without its shortcuts and placed above the selection: Input's
+behaviour, #110); the clear icon, Escape, the states, the parts' guards and the overrides are
 BaseInput's, unchanged.
 
 ## API
