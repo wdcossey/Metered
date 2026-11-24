@@ -51,3 +51,26 @@ be told from elsewhere, still meet Avalonia's behaviour. Not yet tried on the ph
 focus went into it, the work round can go. Not reported upstream yet; the nearest open issues are
 [#12878](https://github.com/AvaloniaUI/Avalonia/issues/12878) and [#16132](https://github.com/AvaloniaUI/Avalonia/issues/16132)
 (touch selection on mobile in general).
+
+## 2. A touch's cut, copy and paste menu opens over the selection (#110)
+
+**Seen** on the Pixel 8 (Android 17 (API 37), Release, 2026-11-21): a long press on a word selects it and opens the menu
+over the word, hiding what was just selected.
+
+**Why.** `TextSelectionHandleCanvas.ShowFlyout`, which opens a text box's `ContextFlyout` after a hold selects a word or a
+handle is let go, places it with `PlacementMode.Custom`: its anchor's top left at the handles' midpoint, the line's
+height and 16 above their top (`LineHeight`, or `FontSize` when it is unset, plus 16), and no gravity, so the popup is
+centred on that point and hangs down over the line. A hold on an empty text, or on its selection, asks for the menu at the
+pointer, under the finger.
+
+**Measured headless** (Avalonia.Headless, the test clock's hold, 2026-11-24, an `Input` 100 from the window's top under the
+Simple theme and Metered's, a fine pointer): a hold on "world" selects it at y 112 to 136, and the menu is drawn at y 71 to
+145, over it (`InputTouchMenuTests.Gallery`'s `desktop` frame).
+
+**Metered's work round** (`BaseInput`, `TouchMenu`): on a coarse pointer (a phone) the input opens the menu itself, before
+Avalonia's flyout handler, with a place of its own: Android's floating toolbar's, above the selection (Input's README,
+known differences 12). Held by `InputTouchMenuTests`. A fine pointer keeps Avalonia's place, so a Windows touch screen's
+long press still covers the word.
+
+**Look again** when Avalonia is upgraded: if `ShowFlyout` gives its place a gravity that puts the menu above the
+selection, the fine pointer's touch could use it. Not reported upstream yet.

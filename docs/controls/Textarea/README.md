@@ -31,7 +31,8 @@ examples (`documentation-site/pages/components/textarea.mdx`, `components/yard/c
 `textarea.js` renders `StyledTextAreaRoot` round Input's `BaseInput` with `type="textarea"`, its `Input` and
 `InputContainer` overridden by `StyledTextarea` and `StyledTextareaContainer`, which call Input's `getInputStyles` and
 `getInputContainerStyles`. So `Textarea` derives from `BaseInput` and reuses `InputField` (as `TextareaField`),
-`InputIcon` and `Input.ContextFlyout`; the clear icon, Escape, the states, the parts' guards and the overrides are
+`InputIcon` and `Input.ContextFlyout` (on a phone `Input.TouchContextFlyout`, without shortcuts and placed above the
+selection: Input's behaviour, #110); the clear icon, Escape, the states, the parts' guards and the overrides are
 BaseInput's, unchanged.
 
 ## API
@@ -98,6 +99,7 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
   right to left, hidden when it doesn't resize; a layout that settles; the shared menu,
   and a long press on another textarea leaving the first with no selection or handles (#109);
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
+- `Controls/InputTouchMenuTests`: on a phone, its menu without shortcuts and above the word a long press selects (#110).
 - `Controls/TextareaFrames`: the drawn border, fill and focus ring, the clear icon at the top, text drawn in the padding
   when scrolled, the grip, and the gallery above.
 - `Sample/TextareaPageTests`: the sample's page, 4, a finger's tap and typing, and a drag on its long text.

@@ -35,6 +35,19 @@
   </MenuFlyout>
 
   <!--
+    The same menu on a coarse pointer (a phone, :pointer-coarse, #110): no shortcuts, as a phone's browser's text toolbar
+    has none, and shown without taking the focus. BaseInput places it above the selection (Metered.Controls.TouchMenu).
+  -->
+  <MenuFlyout x:Key="Input.TouchContextFlyout" ShowMode="Transient" Placement="Top">
+    <MenuItem Header="{DynamicResource StringTextFlyoutCutText}" Command="{Binding $parent[TextBox].Cut}"
+              IsEnabled="{Binding $parent[TextBox].CanCut}" />
+    <MenuItem Header="{DynamicResource StringTextFlyoutCopyText}" Command="{Binding $parent[TextBox].Copy}"
+              IsEnabled="{Binding $parent[TextBox].CanCopy}" />
+    <MenuItem Header="{DynamicResource StringTextFlyoutPasteText}" Command="{Binding $parent[TextBox].Paste}"
+              IsEnabled="{Binding $parent[TextBox].CanPaste}" />
+  </MenuFlyout>
+
+  <!--
     The text's scroller: the text scrolls to keep the caret in view, and a long value under a finger's sideways drag (a
     scroll gesture, flung as a browser's is), as Chrome scrolls an <input>'s on a phone, focused or not (#117). It scrolls
     only sideways, and takes only a drag more sideways than up or down (Metered.Controls.InputScrollGestureRecognizer), so
@@ -73,6 +86,9 @@
     <Setter Property="SelectionBrush" Value="{DynamicResource colors.accent}" />
     <Setter Property="SelectionForegroundBrush" Value="{DynamicResource colors.contentOnColor}" />
     <Setter Property="ContextFlyout" Value="{StaticResource Input.ContextFlyout}" />
+    <Style Selector="^:pointer-coarse">
+      <Setter Property="ContextFlyout" Value="{StaticResource Input.TouchContextFlyout}" />
+    </Style>
     <Setter Property="Template">
       <ControlTemplate>
         <Border Name="Root" Theme="{DynamicResource Input.StyledRoot}">
