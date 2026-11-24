@@ -71,7 +71,8 @@ From the browser, since Base Web renders a `<textarea>`:
   when the drag is the page's. A drag that has moved the textarea stays the textarea's until the finger lifts, even past
   its end: a browser's scroll latching. A textarea whose text fits is the page's to drag. The caret moves by a tap, not
   by a drag (Avalonia's text box would move it by a drag, and keep the page from panning: `BaseInput`'s, Input's too, #94); after a hold,
-  a drag extends the hold's selection, as the text box's.
+  a drag extends the hold's selection, as the text box's. A drag is no tap: it focuses nothing, even one that nothing
+  scrolls (`BaseInput`'s, #117).
 - `resize`: a grip in the textarea's end corner, two strokes as Chrome draws it; a drag on it by any pointer sets the
   textarea's width and height as the way allows, within the Input part's `MinWidth`, `MaxWidth`, `MinHeight` and
   `MaxHeight` (the documentation: set by an override), never smaller than the grip. Right to left, the grip is in the
@@ -91,8 +92,8 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
   textarea's padding, resize and height, the text inside the padding, the grip, the clear icon at the top.
 - `Controls/TextareaTests`: Base Web's defaults; the parts it renders and their labels (16); typing, Enter, wrapping; a
   long text scrolled by the caret and the wheel, under the padding; rows; a finger's drag in a page that scrolls (it moves
-  the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a tap's
-  caret; the clear
+  the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a drag
+  that nothing scrolls focusing nothing; a tap's caret; the clear
   icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later,
   right to left, hidden when it doesn't resize; a layout that settles; the shared menu;
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
