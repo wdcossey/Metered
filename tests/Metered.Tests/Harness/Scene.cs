@@ -29,8 +29,7 @@ internal sealed class Scene : IDisposable
     public Scene(Control? content = null, ThemeVariant? variant = null, double width = Width, double height = Height,
         IEnumerable<IStyle>? themes = null, bool realTime = false)
     {
-        if (realTime && TestClock.IsInstalled)
-            throw new InvalidOperationException("This test's dispatcher is already on a test clock: a real-time scene can't be made in it.");
+        if (realTime) TestClock.KeepRealTime();
         Window = new Window
         {
             Width = width,
@@ -68,6 +67,7 @@ internal sealed class Scene : IDisposable
     /// </summary>
     public void Advance(int ms)
     {
+        if (ms < 0) throw new ArgumentOutOfRangeException(nameof(ms), ms, "Time doesn't go back.");
         var clock = Clock ?? throw new InvalidOperationException("A scene on real time has no clock to advance.");
         for (var i = 0; i < ms; i++)
         {

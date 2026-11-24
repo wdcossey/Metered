@@ -15,7 +15,7 @@ using Spinner = Metered.Controls.Spinner;
 namespace Metered.Tests.Controls;
 
 /// <summary>
-/// The spinner's behaviour: its turn (at its end values, since a frame-by-frame test needs #13's test clock), which
+/// The spinner's behaviour: its turn (at its end values; a frame-by-frame comparison with Base Web's is #13's), which
 /// runs unless the ring is <c>:metered-still</c>; its cursor; its colour following <c>Color</c>; its lengths by name,
 /// token and number, and the text it reads them from; its overrides; its automation peer.
 /// </summary>

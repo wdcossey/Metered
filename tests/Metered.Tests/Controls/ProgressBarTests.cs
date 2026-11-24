@@ -21,7 +21,7 @@ namespace Metered.Tests.Controls;
 /// A progress bar's own behaviour (progress-bar/progressbar.js, its unit tests progressbar.test.tsx and its scenarios):
 /// for each value Base Web's scenarios and tests give, the bars it renders, each step's state and where its fill is, the
 /// label and the accessible name; the parts' state, a value or steps changing, the motion (at its end values: a
-/// frame-by-frame test needs a test clock, #13), overrides, and the pixels the fill and the infinite bars draw.
+/// frame-by-frame comparison with Base Web's is #13's), overrides, and the pixels the fill and the infinite bars draw.
 /// </summary>
 public class ProgressBarTests
 {

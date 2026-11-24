@@ -133,8 +133,8 @@ public class InputFrames
     }
 
     /// <summary>
-    /// Ends the parts' transitions at their end values (CheckboxFrames' way): Avalonia 12's animation clock is internal
-    /// (#13), so a frame can't wait for one.
+    /// Ends the parts' transitions at their end values (CheckboxFrames' way), so a frame shows where they end without
+    /// waiting for them.
     /// </summary>
     internal static void Settle(Scene scene)
     {

@@ -16,14 +16,21 @@ namespace Metered.Tests;
 /// <para>One per dispatcher, and so per test (the assembly keeps Avalonia's default isolation, a dispatcher per test).
 /// Avalonia gives no clock to replace (its <c>IClock</c> and <c>Animatable.Clock</c> are internal, and a dispatcher's
 /// implementation can't be swapped once it exists), so this reaches their private fields; an Avalonia upgrade that moves
-/// one fails here, naming it. Once installed, the dispatcher's own loop (<c>MainLoop</c>) waits on real time for timers
-/// that come due only on this clock: a test on it advances it instead.</para>
+/// one fails here, naming it.</para>
+/// <para>Not held: the dispatcher's own loop (<c>MainLoop</c>) still waits on its implementation's real clock, so on this
+/// clock every timer looks due to it and none is: it spins until cancelled and fires nothing (a test on this clock
+/// advances it instead). Two clocks of Avalonia's stay real too, and no test here reads them: a scroll gesture's inertia
+/// (a stopwatch started at the release, and the velocity tracker's since its last sample), which starts only from a fling
+/// whose moves are stamped apart, while a test's moves are stamped the same unless it advances between them; and the
+/// headless render timer's tick time, which only the compositor's own animations read, and Metered runs none.</para>
 /// </summary>
 internal sealed class TestClock
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly ConditionalWeakTable<Dispatcher, TestClock> Clocks = new();
+
+    private static readonly ConditionalWeakTable<Dispatcher, object> RealTime = new();
 
     private static readonly FieldInfo StopwatchElapsed = Field(typeof(Stopwatch), "_elapsed");
 
@@ -52,9 +59,13 @@ internal sealed class TestClock
     /// <summary>The current test's clock, installed on first use; it holds the window's input clock too.</summary>
     public static TestClock Of(Window window)
     {
+        if (RealTime.TryGetValue(Dispatcher.UIThread, out _))
+            throw new InvalidOperationException("This test has a scene on real time: its dispatcher can't go on a test clock.");
+        var platformImpl = typeof(TopLevel).GetProperty("PlatformImpl", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            ?? throw Moved(typeof(TopLevel), "PlatformImpl");
+        var impl = platformImpl.GetValue(window)
+            ?? throw new InvalidOperationException("The window has no platform implementation (closed?): its input clock can't be held.");
         var clock = Clocks.GetValue(Dispatcher.UIThread, static d => new TestClock(d));
-        var impl = typeof(TopLevel).GetProperty("PlatformImpl", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            ?.GetValue(window) ?? throw Moved(typeof(TopLevel), "PlatformImpl");
         if (!clock._windows.TryGetValue(impl, out _))
         {
             clock._windows.Add(impl, impl);
@@ -66,6 +77,17 @@ internal sealed class TestClock
 
     /// <summary>Whether the current test's dispatcher is on a test clock.</summary>
     public static bool IsInstalled => Clocks.TryGetValue(Dispatcher.UIThread, out _);
+
+    /// <summary>
+    /// Keeps the current test's dispatcher on real time, for a scene that measures it: one test's time is one clock, so
+    /// this throws if it is already on a test clock, and <see cref="Of"/> throws after it.
+    /// </summary>
+    public static void KeepRealTime()
+    {
+        if (IsInstalled)
+            throw new InvalidOperationException("This test's dispatcher is already on a test clock: a real-time scene can't be made in it.");
+        RealTime.AddOrUpdate(Dispatcher.UIThread, RealTime);
+    }
 
     /// <summary>
     /// Moves every held clock on by <paramref name="ms"/>. Nothing runs here: what comes due runs when the dispatcher

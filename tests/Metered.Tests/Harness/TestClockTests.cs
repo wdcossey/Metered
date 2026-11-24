@@ -153,6 +153,37 @@ public class TestClockTests
         Assert.Throws<InvalidOperationException>(() => new Scene(new Border(), realTime: true));
     }
 
+    // And the other way: a test with a scene on real time can't put another on the test's clock.
+    [AvaloniaFact]
+    public void A_test_on_real_time_cant_go_on_the_test_clock()
+    {
+        using var scene = new Scene(new Border(), realTime: true);
+        Assert.Throws<InvalidOperationException>(() => new Scene(new Border()));
+        Assert.False(TestClock.IsInstalled);
+    }
+
+    [AvaloniaFact]
+    public void Time_doesnt_go_back()
+    {
+        using var scene = new Scene(new Border());
+        scene.Advance(5);
+        Assert.Throws<ArgumentOutOfRangeException>(() => scene.Advance(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => scene.Clock!.Advance(-1));
+        Assert.Equal(TimeSpan.FromMilliseconds(5), scene.Clock!.Elapsed);
+    }
+
+    // A closed window has no input clock to hold: said so, not blamed on an Avalonia upgrade.
+    [AvaloniaFact]
+    public void A_closed_window_is_refused_as_closed()
+    {
+        var window = new Window();
+        window.Show();
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        var refused = Assert.Throws<InvalidOperationException>(() => TestClock.Of(window));
+        Assert.Contains("no platform implementation", refused.Message);
+    }
+
     // Two scenes in one test share its clock, and the second window's input follows it from where the clock is.
     [AvaloniaFact]
     public void Two_scenes_in_a_test_share_its_clock()
