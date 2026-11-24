@@ -43,7 +43,8 @@ public class PopoverPageTests
         var entry = Assert.Single(SampleShell.Pages, page => page.Type == typeof(PopoverPage));
         Assert.Equal("Popover", entry.Title);
         Assert.Equal(106, typeof(PopoverPage).GetCustomAttributes(typeof(SamplePageAttribute), false).Cast<SamplePageAttribute>().Single().Order);
-        Assert.Equal(titles.IndexOf("FormControl") + 1, titles.IndexOf(entry.Title));
+        // Select (97) came between them after (#97).
+        Assert.Equal(titles.IndexOf("Select") + 1, titles.IndexOf(entry.Title));
         Assert.True(titles.IndexOf(entry.Title) < titles.IndexOf("Theme"));
     }
 

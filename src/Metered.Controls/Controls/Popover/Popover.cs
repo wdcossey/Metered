@@ -255,6 +255,12 @@ public class Popover : TemplatedControl
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
 
+    /// <summary>
+    /// Avalonia's back request is Base Web's <c>onEsc</c> while it is open (#97): for a controlled popover whose Escape
+    /// handler closes it, as Select's does, so that back closes it as Escape would (#123's rule).
+    /// </summary>
+    internal bool EscOnBack { get; set; }
+
     /// <summary>The popup the body is shown in, for tests.</summary>
     internal Popup? PopupHost => _popup;
 
@@ -927,10 +933,18 @@ public class Popover : TemplatedControl
     /// <summary>
     /// Avalonia's back request (Metered's, #123: Base Web has none): an open popover that Escape would close closes, and
     /// takes the request; one that wouldn't, or is already closing, leaves it to the layer below. <see cref="Esc"/> isn't
-    /// raised: it wasn't Escape.
+    /// raised: it wasn't Escape. But a controlled popover with <see cref="EscOnBack"/> (Select's dropdown, #97), whose own
+    /// Escape handler closes it, takes the request as its Escape: <see cref="Esc"/> is raised and the request handled.
     /// </summary>
     private bool OnLayerBack()
     {
+        // A controlled popover whose onEsc closes it (Select's dropdown, #97): the back request is its Escape.
+        if (IsOpen && EscOnBack)
+        {
+            RaiseEvent(new RoutedEventArgs(EscEvent, this));
+            return true;
+        }
+
         if (!IsOpen || !DismissOnEsc) return false;
         SetCurrentValue(IsOpenProperty, false);
         return true;

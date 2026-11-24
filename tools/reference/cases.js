@@ -158,6 +158,8 @@ const files = {
   'popover.oracle.json': require('./popover').oracle(version),
   // Base Web's Menu: rendered, its stateful container driven, its scrollItemIntoView (menu.js).
   'menu.oracle.json': require('./menu').oracle(version),
+  // Base Web's Select: rendered with its dropdown and tags, its own class driven, its filter (select.js).
+  'select.oracle.json': require('./select').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

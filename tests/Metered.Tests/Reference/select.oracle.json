@@ -1,0 +1,6726 @@
+{
+ "baseui": "18.2.0",
+ "lists": {
+  "OPTIONS": [
+   {
+    "id": "AliceBlue",
+    "label": "AliceBlue"
+   },
+   {
+    "id": "Aqua",
+    "label": "Aqua"
+   },
+   {
+    "id": "Aquamarine",
+    "label": "Aquamarine"
+   },
+   {
+    "id": "Azure",
+    "label": "Azure"
+   },
+   {
+    "id": "Beige",
+    "label": "Beige",
+    "disabled": true
+   },
+   {
+    "id": "Bisque",
+    "label": "Bisque"
+   },
+   {
+    "id": "Black",
+    "label": "Black"
+   },
+   {
+    "id": "BlanchedAlmond",
+    "label": "BlanchedAlmond"
+   }
+  ],
+  "GROUPED": {
+   "__ungrouped": [
+    {
+     "id": "Black",
+     "label": "Black"
+    },
+    {
+     "id": "White",
+     "label": "White"
+    }
+   ],
+   "Blueish": [
+    {
+     "id": "AliceBlue",
+     "label": "AliceBlue"
+    },
+    {
+     "id": "Aqua",
+     "label": "Aqua"
+    }
+   ],
+   "Reddish": [
+    {
+     "id": "Crimson",
+     "label": "Crimson"
+    },
+    {
+     "id": "Red",
+     "label": "Red"
+    }
+   ]
+  }
+ },
+ "locale": {
+  "noResultsMsg": "No results found",
+  "placeholder": "Select...",
+  "create": "Create"
+ },
+ "structure": [
+  {
+   "name": "empty",
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "Placeholder",
+     "text": "Select..."
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "a value",
+   "value": [
+    "Aqua"
+   ],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear value",
+     "ariaLabel": "Clear value",
+     "role": "button"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "a value, not clearable",
+   "value": [
+    "Aqua"
+   ],
+   "clearable": false,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "a value, disabled",
+   "value": [
+    "Aqua"
+   ],
+   "disabled": true,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "loading",
+   "value": [
+    "Aqua"
+   ],
+   "isLoading": true,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "LoadingIndicator",
+     "role": "status"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "not searchable",
+   "value": [
+    "Aqua"
+   ],
+   "searchable": false,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaDisabled": false,
+     "tabIndex": 0
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear value",
+     "ariaLabel": "Clear value",
+     "role": "button"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "not searchable, empty",
+   "searchable": false,
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer",
+     "ariaLabel": "",
+     "ariaDisabled": false,
+     "tabIndex": 0
+    },
+    {
+     "part": "Placeholder",
+     "text": "Select..."
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "search",
+   "type": "search",
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "SearchIconContainer"
+    },
+    {
+     "part": "SearchIcon",
+     "size": 16,
+     "title": "search",
+     "ariaLabel": null,
+     "role": null
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "Placeholder",
+     "text": "Select..."
+    },
+    {
+     "part": "IconsContainer"
+    }
+   ]
+  },
+  {
+   "name": "search with a value",
+   "type": "search",
+   "value": [
+    "Aqua"
+   ],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "SearchIconContainer"
+    },
+    {
+     "part": "SearchIcon",
+     "size": 16,
+     "title": "search",
+     "ariaLabel": null,
+     "role": null
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "SingleValue",
+     "text": "Aqua"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear value",
+     "ariaLabel": "Clear value",
+     "role": "button"
+    }
+   ]
+  },
+  {
+   "name": "multi, empty",
+   "multi": true,
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "Placeholder",
+     "text": "Select..."
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "multi",
+   "multi": true,
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "Tag",
+     "text": "Aqua",
+     "disabled": false,
+     "ariaLabel": "Remove Aqua",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "Tag",
+     "text": "Azure",
+     "disabled": false,
+     "ariaLabel": "Remove Azure",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua, Azure. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear all",
+     "ariaLabel": "Clear all",
+     "role": "button"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "multi, a value not clearable",
+   "multi": true,
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": "Azure",
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "Tag",
+     "text": "Aqua",
+     "disabled": false,
+     "ariaLabel": "Remove Aqua",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "Tag",
+     "text": "Azure",
+     "disabled": false,
+     "ariaLabel": "Remove Azure",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua, Azure. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear all",
+     "ariaLabel": "Clear all",
+     "role": "button"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "multi, disabled",
+   "multi": true,
+   "value": [
+    "Aqua"
+   ],
+   "disabled": true,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "Tag",
+     "text": "Aqua",
+     "disabled": true,
+     "ariaLabel": null,
+     "role": null,
+     "tabIndex": null,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua. ",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "a placeholder",
+   "placeholder": "Choose a colour",
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "Placeholder",
+     "text": "Choose a colour"
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "named",
+   "aria-label": "Colour",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "multi": true,
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "Tag",
+     "text": "Aqua",
+     "disabled": false,
+     "ariaLabel": "Remove Aqua",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "Tag",
+     "text": "Azure",
+     "disabled": false,
+     "ariaLabel": "Remove Azure",
+     "role": "button",
+     "tabIndex": 0,
+     "action": true,
+     "actionIconSize": 12
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "Selected Aqua, Azure. Colour",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "ClearIcon",
+     "size": 18,
+     "title": "Clear all",
+     "ariaLabel": "Clear all",
+     "role": "button"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  },
+  {
+   "name": "required, empty",
+   "required": true,
+   "value": [],
+   "popover": {
+    "accessibilityType": "none",
+    "autoFocus": false,
+    "focusLock": false,
+    "popoverMargin": 0,
+    "placement": "bottom"
+   },
+   "elements": [
+    {
+     "part": "Root"
+    },
+    {
+     "part": "ControlContainer"
+    },
+    {
+     "part": "ValueContainer"
+    },
+    {
+     "part": "InputContainer"
+    },
+    {
+     "part": "Input",
+     "role": "combobox",
+     "ariaLabel": "",
+     "ariaExpanded": false,
+     "ariaHaspopup": "listbox",
+     "ariaAutocomplete": "list",
+     "ariaRequired": true,
+     "tabIndex": 0,
+     "value": ""
+    },
+    {
+     "part": "Placeholder",
+     "text": "Select..."
+    },
+    {
+     "part": "IconsContainer"
+    },
+    {
+     "part": "SelectArrow",
+     "size": 20,
+     "title": "open",
+     "ariaLabel": null,
+     "role": null
+    }
+   ]
+  }
+ ],
+ "dropdown": [
+  {
+   "name": "options",
+   "value": [],
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "a value: its option highlighted and selected",
+   "value": [
+    "Azure"
+   ],
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": true,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "a value not among the options: the first highlighted",
+   "value": [
+    "Crimson"
+   ],
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "multi: the chosen left out",
+   "multi": true,
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "multi, filterOutSelected off: the first chosen highlighted",
+   "multi": true,
+   "value": [
+    "Azure",
+    "Aqua"
+   ],
+   "filterOutSelected": false,
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": true,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": true,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "grouped",
+   "options": "GROUPED",
+   "value": [
+    "Aqua"
+   ],
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "White",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "White",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "OptgroupHeader",
+     "text": "Blueish"
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": true,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": true
+    },
+    {
+     "part": "OptgroupHeader",
+     "text": "Reddish"
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Crimson",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Crimson",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Red",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Red",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "no options",
+   "options": null,
+   "optionsGiven": [],
+   "value": [],
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "EmptyState",
+     "text": "No results"
+    }
+   ]
+  },
+  {
+   "name": "no options, a message",
+   "options": null,
+   "noResultsMsg": "Nothing here",
+   "optionsGiven": [],
+   "value": [],
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "EmptyState",
+     "text": "Nothing here"
+    }
+   ]
+  },
+  {
+   "name": "compact",
+   "size": "compact",
+   "value": [
+    "Aqua"
+   ],
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "maxHeight": "40vh",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": true,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": true
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  },
+  {
+   "name": "a max height",
+   "maxDropdownHeight": "120px",
+   "options": "OPTIONS",
+   "optionsGiven": null,
+   "value": [],
+   "maxHeight": "120px",
+   "listId": true,
+   "containerWidth": "anchor",
+   "elements": [
+    {
+     "part": "Dropdown",
+     "role": "listbox",
+     "ariaMultiselectable": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "AliceBlue",
+     "role": "option",
+     "highlighted": true,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "AliceBlue",
+     "selected": false,
+     "disabled": false,
+     "highlighted": true,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aqua",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aqua",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Aquamarine",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Aquamarine",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Azure",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Azure",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Beige",
+     "role": "option",
+     "highlighted": false,
+     "disabled": true
+    },
+    {
+     "part": "OptionContent",
+     "text": "Beige",
+     "selected": false,
+     "disabled": true,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Bisque",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Bisque",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "Black",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "Black",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    },
+    {
+     "part": "DropdownListItem",
+     "text": "BlanchedAlmond",
+     "role": "option",
+     "highlighted": false,
+     "disabled": false
+    },
+    {
+     "part": "OptionContent",
+     "text": "BlanchedAlmond",
+     "selected": false,
+     "disabled": false,
+     "highlighted": false,
+     "ariaSelected": false
+    }
+   ]
+  }
+ ],
+ "colours": [
+  {
+   "theme": "Light",
+   "state": "rest",
+   "foreground": "#FF000000",
+   "border": "#FFF3F3F3",
+   "background": "#FFF3F3F3",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "focused",
+   "foreground": "#FF000000",
+   "border": "#FF000000",
+   "background": "#FFFFFFFF",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "pseudoFocused",
+   "foreground": "#FF000000",
+   "border": "#FF000000",
+   "background": "#FFFFFFFF",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "error",
+   "foreground": "#FF000000",
+   "border": "#FFDE1135",
+   "background": "#FFFFFFFF",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "positive",
+   "foreground": "#FF000000",
+   "border": "#FF0E8345",
+   "background": "#FFFFFFFF",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "errorFocused",
+   "foreground": "#FF000000",
+   "border": "#FF000000",
+   "background": "#FFFFFFFF",
+   "placeholder": "#FF5E5E5E",
+   "input": "#FF000000",
+   "arrow": "#FF000000",
+   "search": "#FF000000",
+   "cursor": "text"
+  },
+  {
+   "theme": "Light",
+   "state": "disabled",
+   "foreground": "#FFA6A6A6",
+   "border": "#FFF3F3F3",
+   "background": "#FFF3F3F3",
+   "placeholder": "#FFA6A6A6",
+   "input": "#FF000000",
+   "arrow": "#FFA6A6A6",
+   "search": "#FFA6A6A6",
+   "cursor": "not-allowed"
+  },
+  {
+   "theme": "Light",
+   "state": "disabledError",
+   "foreground": "#FFA6A6A6",
+   "border": "#FFF3F3F3",
+   "background": "#FFF3F3F3",
+   "placeholder": "#FFA6A6A6",
+   "input": "#FF000000",
+   "arrow": "#FFA6A6A6",
+   "search": "#FFA6A6A6",
+   "cursor": "not-allowed"
+  },
+  {
+   "theme": "Dark",
+   "state": "rest",
+   "foreground": "#FFDEDEDE",
+   "border": "#FF292929",
+   "background": "#FF292929",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "focused",
+   "foreground": "#FFDEDEDE",
+   "border": "#FFDEDEDE",
+   "background": "#FF161616",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "pseudoFocused",
+   "foreground": "#FFDEDEDE",
+   "border": "#FFDEDEDE",
+   "background": "#FF161616",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "error",
+   "foreground": "#FFDEDEDE",
+   "border": "#FFC33840",
+   "background": "#FF161616",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "positive",
+   "foreground": "#FFDEDEDE",
+   "border": "#FF3D8351",
+   "background": "#FF161616",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "errorFocused",
+   "foreground": "#FFDEDEDE",
+   "border": "#FFDEDEDE",
+   "background": "#FF161616",
+   "placeholder": "#FFABABAB",
+   "input": "#FFDEDEDE",
+   "arrow": "#FFDEDEDE",
+   "search": "#FFDEDEDE",
+   "cursor": "text"
+  },
+  {
+   "theme": "Dark",
+   "state": "disabled",
+   "foreground": "#FF5D5D5D",
+   "border": "#FF292929",
+   "background": "#FF292929",
+   "placeholder": "#FF5D5D5D",
+   "input": "#FFDEDEDE",
+   "arrow": "#FF5D5D5D",
+   "search": "#FF5D5D5D",
+   "cursor": "not-allowed"
+  },
+  {
+   "theme": "Dark",
+   "state": "disabledError",
+   "foreground": "#FF5D5D5D",
+   "border": "#FF292929",
+   "background": "#FF292929",
+   "placeholder": "#FF5D5D5D",
+   "input": "#FFDEDEDE",
+   "arrow": "#FF5D5D5D",
+   "search": "#FF5D5D5D",
+   "cursor": "not-allowed"
+  }
+ ],
+ "surfaces": [
+  {
+   "theme": "Light",
+   "tag": {
+    "foreground": "#FFFFFFFF",
+    "background": "#FF727272",
+    "border": "#FF5E5E5E",
+    "borderWidth": 1,
+    "hover": "#0A000000",
+    "active": "#14000000",
+    "focusRing": "#FF276EF1",
+    "cursor": "default",
+    "actionCursor": "pointer"
+   },
+   "tagDisabled": {
+    "foreground": "#FFC6C6C6",
+    "background": "#FFF3F3F3",
+    "border": null,
+    "borderWidth": 0,
+    "hover": null,
+    "active": null,
+    "focusRing": null,
+    "cursor": "not-allowed",
+    "actionCursor": "not-allowed"
+   },
+   "ring": {
+    "top": "#FF276EF1",
+    "track": "#FFF3F3F3"
+   },
+   "option": {
+    "selected": "#FF000000",
+    "selectedHighlighted": null,
+    "plain": null,
+    "listItem": "#FF000000",
+    "listItemHighlighted": "#FF000000",
+    "selectedWeight": "Bold",
+    "plainWeight": "Normal",
+    "disabledCursor": "not-allowed",
+    "cursor": "pointer"
+   }
+  },
+  {
+   "theme": "Dark",
+   "tag": {
+    "foreground": "#FFDEDEDE",
+    "background": "#FF5D5D5D",
+    "border": "#FF717171",
+    "borderWidth": 1,
+    "hover": "#1AFFFFFF",
+    "active": "#26FFFFFF",
+    "focusRing": "#FF335BA3",
+    "cursor": "default",
+    "actionCursor": "pointer"
+   },
+   "tagDisabled": {
+    "foreground": "#FF5D5D5D",
+    "background": "#FF292929",
+    "border": null,
+    "borderWidth": 0,
+    "hover": null,
+    "active": null,
+    "focusRing": null,
+    "cursor": "not-allowed",
+    "actionCursor": "not-allowed"
+   },
+   "ring": {
+    "top": "#FF5E8BDB",
+    "track": "#FF292929"
+   },
+   "option": {
+    "selected": "#FFDEDEDE",
+    "selectedHighlighted": null,
+    "plain": null,
+    "listItem": "#FFDEDEDE",
+    "listItemHighlighted": "#FFDEDEDE",
+    "selectedWeight": "Bold",
+    "plainWeight": "Normal",
+    "disabledCursor": "not-allowed",
+    "cursor": "pointer"
+   }
+  }
+ ],
+ "layout": [
+  {
+   "size": "mini",
+   "kind": "single",
+   "multi": false,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "single, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "multi",
+   "multi": true,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "multi, values",
+   "multi": true,
+   "values": 2,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    8,
+    0,
+    0,
+    0
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": {
+    "height": 24,
+    "margin": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "padding": [
+     6,
+     4,
+     6,
+     4
+    ],
+    "border": 1,
+    "radius": 4,
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Medium",
+     "lineHeight": 16
+    },
+    "textMaxWidth": 128,
+    "actionMargin": 8,
+    "actionRadius": 12,
+    "actionIcon": 12,
+    "actionIconViewBox": "5 5 13.186 13.186"
+   },
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "search",
+   "multi": false,
+   "values": 0,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "search, a value",
+   "multi": false,
+   "values": 1,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 12,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "mini",
+   "kind": "not searchable, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": false,
+   "font": {
+    "fontSize": 12,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 4,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    4,
+    0,
+    4
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": 20,
+    "maxHeight": 20
+   },
+   "input": null,
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": 20
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 32
+  },
+  {
+   "size": "compact",
+   "kind": "single",
+   "multi": false,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "single, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "multi",
+   "multi": true,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "multi, values",
+   "multi": true,
+   "values": 2,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    8,
+    2,
+    0,
+    2
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": {
+    "height": 24,
+    "margin": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "padding": [
+     6,
+     4,
+     6,
+     4
+    ],
+    "border": 1,
+    "radius": 4,
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Medium",
+     "lineHeight": 16
+    },
+    "textMaxWidth": 128,
+    "actionMargin": 8,
+    "actionRadius": 12,
+    "actionIcon": 12,
+    "actionIconViewBox": "5 5 13.186 13.186"
+   },
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "search",
+   "multi": false,
+   "values": 0,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "search, a value",
+   "multi": false,
+   "values": 1,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 20
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Normal",
+     "lineHeight": 20
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "compact",
+   "kind": "not searchable, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": false,
+   "font": {
+    "fontSize": 14,
+    "fontWeight": "Normal",
+    "lineHeight": 20
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    6,
+    0,
+    6
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": 20,
+    "maxHeight": 20
+   },
+   "input": null,
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": 20
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 16,
+   "tag": null,
+   "height": 36
+  },
+  {
+   "size": "default",
+   "kind": "single",
+   "multi": false,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 20,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "single, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 20,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "multi",
+   "multi": true,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 20,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "multi, values",
+   "multi": true,
+   "values": 2,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    12,
+    8,
+    0,
+    8
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": null,
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 20,
+   "tag": {
+    "height": 24,
+    "margin": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "padding": [
+     6,
+     4,
+     6,
+     4
+    ],
+    "border": 1,
+    "radius": 4,
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Medium",
+     "lineHeight": 16
+    },
+    "textMaxWidth": 128,
+    "actionMargin": 8,
+    "actionRadius": 12,
+    "actionIcon": 12,
+    "actionIconViewBox": "5 5 13.186 13.186"
+   },
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "search",
+   "multi": false,
+   "values": 0,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "search, a value",
+   "multi": false,
+   "values": 1,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 24
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 16,
+     "fontWeight": "Normal",
+     "lineHeight": 24
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "default",
+   "kind": "not searchable, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": false,
+   "font": {
+    "fontSize": 16,
+    "fontWeight": "Normal",
+    "lineHeight": 24
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    10,
+    0,
+    10
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": 24,
+    "maxHeight": 24
+   },
+   "input": null,
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": 24
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 20,
+   "tag": null,
+   "height": 48
+  },
+  {
+   "size": "large",
+   "kind": "single",
+   "multi": false,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 24,
+   "tag": null,
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "single, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 24,
+   "tag": null,
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "multi",
+   "multi": true,
+   "values": 0,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 24,
+   "tag": null,
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "multi, values",
+   "multi": true,
+   "values": 2,
+   "type": "select",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    8,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": null,
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 24,
+   "tag": {
+    "height": 24,
+    "margin": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "padding": [
+     6,
+     4,
+     6,
+     4
+    ],
+    "border": 1,
+    "radius": 4,
+    "font": {
+     "fontSize": 14,
+     "fontWeight": "Medium",
+     "lineHeight": 16
+    },
+    "textMaxWidth": 128,
+    "actionMargin": 8,
+    "actionRadius": 12,
+    "actionIcon": 12,
+    "actionIconViewBox": "5 5 13.186 13.186"
+   },
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "search",
+   "multi": false,
+   "values": 0,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 0,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": null,
+   "placeholder": true,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "search, a value",
+   "multi": false,
+   "values": 1,
+   "type": "search",
+   "searchable": true,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    38,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": null,
+    "maxHeight": 28
+   },
+   "input": {
+    "width": "5px",
+    "font": {
+     "fontSize": 18,
+     "fontWeight": "Normal",
+     "lineHeight": 28
+    }
+   },
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": null
+   },
+   "placeholder": false,
+   "search": {
+    "left": 12,
+    "size": 16,
+    "icon": 16
+   },
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": null,
+   "tag": null,
+   "height": 60
+  },
+  {
+   "size": "large",
+   "kind": "not searchable, a value",
+   "multi": false,
+   "values": 1,
+   "type": "select",
+   "searchable": false,
+   "font": {
+    "fontSize": 18,
+    "fontWeight": "Normal",
+    "lineHeight": 28
+   },
+   "radius": 8,
+   "border": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "padding": [
+    10,
+    14,
+    0,
+    14
+   ],
+   "iconsPadding": 12,
+   "inputContainer": {
+    "marginLeft": 2,
+    "height": 28,
+    "maxHeight": 28
+   },
+   "input": null,
+   "singleValue": {
+    "marginLeft": 2,
+    "lineHeight": 28
+   },
+   "placeholder": false,
+   "search": null,
+   "ring": {
+    "box": 16,
+    "border": 2
+   },
+   "clearIcon": null,
+   "arrow": 24,
+   "tag": null,
+   "height": 60
+  }
+ ],
+ "behaviour": [
+  {
+   "name": "a click opens, a click again closes",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "a click on the input opens, and again keeps it open",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "input",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "input",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "not searchable: a click toggles",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "searchable": false
+   },
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "openOnClick off: focus only",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "openOnClick": false
+   },
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "ArrowDown",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "choose closes, and resets the input",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "aq",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "choose": "Aquamarine",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aquamarine"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Aquamarine",
+       "value": [
+        "Aquamarine"
+       ]
+      }
+     ],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aquamarine"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "closeOnSelect off keeps it open",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "closeOnSelect": false
+   },
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "choose": "Aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Aqua",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "choose": "Azure",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Azure"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Azure",
+       "value": [
+        "Azure"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "typing filters and opens",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "a",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "a",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "type": "aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aqua",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "type": "zz",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "zz",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "type": "",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "typing, ignoreCase off",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "ignoreCase": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "a",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "a",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "type": "A",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "A",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "Escape closes, pseudo-focused; Escape again clears",
+   "value": [
+    "Aqua"
+   ],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [
+      {
+       "type": "clear",
+       "option": null,
+       "value": []
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "ArrowDown",
+     "isOpen": true,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "escapeClearsValue off",
+   "value": [
+    "Aqua"
+   ],
+   "unclearable": null,
+   "props": {
+    "escapeClearsValue": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "the keys that open",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "searchable": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": " ",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "ArrowUp",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "PageDown",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "Home",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "End",
+     "shift": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "End",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "Space types when searchable",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": " ",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": " ",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "Tab closes and blurs, the input kept for a reset off",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "onBlurResetsInput": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "aq",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Tab",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "Tab closes and resets the input",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "aq",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Tab",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "blur closes and resets",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "b",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "b",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "clickOutside": true,
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "a tap opens, a drag does not",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "drag": "control",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "tap": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "tapOutside": true,
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "clear: the value and the input",
+   "value": [
+    "Aqua"
+   ],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "clear": true,
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [
+      {
+       "type": "clear",
+       "option": null,
+       "value": []
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "Backspace takes the last value back to the input",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": null,
+   "props": {
+    "multi": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Backspace",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Azur",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Azure",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Azure"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Backspace",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Azu",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "Azure"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Backspace",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Az",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "Azure"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "backspaceClearsInputValue",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": null,
+   "props": {
+    "multi": true,
+    "backspaceClearsInputValue": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Backspace",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Azure",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "Backspace with text deletes a letter",
+   "value": [
+    "Aqua"
+   ],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "type": "b",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "b",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Backspace",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "Delete removes the last value",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": null,
+   "props": {
+    "multi": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Delete",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Azure",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Delete",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Aqua",
+       "value": []
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "a value not clearable stays",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": "Azure",
+   "props": {
+    "multi": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "key": "Backspace",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "clear": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Azure"
+     ],
+     "changes": [
+      {
+       "type": "clear",
+       "option": null,
+       "value": [
+        "Azure"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "multi: choose adds, again removes",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "multi": true,
+    "closeOnSelect": false,
+    "filterOutSelected": false
+   },
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "choose": "Aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Aqua",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "choose": "Azure",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Aqua",
+      "Azure"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Azure",
+       "value": [
+        "Aqua",
+        "Azure"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "choose": "Aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Azure"
+     ],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Aqua",
+       "value": [
+        "Azure"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "multi: a tag removed",
+   "value": [
+    "Aqua",
+    "Azure"
+   ],
+   "unclearable": null,
+   "props": {
+    "multi": true
+   },
+   "steps": [
+    {
+     "remove": "Aqua",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Azure"
+     ],
+     "changes": [
+      {
+       "type": "remove",
+       "option": "Aqua",
+       "value": [
+        "Azure"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "creatable",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "creatable": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "Teal",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Teal",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Create “Teal”"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "choose": "Create Teal",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Teal"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Teal",
+       "value": [
+        "Teal"
+       ]
+      }
+     ],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "type": "aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aqua",
+     "value": [
+      "Teal"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "type": "Aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Aqua",
+     "value": [
+      "Teal"
+     ],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "creatable multi",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "creatable": true,
+    "multi": true
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "Teal",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Teal",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Create “Teal”"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "choose": "Create Teal",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [
+      "Teal"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Teal",
+       "value": [
+        "Teal"
+       ]
+      }
+     ],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": false,
+     "showValue": true
+    },
+    {
+     "type": "Teal",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "Teal",
+     "value": [
+      "Teal"
+     ],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "a disabled option is not chosen",
+   "value": [],
+   "unclearable": null,
+   "props": {},
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "choose": "Beige",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "disabled: nothing opens",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "disabled": true
+   },
+   "steps": [
+    {
+     "click": "control",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "key": "ArrowDown",
+     "isOpen": false,
+     "isFocused": false,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    }
+   ]
+  },
+  {
+   "name": "onCloseResetsInput off keeps the text on Escape",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "onCloseResetsInput": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "aq",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "key": "Escape",
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": true,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "close"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  },
+  {
+   "name": "onSelectResetsInput off keeps the text",
+   "value": [],
+   "unclearable": null,
+   "props": {
+    "onSelectResetsInput": false,
+    "closeOnSelect": false
+   },
+   "steps": [
+    {
+     "focus": true,
+     "isOpen": false,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "",
+     "value": [],
+     "changes": [],
+     "opens": [],
+     "options": [
+      "AliceBlue",
+      "Aqua",
+      "Aquamarine",
+      "Azure",
+      "Beige",
+      "Bisque",
+      "Black",
+      "BlanchedAlmond"
+     ],
+     "placeholder": true,
+     "showValue": true
+    },
+    {
+     "type": "aq",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [],
+     "changes": [],
+     "opens": [
+      "open"
+     ],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    },
+    {
+     "choose": "Aqua",
+     "isOpen": true,
+     "isFocused": true,
+     "isPseudoFocused": false,
+     "inputValue": "aq",
+     "value": [
+      "Aqua"
+     ],
+     "changes": [
+      {
+       "type": "select",
+       "option": "Aqua",
+       "value": [
+        "Aqua"
+       ]
+      }
+     ],
+     "opens": [],
+     "options": [
+      "Aqua",
+      "Aquamarine"
+     ],
+     "placeholder": false,
+     "showValue": false
+    }
+   ]
+  }
+ ],
+ "filtering": [
+  {
+   "filter": "",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": [
+    "AliceBlue",
+    "Aqua",
+    "Aquamarine",
+    "Azure",
+    "Beige",
+    "Bisque",
+    "Black",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "a",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": [
+    "AliceBlue",
+    "Aqua",
+    "Aquamarine",
+    "Azure",
+    "Black",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "A",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": [
+    "AliceBlue",
+    "Aqua",
+    "Aquamarine",
+    "Azure",
+    "Black",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "  aq ",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": [
+    "Aqua",
+    "Aquamarine"
+   ]
+  },
+  {
+   "filter": "zz",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": []
+  },
+  {
+   "filter": "qua",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": [
+    "Aqua",
+    "Aquamarine"
+   ]
+  },
+  {
+   "filter": ".",
+   "exclude": null,
+   "ignoreCase": true,
+   "labels": []
+  },
+  {
+   "filter": "Aqua",
+   "exclude": [
+    "Aqua"
+   ],
+   "ignoreCase": true,
+   "labels": [
+    "Aquamarine"
+   ]
+  },
+  {
+   "filter": "b",
+   "exclude": [
+    "Bisque"
+   ],
+   "ignoreCase": true,
+   "labels": [
+    "AliceBlue",
+    "Beige",
+    "Black",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "a",
+   "exclude": null,
+   "ignoreCase": false,
+   "labels": [
+    "Aqua",
+    "Aquamarine",
+    "Black",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "A",
+   "exclude": null,
+   "ignoreCase": false,
+   "labels": [
+    "AliceBlue",
+    "Aqua",
+    "Aquamarine",
+    "Azure",
+    "BlanchedAlmond"
+   ]
+  },
+  {
+   "filter": "aq",
+   "exclude": null,
+   "ignoreCase": false,
+   "labels": []
+  }
+ ],
+ "transition": {
+  "property": "border, box-shadow, background-color",
+  "seconds": 0.2,
+  "curve": [
+   0.2,
+   0.8,
+   0.4,
+   1
+  ]
+ },
+ "clearSizes": {
+  "mini": 15,
+  "compact": 15,
+  "default": 18,
+  "large": 22
+ }
+}

@@ -1,0 +1,117 @@
+<!--
+  Base Web's Select (baseui 18.2.0, select/select-component.js), as a template of named parts. Each part's look is its own
+  theme, Select.Styled<Part> (Select.Parts.g.axaml), which the select's Overrides merge over: this file holds only the
+  structure.
+
+  Popover                      (the dropdown's: Metered.Controls.Popover, controlled; the root its anchor)
+    Root                       (the anchor: its font)
+      ControlContainer         (the 2 px box)
+        ValueContainer         (a flex row: Metered.Controls.SelectValueContainer)
+          Tag                  (made by the select, one for each multi value: Metered.Controls.SelectTag)
+          SingleValue
+          InputContainer       (focusable itself when it isn't searchable)
+            Input              (the searchable select's text box: Metered.Controls.SelectInput)
+          Placeholder
+        IconsContainer
+          LoadingIndicator
+          ClearIcon
+          SelectArrow
+      SearchIconContainer      (CSS's position: absolute, over the root's start)
+        SearchIcon
+  The dropdown, the popover's content, made by the select: DropdownContainer round the StatefulMenu (Metered.Controls.Menu),
+  whose List, Option and ListItem are Dropdown, DropdownOption and DropdownListItem, each option's label an OptionContent.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <!-- The input's own template: the text, scrolled to keep the caret in view, no bars, no placeholder (the select's). -->
+  <ControlTemplate x:Key="Select.InputTemplate" TargetType="b:SelectInput">
+    <ScrollViewer Name="PART_ScrollViewer"
+                  Background="Transparent"
+                  HorizontalScrollBarVisibility="Hidden"
+                  VerticalScrollBarVisibility="Disabled">
+      <ScrollViewer.Template>
+        <ControlTemplate>
+          <ScrollContentPresenter Name="PART_ContentPresenter" Background="{TemplateBinding Background}" />
+        </ControlTemplate>
+      </ScrollViewer.Template>
+      <TextPresenter Name="PART_TextPresenter"
+                     CaretBrush="{TemplateBinding CaretBrush}"
+                     CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                     CaretIndex="{TemplateBinding CaretIndex}"
+                     LineHeight="{TemplateBinding LineHeight}"
+                     SelectionBrush="{TemplateBinding SelectionBrush}"
+                     SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                     SelectionStart="{TemplateBinding SelectionStart}"
+                     SelectionEnd="{TemplateBinding SelectionEnd}"
+                     Text="{TemplateBinding Text, Mode=TwoWay}"
+                     TextWrapping="NoWrap" />
+    </ScrollViewer>
+  </ControlTemplate>
+
+  <ControlTheme x:Key="{x:Type b:Select}" TargetType="b:Select">
+    <!-- width: 100%. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:ControlledPopover Name="Popover">
+          <Border Name="Root" Theme="{DynamicResource Select.StyledRoot}">
+            <Panel>
+              <Border Name="ControlContainer" Theme="{DynamicResource Select.StyledControlContainer}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <b:SelectValueContainer Name="ValueContainer" Grid.Column="0" Theme="{DynamicResource Select.StyledValueContainer}">
+                    <ContentPresenter Name="SingleValue" Theme="{DynamicResource Select.StyledSingleValue}" />
+                    <b:SelectInputContainer Name="InputContainer" Theme="{DynamicResource Select.StyledInputContainer}">
+                      <b:SelectInput Name="Input"
+                                     Theme="{DynamicResource Select.StyledInput}"
+                                     Template="{StaticResource Select.InputTemplate}" />
+                    </b:SelectInputContainer>
+                    <TextBlock Name="Placeholder" Theme="{DynamicResource Select.StyledPlaceholder}" />
+                  </b:SelectValueContainer>
+                  <StackPanel Name="IconsContainer" Grid.Column="1" Theme="{DynamicResource Select.StyledIconsContainer}">
+                    <b:SpinnerRing Name="LoadingIndicator" Theme="{DynamicResource Select.StyledLoadingIndicator}">
+                      <b:SpinnerRing.RenderTransform>
+                        <RotateTransform />
+                      </b:SpinnerRing.RenderTransform>
+                    </b:SpinnerRing>
+                    <b:InputIcon Name="ClearIcon" Theme="{DynamicResource Select.StyledClearIcon}" />
+                    <b:InputIcon Name="SelectArrow" Theme="{DynamicResource Select.StyledSelectArrow}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Name="SearchIconContainer" Theme="{DynamicResource Select.StyledSearchIconContainer}">
+                <b:InputIcon Name="SearchIcon" Theme="{DynamicResource Select.StyledSearchIcon}" />
+              </Border>
+            </Panel>
+          </Border>
+        </b:ControlledPopover>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!--
+    A multi value's tag, Base Web's Tag as multi-value.js renders it (tag/tag.js), its parts' looks SelectTag.Styled<Part>.
+      Root                     (the box: Metered.Controls.RadioMark, which draws the overlay and the ring)
+        Text
+        Action
+          ActionIcon
+  -->
+  <ControlTheme x:Key="{x:Type b:SelectTag}" TargetType="b:SelectTag">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:RadioMark Name="Root" Theme="{DynamicResource SelectTag.StyledRoot}">
+          <StackPanel Orientation="Horizontal">
+            <ContentPresenter Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Content="{TemplateBinding Content}" />
+            <Border Name="Action" Theme="{DynamicResource SelectTag.StyledAction}">
+              <b:InputIcon Name="ActionIcon" Theme="{DynamicResource SelectTag.StyledActionIcon}" />
+            </Border>
+          </StackPanel>
+        </b:RadioMark>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

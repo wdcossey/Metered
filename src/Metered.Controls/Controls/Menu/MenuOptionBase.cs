@@ -56,7 +56,7 @@ public abstract class MenuOptionBase : TemplatedControl
 
     private Parts? _parts;
     private IPointer? _pressed;
-    private MenuChildPopover? _popover;
+    private ControlledPopover? _popover;
     private object? _childMenu;
     private InputElement? _tabTarget;
     private bool _templated;
@@ -133,7 +133,7 @@ public abstract class MenuOptionBase : TemplatedControl
 
         // maybe-child-menu.js: a Popover round the option, open while it is highlighted, at its right, its top, whatever its
         // anchor's click or its dismissals would make it (a controlled popover's isOpen).
-        var popover = new MenuChildPopover { Name = ChildMenuPopoverPart, Anchor = root, Content = _childMenu, Held = IsHighlighted };
+        var popover = new ControlledPopover { Name = ChildMenuPopoverPart, Anchor = root, Content = _childMenu, Held = IsHighlighted };
         popover.SetValue(Popover.PlacementProperty, PopoverPlacement.RightTop, BindingPriority.Template);
         popover.SetValue(Popover.IgnoreBoundaryProperty, true, BindingPriority.Template);
         popover.SetValue(Popover.FocusLockProperty, false, BindingPriority.Template);
@@ -335,28 +335,4 @@ public abstract class MenuOptionBase : TemplatedControl
 
     /// <summary>What the option says to UI Automation: its label's text, or Base Web's aria-label for an option with a child menu.</summary>
     internal abstract string? AccessibleText { get; }
-}
-
-/// <summary>
-/// A child menu's popover (maybe-child-menu.js): Base Web's controlled Popover, its <c>isOpen</c> the option's highlight. Its
-/// open state is held there (coerced), so neither a click on its anchor nor a dismissal changes it, as a controlled Base Web
-/// popover calls its handlers and changes nothing. Its look and template are the Popover's.
-/// </summary>
-internal sealed class MenuChildPopover : Popover
-{
-    static MenuChildPopover()
-    {
-        IsOpenProperty.OverrideMetadata<MenuChildPopover>(new StyledPropertyMetadata<bool>(
-            defaultBindingMode: BindingMode.TwoWay, coerce: (o, _) => ((MenuChildPopover)o).Held));
-    }
-
-    /// <summary>Whether it is open: the option's highlight.</summary>
-    internal bool Held { get; set; }
-
-    /// <summary>Open or closed as the option's highlight is.</summary>
-    internal void Hold(bool open)
-    {
-        Held = open;
-        CoerceValue(IsOpenProperty);
-    }
 }
