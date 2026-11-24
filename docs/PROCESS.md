@@ -40,6 +40,23 @@ Never without the developer's go-ahead in the conversation, whatever the label, 
 - **Decisions that aren't Claude's:** a change to an accepted ADR's design (for example a Button theme
   pruned by kind, size and shape: `docs/performance/README.md`), a deviation from Base Web that Avalonia
   doesn't force, a new dependency, the public API's names where Base Web's don't map.
+- **CI's workflows beyond these rules.** The repository is public: anyone can fork it and open a pull request,
+  and a `pull_request` run uses the workflow file from the pull request itself, so an `if:` or a `runs-on:` in
+  the YAML protects nothing; the protection is the repository's settings (every outside contributor's run waits
+  for the developer's approval; only GitHub-owned actions are allowed; the job token is read-only). So, in any
+  workflow change:
+  - `runs-on:` stays GitHub-hosted (`ubuntu-latest`, `windows-latest`, …): never a self-hosted label, and no
+    self-hosted runner is registered on this repository. If one ever seems needed, stop and ask: it needs a
+    security review first.
+  - Triggers are `push`, `pull_request`, `workflow_dispatch` and `schedule` only. Never `pull_request_target`,
+    `issue_comment` or `workflow_run`, which run with the base repository's token and secrets but can be started
+    by a stranger.
+  - The top-level `permissions: contents: read` stays. A job that needs more grants it on itself, with a comment
+    saying why.
+  - Actions are GitHub-owned (`actions/*`) only. A third-party one needs the developer's OK, and is pinned by its
+    full commit SHA, not a tag.
+  - No collaborators (one with write access skips the fork approval), and no Actions secrets or variables.
+  - Approving a fork pull request's workflow run is the developer's alone: never approve one, nor ask to.
 - **Hard rules no go-ahead lifts:**
   - Uber Move, or any other proprietary font, is never downloaded, saved, committed, embedded or copied;
     it is only measured as baseweb.design renders it.
