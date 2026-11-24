@@ -5,8 +5,8 @@ on:
     branches: [main]
   pull_request:
 
-# Least privilege for the job token. The repo's default is read-only too; this keeps it so if that
-# default ever changes. A job that needs more grants it on itself, with a comment saying why.
+# Least privilege for the job token. The repo's default (actions/permissions/workflow) is read-only too;
+# this keeps it so if that default ever changes. A job that needs more grants it on itself, with a comment saying why.
 permissions:
   contents: read
 
