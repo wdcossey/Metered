@@ -409,6 +409,42 @@ public class InputTouchMenuTests
         }
     }
 
+    // And as the selection changes while it is open (a hardware keyboard's Shift and arrows, or code).
+    [AvaloniaFact]
+    public void It_follows_the_selection()
+    {
+        var input = new Input { StartEnhancer = "@", Text = "hello world", CoarsePointer = true };
+        using var scene = Show(input);
+        Hold(scene, input, 7);
+        Assert.Equal(Selection(scene, input).Center.X, Menu(scene).Center.X, tolerance: 1);
+
+        input.SelectionStart = 0;
+        input.SelectionEnd = 5;
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.Equal(Selection(scene, input).Center.X, Menu(scene).Center.X, tolerance: 1);
+        input.ContextFlyout.Hide();
+    }
+
+    // And as the handles' height changes once they are laid out: below them, clear of them.
+    [AvaloniaFact]
+    public void It_is_placed_again_as_the_handles_are_laid_out()
+    {
+        var input = new Input { Text = "hello world", CoarsePointer = true };
+        using var scene = Show(input, top: 10);
+        Hold(scene, input, 7);
+        var handles = scene.Window.GetVisualDescendants().OfType<TextSelectorLayer>().Single().GetVisualDescendants()
+            .OfType<TextSelectionHandle>().Where(h => h.IsEffectivelyVisible).ToList();
+        Assert.Equal(2, handles.Count);
+
+        foreach (var handle in handles) handle.Height = handle.Bounds.Height + 20;
+        scene.Pump();
+
+        Assert.Equal(Handles(scene).Max(h => h.Bottom) + Above, Menu(scene).Top, tolerance: 0.5);
+        input.ContextFlyout!.Hide();
+    }
+
     // A selection the box doesn't show at all (scrolled out of a long value): the menu goes by the box.
     [AvaloniaFact]
     public void A_selection_the_box_doesnt_show_is_placed_by_the_box()

@@ -123,10 +123,11 @@ From base-input.js and input.js, and its e2e test:
   (`floating_toolbar_vertical_margin`, 8 dp), or with no room there 8 below its touch handles, or just below them, or
   as high as it fits; centred on the selection and kept 16 from the sides (`floating_toolbar_horizontal_margin`). The
   selection is Chrome's content rect (`SelectionPopupControllerImpl`: its bounds, their bottom extended by the
-  handles' height), the part of it the text's box shows, kept inside the page (`FloatingActionMode`, 20 dp below it
-  allowed); with nothing selected, the caret's line. The room is the window's safe area above the soft keyboard (Android's
+  handles' height), the part of it the text's box shows, as Blink clips an input's selection and `FloatingActionMode`
+  keeps the rect inside its view; with nothing selected, the caret's line. The room is the window's safe area above the soft keyboard (Android's
   visible display frame). While it is open it is placed again as the input moves (a page's scroll, the keyboard making
-  room) and as the keyboard or the bars change, as Android's toolbar follows its content. A selection the box doesn't
+  room), as its selection or caret moves, as the handles' height changes once they are laid out, and as the keyboard or
+  the bars change, as Android's toolbar follows its content. A selection the box doesn't
   show at all places it by the box. An app's own `ContextFlyout` (local or by a style) replaces the menu, keeps its
   items as they are, and is placed the same; one whose opening the app cancels stays shut. A fine pointer keeps the
   desktop's menu, its shortcuts and Avalonia's place. `BaseInput` does this (`TouchMenu`), so Textarea's text has
@@ -164,11 +165,11 @@ From base-input.js and input.js, and its e2e test:
   after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
-- `Controls/InputTouchMenuTests`: 32: the place against Android's in each of its cases (8, worked by hand from its
+- `Controls/InputTouchMenuTests`: 34: the place against Android's in each of its cases (8, worked by hand from its
   source); a coarse pointer by platform and `:pointer-coarse`; on a phone the theme's menu without shortcuts while open
   and with them again after, above the word a long press selects and centred on it, below the handles near the top, 16
   from the side, below the handles under the Pixel's status bar, as high as it fits above a keyboard, placed again as the
-  page scrolls and as the keyboard opens, above the caret of an empty input (the focus kept), a long selection by the
+  page scrolls, as the keyboard opens, as the selection moves and as the handles' height changes, above the caret of an empty input (the focus kept), a long selection by the
   part the box shows and one it doesn't show by the box, an app's own menu (local, or by a style, its items untouched)
   placed the same, a cancelled opening left shut, a placement rect on its popup, the menu's own place left as it was,
   #109's work round on a phone, a Textarea's; a fine pointer's shortcuts and place; the word drawn selected under the
@@ -242,7 +243,7 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    - selection handles stayed on an input after the focus left it (#109): Avalonia's ([its issues](../../avalonia-issues.md),
      1), worked round since (Behaviour), headless only, not yet tried on the phone;
    - the menu shows desktop shortcuts and covers the selection (#110): on a phone it has none since, and opens above the
-     selection (Behaviour; known differences, 12), headless only, not yet tried on the phone.
+     selection (Behaviour; known differences, 12), headless only, not yet tried on the phone (#148).
 
    Holding isn't raised headless, so the drag after a hold is tested only on the phone.
 11. **A long value's sideways scroll is checked headless only.** Since #117 (decided 2026-11-24) a finger's sideways
@@ -257,6 +258,6 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    shortcuts while it is open there, placed where Android places its toolbar (Behaviour). Avalonia's own place for a touch's menu hangs it over
    the selection ([Avalonia's issues](../../avalonia-issues.md), 2), and a fine pointer keeps it: a Windows touch screen
    still gets the desktop's menu, its shortcuts and that place. The menu's items are no taller for a finger, and it has no
-   Select all. Not tried on the phone. The alternatives on the decisions page: a row-shaped toolbar of Metered's own, or
+   Select all. Not tried on the phone (#148). The alternatives on the decisions page: a row-shaped toolbar of Metered's own, or
    Avalonia's menu left as it was.
 

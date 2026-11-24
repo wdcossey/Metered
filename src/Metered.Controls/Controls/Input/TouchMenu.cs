@@ -70,22 +70,22 @@ internal static class TouchMenu
     /// already open for it, which Avalonia's flyout handler leaves as it is too; a menu whose opening was cancelled stays
     /// shut.
     /// </summary>
-    internal static bool Show(BaseInput input, PopupFlyoutBase menu, TextPresenter? presenter, ScrollViewer? scroller)
+    internal static bool Show(BaseInput input, PopupFlyoutBase menu)
     {
         if (menu.IsOpen && menu.Target == input) return false;
-        var shortcuts = HideShortcuts(input, menu);
+        var shown = new Shown(input, menu);
         // Above the values Avalonia's touch path sets for its own place while it asks for the menu, and given back after:
         // the popup keeps the callback, which places it again as its size changes.
         using (menu.SetValue(PopupFlyoutBase.PlacementProperty, PlacementMode.Custom, BindingPriority.Animation))
         using (menu.SetValue(PopupFlyoutBase.CustomPopupPlacementCallbackProperty,
-                   (CustomPopupPlacementCallback)(p => Position(p, input, menu, presenter, scroller)), BindingPriority.Animation))
+                   (CustomPopupPlacementCallback)shown.Position, BindingPriority.Animation))
         using (menu.SetValue(PopupFlyoutBase.ShowModeProperty, FlyoutShowMode.Transient, BindingPriority.Animation))
         {
             menu.ShowAt(input);
         }
 
-        if (menu.IsOpen && menu.Target == input) Follow(input, menu, shortcuts);
-        else shortcuts?.Dispose();
+        if (menu.IsOpen && menu.Target == input) shown.Follow();
+        else shown.Release();
         return true;
     }
 
@@ -131,128 +131,8 @@ internal static class TouchMenu
         return new Release(held);
     }
 
-    /// <summary>Placed again while it is open, as what it is placed by changes; let go when it closes.</summary>
-    private static void Follow(BaseInput input, PopupFlyoutBase menu, IDisposable? shortcuts)
-    {
-        var top = TopLevel.GetTopLevel(input);
-        var keyboard = top is null ? null : KeyboardOf(top);
-        var safe = top is null ? null : SafeArea.Of(top);
-
-        void Moved(object? sender, EffectiveViewportChangedEventArgs e) => PlaceAgain(input, menu);
-        void Changed(object? sender, EventArgs e) => PlaceAgain(input, menu);
-        void Closed(object? sender, EventArgs e)
-        {
-            menu.Closed -= Closed;
-            input.EffectiveViewportChanged -= Moved;
-            if (keyboard is not null) keyboard.Changed -= Changed;
-            if (safe is not null) safe.Changed -= Changed;
-            shortcuts?.Dispose();
-        }
-
-        input.EffectiveViewportChanged += Moved;
-        if (keyboard is not null) keyboard.Changed += Changed;
-        if (safe is not null) safe.Changed += Changed;
-        menu.Closed += Closed;
-    }
-
-    /// <summary>
-    /// The popup places itself again (through the callback it keeps) when one of its offsets changes: the place sets the
-    /// offset itself, so the one it is given is no matter.
-    /// </summary>
-    private static void PlaceAgain(BaseInput input, PopupFlyoutBase menu)
-    {
-        if (!menu.IsOpen || menu.Target != input) return;
-        var popup = menu.Popup;
-        var offset = popup.HorizontalOffset;
-        popup.HorizontalOffset = offset + 1;
-        popup.HorizontalOffset = offset;
-    }
-
-    private static void Position(CustomPopupPlacement placement, BaseInput input, PopupFlyoutBase menu,
-        TextPresenter? presenter, ScrollViewer? scroller)
-    {
-        if (TopLevel.GetTopLevel(input) is not { } top || presenter is null
-            || Content(input, presenter, scroller, top) is not { } content)
-        {
-            // Nothing to place it by: above the input.
-            placement.Anchor = PopupAnchor.Top;
-            placement.Gravity = PopupGravity.Top;
-            return;
-        }
-
-        // The positioner's coordinates are its root's, and the anchor rectangle it gives is the popup's placement rect (the
-        // input's box unless an app set one) within the input's box there: the same corner in the top level's gives the
-        // shift from one to the other.
-        var box = new Rect(input.Bounds.Size);
-        var corner = (menu.Popup.PlacementRect ?? box).Intersect(box).TopLeft;
-        if (input.TranslatePoint(corner, top) is not { } cornerOnTop) return;
-        var at = Place(placement.PopupSize.Deflate(placement.Deflate), content, Viewport(top));
-        // The menu's own box (its size less what it deflates by) goes at the anchor's corner.
-        placement.AnchorRectangle = new Rect(at + (placement.AnchorRectangle.TopLeft - cornerOnTop), default(Size));
-        placement.Anchor = PopupAnchor.TopLeft;
-        placement.Gravity = PopupGravity.BottomRight;
-        placement.ConstraintAdjustment = PopupPositionerConstraintAdjustment.None;
-        placement.Offset = default;
-    }
-
-    /// <summary>Chrome's content rect, in the top level's coordinates.</summary>
-    private static Rect? Content(BaseInput input, TextPresenter presenter, ScrollViewer? scroller, TopLevel top)
-    {
-        if (presenter.TransformToVisual(top) is not { } toTop) return null;
-        var layout = presenter.TextLayout;
-        var start = Math.Min(input.SelectionStart, input.SelectionEnd);
-        var end = Math.Max(input.SelectionStart, input.SelectionEnd);
-        Rect? box = null;
-        if (start != end)
-        {
-            foreach (var line in layout.HitTestTextRange(start, end - start)) box = box?.Union(line) ?? line;
-        }
-
-        if (box is null)
-        {
-            var caret = layout.HitTestTextPosition(input.CaretIndex);
-            box = new Rect(caret.X, caret.Y, 0, caret.Height);
-        }
-
-        var content = box.Value.TransformToAABB(toTop);
-        // The part the text's box shows; none of it, the box.
-        if (scroller?.TransformToVisual(top) is { } scrollerToTop)
-        {
-            var shown = new Rect(scroller.Bounds.Size).TransformToAABB(scrollerToTop);
-            content = IntersectsClosed(content, shown) ? Clamp(content, shown) : shown;
-        }
-
-        // Clear of the handles below it.
-        return content.WithHeight(content.Height + HandleHeight(input));
-    }
-
-    /// <summary>The safe area, above the soft keyboard while it is open: Android's visible display frame.</summary>
-    private static Rect Viewport(TopLevel top)
-    {
-        var area = SafeArea.Area(top.ClientSize, SafeArea.Of(top)?.Padding ?? default);
-        if (KeyboardOf(top)?.Occluded is { Height: > 0 } keyboard && keyboard.Top < area.Bottom)
-            area = area.WithHeight(Math.Max(0, keyboard.Top - area.Top));
-        return area;
-    }
-
     private static IKeyboard? KeyboardOf(TopLevel top) =>
         Keyboards.TryGetValue(top, out var fake) ? fake : top.InputPane is { } pane ? new Platform(pane) : null;
-
-    /// <summary>
-    /// The touch handles' height, as Chrome adds it below the selection: the tallest shown in the top level's text selector
-    /// layer, where only the focused text box's are shown. None shown, none added.
-    /// </summary>
-    private static double HandleHeight(Visual input)
-    {
-        if (TextSelectorLayer.GetTextSelectorLayer(input) is not { } layer) return 0;
-        var height = 0.0;
-        foreach (var handle in layer.GetVisualDescendants().OfType<TextSelectionHandle>())
-        {
-            if (handle.IsEffectivelyVisible) height = Math.Max(height, handle.Bounds.Height);
-        }
-
-        return height;
-    }
 
     // Android's Rect.intersects, with the edges that touch: FloatingActionMode.intersectsClosed.
     private static bool IntersectsClosed(Rect a, Rect b) =>
@@ -266,6 +146,180 @@ internal static class TouchMenu
         var right = Math.Min(content.Right, inside.Right);
         var bottomEdge = Math.Min(content.Bottom, inside.Bottom);
         return new Rect(left, topEdge, Math.Max(0, right - left), Math.Max(0, bottomEdge - topEdge));
+    }
+
+    /// <summary>
+    /// One opening of the menu for an input: what it is placed by, read from the input's current parts, and the sources it
+    /// follows while it is open, kept so that a change they report is the one it is placed by.
+    /// </summary>
+    private sealed class Shown
+    {
+        private readonly BaseInput _input;
+        private readonly PopupFlyoutBase _menu;
+        private readonly TopLevel? _top;
+        private readonly IKeyboard? _keyboard;
+        private readonly SafeArea.ISource? _safe;
+        private readonly TextSelectorLayer? _layer;
+        private IDisposable? _shortcuts;
+        private double _handles;
+
+        public Shown(BaseInput input, PopupFlyoutBase menu)
+        {
+            _input = input;
+            _menu = menu;
+            _top = TopLevel.GetTopLevel(input);
+            _keyboard = _top is null ? null : KeyboardOf(_top);
+            _safe = _top is null ? null : SafeArea.Of(_top);
+            _layer = TextSelectorLayer.GetTextSelectorLayer(input);
+            _shortcuts = HideShortcuts(input, menu);
+        }
+
+        /// <summary>
+        /// Placed again while it is open as what it is placed by changes: the input's place on the window (a page's scroll,
+        /// the keyboard making room), its selection or caret, the handles' height once they are laid out, the keyboard and
+        /// the bars. Let go when it closes.
+        /// </summary>
+        public void Follow()
+        {
+            _input.EffectiveViewportChanged += OnMoved;
+            _input.PropertyChanged += OnInputChanged;
+            if (_layer is not null) _layer.LayoutUpdated += OnHandlesLaidOut;
+            if (_keyboard is not null) _keyboard.Changed += OnChanged;
+            if (_safe is not null) _safe.Changed += OnChanged;
+            _menu.Closed += OnClosed;
+        }
+
+        public void Release()
+        {
+            _shortcuts?.Dispose();
+            _shortcuts = null;
+        }
+
+        private void OnClosed(object? sender, EventArgs e)
+        {
+            _menu.Closed -= OnClosed;
+            _input.EffectiveViewportChanged -= OnMoved;
+            _input.PropertyChanged -= OnInputChanged;
+            if (_layer is not null) _layer.LayoutUpdated -= OnHandlesLaidOut;
+            if (_keyboard is not null) _keyboard.Changed -= OnChanged;
+            if (_safe is not null) _safe.Changed -= OnChanged;
+            Release();
+        }
+
+        private void OnMoved(object? sender, EffectiveViewportChangedEventArgs e) => PlaceAgain();
+
+        private void OnChanged(object? sender, EventArgs e) => PlaceAgain();
+
+        private void OnInputChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty
+                || e.Property == TextBox.CaretIndexProperty)
+                PlaceAgain();
+        }
+
+        // Only when their height has changed: a layout pass of its own is no reason.
+        private void OnHandlesLaidOut(object? sender, EventArgs e)
+        {
+            if (HandleHeight() != _handles) PlaceAgain();
+        }
+
+        /// <summary>
+        /// The popup places itself again (through the callback it keeps) when one of its offsets changes: the place sets the
+        /// offset itself, so the one it is given is no matter.
+        /// </summary>
+        private void PlaceAgain()
+        {
+            if (!_menu.IsOpen || _menu.Target != _input) return;
+            var popup = _menu.Popup;
+            var offset = popup.HorizontalOffset;
+            popup.HorizontalOffset = offset + 1;
+            popup.HorizontalOffset = offset;
+        }
+
+        public void Position(CustomPopupPlacement placement)
+        {
+            if (_top is null || Content() is not { } content)
+            {
+                // Nothing to place it by: above the input.
+                placement.Anchor = PopupAnchor.Top;
+                placement.Gravity = PopupGravity.Top;
+                return;
+            }
+
+            // The positioner's coordinates are its root's, and the anchor rectangle it gives is the popup's placement rect
+            // (the input's box unless an app set one) within the input's box there: the same corner in the top level's
+            // gives the shift from one to the other.
+            var box = new Rect(_input.Bounds.Size);
+            var corner = (_menu.Popup.PlacementRect ?? box).Intersect(box).TopLeft;
+            if (_input.TranslatePoint(corner, _top) is not { } cornerOnTop) return;
+            var at = Place(placement.PopupSize.Deflate(placement.Deflate), content, Viewport());
+            // The menu's own box (its size less what it deflates by) goes at the anchor's corner.
+            placement.AnchorRectangle = new Rect(at + (placement.AnchorRectangle.TopLeft - cornerOnTop), default(Size));
+            placement.Anchor = PopupAnchor.TopLeft;
+            placement.Gravity = PopupGravity.BottomRight;
+            placement.ConstraintAdjustment = PopupPositionerConstraintAdjustment.None;
+            placement.Offset = default;
+        }
+
+        /// <summary>
+        /// Chrome's content rect, in the top level's coordinates. The selection's indices are the text presenter's as it
+        /// draws the selection (<c>TextPresenter.Render</c>), so the menu goes where the selection is drawn.
+        /// </summary>
+        private Rect? Content()
+        {
+            if (_input.TextPresenterPart is not { } presenter || presenter.TransformToVisual(_top!) is not { } toTop) return null;
+            var layout = presenter.TextLayout;
+            var start = Math.Min(_input.SelectionStart, _input.SelectionEnd);
+            var end = Math.Max(_input.SelectionStart, _input.SelectionEnd);
+            Rect? box = null;
+            if (start != end)
+            {
+                foreach (var line in layout.HitTestTextRange(start, end - start)) box = box?.Union(line) ?? line;
+            }
+
+            if (box is null)
+            {
+                var caret = layout.HitTestTextPosition(_input.CaretIndex);
+                box = new Rect(caret.X, caret.Y, 0, caret.Height);
+            }
+
+            var content = box.Value.TransformToAABB(toTop);
+            // The part the text's box shows; none of it, the box.
+            if (_input.TextScrollerPart?.TransformToVisual(_top!) is { } scrollerToTop)
+            {
+                var shown = new Rect(_input.TextScrollerPart.Bounds.Size).TransformToAABB(scrollerToTop);
+                content = IntersectsClosed(content, shown) ? Clamp(content, shown) : shown;
+            }
+
+            // Clear of the handles below it.
+            _handles = HandleHeight();
+            return content.WithHeight(content.Height + _handles);
+        }
+
+        /// <summary>The safe area, above the soft keyboard while it is open: Android's visible display frame.</summary>
+        private Rect Viewport()
+        {
+            var area = SafeArea.Area(_top!.ClientSize, _safe?.Padding ?? default);
+            if (_keyboard?.Occluded is { Height: > 0 } keyboard && keyboard.Top < area.Bottom)
+                area = area.WithHeight(Math.Max(0, keyboard.Top - area.Top));
+            return area;
+        }
+
+        /// <summary>
+        /// The touch handles' height, as Chrome adds it below the selection: the tallest shown in the top level's text
+        /// selector layer, where only the focused text box's are shown. None shown, none added.
+        /// </summary>
+        private double HandleHeight()
+        {
+            if (_layer is null) return 0;
+            var height = 0.0;
+            foreach (var handle in _layer.GetVisualDescendants().OfType<TextSelectionHandle>())
+            {
+                if (handle.IsEffectivelyVisible) height = Math.Max(height, handle.Bounds.Height);
+            }
+
+            return height;
+        }
     }
 
     private sealed class Release(List<IDisposable> held) : IDisposable

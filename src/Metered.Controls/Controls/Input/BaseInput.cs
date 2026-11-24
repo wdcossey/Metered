@@ -192,6 +192,12 @@ public abstract class BaseInput : TextBox
         }
     }
 
+    /// <summary>The current template's text presenter (Avalonia's <c>PART_TextPresenter</c>), for the menu's place.</summary>
+    internal TextPresenter? TextPresenterPart => _textPresenter;
+
+    /// <summary>The current template's text scroller (<see cref="ScrollViewerPart"/>), for the menu's place.</summary>
+    internal ScrollViewer? TextScrollerPart => _scroller;
+
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
 
@@ -500,7 +506,7 @@ public abstract class BaseInput : TextBox
         // after all. A context menu is Avalonia's to open. The hold's feedback is the text box's own (its hold, a handle's
         // request): the flyout handler's would be a second.
         if (CoarsePointer && ContextMenu is null && ContextFlyout is PopupFlyoutBase menu
-            && TouchMenu.Show(this, menu, _textPresenter, _scroller))
+            && TouchMenu.Show(this, menu))
         {
             e.Handled = true;
         }
