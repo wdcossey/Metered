@@ -91,9 +91,6 @@ public class Select : TemplatedControl
     /// <summary>Base Web's locale's <c>placeholder</c>.</summary>
     public const string PlaceholderDefault = "Select...";
 
-    /// <summary>Base Web's locale's <c>noResultsMsg</c>, the dropdown's empty state.</summary>
-    public const string NoResultsMsgDefault = "No results found";
-
     /// <summary>Base Web's locale's <c>create</c>: a creatable option's label is <c>Create “text”</c>.</summary>
     public const string CreateLabel = "Create";
 
@@ -251,7 +248,7 @@ public class Select : TemplatedControl
     /// <summary>Base Web's <c>placeholder</c>; null is <c>Select...</c>.</summary>
     public string? Placeholder { get => GetValue(PlaceholderProperty); set => SetValue(PlaceholderProperty, value); }
 
-    /// <summary>Base Web's <c>noResultsMsg</c>: the dropdown's empty state, any content; null is <c>No results found</c>.</summary>
+    /// <summary>Base Web's <c>noResultsMsg</c>: the dropdown's empty state, any content; null is the menu's, <c>No results</c> (dropdown.js passes the prop on as it is).</summary>
     public object? NoResultsMsg { get => GetValue(NoResultsMsgProperty); set => SetValue(NoResultsMsgProperty, value); }
 
     /// <summary>Base Web's <c>maxDropdownHeight</c>, a CSS length: <c>40vh</c> (of the window's height) by default, or pixels.</summary>
@@ -900,7 +897,7 @@ public class Select : TemplatedControl
             var options = Filtered();
             _menu.HighlightedIndex = HighlightedIndex(options);
             _menu.ItemsSource = Grouped(options);
-            _menu.NoResultsMsg = NoResultsMsg ?? NoResultsMsgDefault;
+            _menu.NoResultsMsg = NoResultsMsg;
             _menu.TemplateApplied += OnMenuTemplated;
             _parts.Place((DropdownContainerPart, [_dropdown]), (StatefulMenuPart, [_menu]));
             _popover.Content = _dropdown;
@@ -910,7 +907,7 @@ public class Select : TemplatedControl
         var shown = Filtered();
         var grouped = Grouped(shown);
         if (_menu.ItemsSource is not IList<object> old || !old.SequenceEqual(grouped, ItemComparer.Instance)) _menu.ItemsSource = grouped;
-        _menu.NoResultsMsg = NoResultsMsg ?? NoResultsMsgDefault;
+        _menu.NoResultsMsg = NoResultsMsg;
         UpdateContents();
     }
 
@@ -1061,7 +1058,9 @@ public class Select : TemplatedControl
         {
             if (cache.TryGetValue(second, out var both)) return both;
             both = new ControlTheme(second.TargetType ?? first.TargetType!);
-            foreach (var s in first.Setters) both.Setters.Add(s);
+            // One setter for a property: the second's wins.
+            var theirs = second.Setters.OfType<Setter>().Select(s => s.Property).ToHashSet();
+            foreach (var s in first.Setters) if (s is not Setter { Property: { } p } || !theirs.Contains(p)) both.Setters.Add(s);
             foreach (var s in second.Setters) both.Setters.Add(s);
             foreach (var c in first.Children) both.Children.Add(c);
             foreach (var c in second.Children) both.Children.Add(c);

@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.SelectPage">
+  <!-- Base Web's select, as its documentation's examples show it: basic, search single and multi, creatable single and
+       multi, its sizes, grouped options, a select that isn't searchable, and its states. Headings are the shell's. A tap
+       on a select opens its dropdown; a finger's drag over it scrolls the page; a tap on an option chooses it. The
+       options are set by the page (SelectPage.axaml.cs). -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,320" Spacing="8">
+      <TextBlock Classes="heading" Text="Basic" />
+      <!-- controlled.tsx: a colour, placeholder "Select color". -->
+      <b:Select x:Name="Basic" Placeholder="Select color" />
+
+      <TextBlock Classes="heading" Text="Search" />
+      <!-- search-single-pick.tsx and search-multi-pick.tsx: the search type, its magnifying glass and no arrow. -->
+      <b:Select x:Name="Search" Type="Search" Placeholder="Search colors" />
+      <b:Select x:Name="SearchMulti" Type="Search" Multi="True" Placeholder="Search colors" />
+
+      <TextBlock Classes="heading" Text="Creatable" />
+      <!-- creatable.tsx and creatable-multi.tsx: text that matches no option is offered as one. -->
+      <b:Select x:Name="Creatable" Creatable="True" Placeholder="Select or create a color" />
+      <b:Select x:Name="CreatableMulti" Creatable="True" Multi="True" Placeholder="Select or create colors" />
+
+      <TextBlock Classes="heading" Text="Sizes" />
+      <!-- sizes.tsx: mini, compact, default, large. -->
+      <b:Select x:Name="Mini" Size="Mini" />
+      <b:Select x:Name="Compact" Size="Compact" />
+      <b:Select x:Name="Default" Size="Default" />
+      <b:Select x:Name="Large" Size="Large" />
+
+      <TextBlock Classes="heading" Text="Grouped" />
+      <!-- grouped.tsx: options under their group's header. -->
+      <b:Select x:Name="Grouped" />
+
+      <TextBlock Classes="heading" Text="Not searchable" />
+      <!-- native.tsx: no typing, as a native select. -->
+      <b:Select x:Name="Native" Searchable="False" Clearable="False" />
+
+      <TextBlock Classes="heading" Text="States" />
+      <!-- select-states.scenario.tsx: error, positive, disabled, loading. -->
+      <b:Select x:Name="Error" Error="True" />
+      <b:Select x:Name="Positive" Positive="True" />
+      <b:Select x:Name="Disabled" IsEnabled="False" />
+      <b:Select x:Name="Loading" IsLoading="True" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

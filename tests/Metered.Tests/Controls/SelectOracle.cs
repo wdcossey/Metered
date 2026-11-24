@@ -56,9 +56,10 @@ internal static class SelectOracle
         var flat = options.SelectMany(o => o is SelectGroup g ? g.Items : [o]).OfType<SelectOption>().ToList();
         return [.. (labels ?? []).Select(l =>
         {
-            var o = flat.FirstOrDefault(x => (string?)x.Label == l) ?? new SelectOption(l);
-            if (l == unclearable) o.ClearableValue = false;
-            return (object)o;
+            // A value not clearable is a value of its own: Base Web's expandValue shows the option, popValue and clearValue
+            // read the value itself.
+            if (l == unclearable) return new SelectOption(l) { ClearableValue = false };
+            return (object)(flat.FirstOrDefault(x => (string?)x.Label == l) ?? new SelectOption(l));
         })];
     }
 
