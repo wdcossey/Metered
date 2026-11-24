@@ -15,9 +15,9 @@ namespace Metered.Tests.Controls;
 /// <summary>
 /// Nested menus (nested-menus.js, maybe-child-menu.js, stateful-container.js), as child.tsx builds them: an option's child
 /// menu in a Popover at its right, its top, open while the option is highlighted; ArrowRight and ArrowLeft between the
-/// menus shown; Escape in a child resetting its parent, and Avalonia's back request as that Escape (#131); a mouse back over the parent letting a deeper menu's highlight go,
-/// and 200 ms after it has left them all, every one's; a click on an option with a child choosing it; Tab kept in the
-/// child; its name; the ChildMenuPopover override.
+/// menus shown; Escape in a child resetting its parent, and Avalonia's back request as that Escape (#131); a mouse back
+/// over the parent letting a deeper menu's highlight go, and 200 ms after it has left them all, every one's; a click on an
+/// option with a child choosing it; Tab kept in the child; its name; the ChildMenuPopover override.
 /// </summary>
 public class MenuNestedTests
 {

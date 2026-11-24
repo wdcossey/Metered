@@ -495,8 +495,12 @@ public class Menu : TemplatedControl
     /// </summary>
     internal void ResetFromChild(Visual? child)
     {
-        _childClosing = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused
-            && Layers.IsWithin(focused, child);
+        // Only ever set here, so a second call with the focus elsewhere doesn't clear a first one's.
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused && Layers.IsWithin(focused, child))
+        {
+            _childClosing = true;
+        }
+
         ResetMenu();
         // The popup gives the focus back as it closes; if it doesn't come, the next focus is the menu's again.
         DispatcherTimer.RunOnce(() => _childClosing = false, ChildClosingTime);

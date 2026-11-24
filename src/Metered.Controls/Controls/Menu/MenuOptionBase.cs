@@ -144,7 +144,9 @@ public abstract class MenuOptionBase : TemplatedControl
         popover.SetValue(Popover.DismissOnClickOutsideProperty, false, BindingPriority.Template);
         popover.SetValue(Popover.DismissOnEscProperty, false, BindingPriority.Template);
         popover.CoerceValue(Popover.IsOpenProperty);
-        popover.Esc += (_, _) => Owner?.ResetFromChild(popover.Content as Visual);
+        // The child as it is now: Release() takes the popover's content away when the option is made again.
+        var childVisual = _childMenu as Visual;
+        popover.Esc += (_, _) => Owner?.ResetFromChild(childVisual);
         // Avalonia's back request (Metered's, #131: Base Web has none) is that Escape while the child is open: the parent
         // reset, the child closed, the request handled before any popover below and before the app goes back.
         popover.EscOnBack = true;
