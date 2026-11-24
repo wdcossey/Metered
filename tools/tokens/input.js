@@ -362,4 +362,4 @@ ${themes('Input', parts()).join('\n')}
 `;
 }
 
-module.exports = { file, parts, themes, AXES, ICON_SIZES, DESCRIBE, declare, padding, INHERITED, SIDES, RADII, TRANSITION, same };
+module.exports = { file, parts, themes, AXES, ICON_SIZES, DESCRIBE, declare, padding, INHERITED, SIDES, RADII, TRANSITION, same, icon, font };

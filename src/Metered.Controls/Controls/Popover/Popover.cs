@@ -255,6 +255,12 @@ public class Popover : TemplatedControl
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
 
+    /// <summary>
+    /// Avalonia's back request is Base Web's <c>onEsc</c> while it is open (#97): for a controlled popover whose Escape
+    /// handler closes it, as Select's does, so that back closes it as Escape would (#123's rule).
+    /// </summary>
+    internal bool EscOnBack { get; set; }
+
     /// <summary>The popup the body is shown in, for tests.</summary>
     internal Popup? PopupHost => _popup;
 
@@ -931,6 +937,13 @@ public class Popover : TemplatedControl
     /// </summary>
     private bool OnLayerBack()
     {
+        // A controlled popover whose onEsc closes it (Select's dropdown, #97): the back request is its Escape.
+        if (IsOpen && EscOnBack)
+        {
+            RaiseEvent(new RoutedEventArgs(EscEvent, this));
+            return true;
+        }
+
         if (!IsOpen || !DismissOnEsc) return false;
         SetCurrentValue(IsOpenProperty, false);
         return true;
