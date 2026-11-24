@@ -161,7 +161,7 @@ public class Popover : TemplatedControl
     private (Rect Anchor, Size Body, Rect View, Rect? Bounds, Thickness Margin, double? Arrow)? _tethered;
     private SafeArea.ISource? _safe;
     private OverlayPopupHost? _host;
-    private (Rect Area, Point At)? _cut;
+    private (OverlayPopupHost Host, Rect Area, Point At)? _cut;
     private ScrollContentPresenter? _scrollParent;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
     private (int Time, Easing? Easing, Transitions Transitions)? _exit;
@@ -504,8 +504,7 @@ public class Popover : TemplatedControl
         if (_top is Window window) window.Closing -= OnWindowClosing;
         if (_safe is not null) _safe.Changed -= OnSafeAreaChanged;
         _safe = null;
-        // The host's cut goes with this opening: a host is made for each.
-        _host?.ClearValue(ClipProperty);
+        // The host goes with this opening (a host is made for each), and its cut with it.
         _host = null;
         _cut = null;
         if (closePopup && _popup is not null) _popup.IsOpen = false;
@@ -645,8 +644,8 @@ public class Popover : TemplatedControl
 
         if (_host.TranslatePoint(default, _top) is not { } at) return;
         var area = Seen();
-        if (_cut is { } cut && cut.Area == area && cut.At == at) return;
-        _cut = (area, at);
+        if (_cut == (_host, area, at)) return;
+        _cut = (_host, area, at);
         _host.Clip = new RectangleGeometry(area.Translate(-(Vector)at));
     }
 

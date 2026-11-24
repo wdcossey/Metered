@@ -180,18 +180,25 @@ public class PopoverSafeAreaTests
         Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
         Assert.Null(Cut(popover, scene));
 
+        // Each change is read as it is raised, not at the next layout pass (which the scene's frames would run anyway): a
+        // safe area can change with nothing in the window laid out again.
         insets.Set(Bars);
+        Assert.Equal(PopoverPlacement.Top, popover.ActualPlacement);
+        Assert.Equal(Safe(Bars), Cut(popover, scene));
         PopoverTests.Settle(scene);
         Assert.Equal(PopoverPlacement.Top, popover.ActualPlacement);
         Assert.Equal(Safe(Bars), Cut(popover, scene));
 
         var side = new Thickness(48, 0, 30, 0);
         insets.Set(side);
+        Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
+        Assert.Equal(Safe(side), Cut(popover, scene));
         PopoverTests.Settle(scene);
         Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
         Assert.Equal(Safe(side), Cut(popover, scene));
 
         insets.Set(default);
+        Assert.Null(Cut(popover, scene));
         PopoverTests.Settle(scene);
         Assert.Null(Cut(popover, scene));
     }
