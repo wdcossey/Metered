@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia;
 using Avalonia.Automation.Peers;
 using Avalonia.Automation.Provider;
@@ -6,6 +7,7 @@ using Avalonia.Controls.Automation.Peers;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
+using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Rendering;
@@ -29,8 +31,9 @@ namespace Metered.Controls;
 /// <para>The click is the target's own, through its automation peer: its toggle (Avalonia's toggle button, Metered's
 /// Checkbox, Radio and Switch), else its invoke (a button), each of which runs the control's click, its <c>Click</c> event
 /// and its <c>Command</c>, as a browser's label runs the labelled control's activation. A target with neither (a text box)
-/// is only focused; a disabled one is left alone. A press on a control inside the label's content (a link, a button) is
-/// that control's: it handles the press, which the label never sees.</para>
+/// is only focused, and its soft keyboard asked for, as a tap on it asks (#124); a disabled one is left alone. A press on
+/// a control inside the label's content (a link, a button) is that control's: it handles the press, which the label never
+/// sees.</para>
 /// <para>Its hit area is its box widened over the label row's top and bottom margins (Metered's, for a finger: Base Web's
 /// label box is the row's 16 px, 20 with an end enhancer; here 32, or 36), the row's width less the end enhancer's.
 /// Nothing moves: the margins stay empty space, and the child, after the label in the tree, keeps a press where its own
@@ -115,10 +118,37 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
     {
         if (!target.IsEffectivelyEnabled) return;
         target.Focus(NavigationMethod.Pointer);
+        ShowInputPane(target);
         if (target is not Avalonia.Controls.Button control) return;
         var peer = ControlAutomationPeer.CreatePeerForElement(control);
         if (peer.GetProvider<IToggleProvider>() is { } toggle) toggle.Toggle();
         else if (peer.GetProvider<IInvokeProvider>() is { } invoke) invoke.Invoke();
+    }
+
+    // Protected on Avalonia's public TextInputMethodClient (12.1.4): FormControlTests' keyboard tests go red if an upgrade
+    // renames it.
+    private static readonly MethodInfo? RequestInputPane = typeof(TextInputMethodClient).GetMethod(
+        "RaiseInputPaneActivationRequested", BindingFlags.Instance | BindingFlags.NonPublic, Type.EmptyTypes);
+
+    /// <summary>
+    /// The soft keyboard asked for, for the text box the label has focused, as a tap on the text box asks for it (#124).
+    /// Focusing a text box shows the keyboard, but a focused one isn't focused again, so once the keyboard has been put away
+    /// (Android's Back) a label's tap would leave it closed, where a browser's opens it again. Avalonia's text box asks on
+    /// its own tap (its input method client's <c>InputPaneActivationRequested</c>, which Android's input method answers
+    /// with <c>ShowSoftInput</c>); the label asks that client, the one Avalonia's input method manager takes for the
+    /// focused element, asked for as the manager asks (raised on the focused element), through the client's own protected
+    /// raiser (no public member asks). The focused element is the target or inside it (a searchable Select's input, a text
+    /// box in a control <c>HtmlFor</c> names); nothing where the focus is elsewhere, or the focused element has no client
+    /// (a read-only text box, a button). Android's input method listens only to the client the manager has given it, which
+    /// is none where the focused element's input method is turned off.
+    /// </summary>
+    internal static void ShowInputPane(IInputElement target)
+    {
+        if (target is not Visual visual || TopLevel.GetTopLevel(visual)?.FocusManager?.GetFocusedElement() is not InputElement focused) return;
+        if (focused != visual && !visual.IsVisualAncestorOf(focused)) return;
+        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = TextInputMethodClientRequestedEvent };
+        focused.RaiseEvent(request);
+        if (request.Client is { } client) RequestInputPane?.Invoke(client, null);
     }
 
     /// <summary>
