@@ -72,6 +72,12 @@ These are the ones to revisit first.
 | Menu | A desktop browser draws `overflow: auto`'s scroll bar in the list | No scroll bars, as Metered's other scrollers | as built (#107) | [Menu 6](controls/Menu/README.md#known-differences) |
 | Menu | The profile option's plain `:hover`, kept after a tap on a phone; a pen's hover | A mouse's only | as built (#107) | [Menu 7](controls/Menu/README.md#known-differences) |
 | Menu | A profile picture's `<img src>` loads any address; a link without a scheme is resolved against the page | A string is a resource or a file, never fetched; such a link is opened by https | as built (#107) | [Menu 8, 11](controls/Menu/README.md#known-differences) |
+| Select | `Select` and `StatefulSelect` are separate | One select: its handlers set `Value`, `IsOpen` and `InputValue` whatever bound them | as built (#97) | [Select 1](controls/Select/README.md#known-differences) |
+| Select | Any object is an option, read by `valueKey` and `labelKey`; grouped options an object of keys | A `SelectOption` has `Id` and `Label`; any other object is its own label and value; a `SelectGroup` a key | as built (#97) | [Select 2](controls/Select/README.md#known-differences) |
+| Select | The dropdown's list (`tabIndex={0}`) takes the focus on a press; a multi select's choice leaves it there, gone as the dropdown closes | The input keeps the focus | as built (#97) | [Select 3](controls/Select/README.md#known-differences) |
+| Select | Backspace or Delete on a focused tag removes it, then the select's handler removes the last value in its place | Only the focused tag is removed | as built (#97) | [Select 4](controls/Select/README.md#known-differences) |
+| Select | `placeholder` is any node | Text | as built (#97) | [Select 5](controls/Select/README.md#known-differences) |
+| Select | No counterpart: a browser's back button leaves the page | Avalonia's back request closes an open dropdown as Escape does (#123's rule) | as built (#97) | [Select 7](controls/Select/README.md#known-differences) |
 
 ## Forced
 
@@ -80,7 +86,7 @@ These are the ones to revisit first.
 | **Fonts:** Instrument Sans for UberMoveText, Figtree for UberMove | Uber Move can't ship | [ADR 0003](decisions/0003-font.md); the Fonts item of Button, Checkbox, ProgressBar, Radio, Slider and Switch |
 | **An override restyles or hides a part; it never renders another element** (`component`, `() => null`, a custom `TickBar`); Spinner, which has none in Base Web (`withStyle`, `$style`), takes one too | An Avalonia override is a theme for the part's element | [ADR 0001](decisions/0001-parts-states-and-overrides.md); [Button 1](controls/Button/README.md#known-differences), [Slider 8](controls/Slider/README.md#known-differences), [Input 6](controls/Input/README.md#known-differences), [Spinner 1](controls/Spinner/README.md#known-differences) |
 | **`@media (pointer: coarse)` is the platform** (Android and iOS) | Avalonia has no such media query | [Checkbox 3](controls/Checkbox/README.md#known-differences), [Radio 4](controls/Radio/README.md#known-differences), [Switch 4](controls/Switch/README.md#known-differences) |
-| **No hidden `Input` part**: the control is the native input | There is no hidden native input to keep | [Checkbox 1](controls/Checkbox/README.md#known-differences), [Radio 1](controls/Radio/README.md#known-differences), [Switch 1](controls/Switch/README.md#known-differences) |
+| **No hidden `Input` part**: the control is the native input | There is no hidden native input to keep | [Checkbox 1](controls/Checkbox/README.md#known-differences), [Radio 1](controls/Radio/README.md#known-differences), [Switch 1](controls/Switch/README.md#known-differences), [Select 8](controls/Select/README.md#known-differences) |
 | **A disabled control shows no not-allowed cursor, and a disabled switch no hover overlay** | Avalonia doesn't hit-test a disabled control | [Checkbox 8](controls/Checkbox/README.md#known-differences), [Radio 11](controls/Radio/README.md#known-differences), [Switch 3](controls/Switch/README.md#known-differences), [Slider 4](controls/Slider/README.md#known-differences) |
 | **A control in a label keeps its own press** (`containsInteractiveElement`) | Avalonia's controls take their own press | [Checkbox 7](controls/Checkbox/README.md#known-differences), [Radio 9](controls/Radio/README.md#known-differences) |
 | **The hover area is the rectangle**, not the rounded corners | Avalonia's hit test is the bounds | [Checkbox 6](controls/Checkbox/README.md#known-differences), [Radio 8](controls/Radio/README.md#known-differences) |
@@ -107,7 +113,7 @@ These are the ones to revisit first.
 
 | What | Detail |
 |---|---|
-| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences) |
+| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences) |
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** under `KeyboardInset`, Gboard's height changing, the focus moved to another input with the keyboard up and the ready line's `page=` (#108; its other checks passed on the Pixel 8 on 2026-11-23), handles left on an input the focus left (#109), the desktop menu (#110), the grip focusing the textarea (#111) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences), [KeyboardInset 5](controls/KeyboardInset/README.md#known-differences) |
@@ -117,3 +123,5 @@ These are the ones to revisit first.
 | **In a real window:** the Popover; **on a phone:** its placements' flips, a text field in it under the keyboard, and an anchor scrolled out of view below drawing its popover over Android's navigation bar (#129; #119; the rest passed on the Pixel 8 on 2026-11-23) | [Popover 10](controls/Popover/README.md#known-differences) |
 | **Menu:** `rootRef`, `getRequiredItemProps`, `onActiveDescendantChange` and the options' ids; Base Web's locale | [Menu 10, 12](controls/Menu/README.md#known-differences) |
 | **On a phone and in a real window:** the Menu (#126) | [Menu 14](controls/Menu/README.md#known-differences) |
+| **Select:** the Tag control (its tag is `SelectTag`, only what the select uses); `onFocus`, `onBlur`, `inputRef`, `mountNode`, `id`; the `aria-` props but its name; Base Web's locale | [Select 6, 9, 10, 11](controls/Select/README.md#known-differences) |
+| **On a phone and in a real window:** the Select (#133) | [Select 14](controls/Select/README.md#known-differences) |

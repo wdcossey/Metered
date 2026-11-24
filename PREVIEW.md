@@ -182,6 +182,25 @@ input's form control states, and a checkbox and a radio group in one. A tap on a
 <img src="docs/preview/dark__formcontrol-4.png" width="270" alt="FormControl, dark, at its end: a checkbox and a radio group">
 </p>
 
+## Select
+
+Base Web's select, as its documentation's examples: basic, search single and multi, creatable single and multi, its four
+sizes, grouped options, a select that isn't searchable, and its states (error, positive, disabled, loading). A tap opens
+a select's dropdown below it; a tap there chooses; a finger's drag over the page scrolls it and opens nothing.
+
+<p>
+<img src="docs/preview/light__select-1.png" width="270" alt="Select, light: basic, search single and multi, creatable, sizes">
+<img src="docs/preview/dark__select-1.png" width="270" alt="Select, dark: basic, search single and multi, creatable, sizes">
+</p>
+<p>
+<img src="docs/preview/light__select-2.png" width="270" alt="Select, light, scrolled: grouped, not searchable, the states">
+<img src="docs/preview/dark__select-2.png" width="270" alt="Select, dark, scrolled: grouped, not searchable, the states">
+</p>
+<p>
+<img src="docs/preview/light__select-3.png" width="270" alt="Select, light, at its end: not searchable, the states">
+<img src="docs/preview/dark__select-3.png" width="270" alt="Select, dark, at its end: not searchable, the states">
+</p>
+
 ## Popover
 
 Base Web's popover, as its documentation's examples: always open, opened by a click and with an arrow, by a hover, closed

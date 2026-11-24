@@ -189,6 +189,26 @@ public class SelectTests
     }
 
     [AvaloniaFact]
+    public void AutoFocus_focuses_the_input_once_it_is_shown_and_opens_nothing()
+    {
+        var (select, scene, _) = Make(s => s.AutoFocus = true);
+        using var _s = scene;
+        Assert.True(select.FocusTarget!.IsFocused);
+        Assert.True(select.IsSelectFocused);
+        Assert.False(select.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void A_click_on_the_search_icon_is_the_controls()
+    {
+        var (select, scene, _) = Make(s => s.Type = SelectType.Search);
+        using var _s = scene;
+        scene.Click(select.P<Control>(Select.SearchIconPart));
+        Assert.True(select.IsOpen);
+        Assert.True(select.IsSelectFocused);
+    }
+
+    [AvaloniaFact]
     public void Disabled_it_takes_no_focus_and_shows_no_clear_icon()
     {
         var (select, scene, _) = Make(s => s.IsEnabled = false, ["Aqua"]);

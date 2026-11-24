@@ -127,3 +127,9 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       chooses, `keyboardControlNode` and `forceHighlight` for Select (#97), links, the profile option by the `Option`
       override, nested menus in a Popover (`NestedMenus`), its parts and overrides (`docs/controls/Menu/`). On the Pixel
       and in a real window: #126
+- [x] Select (#97): Base Web's `baseui/select` (no v2), `Select` and `StatefulSelect` in one, its dropdown Metered's Popover
+      round Metered's Menu: single and multi, searchable and creatable, clearable, its tags (`SelectTag`, the part of Base
+      Web's Tag it uses), sizes, error and positive, loading, the search type, grouped options, its state through
+      select-component.js's own handlers (against its own class driven in Node), a click or a tap that opens it and a drag
+      that doesn't, a finger down outside closing it, the back request, its parts and overrides (`docs/controls/Select/`).
+      On the Pixel and in a real window: #133. The Tag control is still to come

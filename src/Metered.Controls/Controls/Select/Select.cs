@@ -140,6 +140,7 @@ public class Select : TemplatedControl
     public static readonly StyledProperty<bool> OnCloseResetsInputProperty = AvaloniaProperty.Register<Select, bool>(nameof(OnCloseResetsInput), true);
     public static readonly StyledProperty<bool> OnSelectResetsInputProperty = AvaloniaProperty.Register<Select, bool>(nameof(OnSelectResetsInput), true);
     public static readonly StyledProperty<bool> OpenOnClickProperty = AvaloniaProperty.Register<Select, bool>(nameof(OpenOnClick), true);
+    public static readonly StyledProperty<bool> AutoFocusProperty = AvaloniaProperty.Register<Select, bool>(nameof(AutoFocus));
 
     public static readonly StyledProperty<Func<object, SelectOptionState, object?>?> GetOptionLabelProperty =
         AvaloniaProperty.Register<Select, Func<object, SelectOptionState, object?>?>(nameof(GetOptionLabel));
@@ -286,6 +287,9 @@ public class Select : TemplatedControl
 
     /// <summary>Base Web's <c>openOnClick</c>: a click that focuses it opens it. True by default.</summary>
     public bool OpenOnClick { get => GetValue(OpenOnClickProperty); set => SetValue(OpenOnClickProperty, value); }
+
+    /// <summary>Base Web's <c>autoFocus</c>: the input focused once the select is shown (componentDidMount).</summary>
+    public bool AutoFocus { get => GetValue(AutoFocusProperty); set => SetValue(AutoFocusProperty, value); }
 
     /// <summary>Base Web's <c>getOptionLabel</c>: what the dropdown shows for an option, any content. Null is its label, or <c>Create “…”</c>.</summary>
     public Func<object, SelectOptionState, object?>? GetOptionLabel { get => GetValue(GetOptionLabelProperty); set => SetValue(GetOptionLabelProperty, value); }
@@ -482,9 +486,11 @@ public class Select : TemplatedControl
             _popover.Esc += OnPopoverEsc;
         }
 
-        // A click each time, as a browser's: a second within the double-click time is Avalonia's DoubleTapped.
-        _control?.AddHandler(InputElement.TappedEvent, OnControlTapped, handledEventsToo: true);
-        _control?.AddHandler(InputElement.DoubleTappedEvent, OnControlTapped, handledEventsToo: true);
+        // The control container's onClick, a click each time, as a browser's: a second within the double-click time is
+        // Avalonia's DoubleTapped. On the root, which holds the container and the search icon over its start (in the
+        // container's DOM in Base Web, absolutely placed).
+        _root?.AddHandler(InputElement.TappedEvent, OnControlTapped, handledEventsToo: true);
+        _root?.AddHandler(InputElement.DoubleTappedEvent, OnControlTapped, handledEventsToo: true);
         _clearIcon?.AddHandler(InputElement.TappedEvent, OnClearTapped, handledEventsToo: true);
         _clearIcon?.AddHandler(InputElement.DoubleTappedEvent, OnClearTapped, handledEventsToo: true);
         if (_root is not null) _root.PropertyChanged += OnRootChanged;
@@ -510,8 +516,8 @@ public class Select : TemplatedControl
     private void Unhook()
     {
         if (_popover is not null) _popover.Esc -= OnPopoverEsc;
-        _control?.RemoveHandler(InputElement.TappedEvent, OnControlTapped);
-        _control?.RemoveHandler(InputElement.DoubleTappedEvent, OnControlTapped);
+        _root?.RemoveHandler(InputElement.TappedEvent, OnControlTapped);
+        _root?.RemoveHandler(InputElement.DoubleTappedEvent, OnControlTapped);
         _clearIcon?.RemoveHandler(InputElement.TappedEvent, OnClearTapped);
         _clearIcon?.RemoveHandler(InputElement.DoubleTappedEvent, OnClearTapped);
         if (_root is not null) _root.PropertyChanged -= OnRootChanged;
@@ -574,6 +580,7 @@ public class Select : TemplatedControl
         base.OnLoaded(e);
         SetPseudo(":loaded", true);
         if (IsOpen) OpenDropdown();
+        if (AutoFocus) FocusTarget?.Focus(NavigationMethod.Unspecified);
     }
 
     protected override void OnUnloaded(RoutedEventArgs e)
