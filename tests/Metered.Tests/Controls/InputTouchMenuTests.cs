@@ -571,6 +571,13 @@ public class InputTouchMenuTests
         // Placed again once at most, as it starts to follow the input.
         Assert.True(menu.IsOpen);
         Assert.True(nudges <= 2, $"{nudges} changes of the popup's offset");
+
+        // The other input's handles moving, their height the same, are no reason either.
+        var settled = nudges;
+        foreach (var handle in scene.Window.GetVisualDescendants().OfType<TextSelectionHandle>().Where(h => h.IsEffectivelyVisible))
+            Canvas.SetLeft(handle, Canvas.GetLeft(handle) + 5);
+        scene.Advance(100);
+        Assert.Equal(settled, nudges);
         menu.Hide();
     }
 
