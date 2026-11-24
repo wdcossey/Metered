@@ -489,12 +489,18 @@ public class Menu : TemplatedControl
     private bool _childClosing;
 
     /// <summary>
-    /// A child menu's Escape: resetMenu. Its popover closes, and Avalonia's popup gives the focus back to the list, where a
-    /// browser leaves it on the page (the child's list, focused, is gone): that focus isn't the menu's, and is let go.
+    /// A child menu's Escape (or the back request, #131): resetMenu. Its popover closes, and if the focus was in the child,
+    /// Avalonia's popup gives it back to the list, where a browser leaves it on the page (the child's list, focused, is
+    /// gone): that focus isn't the menu's, and is let go. With the focus elsewhere, none comes back, and none is let go.
     /// </summary>
-    internal void ResetFromChild()
+    internal void ResetFromChild(Visual? child)
     {
-        _childClosing = true;
+        // Only ever set here, so a second call with the focus elsewhere doesn't clear a first one's.
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused && Layers.IsWithin(focused, child))
+        {
+            _childClosing = true;
+        }
+
         ResetMenu();
         // The popup gives the focus back as it closes; if it doesn't come, the next focus is the menu's again.
         DispatcherTimer.RunOnce(() => _childClosing = false, ChildClosingTime);

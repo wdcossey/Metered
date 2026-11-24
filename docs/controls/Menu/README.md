@@ -96,9 +96,10 @@ From `stateful-container.js`, `menu.js` and `utils.js`:
   controlled Base Web popover's: a click or a tap on the option chooses it and doesn't toggle or close the popover, even for
   a moment). `NestedMenus` keeps the menus shown in order; a mouse back over a
   shallower menu lets a deeper one's highlight go, and 200 ms after it has left them all, every one's. Escape in a child
-  resets its parent (onEsc: resetMenu), which closes it; the focus Avalonia's popup gives back as it closes is let go, as a
-  browser leaves it on the page. Tab stays in a child menu. A menu hidden when it is shown isn't nested (addMenuToNesting's
-  offsetHeight). A menu taken out of the tree (a child's popover closed) starts again at its first state when it is shown
+  resets its parent (onEsc: resetMenu), which closes it; the focus Avalonia's popup gives back as it closes, when the focus
+  was in the child, is let go, as a browser leaves it on the page. Avalonia's back request while a child is open is that
+  Escape (Metered's, known difference 15): the parent reset and the child closed, the request handled. Tab stays in a
+  child menu. A menu hidden when it is shown isn't nested (addMenuToNesting's offsetHeight). A menu taken out of the tree (a child's popover closed) starts again at its first state when it is shown
   again, as Base Web's unmounted container does, and an input method's keys ("Process") are type-ahead's, never Enter's.
 - **UI Automation**: the list is a list named by `aria-label` ("Menu"), its children the options, the headers and the empty
   state's message; an option a list item, selected while highlighted and the menu focused (`aria-selected`), not enabled
@@ -111,7 +112,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 99 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 105 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -128,11 +129,12 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
   option's own, its template, a theme's template after the option is made again), the profile option by override (a picture that isn't an image: none), links (followed
   whatever `ItemSelect` does), UI Automation, items that change, options made again taking their controls, a menu following
   its collection only in the tree and letting its letters go out of it, the empty state's content, keys by name.
-- `MenuNestedTests` (9): a child open while highlighted, the arrow keys between menus, a child opened again afresh, Escape,
-  the nested hover, a hidden menu not nested, a click and a tap on a parent option (its popover never closed), the
-  `ChildMenuPopover` override.
-- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (4): the sample's
-  page.
+- `MenuNestedTests` (14): a child open while highlighted, the arrow keys between menus, a child opened again afresh, Escape,
+  the back request as that Escape (a child a tap opened, a focused child, a child above the popover the menu is in, a
+  child that Escape leaves open, the parent's focus after an unfocused child closed), the nested hover, a hidden menu not
+  nested, a click and a tap on a parent option (its popover never closed), the `ChildMenuPopover` override.
+- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (5): the sample's
+  page, and in the shell Back closing the child menu before it goes back.
 
 ## Known differences
 
@@ -173,8 +175,12 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     child menu's popover reaches over Android's navigation bar (#129: since cut to the safe area, as every popover is,
     tried headless only). Not tried yet: the keys, the profile pictures,
     links, and everything in a real window.
-15. **Android's back request with a child menu open goes on to the page** (chosen; decided 2026-11-24 to change, #131;
-    Base Web has no back request). Metered's popover closes on it when Escape would close it (#123), and a child menu's
-    Escape resets its parent rather than closing its popover, which is held to the highlight. To change (#131): the back
-    request does what Escape does there, resetting the parent and closing the child menu, before the page goes back.
+15. **Android's back request with a child menu open is that Escape** (chosen; decided 2026-11-24, #131; Base Web has no
+    back request). Metered's popover closes on it when Escape would close it (#123), but a child menu's Escape resets its
+    parent rather than closing its popover, which is held to the highlight, so that rule passed over it and Back went on
+    to the page. The child menu's popover takes the request as its Escape (`EscOnBack`, as Select's dropdown does): the
+    parent menu reset and the child closed, the request handled before any popover below (the one the menu is in) and
+    before the app goes back (the sample's shell); with no child open, or one that Escape leaves open (as `ForceHighlight`
+    highlights its option again, its Escape run all the same), the request goes on as before, to the popover below or the
+    app. Tried headless (`MenuNestedTests`, `MenuPageTests`), not yet on a phone.
 
