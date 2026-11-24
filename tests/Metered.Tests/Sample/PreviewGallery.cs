@@ -201,7 +201,7 @@ public class PreviewGallery
     /// <summary>
     /// Stops the motion that never ends, so a picture can be at rest: <see cref="Still"/> on every element of the screen.
     /// A theme runs such motion only while its element isn't <c>:metered-still</c> (the Spinner's ring then stands at
-    /// 0deg, Base Web's <c>from</c>), as Avalonia 12's animation clock is internal and can't be held (#13).
+    /// 0deg, Base Web's <c>from</c>), as the gallery's windows, the sample's own, run on real time, not on the test's clock.
     /// </summary>
     private static void HoldStill(Visual root)
     {
@@ -210,7 +210,8 @@ public class PreviewGallery
     }
 
     /// <summary>
-    /// Avalonia's transitions run on the render loop's clock, which is real time: draw frames over
+    /// Avalonia's transitions run on the media context's clock, real time here (the sample's windows aren't on the test's
+    /// clock): draw frames over
     /// <see cref="RealTimeSettle"/> of it, so the picture is at rest. Between frames the dispatcher's loop runs, so its
     /// timers fire as an app's do (headless, RunJobs doesn't fire them): a popover's entrance starts on one.
     /// </summary>

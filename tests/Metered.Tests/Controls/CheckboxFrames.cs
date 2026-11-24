@@ -170,7 +170,7 @@ public class CheckboxFrames
     }
 
     /// <summary>
-    /// No transition on the mark, so a frame shows where its colours end: the headless clock doesn't run, and a frame
+    /// No transition on the mark, so a frame shows where its colours end: the test's clock stands still, and a frame
     /// taken just after a hover would catch the fill on its way.
     /// </summary>
     private static void Settle(Checkbox box) => ((CheckboxMark)box.Part(Checkbox.CheckmarkPart)!).Transitions = null;

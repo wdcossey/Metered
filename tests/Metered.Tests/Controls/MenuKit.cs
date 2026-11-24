@@ -87,7 +87,7 @@ internal static class MenuKit
         scene.Pump();
     }
 
-    /// <summary>The dispatcher's loop for a while, so its timers fire (type-ahead's 500 ms, the nested menus' 200 ms).</summary>
+    /// <summary>The test's clock moved on, so its timers fire (type-ahead's 500 ms, the nested menus' 200 ms).</summary>
     public static void Wait(Scene scene, int ms) => PopoverTests.Settle(scene, ms);
 
     /// <summary>An option's centre, scrolled into the list's view first.</summary>

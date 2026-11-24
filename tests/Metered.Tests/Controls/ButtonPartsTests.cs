@@ -75,20 +75,16 @@ public class ButtonPartsTests
     }
 
     // The ring's turn, Base Web's LoadingSpinner (button/styled-components.js): rotate(0deg) to rotate(360deg), on
-    // Avalonia's clock, real time. Its angle moves between two frames 150 ms apart while the button loads.
+    // Avalonia's clock, here the test's. Its angle moves between two frames 150 ms apart while the button loads.
     [AvaloniaFact]
     public void The_loading_ring_turns()
     {
         var (ring, scene) = Loading();
         using var _ = scene;
         var first = Angle(ring, scene);
-        // A few tries, so a slow runner's frame can't make it flaky: a turn that never runs stays at its first angle.
-        var moved = false;
-        for (var i = 0; i < 5 && !moved; i++)
-        {
-            Thread.Sleep(150);
-            moved = Angle(ring, scene) != first;
-        }
+        // 150 ms on the test's clock: a turn that never runs stays at its first angle.
+        scene.Advance(150);
+        var moved = Angle(ring, scene) != first;
 
         Assert.True(moved, $"the ring stayed at {first} degrees");
     }
@@ -101,18 +97,14 @@ public class ButtonPartsTests
         const double from = 0;
         var (ring, scene) = Loading();
         using var _ = scene;
-        // Turning first (a few tries, for a slow runner), so standing at 0 below is the hold's doing.
-        var turned = false;
-        for (var i = 0; i < 5 && !turned; i++)
-        {
-            Thread.Sleep(150);
-            turned = Angle(ring, scene) != from;
-        }
+        // Turning first, so standing at 0 below is the hold's doing.
+        scene.Advance(150);
+        var turned = Angle(ring, scene) != from;
 
         Assert.True(turned, "the ring never turned");
         SpinnerColourTests.Still(ring);
         Assert.Equal(from, Angle(ring, scene));
-        Thread.Sleep(150);
+        scene.Advance(150);
         Assert.Equal(from, Angle(ring, scene));
     }
 
@@ -150,12 +142,9 @@ public class ButtonPartsTests
 
         ring.Theme = theme;
         var first = Angle(ring, scene);
-        var moved = false;
-        for (var i = 0; i < 5 && !moved; i++)
-        {
-            Thread.Sleep(150);
-            moved = Angle(ring, scene) != first;
-        }
+        // 150 ms on the test's clock: a turn that never runs stays at its first angle.
+        scene.Advance(150);
+        var moved = Angle(ring, scene) != first;
 
         Assert.True(moved, $"the ring stayed at {first} degrees");
     }
