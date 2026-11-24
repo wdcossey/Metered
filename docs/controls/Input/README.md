@@ -127,13 +127,14 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 111: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 112: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept; a long press on
   another input leaving the first with no selection or handles, the shared menu open for the other (the theme's, and an
   app's), its own menu left open closing with its selection when the focus moves on (by Tab, by code, to its clear
-  icon, to another popup of its content, to nowhere), and the focus going into the menu keeping it (#109);
+  icon, to another popup of its content, to nowhere), the focus going into the menu keeping it, and its own menu after
+  another's still opening on its text alone (#109);
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
   focus; a finger's drag that moves the page and not the caret, focused or not; a sideways one on a long value that

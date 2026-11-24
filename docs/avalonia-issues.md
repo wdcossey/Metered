@@ -40,7 +40,8 @@ by `InputTests` (`A_long_press_on_another_input_leaves_the_first_with_no_selecti
 `Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on` (by Tab and by code),
 `Its_menu_closes_with_its_selection_when_the_focus_goes_to_its_clear_icon`,
 `Its_menu_closes_with_its_selection_when_the_focus_goes_nowhere`,
-`The_focus_going_into_another_popup_of_its_content_closes_its_menu`, `The_focus_going_into_its_menu_keeps_the_selection`)
+`The_focus_going_into_another_popup_of_its_content_closes_its_menu`, `The_focus_going_into_its_menu_keeps_the_selection`,
+`After_another_inputs_menu_its_own_opens_on_its_text_alone`)
 and `TextareaTests` (`A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles`).
 
 **Not covered:** a `ContextMenu` (Metered gives none), and a flyout that isn't a `PopupFlyoutBase`, whose inside can't

@@ -485,6 +485,32 @@ public class InputTests
         Assert.Equal(1, ShownHandles(scene));
     }
 
+    // The menu hidden from the text box's check comes back as it was: after a long press on another input, its own still
+    // opens on its text and not on its clear icon (BaseInput's handler before the flyout's).
+    [AvaloniaFact]
+    public void After_another_inputs_menu_its_own_opens_on_its_text_alone()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, b, 2));
+        b.ContextFlyout!.Hide();
+        scene.Pump();
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.Same(a, a.ContextFlyout!.Target);
+        Assert.Equal(b.SelectionStart, b.SelectionEnd);
+        a.ContextFlyout.Hide();
+        scene.Pump();
+
+        P<Control>(b, BaseInput.ClearIconPart).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.False(b.ContextFlyout.IsOpen);
+        P<Control>(b, BaseInput.InputPart).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.True(b.ContextFlyout.IsOpen);
+        Assert.Same(b, b.ContextFlyout.Target);
+        b.ContextFlyout.Hide();
+    }
+
     // Its own menu left open while the focus goes elsewhere (a key, the soft keyboard's next, code): the menu closes, and the
     // selection and handles go with the focus, as they do with the menu closed; the focus is where it went.
     [AvaloniaTheory]
