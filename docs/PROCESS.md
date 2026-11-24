@@ -40,11 +40,30 @@ Never without the developer's go-ahead in the conversation, whatever the label, 
 - **Decisions that aren't Claude's:** a change to an accepted ADR's design (for example a Button theme
   pruned by kind, size and shape: `docs/performance/README.md`), a deviation from Base Web that Avalonia
   doesn't force, a new dependency, the public API's names where Base Web's don't map.
+- **CI's workflows and their settings.** The repository is public: anyone can fork it and open a pull request,
+  and a `pull_request` run uses the workflow file from the pull request itself, so an `if:` or a `runs-on:` in
+  the YAML protects nothing. The protection is three settings, checked read-only at any time:
+  `gh api repos/wdcossey/Metered/actions/permissions/fork-pr-contributor-approval` (`all_external_contributors`),
+  `gh api repos/wdcossey/Metered/actions/permissions` and `.../permissions/selected-actions` (`selected`,
+  GitHub-owned only), and `gh api repos/wdcossey/Metered/actions/permissions/workflow` (`read`). Changing any
+  setting is ask-first (repo settings, above). In a workflow:
+  - The top-level `permissions: contents: read` stays. A job that needs more grants it on itself, with a comment
+    saying why.
+  - Actions are GitHub-owned (`actions/*`). A third-party one needs the developer's OK, a change to the allowed
+    actions setting (ask-first), and a pin by its full commit SHA, not a tag.
+  - No collaborators (one with write access skips the fork approval), and no Actions secrets or variables.
 - **Hard rules no go-ahead lifts:**
   - Uber Move, or any other proprietary font, is never downloaded, saved, committed, embedded or copied;
     it is only measured as baseweb.design renders it.
   - No Uber or Base mark in Metered's own names; Base Web's names stay only where they are its API.
   - Requests to outside services carry nothing about the developer or the project: a generic user agent.
+  - CI runs on GitHub-hosted runners only (`ubuntu-latest`, `windows-latest`, …): never a self-hosted label,
+    and no self-hosted runner is registered on this repository. If one ever seems needed, stop: it is the
+    developer's, after a security review.
+  - No `pull_request_target`, `issue_comment` or `workflow_run` trigger: each runs with the base repository's
+    token and secrets but can be started by a stranger. Triggers are `push`, `pull_request`,
+    `workflow_dispatch` and `schedule`.
+  - Approving a fork pull request's workflow run is the developer's alone: never approve one, nor ask to.
 
 When a unit of work runs into one of these it doesn't try it: it finishes the rest, files the step as a
 `hands-on` follow-up and lists it under **Hands-on follow-ups** in the PR.
