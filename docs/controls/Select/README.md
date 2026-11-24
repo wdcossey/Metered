@@ -80,8 +80,9 @@ Its state is `select-component.js`'s, its handlers ported one by one, their `set
 (a focus event a handler sets off reads the state from before the handler, as Base Web's does).
 
 - **A click or a tap on the control** (its `onClick`; a tap is a phone's click, a drag none): focuses the input and opens
-  the dropdown (`openOnClick`); clicked again while focused, it closes (a searchable select clears the text shown and keeps
-  the state's, as Base Web's `this.input.value = ''` does); a not-searchable one toggles, and unfocuses as it closes. A
+  the dropdown (`openOnClick`); clicked again while focused, it closes, the caret at the text's end (Base Web's
+  `this.input.value = ''`, which React's render undoes, writing the state's text back); a not-searchable one toggles, and
+  unfocuses as it closes. A
   click on the input opens it. A press anywhere in the control but the input lets a browser's focus go, so the focus its
   click gives back is a focus event: that is kept (focus after a clear doesn't open it until the next click).
 - **The keys** (its `onKeyDown`, on the input's keys before the input has them): Space (not searchable), the arrows, Page
@@ -122,7 +123,7 @@ every part recorded, and each part's style function evaluated with the props it 
 Popover's `content` as the Popover renders it; each tag rendered as Base Web's own Tag with `multi-value.js`'s props; and its
 own `Select` class driven step by step in Node as a browser and React would drive it (focus events, the document's
 listeners, React's batched state). The themes come from `tools/tokens/select.js`, which checks them against the style
-functions for every combination of states. 144 tests:
+functions for every combination of states. 150 tests:
 
 - `SelectBehaviourTests` (30): Base Web's state (open, focused, pseudo-focused, the text) and value after each step of 30
   sequences, replayed with a real mouse, real touch, real keys and typing: the click, the tap and the drag, the keys that
@@ -138,10 +139,12 @@ functions for every combination of states. 144 tests:
   padding, height, fonts, the icons, the input's box and the input, the single value, the search icon, the tags' boxes and
   places; the clear icon's sizes; tags wrapping and a long value cut.
 - `SelectFilterTests` (12): `defaultFilterOptions` against Base Web's.
-- `SelectTests` (18): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
+- `SelectTests` (24): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
   outside; typing and the menu's keys, the dropdown opened by a key, a tag's keys, the back request, disabled, `autoFocus`,
   the search icon's click; `controlRef`; labels and creatable; options changing while it is open; the dropdown's width and
-  height; overrides (its own parts, the popover's, the dropdown's, a tag's); UI Automation; the transition and the ring.
+  height; overrides (its own parts, the popover's, the dropdown's, a tag's, a collection changed after it is set); a tag's
+  content; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; UI
+  Automation; the transition and the ring.
 - `SelectFrames` (2, and the gallery): drawn pixels of the control, a tag and a highlighted option. `SelectPageTests` (4):
   the sample's page.
 
@@ -151,7 +154,10 @@ functions for every combination of states. 144 tests:
    `InputValue` are set by the select whatever bound them.
 2. **Options** (chosen): Base Web's options are any objects it reads `valueKey` and `labelKey` from. Here a
    `SelectOption` has `Id` and `Label` (the default keys); any other object is its own label and its own value. A
-   `SelectGroup` is a grouped key. As Base Web's `expandValue`, a value is shown as the option with the same id (as text).
+   `SelectGroup` is a grouped key; the dropdown lists the ungrouped options first, as Base Web's `groupOptions` does, and
+   highlights the value in that order (Base Web's index is the options' given order, the same whenever its `__ungrouped`
+   key comes first, as it conventionally does). As Base Web's `expandValue`, a value is shown as the option with the same
+   id (as text).
 3. **The dropdown's list never takes the focus** (chosen): Base Web's list (`tabIndex={0}`) takes it on a press, and a
    single select's choice gives it back to the input (`focus()`); a multi select's leaves it on the list, which goes as the
    dropdown closes, so the page has no focus while the select looks focused. Here the input keeps it in both. The

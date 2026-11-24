@@ -377,9 +377,9 @@
     </Style>
   </ControlTheme>
   <!-- Text: the tag's label, cut with an ellipsis. -->
-  <ControlTheme x:Key="SelectTag.StyledText" TargetType="TextBlock">
-    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-    <Setter Property="TextWrapping" Value="NoWrap" />
+  <ControlTheme x:Key="SelectTag.StyledText" TargetType="ContentPresenter">
+    <Setter Property="TextBlock.TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="TextBlock.TextWrapping" Value="NoWrap" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="MaxWidth" Value="128" />
   </ControlTheme>

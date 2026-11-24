@@ -181,6 +181,9 @@ public class Select : TemplatedControl
     private Menu? _menu;
     private TopLevel? _top;
     private OverrideCollection? _appOverrides;
+    private bool _overridesWatched;
+    private SelectOption? _created;
+    private bool _relabel;
 
     // Base Web's state beyond its two properties, and its instance flags.
     private bool _isFocused, _isPseudoFocused;
@@ -480,6 +483,8 @@ public class Select : TemplatedControl
         _tags.Clear();
         _renderedValue = null;
         _shownText = null;
+        // A new template is a new popover: the dropdown is made again for it.
+        CloseDropdown();
         if (_popover is not null)
         {
             _popover.EscOnBack = true;
@@ -545,6 +550,10 @@ public class Select : TemplatedControl
             _top.AddHandler(PointerPressedEvent, OnTopPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
             _top.PropertyChanged += OnTopChanged;
         }
+
+        // What changed while it was out of the tree: its dropdown held as its state says, its height of this window.
+        ApplyMenuOverrides();
+        Render();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -564,6 +573,8 @@ public class Select : TemplatedControl
     {
         base.OnAttachedToLogicalTree(e);
         Watch();
+        WatchOverrides();
+        ApplyOverrides();
     }
 
     protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
@@ -571,7 +582,23 @@ public class Select : TemplatedControl
         base.OnDetachedFromLogicalTree(e);
         foreach (var w in _watched) w.CollectionChanged -= OnCollectionChanged;
         _watched.Clear();
-        if (_appOverrides is not null) _appOverrides.CollectionChanged -= OnOverridesChanged;
+        UnwatchOverrides();
+    }
+
+    /// <summary>The app's overrides followed while the select is in the tree: out of it, nothing of the app's holds it.</summary>
+    private void WatchOverrides()
+    {
+        UnwatchOverrides();
+        if (!((ILogical)this).IsAttachedToLogicalTree || Overrides is not { } o) return;
+        _appOverrides = o;
+        o.CollectionChanged += OnOverridesChanged;
+        _overridesWatched = true;
+    }
+
+    private void UnwatchOverrides()
+    {
+        if (_overridesWatched && _appOverrides is not null) _appOverrides.CollectionChanged -= OnOverridesChanged;
+        _overridesWatched = false;
         _appOverrides = null;
     }
 
@@ -595,9 +622,7 @@ public class Select : TemplatedControl
         var p = change.Property;
         if (p == OverridesProperty)
         {
-            if (_appOverrides is not null) _appOverrides.CollectionChanged -= OnOverridesChanged;
-            _appOverrides = Overrides;
-            if (_appOverrides is not null && ((ILogical)this).IsAttachedToLogicalTree) _appOverrides.CollectionChanged += OnOverridesChanged;
+            WatchOverrides();
             ApplyOverrides();
         }
         else if (p == IsOpenProperty)
@@ -629,7 +654,12 @@ public class Select : TemplatedControl
             || p == NoResultsMsgProperty || p == GetOptionLabelProperty || p == GetValueLabelProperty || p == FilterOptionsProperty
             || p == FilterOutSelectedProperty || p == IgnoreCaseProperty || p == RequiredProperty || p == MaxDropdownHeightProperty)
         {
-            if (p == GetOptionLabelProperty) _contents.Clear();
+            if (p == GetOptionLabelProperty)
+            {
+                // Every option labelled again, as Base Web renders them again with the new function.
+                _contents.Clear();
+                _relabel = true;
+            }
             if (p == GetValueLabelProperty || p == MultiProperty) _renderedValue = null;
             if (p == MaxDropdownHeightProperty) ApplyMenuOverrides();
             Render();
@@ -670,11 +700,6 @@ public class Select : TemplatedControl
         Add(Options);
         foreach (var group in (Options ?? Array.Empty<object>()).OfType<SelectGroup>()) Add(group.Items);
         Add(Value);
-        if (_appOverrides is null && Overrides is { } o)
-        {
-            _appOverrides = o;
-            o.CollectionChanged += OnOverridesChanged;
-        }
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -736,7 +761,9 @@ public class Select : TemplatedControl
             : LabelText(o) != filter.Trim();
         if (filter.Length > 0 && Creatable && shown.Concat(values).All(Differs))
         {
-            shown.Add(new SelectOption { Id = filter, Label = filter, IsCreatable = true });
+            // One creatable option for the text, made again only when the text changes.
+            if (_created is null || (string?)_created.Label != filter) _created = new SelectOption { Id = filter, Label = filter, IsCreatable = true };
+            shown.Add(_created);
         }
 
         return shown;
@@ -901,9 +928,9 @@ public class Select : TemplatedControl
             _dropdown = new Border { Child = _menu };
             if (_root is not null) _dropdown.Width = _root.Bounds.Width;
             ApplyMenuOverrides();
-            var options = Filtered();
-            _menu.HighlightedIndex = HighlightedIndex(options);
-            _menu.ItemsSource = Grouped(options);
+            var first = Grouped(Filtered());
+            _menu.HighlightedIndex = HighlightedIndex(Flat(first));
+            _menu.ItemsSource = first;
             _menu.NoResultsMsg = NoResultsMsg;
             _menu.TemplateApplied += OnMenuTemplated;
             _parts.Place((DropdownContainerPart, [_dropdown]), (StatefulMenuPart, [_menu]));
@@ -913,7 +940,14 @@ public class Select : TemplatedControl
 
         var shown = Filtered();
         var grouped = Grouped(shown);
-        if (_menu.ItemsSource is not IList<object> old || !old.SequenceEqual(grouped, ItemComparer.Instance)) _menu.ItemsSource = grouped;
+        // The labels of options no longer shown let go.
+        foreach (var gone in _contents.Keys.Where(k => !shown.Contains(k, ReferenceEqualityComparer.Instance)).ToList()) _contents.Remove(gone);
+        if (_relabel || _menu.ItemsSource is not IList<object> old || !old.SequenceEqual(grouped, ItemComparer.Instance))
+        {
+            _relabel = false;
+            _menu.ItemsSource = grouped;
+            _parts.Place((OptionContentPart, [.. _contents.Values]));
+        }
         _menu.NoResultsMsg = NoResultsMsg;
         UpdateContents();
     }
@@ -942,7 +976,13 @@ public class Select : TemplatedControl
         _contents.Clear();
     }
 
-    /// <summary>getHighlightedIndex: the first value's index among the options shown, or the first.</summary>
+    /// <summary>The menu's items in its order: the ungrouped, then each group's.</summary>
+    private static List<object> Flat(List<object> grouped) => [.. grouped.SelectMany(g => g is MenuGroup m ? m.Items : [g])];
+
+    /// <summary>
+    /// getHighlightedIndex: the first value's index among the options shown, or the first; in the menu's order, which is
+    /// Base Web's whenever its ungrouped options come first, as its <c>__ungrouped</c> key conventionally does.
+    /// </summary>
     private int HighlightedIndex(List<object> options)
     {
         var values = ValueArray();
@@ -1076,7 +1116,7 @@ public class Select : TemplatedControl
         }
     }
 
-    private readonly Dictionary<double, ControlTheme> _listStyles = [];
+    private (double Height, ControlTheme Theme)? _listStyle;
 
     /// <summary>
     /// The menu's overrides, dropdown.js's: its List with the dropdown's max height under an app's Dropdown, its Option with
@@ -1086,11 +1126,13 @@ public class Select : TemplatedControl
     {
         if (_menu is null) return;
         var height = DropdownMaxHeight();
-        if (!_listStyles.TryGetValue(height, out var list))
+        // One theme for the height now, made again when it changes (a window resized), the last let go.
+        if (_listStyle is not { } current || current.Height != height)
         {
-            list = new ControlTheme(typeof(MenuList)) { Setters = { new Setter(MaxHeightProperty, height) } };
-            _listStyles[height] = list;
+            _listStyle = (height, new ControlTheme(typeof(MenuList)) { Setters = { new Setter(MaxHeightProperty, height) } });
         }
+
+        var list = _listStyle.Value.Theme;
 
         var dropdown = Find(DropdownPart);
         var option = Find(DropdownOptionPart);
@@ -1191,19 +1233,10 @@ public class Select : TemplatedControl
         if (_isFocused)
         {
             FocusInput();
-            // this.input.value = '': the text shown cleared, the state's kept (docs/controls/Select).
-            if (_input is not null)
-            {
-                _syncing = true;
-                try
-                {
-                    _input.Text = "";
-                }
-                finally
-                {
-                    _syncing = false;
-                }
-            }
+            // this.input.value = '': React writes the state's text back as it renders again, so the caret is at its end
+            // (what the comment there wants: a click places it at the end rather than selecting the text).
+            if (_input is not null) _input.ClearSelection();
+            if (_input is not null) _input.CaretIndex = (_input.Text ?? "").Length;
 
             var afterClear = _focusAfterClear;
             SetState(s => s with { IsOpen = !afterClear && !s.IsOpen, IsPseudoFocused = false });

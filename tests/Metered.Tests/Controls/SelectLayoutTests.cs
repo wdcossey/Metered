@@ -126,7 +126,7 @@ public class SelectLayoutTests
             Assert.Equal(new CornerRadius(t.Radius), r.CornerRadius);
             Assert.Equal(t.Font.FontSize, r.GetValue(TextElement.FontSizeProperty));
             Assert.Equal(Enum.Parse<FontWeight>(t.Font.FontWeight), r.GetValue(TextElement.FontWeightProperty));
-            Assert.Equal(t.TextMaxWidth, ((TextBlock)first.Part(SelectTag.TextPart)!).MaxWidth);
+            Assert.Equal(t.TextMaxWidth, ((ContentPresenter)first.Part(SelectTag.TextPart)!).MaxWidth);
             var action = (Border)first.Part(SelectTag.ActionPart)!;
             Assert.Equal(t.ActionMargin, action.Margin.Left);
             Assert.Equal(new CornerRadius(t.ActionRadius), action.CornerRadius);

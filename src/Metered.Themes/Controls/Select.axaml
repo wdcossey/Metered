@@ -104,7 +104,7 @@
       <ControlTemplate>
         <b:RadioMark Name="Root" Theme="{DynamicResource SelectTag.StyledRoot}">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Text="{TemplateBinding Content}" />
+            <ContentPresenter Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Content="{TemplateBinding Content}" />
             <Border Name="Action" Theme="{DynamicResource SelectTag.StyledAction}">
               <b:InputIcon Name="ActionIcon" Theme="{DynamicResource SelectTag.StyledActionIcon}" />
             </Border>

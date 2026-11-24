@@ -25,7 +25,7 @@ namespace Metered.Controls;
 /// action removes it, and Backspace or Delete while it is focused.</para>
 /// </remarks>
 [TemplatePart(RootPart, typeof(RadioMark))]
-[TemplatePart(TextPart, typeof(TextBlock))]
+[TemplatePart(TextPart, typeof(Avalonia.Controls.Presenters.ContentPresenter))]
 [TemplatePart(ActionPart, typeof(Control))]
 [TemplatePart(ActionIconPart, typeof(InputIcon))]
 [PseudoClasses(":is-hovered", ":is-active")]

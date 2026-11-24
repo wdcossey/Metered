@@ -933,7 +933,8 @@ public class Popover : TemplatedControl
     /// <summary>
     /// Avalonia's back request (Metered's, #123: Base Web has none): an open popover that Escape would close closes, and
     /// takes the request; one that wouldn't, or is already closing, leaves it to the layer below. <see cref="Esc"/> isn't
-    /// raised: it wasn't Escape.
+    /// raised: it wasn't Escape. But a controlled popover with <see cref="EscOnBack"/> (Select's dropdown, #97), whose own
+    /// Escape handler closes it, takes the request as its Escape: <see cref="Esc"/> is raised and the request handled.
     /// </summary>
     private bool OnLayerBack()
     {

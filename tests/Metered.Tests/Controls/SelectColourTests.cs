@@ -105,7 +105,7 @@ public class SelectColourTests
         Assert.Equal(C(s.Tag.Border!), Of(root.BorderBrush));
         Assert.Equal(new Thickness(s.Tag.BorderWidth), root.BorderThickness);
         Assert.Equal(C(s.Tag.Foreground), Of(root.GetValue(TextElement.ForegroundProperty)));
-        Assert.Equal(C(s.Tag.Foreground), Of(((TextBlock)tag.Part(SelectTag.TextPart)!).Foreground));
+        Assert.Equal(C(s.Tag.Foreground), Of(((ContentPresenter)tag.Part(SelectTag.TextPart)!).GetValue(TextElement.ForegroundProperty)));
         AssertCursor(s.Tag.Cursor, root);
         AssertCursor(s.Tag.ActionCursor, (InputElement)tag.Part(SelectTag.ActionPart)!);
         Assert.Equal(Colors.Transparent, Of(root.Overlay));

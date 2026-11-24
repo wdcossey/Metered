@@ -362,6 +362,104 @@ public class SelectTests
         Assert.Equal(50, ((Control)first.Part(MenuOptionList.ListItemPart)!).MinHeight);
     }
 
+    [AvaloniaFact]
+    public void A_tag_shows_any_content_its_value_label_gives()
+    {
+        var (select, scene, _) = Make(s =>
+        {
+            s.Multi = true;
+            s.GetValueLabel = o => new Border { Width = 30, Height = 10, Child = new TextBlock { Text = Select.LabelText(o) } };
+        }, ["Aqua"]);
+        using var _s = scene;
+        var text = (ContentPresenter)select.Tags[0].Part(SelectTag.TextPart)!;
+        var border = Assert.IsType<Border>(text.Content);
+        Assert.True(border.IsEffectivelyVisible && border.Bounds.Width == 30);
+        // tag.js's aria-label: "Remove" and its children only when they are a string.
+        Assert.Equal("Remove", ControlAutomationPeer.CreatePeerForElement(select.Tags[0]).GetName());
+    }
+
+    [AvaloniaFact]
+    public void Overrides_set_before_it_is_shown_follow_their_collections_changes()
+    {
+        var overrides = new OverrideCollection();
+        var options = SelectOracle.Options("OPTIONS");
+        var select = new Select { Options = options, Overrides = overrides };
+        var (scene, _) = SelectKit.Page(select);
+        using var _s = scene;
+        overrides.Add(new Override { Part = Select.RootPart, Style = new ControlTheme(typeof(Border)) { Setters = { new Setter(Layoutable.MarginProperty, new Thickness(7)) } } });
+        scene.Pump();
+        Assert.Equal(new Thickness(7), select.P<Control>(Select.RootPart).Margin);
+    }
+
+    [AvaloniaFact]
+    public void Opened_out_of_the_tree_it_opens_when_shown_again_at_its_windows_height()
+    {
+        var options = SelectOracle.Options("OPTIONS");
+        var select = new Select { Options = options };
+        var host = new ContentControl { Content = select };
+        var (scene, _) = SelectKit.Page(new Select());
+        using var _s = scene;
+        var page = (StackPanel)scene.Window.Content!;
+        page.Children.Insert(0, host);
+        scene.Pump();
+        host.Content = null;
+        scene.Pump();
+        select.SetDropdownOpen(true);
+        host.Content = select;
+        PopoverTests.Settle(scene);
+        Assert.True(select.DropdownMenu is { } m && m.IsAttachedToVisualTree());
+        Assert.Equal(scene.Window.ClientSize.Height * 0.4, ((MenuList)select.DropdownMenu!.Part(Menu.ListPart)!).MaxHeight, 3);
+    }
+
+    [AvaloniaFact]
+    public void A_new_template_while_it_is_open_shows_the_dropdown_in_its_new_popover()
+    {
+        var (select, scene, _) = Make();
+        using var _s = scene;
+        select.SetDropdownOpen(true);
+        PopoverTests.Settle(scene);
+        var before = select.DropdownMenu;
+        select.Template = new Avalonia.Controls.Templates.FuncControlTemplate<Select>((_, _) => new Border());
+        scene.Pump();
+        select.Template = ((ControlTheme)scene.Window.FindResource(typeof(Select))!).Setters.OfType<Setter>().Single(s => s.Property == TemplatedControl.TemplateProperty).Value as Avalonia.Controls.Templates.IControlTemplate;
+        PopoverTests.Settle(scene);
+        Assert.NotSame(before, select.DropdownMenu);
+        Assert.True(select.DropdownMenu is { } m && m.IsAttachedToVisualTree());
+        Assert.Same(select.Part(Select.DropdownContainerPart), select.DropdownPopover!.Content);
+    }
+
+    [AvaloniaFact]
+    public void A_click_on_the_focused_control_puts_the_caret_at_the_texts_end_the_text_kept()
+    {
+        var (select, scene, _) = Make(s => { s.OnCloseResetsInput = false; s.OnBlurResetsInput = false; });
+        using var _s = scene;
+        select.FocusTarget!.Focus(NavigationMethod.Tab);
+        scene.Window.KeyTextInput("aq");
+        scene.Pump();
+        SelectKit.Key(scene, Key.Escape);
+        var input = select.P<TextBox>(Select.InputPart);
+        input.CaretIndex = 0;
+        SelectKit.ClickAt(scene, SelectKit.ControlPoint(scene, select));
+        Assert.Equal("aq", input.Text);
+        Assert.Equal(2, input.CaretIndex);
+        Assert.Equal("aq", select.InputValue);
+    }
+
+    [AvaloniaFact]
+    public void Grouped_options_after_a_group_highlight_the_value_in_the_menus_order()
+    {
+        var black = new SelectOption("Black");
+        var group = new SelectGroup { Label = "Blueish" };
+        group.Items.AddRange([new SelectOption("AliceBlue"), new SelectOption("Aqua")]);
+        var select = new Select { Options = new List<object> { group, black }, Value = [black] };
+        var (scene, _) = SelectKit.Page(select);
+        using var _s = scene;
+        select.SetDropdownOpen(true);
+        PopoverTests.Settle(scene);
+        var menu = select.DropdownMenu!;
+        Assert.Same(black, menu.FlatItems[menu.HighlightedIndex]);
+    }
+
     // ---- UI Automation ----
 
     [AvaloniaFact]

@@ -359,8 +359,9 @@ const TAG_PARTS = [
     },
   },
   {
-    part: 'Text', type: 'TextBlock', axes: [TAG_AX.disabled],
-    fixed: { TextTrimming: 'CharacterEllipsis', TextWrapping: 'NoWrap', VerticalAlignment: 'Center' },
+    // tag.js's Text span round its children, any content: a presenter, its text cut with an ellipsis.
+    part: 'Text', type: 'ContentPresenter', axes: [TAG_AX.disabled],
+    fixed: { [INHERITED.TextTrimming]: 'CharacterEllipsis', [INHERITED.TextWrapping]: 'NoWrap', VerticalAlignment: 'Center' },
     styled: (t, c) => declarations(styleOf(tagSc.Text, T, { ...tagProps(c), $contentMaxWidth: undefined }), 'Tag.Text'),
     convert(s) {
       check(s, 'Tag.Text', ['overflow', 'whiteSpace', 'textOverflow', 'maxWidth', 'order']);
