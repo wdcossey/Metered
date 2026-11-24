@@ -52,15 +52,14 @@ public class SelectValueContainer : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         var inner = finalSize.Deflate(Padding);
-        _slots = Layout(inner.Width, measure: false, out var size);
-        // The lines centred in the box's height, as align-items centres a single line's items in a taller box.
-        var dy = Wrap ? 0 : Math.Max(0, (inner.Height - size.Height) / 2);
-        foreach (var (child, slot) in _slots) child.Arrange(slot.Translate(new Vector(Padding.Left, Padding.Top + dy)));
+        // A taller box: a single line's items centred in it (align-items); wrapped lines share it (align-content's stretch).
+        _slots = Layout(inner.Width, measure: false, out _, inner.Height);
+        foreach (var (child, slot) in _slots) child.Arrange(slot.Translate(new Vector(Padding.Left, Padding.Top)));
         return finalSize;
     }
 
-    /// <summary>The children's slots, line by line, for a row this wide.</summary>
-    private List<(Control, Rect)> Layout(double width, bool measure, out Size size)
+    /// <summary>The children's slots, line by line, for a row this wide; the lines stretched to a height, when given.</summary>
+    private List<(Control, Rect)> Layout(double width, bool measure, out Size size, double? stretch = null)
     {
         var shown = Children.Where(c => c.IsVisible).ToList();
         var lines = new List<List<(Control Child, double Width, double Height)>>();
@@ -85,6 +84,8 @@ public class SelectValueContainer : Panel
         if (line.Count > 0) lines.Add(line);
         var slots = new List<(Control, Rect)>();
         double y = 0, widest = 0;
+        var natural = 0.0;
+        var placed = new List<(List<(Control Child, double Width, double Height)> Line, double[] Widths)>();
         foreach (var l in lines)
         {
             var total = l.Sum(x => x.Item2);
@@ -101,12 +102,24 @@ public class SelectValueContainer : Panel
                 }
             }
 
-            var height = l.Count == 0 ? 0 : l.Max(x => x.Item3);
+            // A child shrunk is measured again at its width: its height then (a label that wraps) is the line's.
+            for (var i = 0; i < l.Count; i++)
+            {
+                if (measure && widths[i] < l[i].Item1.DesiredSize.Width) l[i].Item1.Measure(new Size(widths[i], double.PositiveInfinity));
+            }
+
+            natural += l.Count == 0 ? 0 : l.Max(x => x.Item1.DesiredSize.Height);
+            placed.Add((l, widths));
+        }
+
+        var extra = stretch is { } h0 && placed.Count > 0 ? Math.Max(0, h0 - natural) / placed.Count : 0;
+        foreach (var (l, widths) in placed)
+        {
+            var height = (l.Count == 0 ? 0 : l.Max(x => x.Item1.DesiredSize.Height)) + extra;
             double x0 = 0;
             for (var i = 0; i < l.Count; i++)
             {
-                var (child, _, h) = l[i];
-                if (measure && widths[i] < child.DesiredSize.Width) child.Measure(new Size(widths[i], double.PositiveInfinity));
+                var child = l[i].Item1;
                 var childHeight = child.DesiredSize.Height;
                 slots.Add((child, new Rect(x0, y + (height - childHeight) / 2, widths[i], childHeight)));
                 x0 += widths[i];

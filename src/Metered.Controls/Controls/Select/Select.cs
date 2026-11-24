@@ -417,8 +417,15 @@ public class Select : TemplatedControl
 
     private void Flush()
     {
-        for (var guard = 0; _pending.Count > 0 && guard < 20; guard++)
+        for (var guard = 0; _pending.Count > 0; guard++)
         {
+            // An app's handlers that set the state from its own changes, round and round: theirs to fix, said at once.
+            if (guard > 100)
+            {
+                _pending.Clear();
+                throw new InvalidOperationException("The select's state does not settle: a handler sets it again from each change.");
+            }
+
             var list = _pending;
             _pending = [];
             var prev = Current;
@@ -1104,7 +1111,8 @@ public class Select : TemplatedControl
         lock (cache)
         {
             if (cache.TryGetValue(second, out var both)) return both;
-            both = new ControlTheme(second.TargetType ?? first.TargetType!);
+            // Its base the app's, which Parts then uses as it is, as it uses an app's theme with a base of its own.
+            both = new ControlTheme(second.TargetType ?? first.TargetType!) { BasedOn = second.BasedOn };
             // One setter for a property: the second's wins.
             var theirs = second.Setters.OfType<Setter>().Select(s => s.Property).ToHashSet();
             foreach (var s in first.Setters) if (s is not Setter { Property: { } p } || !theirs.Contains(p)) both.Setters.Add(s);
@@ -1297,13 +1305,17 @@ public class Select : TemplatedControl
         _top?.RemoveHandler(PointerReleasedEvent, OnTopReleased);
     }
 
-    private (IPointer Pointer, Point At, Visual? Source)? _down;
+    private (IPointer Pointer, Point At, Visual? Source, bool InAnchor, bool InDropdown, bool OnTagAction)? _down;
 
-    /// <summary>A finger down outside: handleTouchOutside (touchstart, while open). Any press: the click it may become.</summary>
+    /// <summary>
+    /// A finger down outside: handleTouchOutside (touchstart, while open). Any press: the click it may become, where it was
+    /// decided now, while what was pressed is in the tree (a tag's action takes its tag away before the release).
+    /// </summary>
     private void OnTopPressed(object? sender, PointerPressedEventArgs e)
     {
         var source = e.Source as Visual;
-        _down = (e.Pointer, e.GetPosition(_top), source);
+        _down = (e.Pointer, e.GetPosition(_top), source, InAnchor(source), InDropdown(source),
+            _tags.Any(t => t.Part(SelectTag.ActionPart) is Visual action && Within(source, action)));
         if (e.Pointer.Type == PointerType.Touch && IsOpen && !InDropdown(source) && !InAnchor(source)) Batch(CloseMenu);
     }
 
@@ -1316,10 +1328,12 @@ public class Select : TemplatedControl
         var tap = Application.Current?.PlatformSettings?.GetTapSize(e.Pointer.Type) ?? new Size(10, 10);
         var at = e.GetPosition(_top);
         if (e.Pointer.Type != PointerType.Mouse && (Math.Abs(at.X - down.At.X) > tap.Width / 2 || Math.Abs(at.Y - down.At.Y) > tap.Height / 2)) return;
-        Batch(() => HandleClickOutside(down.Source));
+        // A tag's action stops its click's propagation: the document never hears it.
+        if (down.OnTagAction && e.Handled) return;
+        Batch(() => HandleClickOutside(down.InAnchor, down.InDropdown));
     }
 
-    private void HandleClickOutside(Visual? target)
+    private void HandleClickOutside(bool inAnchor, bool inDropdown)
     {
         if (_justSelected)
         {
@@ -1327,8 +1341,8 @@ public class Select : TemplatedControl
             return;
         }
 
-        if (InDropdown(target)) return;
-        if ((_isFocused || _isPseudoFocused) && !InAnchor(target))
+        if (inDropdown) return;
+        if ((_isFocused || _isPseudoFocused) && !inAnchor)
         {
             // A browser's press on the page has taken the focus from the input.
             if (FocusTarget is { IsFocused: true }) TopLevel.GetTopLevel(this)?.FocusManager?.Focus(null);

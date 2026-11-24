@@ -104,7 +104,8 @@ Its state is `select-component.js`'s, its handlers ported one by one, their `set
 - **Blur**: focus gone elsewhere, a click outside (the document's listener, from the first focus), or a tap outside closes
   and unfocuses it, the text reset (`onBlurResetsInput`); focus gone to a tag or the dropdown doesn't. A finger down
   outside while it is open closes it at once (Base Web's `touchstart` listener), whatever the finger does next. A
-  selection's own click on the document is let go (`justSelected`).
+  selection's own click on the document is let go (`justSelected`), and, as Base Web's flag, a choice by Enter lets the
+  next click outside go too. A tag's action stops its click: the document's listener never hears it.
 - **The clear icon** (shown while clearable, enabled, not loading, with a value or text): clears the value (but values that
   aren't `clearableValue`) and the text, and focuses the input. **A tag's action** removes its value; so do Backspace and
   Delete on a focused tag (known difference 4).
@@ -123,7 +124,7 @@ every part recorded, and each part's style function evaluated with the props it 
 Popover's `content` as the Popover renders it; each tag rendered as Base Web's own Tag with `multi-value.js`'s props; and its
 own `Select` class driven step by step in Node as a browser and React would drive it (focus events, the document's
 listeners, React's batched state). The themes come from `tools/tokens/select.js`, which checks them against the style
-functions for every combination of states. 150 tests:
+functions for every combination of states. 154 tests:
 
 - `SelectBehaviourTests` (30): Base Web's state (open, focused, pseudo-focused, the text) and value after each step of 30
   sequences, replayed with a real mouse, real touch, real keys and typing: the click, the tap and the drag, the keys that
@@ -139,12 +140,13 @@ functions for every combination of states. 150 tests:
   padding, height, fonts, the icons, the input's box and the input, the single value, the search icon, the tags' boxes and
   places; the clear icon's sizes; tags wrapping and a long value cut.
 - `SelectFilterTests` (12): `defaultFilterOptions` against Base Web's.
-- `SelectTests` (24): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
+- `SelectTests` (28): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
   outside; typing and the menu's keys, the dropdown opened by a key, a tag's keys, the back request, disabled, `autoFocus`,
   the search icon's click; `controlRef`; labels and creatable; options changing while it is open; the dropdown's width and
   height; overrides (its own parts, the popover's, the dropdown's, a tag's, a collection changed after it is set); a tag's
-  content; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; UI
-  Automation; the transition and the ring.
+  content; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; tags
+  removed one after another while focused; a taller value container and a label that wraps; searchable changed at run
+  time to UI Automation; an override based on another theme; UI Automation; the transition and the ring.
 - `SelectFrames` (2, and the gallery): drawn pixels of the control, a tag and a highlighted option. `SelectPageTests` (4):
   the sample's page.
 

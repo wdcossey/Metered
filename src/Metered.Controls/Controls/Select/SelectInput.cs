@@ -59,8 +59,7 @@ public class SelectInputContainer : Border
     /// <summary>The select it is the input's box of.</summary>
     internal Select? Owner { get; set; }
 
-    protected override AutomationPeer OnCreateAutomationPeer() =>
-        Focusable ? new SelectComboAutomationPeer(this, () => Owner) : new ControlAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer() => new SelectComboAutomationPeer(this, () => Owner);
 }
 
 /// <summary>
@@ -69,13 +68,16 @@ public class SelectInputContainer : Border
 /// </summary>
 internal sealed class SelectComboAutomationPeer(Control owner, Func<Select?> select) : ControlAutomationPeer(owner), IExpandCollapseProvider
 {
-    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.ComboBox;
+    // The input's box is the combo box only while it takes the focus (a select that isn't searchable); else a plain box,
+    // left out of the control view, as the input is while it is hidden.
+    protected override AutomationControlType GetAutomationControlTypeCore() =>
+        Owner is SelectInputContainer { Focusable: false } ? AutomationControlType.Group : AutomationControlType.ComboBox;
 
     protected override string? GetNameCore() => select()?.AccessibleName ?? base.GetNameCore();
 
-    protected override bool IsControlElementCore() => Owner.IsVisible;
+    protected override bool IsControlElementCore() => Owner.IsVisible && Owner is not SelectInputContainer { Focusable: false };
 
-    protected override bool IsContentElementCore() => Owner.IsVisible;
+    protected override bool IsContentElementCore() => IsControlElementCore();
 
     public ExpandCollapseState ExpandCollapseState => select()?.IsOpen == true ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed;
 

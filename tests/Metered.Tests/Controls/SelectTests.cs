@@ -460,6 +460,85 @@ public class SelectTests
         Assert.Same(black, menu.FlatItems[menu.HighlightedIndex]);
     }
 
+    [AvaloniaFact]
+    public void Removing_tags_one_after_another_keeps_it_focused()
+    {
+        var (select, scene, _) = Make(s => s.Multi = true, ["Aqua", "Azure", "Bisque"]);
+        using var _s = scene;
+        // Focused, its dropdown opened by a key and closed by Escape: the page's listener is on.
+        select.SetInputFocus();
+        scene.Pump();
+        SelectKit.Key(scene, Key.Down);
+        SelectKit.Key(scene, Key.Escape);
+        Assert.True(select.IsSelectFocused);
+        foreach (var expected in new[] { new[] { "Azure", "Bisque" }, ["Bisque"] })
+        {
+            // A tag's action stops its click: the page's listener never hears it, though its tag is gone by the release.
+            scene.Click((Control)select.Tags[0].Part(SelectTag.ActionPart)!);
+            Assert.Equal(expected, SelectKit.Labels(select.Value));
+            Assert.True(select.IsSelectFocused);
+            Assert.True(select.FocusTarget!.IsFocused);
+        }
+    }
+
+    [AvaloniaFact]
+    public void A_taller_value_container_centres_a_line_of_tags_and_a_wrapping_label_keeps_its_line()
+    {
+        var tall = new ControlTheme(typeof(SelectValueContainer)) { Setters = { new Setter(Layoutable.MinHeightProperty, 120.0) } };
+        var (select, scene, _) = Make(s =>
+        {
+            s.Multi = true;
+            s.Overrides = [new Override { Part = Select.ValueContainerPart, Style = tall }];
+        }, ["Aqua"]);
+        using var _s = scene;
+        var row = select.P<SelectValueContainer>(Select.ValueContainerPart);
+        var tag = (Control)select.Tags[0].Part(SelectTag.RootPart)!;
+        var middle = tag.TranslatePoint(new Point(0, tag.Bounds.Height / 2), row)!.Value.Y;
+        Assert.Equal(row.Padding.Top + (row.Bounds.Height - row.Padding.Top - row.Padding.Bottom) / 2, middle, 3);
+
+        var narrow = new Select
+        {
+            Options = SelectOracle.Options("OPTIONS"),
+            Width = 140,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            GetValueLabel = o => new TextBlock { Text = "A long label that wraps onto lines", TextWrapping = TextWrapping.Wrap },
+        };
+        narrow.Value = [narrow.Options!.Cast<object>().First()];
+        ((StackPanel)scene.Window.Content!).Children.Insert(0, narrow);
+        scene.Pump();
+        var single = narrow.P<ContentPresenter>(Select.SingleValuePart);
+        var box = narrow.P<SelectValueContainer>(Select.ValueContainerPart);
+        Assert.True(single.Bounds.Top >= box.Padding.Top - 0.01, "the label's top " + single.Bounds.Top);
+        Assert.True(single.Bounds.Bottom <= box.Bounds.Height - box.Padding.Bottom + 0.01, "the label's foot " + single.Bounds.Bottom);
+    }
+
+    [AvaloniaFact]
+    public void Made_searchable_or_not_at_run_time_the_focusable_element_is_the_combo_box()
+    {
+        var (select, scene, _) = Make();
+        using var _s = scene;
+        var container = select.P<Control>(Select.InputContainerPart);
+        var peer = ControlAutomationPeer.CreatePeerForElement(container);
+        Assert.False(peer.IsControlElement());
+        select.Searchable = false;
+        scene.Pump();
+        Assert.Same(container, select.FocusTarget);
+        Assert.True(peer.IsControlElement());
+        Assert.Equal(AutomationControlType.ComboBox, peer.GetAutomationControlType());
+        Assert.False(ControlAutomationPeer.CreatePeerForElement(select.P<Control>(Select.InputPart)).IsControlElement());
+    }
+
+    [AvaloniaFact]
+    public void An_override_based_on_another_theme_keeps_what_it_is_based_on()
+    {
+        var based = new ControlTheme(typeof(Popover)) { Setters = { new Setter(Popover.ShowArrowProperty, true) } };
+        var style = new ControlTheme(typeof(Popover)) { BasedOn = based, Setters = { new Setter(Popover.PlacementProperty, PopoverPlacement.Top) } };
+        var (select, scene, _) = Make(s => s.Overrides = [new Override { Part = Select.PopoverPart, Style = style }]);
+        using var _s = scene;
+        Assert.True(select.DropdownPopover!.ShowArrow);
+        Assert.Equal(PopoverPlacement.Top, select.DropdownPopover!.Placement);
+    }
+
     // ---- UI Automation ----
 
     [AvaloniaFact]
