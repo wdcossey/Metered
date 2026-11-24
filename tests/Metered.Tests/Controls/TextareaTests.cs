@@ -665,6 +665,58 @@ public class TextareaTests
         Assert.Equal((2, 2), (pressed, released));
     }
 
+    // Another finger's tap on the grip while one drags it is the grip's too, not the text's: it focuses nothing, moves no
+    // caret and drags nothing (#111).
+    [AvaloniaFact]
+    public void Another_fingers_tap_on_the_grip_while_one_drags_focuses_nothing()
+    {
+        var textarea = new Textarea { Resize = TextareaResize.Both, Text = "Resize me" };
+        using var scene = Show(textarea);
+        var field = P<TextareaField>(textarea, BaseInput.InputPart);
+        var start = field.Bounds.Size;
+        var at = scene.CentreOf(Grip(textarea));
+        var first = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchMove(first, at + new Vector(20, 10), RawInputModifiers.None);
+        scene.Pump();
+
+        var tap = scene.CentreOf(Grip(textarea));
+        var second = scene.Window.TouchBegin(tap, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(second, tap, RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(textarea.IsFocused);
+        Assert.Equal(0, textarea.CaretIndex);
+
+        scene.Window.TouchMove(first, at + new Vector(40, 30), RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(first, at + new Vector(40, 30), RawInputModifiers.None);
+        scene.Pump();
+        Assert.Equal(start + new Size(40, 30), field.Bounds.Size);
+        Assert.False(textarea.IsFocused);
+        Assert.Equal(0, textarea.CaretIndex);
+    }
+
+    // A drag's release focuses nothing either once the textarea no longer resizes (#111).
+    [AvaloniaFact]
+    public void A_drag_whose_textarea_stops_resizing_focuses_nothing()
+    {
+        var textarea = new Textarea { Resize = TextareaResize.Both, Text = "Resize me" };
+        using var scene = Show(textarea);
+        var grip = Grip(textarea);
+        var at = scene.CentreOf(grip);
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchMove(touch, at + new Vector(20, 10), RawInputModifiers.None);
+        scene.Pump();
+        textarea.Resize = TextareaResize.None;
+        scene.Pump();
+        scene.Window.TouchEnd(touch, at + new Vector(20, 10), RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(textarea.IsFocused);
+        Assert.False(grip.IsDragging);
+    }
+
     // A width dragged to is kept within the width the textarea is later given (a phone turned upright): never past its
     // root, so the grip stays in reach.
     [AvaloniaFact]

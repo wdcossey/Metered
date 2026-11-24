@@ -94,11 +94,13 @@ public class TextareaResizer : Control, ICustomHitTest
     /// whose class handler at the grip focuses the first focusable element from it up (the textarea: a mouse's on its
     /// press, a finger's or a pen's on its release), passes it by. The grip unmarks it after that handler (below), so the
     /// rest of its way is as before. At its parent, the nearest it can be: a handler of the textarea's, or an app's, on the
-    /// way down sees it as it did. It ran only on an unhandled event, so unhandled is what it goes back to.
+    /// way down sees it as it did; only one added to that parent after the grip was attached, or one on the grip that
+    /// isn't for handled events, misses it. It ran only on an unhandled event, so unhandled is what it goes back to.
     /// </summary>
     private void PassFocusBy(object? sender, PointerEventArgs e)
     {
-        if (e.Source != this || Direction == TextareaResize.None) return;
+        // A drag's release, even once it no longer resizes.
+        if (e.Source != this || (Direction == TextareaResize.None && _dragging != e.Pointer)) return;
         _passed = e;
         e.Handled = true;
     }
@@ -134,14 +136,16 @@ public class TextareaResizer : Control, ICustomHitTest
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (_dragging is not null || Direction == TextareaResize.None || Field is not { } field) return;
+        if (Direction == TextareaResize.None || Field is not { } field) return;
         if (e.Pointer.Type == PointerType.Mouse && !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        // Every such press on it is the grip's, not the text's: another finger's while one drags too, which drags nothing.
+        e.Handled = true;
+        if (_dragging is not null) return;
         _dragging = e.Pointer;
         _field = field;
         _from = e.GetPosition(null);
         _start = field.Bounds.Size;
         e.Pointer.Capture(this);
-        e.Handled = true;
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
