@@ -27,6 +27,13 @@ A Button for each page in the catalogue, one per control.
 <img src="docs/preview/dark__list-1.png" width="270" alt="The sample's list of pages, dark">
 </p>
 
+Scrolled to its foot:
+
+<p>
+<img src="docs/preview/light__list-2.png" width="270" alt="The sample's list of pages, light, scrolled to its foot">
+<img src="docs/preview/dark__list-2.png" width="270" alt="The sample's list of pages, dark, scrolled to its foot">
+</p>
+
 ## Button
 
 The seven kinds and disabled, the four sizes, the shapes, a button loading (its ring held still for the picture; the
