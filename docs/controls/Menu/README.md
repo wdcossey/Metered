@@ -172,7 +172,8 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     option of a menu partly below the screen's foot scrolls the page to bring the whole menu into view (#132); the
     child menu's popover reaches over Android's navigation bar (#129). Not tried yet: the keys, the profile pictures,
     links, and everything in a real window.
-15. **Android's back request with a child menu open goes on to the page** (chosen; to change, decided 2026-11-24: Back closes a child menu first, as Escape does, #131; Base Web has no back request):
-    Metered's popover closes on it when Escape would close it (#123), and a child menu's Escape resets its parent rather
-    than closing its popover, which is held to the highlight. The alternative: the back request resets the parent as
-    Escape does.
+15. **Android's back request with a child menu open goes on to the page** (chosen; decided 2026-11-24 to change, #131;
+    Base Web has no back request). Metered's popover closes on it when Escape would close it (#123), and a child menu's
+    Escape resets its parent rather than closing its popover, which is held to the highlight. To change (#131): the back
+    request does what Escape does there, resetting the parent and closing the child menu, before the page goes back.
+
