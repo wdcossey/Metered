@@ -15,7 +15,8 @@ namespace Metered.Tests.Sample;
 /// <summary>
 /// The sample's Menu page: its place in the catalogue (its issue's number, 107, after Popover and before the theme), the
 /// documentation's examples as set, each within a phone's width; a finger's drag over the long list scrolling it; a tap on
-/// Open Recent opening its child beside it, on the screen, and a tap there choosing.
+/// Open Recent opening its child beside it, on the screen, and a tap there choosing; in the shell, Back closing that child
+/// before it goes back (#131).
 /// </summary>
 public class MenuPageTests
 {
@@ -100,5 +101,33 @@ public class MenuPageTests
         MenuTests.Tap(scene, scene.CentreOf(child.OptionAt(1)!));
         Assert.Equal("~/workspace/baseui", ((MenuItemData)Assert.Single(chosen)).Label);
         Assert.True(option.ChildMenuPopover!.IsOpen);
+    }
+
+    // Back with the child menu open is its Escape: the parent reset and the child closed, and the shell stays on the page;
+    // with the child closed, the shell goes back (#131).
+    [AvaloniaFact]
+    public void Back_Closes_The_Child_Menu_Before_The_Shell_Goes_Back()
+    {
+        // No cost footer over the page's foot, where the option is brought into view.
+        var shell = new SampleShell { Report = _ => { }, ShowsCost = false };
+        using var scene = PopoverTests.Show(shell);
+        shell.Open("Menu");
+        ShellFrames.Draw();
+        var page = Assert.IsType<MenuPage>(shell.Shown);
+        var option = page.Child.OptionAt(4)!;
+        option.BringIntoView();
+        scene.Pump();
+        MenuTests.Tap(scene, scene.CentreOf(option));
+        PopoverTests.Settle(scene);
+        Assert.True(option.ChildMenuPopover!.IsOpen);
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(option.ChildMenuPopover!.IsOpen);
+        Assert.Equal(-1, page.Child.HighlightedIndex);
+        Assert.True(shell.IsShowingPage);
+
+        PopoverTests.Settle(scene);
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(shell.IsShowingPage);
     }
 }
