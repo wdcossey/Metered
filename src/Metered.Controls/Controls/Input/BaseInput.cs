@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
@@ -32,9 +33,12 @@ namespace Metered.Controls;
 /// <c>:loaded</c> is set once the control is loaded, so a transition doesn't run on its first appearance.</para>
 /// <para>The parts that take focus are inside the text box's template, so the text box takes no key, text, focus or
 /// pointer of theirs: what they do is theirs alone, as their own elements in Base Web.</para>
-/// <para>A finger's or a pen's drag on it scrolls what is round it, as on a phone's browser, and never moves the caret,
-/// by its moves or where it lifts (Avalonia's text box would move it, and keep the page from panning): a tap does. After
-/// a hold, that pointer's drag extends the hold's selection. A press still focuses it, and a mouse's drag selects.</para>
+/// <para>A finger's or a pen's drag on it scrolls, as on a phone's browser, and never moves the caret, by its moves or
+/// where it lifts (Avalonia's text box would move it, and keep the page from panning): a tap does. The drag scrolls the
+/// text where it can (an input's long value sideways, a textarea's lines), focusing nothing, and what is round it
+/// otherwise; once it has moved the text it stays the text's until the finger lifts, as a browser latches a touch's
+/// scroll. After a hold, that pointer's drag extends the hold's selection. A press still focuses it, and a mouse's drag
+/// selects.</para>
 /// </remarks>
 [TemplatePart(InputContainerPart, typeof(StyledElement))]
 [TemplatePart(InputPart, typeof(StyledElement))]
@@ -45,6 +49,7 @@ namespace Metered.Controls;
 [TemplatePart(MaskToggleButtonPart, typeof(Avalonia.Controls.Button))]
 [TemplatePart(MaskToggleShowIconPart, typeof(StyledElement))]
 [TemplatePart(MaskToggleHideIconPart, typeof(StyledElement))]
+[TemplatePart(ScrollViewerPart, typeof(ScrollViewer))]
 [PseudoClasses(":loaded", ":size-mini", ":size-compact", ":size-default", ":size-large", ":is-focused", ":error", ":positive",
     ":is-read-only")]
 public abstract class BaseInput : TextBox
@@ -58,6 +63,9 @@ public abstract class BaseInput : TextBox
     public const string MaskToggleButtonPart = "MaskToggleButton";
     public const string MaskToggleShowIconPart = "MaskToggleShowIcon";
     public const string MaskToggleHideIconPart = "MaskToggleHideIcon";
+
+    /// <summary>The text box's own text scroller (Avalonia's TextBox's part): not one of Base Web's parts.</summary>
+    internal const string ScrollViewerPart = "PART_ScrollViewer";
 
     /// <summary>base-input.js's clear icon's <c>aria-label</c> and <c>title</c>.</summary>
     public const string ClearLabel = "Clear value";
@@ -109,6 +117,10 @@ public abstract class BaseInput : TextBox
     private IDisposable? _maskKeyboard;
     private readonly List<IDisposable> _labels = [];
     private IDisposable[] _toggleLabel = [];
+    private ScrollViewer? _scroller;
+    private readonly HashSet<int> _latched = [];
+    private TextPresenter? _textPresenter;
+    private IPointer? _unfocused;
 
     /// <param name="component">The prefix of the parts' theme keys: <c>Input</c> for <c>Input.StyledRoot</c>.</param>
     /// <param name="parts">Every part of the control's template, by Base Web's names.</param>
@@ -123,6 +135,7 @@ public abstract class BaseInput : TextBox
         // Before the text box's flyout's own handler (added later, with ContextFlyout): a menu asked for on a control of
         // its own isn't the text box's.
         AddHandler(ContextRequestedEvent, OnContextRequestedFromPart);
+        AddHandler(PointerReleasedEvent, OnPointerReleasedTunnel, RoutingStrategies.Tunnel);
         UpdateMask();
     }
 
@@ -198,6 +211,11 @@ public abstract class BaseInput : TextBox
         _shown.Clear();
         base.OnApplyTemplate(e);
         _parts.Attach(e.NameScope);
+        _scroller = e.NameScope.Find<ScrollViewer>(ScrollViewerPart);
+        _scroller?.AddHandler(ScrollGestureEvent, OnScrollGesture, handledEventsToo: true);
+        _scroller?.AddHandler(ScrollGestureEndedEvent, OnScrollGestureEnded, handledEventsToo: true);
+        _textPresenter = e.NameScope.Find<TextPresenter>("PART_TextPresenter");
+        _textPresenter?.AddHandler(PointerReleasedEvent, OnPresenterReleasedTunnel, RoutingStrategies.Tunnel, handledEventsToo: true);
         _clear = _parts[ClearIconPart] as InputIcon;
         _toggle = _parts[MaskToggleButtonPart] as Avalonia.Controls.Button;
         if (_clear is not null)
@@ -351,6 +369,30 @@ public abstract class BaseInput : TextBox
         base.OnPointerReleased(e);
     }
 
+    // Nor does that drag focus it: a drag in a phone's browser focuses nothing, and Chrome's sideways scroll of a long value
+    // leaves it as it was (#117). Avalonia's focus manager focuses a finger's text box on its release, wherever it moved,
+    // from the text presenter the text box's press captured the pointer to: the release is marked handled on its way down,
+    // so the focus manager passes it by there, and unmarked at the presenter after it (below), so the rest of its way is as
+    // before: the text box's own release does nothing for it (above), and what is round it sees it. Only the text box's
+    // own capture: a control inside with a press of its own (a resize grip) keeps its release, and a drag that a scroller
+    // took (the page, or the text itself) has gone to the scroll gesture.
+    private void OnPointerReleasedTunnel(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.Pointer.Type == PointerType.Mouse || _held == e.Pointer) return;
+        if (_textPresenter is null || e.Pointer.Captured != _textPresenter) return;
+        if (_press is not { } press || press.Pointer != e.Pointer || IsTap(e, press.At)) return;
+        _unfocused = e.Pointer;
+        e.Handled = true;
+    }
+
+    // After the focus manager's class handler at the presenter: the release goes on unhandled.
+    private void OnPresenterReleasedTunnel(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_unfocused != e.Pointer) return;
+        _unfocused = null;
+        e.Handled = false;
+    }
+
     protected override void OnHolding(HoldingRoutedEventArgs e)
     {
         base.OnHolding(e);
@@ -361,6 +403,24 @@ public abstract class BaseInput : TextBox
             _held = press.Pointer;
         }
     }
+
+    // A browser's scroll latching: a touch's scroll that has moved the text (a textarea's lines, an input's long value
+    // sideways) stays the text's until the finger lifts, and goes no further at its end. One that hasn't moved it (it was
+    // at its end that way) goes on to the page. The presenter has already moved what it could: handled, by Avalonia's
+    // ScrollContentPresenter, if it moved. A fling that has carried it to its end ends there (the recognizer reads
+    // ShouldEndScrollGesture only while it flings), rather than going on unseen until it slows.
+    private void OnScrollGesture(object? sender, ScrollGestureEventArgs e)
+    {
+        if (_scroller?.Presenter is not { } presenter || e.Source != presenter) return;
+        if (e.Handled) _latched.Add(e.Id);
+        else if (_latched.Contains(e.Id))
+        {
+            e.Handled = true;
+            e.ShouldEndScrollGesture = true;
+        }
+    }
+
+    private void OnScrollGestureEnded(object? sender, ScrollGestureEndedEventArgs e) => _latched.Remove(e.Id);
 
     // Avalonia's tap (Gestures): a release within the platform's tap size of the press, here on the window.
     private static bool IsTap(PointerReleasedEventArgs e, Point pressedAt)
@@ -458,6 +518,13 @@ public abstract class BaseInput : TextBox
             _toggle.RemoveHandler(TextInputMethodClientRequestedEvent, OnPartTextInputClient);
         }
 
+        _scroller?.RemoveHandler(ScrollGestureEvent, OnScrollGesture);
+        _scroller?.RemoveHandler(ScrollGestureEndedEvent, OnScrollGestureEnded);
+        _scroller = null;
+        _latched.Clear();
+        _textPresenter?.RemoveHandler(PointerReleasedEvent, OnPresenterReleasedTunnel);
+        _textPresenter = null;
+        _unfocused = null;
         _clear = null;
         _toggle = null;
         _clearPress = null;

@@ -93,12 +93,21 @@ From base-input.js and input.js, and its e2e test:
   (`TextInputOptions.ContentType`), as a browser does for `type="password"`. Copying is off while masked (Avalonia's
   text box, as a browser's).
 - The tab order is the input, the clear icon, the toggle: their order in Base Web's markup.
-- **A finger's (or a pen's) drag on the input scrolls the page round it**, focused or not, as a phone's browser does
-  with an `<input>`: the caret moves by a tap or its handle, never by a drag, nor where a drag that nothing scrolled
-  lifts, nor where a finger lifts after another has pressed (Avalonia's text box would move it by a drag, and keep the
-  page from panning: #94; a tap is Avalonia's, a release within the platform's tap size of the press). After a hold, a
-  drag extends the hold's selection, as the text box's. A mouse's drag selects, and a press anywhere on the box
-  focuses it (known differences, 1). `BaseInput` does this, so Textarea's text has it too.
+- **A finger's (or a pen's) drag on the input scrolls**, focused or not, as a phone's browser does with an `<input>`
+  (Chrome on the Pixel 8, 2026-11-23): a sideways drag on a value longer than the box scrolls its text (a scroll gesture
+  on the text's scroller, sideways only, flung as a browser's: #117), and a drag up or down, or one the text can't take
+  (it is at its end that way, or fits), scrolls the page round it. Which it is, the drag's way decides once it has gone
+  the gesture's start distance: more sideways than up or down, and a way the text can move, is the text's, even in a
+  quick flick whose first move is already past that distance sideways; otherwise the whole drag is the page's, even if it
+  turns back the way the text could go, as a browser picks a touch's scroller as it starts (`InputScrollGestureRecognizer`;
+  Avalonia's own would start on any sideways part, and the text's scroller sees each move before the page's). A fling
+  that reaches the text's end stops there. A drag that has moved the text stays the text's until
+  the finger lifts, even past its end: a browser's scroll latching. A drag is no tap: it focuses nothing, and the caret
+  moves by a tap or its handle, never by a drag, nor where a drag lifts, nor where a finger lifts after another has
+  pressed (Avalonia's text box would move it by a drag and keep the page from panning, #94, and its focus manager focuses
+  a finger's text box where it lifts, wherever it moved: the release is kept from the focus manager alone, and goes on
+  to what is round the input as before; a tap is Avalonia's, a release within the platform's tap size of the press). After a hold, a drag extends the hold's selection, as the text box's. A mouse's drag selects, and a
+  press anywhere on the box focuses it (known differences, 1). `BaseInput` does this, so Textarea's text has it too.
 - The icons are Base Web's own paths, rendered from its icons by the generator and the oracle, each drawn in its
   `viewBox` (24 × 24) at the size base-input.js gives it, filled with the colour its container passes down
   (`currentColor`). Metered has no icon set: these three are all Input needs.
@@ -112,14 +121,20 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 93: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 103: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept;
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
-  focus; a finger's drag that moves the page and not the caret, focused or not, one that nothing scrolls (and a tap that
-  does place it), a finger lifted after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
+  focus; a finger's drag that moves the page and not the caret, focused or not; a sideways one on a long value that
+  scrolls its text, focused or not, focusing nothing, the caret left, and back again, the caret's blinking not bringing it
+  back; a mostly vertical one on it that is still the page's, in fifteen moves or three; a mostly sideways one in three
+  that is the text's; one latched past the text's end as it turns up the page, and a latched scroll at the end that asks
+  its fling to stop, the next gesture the page's; `ScrollViewer.IsScrollChainingEnabled` reaching the text's scroller; one
+  that sets off towards the text's start and turns back, not the text's; one that nothing scrolls (focusing nothing, its
+  release still seen unhandled round the input, the caret left, and a tap after it that focuses and places it), a finger lifted
+  after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
 - `Controls/InputFrames`: the drawn border and fill and the focus ring, the clear icon and its outline, the toggle's ring, the show
@@ -191,9 +206,10 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    - the menu shows desktop shortcuts and covers the selection (#110).
 
    Holding isn't raised headless, so the drag after a hold is tested only on the phone.
-11. **A long value doesn't scroll sideways under a finger.** The text's scroller has no scroll gesture, and a finger's
-   drag no longer moves the caret (#94), so a sideways drag on a value longer than the box moves nothing; the text still
-   scrolls to keep the caret in view (a tap, typing, the keys). Chrome on the Pixel 8 does scroll an `<input>`'s
-   overflowing text sideways under a finger, focused or not, without focusing it (2026-11-23). To change, decided
-   2026-11-24 (#117): a sideways scroll as Chrome's, a vertical drag still the page's.
+11. **A long value's sideways scroll is checked headless only.** Since #117 (decided 2026-11-24) a finger's sideways
+   drag scrolls a value longer than the box, as Chrome on the Pixel 8 scrolls an `<input>`'s (2026-11-23): focused or not,
+   focusing nothing, a vertical drag still the page's; so this is no longer a difference from Base Web in a browser. Not
+   checked: its fling (the gesture's inertia runs on a stopwatch, not the tests' clock); a pen (Avalonia.Headless has
+   none), whose hover after a tap is kept from scrolling the text, and whose release on a control inside the input (a
+   textarea's grip) is that control's; and the phone itself (#140).
 

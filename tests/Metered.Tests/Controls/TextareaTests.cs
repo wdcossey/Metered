@@ -292,6 +292,37 @@ public class TextareaTests
         Assert.Equal(0, page.Offset.Y);
     }
 
+    // An app's ScrollViewer.IsScrollChainingEnabled on the textarea is its text scroller's, as on Avalonia's own text box.
+    [AvaloniaFact]
+    public void Scroll_chaining_set_on_the_textarea_reaches_its_text()
+    {
+        var textarea = new Textarea { Text = Long };
+        ScrollViewer.SetIsScrollChainingEnabled(textarea, false);
+        using var scene = Show(textarea);
+        Assert.False(Scroller(textarea).IsScrollChainingEnabled);
+        Assert.False(((ScrollContentPresenter)Scroller(textarea).Presenter!).IsScrollChainingEnabled);
+    }
+
+    // A finger's drag on a textarea that nothing scrolls (its text short, nothing round it scrolling) is no tap: it focuses
+    // nothing, as in a phone's browser (BaseInput's, #117). A tap after it does.
+    [AvaloniaFact]
+    public void A_finger_drag_that_nothing_scrolls_focuses_nothing()
+    {
+        var textarea = new Textarea { Text = "one two" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { textarea } },
+            themes: [new SimpleTheme(), new BaseTheme()]);
+        var at = scene.CentreOf(textarea);
+        TouchDrag(scene, at, new Point(at.X - 100, at.Y - 30));
+        Assert.False(textarea.IsFocused);
+
+        scene.Advance(1000);
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        scene.Pump();
+        Assert.True(textarea.IsFocused);
+    }
+
     // A browser latches a touch's scroll to the scroller that took it: a drag that carries the textarea to its end goes no
     // further in that drag. The next drag, starting at the end, is the page's.
     [AvaloniaFact]
