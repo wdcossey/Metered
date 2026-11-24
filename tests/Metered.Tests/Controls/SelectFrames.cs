@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Metered.Controls;
 using Menu = Metered.Controls.Menu;
 
@@ -49,6 +50,71 @@ public class SelectFrames
         var highlighted = MenuOracle.Data.Colours.Single(c => c.Theme == theme && c.State == "highlightedFocused");
         var first = single.DropdownMenu!.OptionAt(0)!;
         Assert.Equal(Color.Parse(highlighted.Background), At(scene, frame, first, first.Bounds.Width - 6, 6));
+    }
+
+    [AvaloniaTheory]
+    [InlineData("Light")]
+    [InlineData("Dark")]
+    public void A_tags_text_is_drawn_whole_its_line_centred_in_the_tag_as_Base_Webs(string theme)
+    {
+        // tag.js's Root is border-box (styled-components.js: boxSizing, height, the padding) and an inline flex row that
+        // centres its items (alignItems: center), so the Text span, a line of LabelSmall's line height, is centred in the
+        // tag's height whatever the padding, and drawn whole: its line overflows a content box shorter than it, uncut.
+        var box = SelectOracle.Data.Layout.First(l => l.Tag is not null && l.Size == "default").Tag!;
+        var surface = SelectOracle.Data.Surfaces.Single(s => s.Theme == theme);
+        var options = SelectOracle.Options("OPTIONS");
+        var multi = new Select { Options = options, Multi = true, Value = SelectOracle.Value(options, ["Aqua"]) };
+        var reference = new TextBlock { Text = "Aqua" };
+        var page = new StackPanel { Margin = new Thickness(20), Spacing = 20, Children = { multi } };
+        using var scene = SelectKit.Show(page, SelectColourTests.Variant(theme));
+        var root = (Visual)multi.Tags[0].Part(SelectTag.RootPart)!;
+        var text = (Visual)multi.Tags[0].Part(SelectTag.TextPart)!;
+        var drawn = text as TextBlock ?? text.GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.Equal(box.Font.LineHeight, drawn.LineHeight);
+        // The same line, alone and as tall as its line height, on the tag's fill.
+        reference.FontFamily = drawn.FontFamily;
+        reference.FontSize = drawn.FontSize;
+        reference.FontWeight = drawn.FontWeight;
+        reference.LineHeight = drawn.LineHeight;
+        reference.Foreground = drawn.Foreground;
+        page.Children.Add(new Border { Background = new SolidColorBrush(Color.Parse(surface.Tag.Background)), HorizontalAlignment = HorizontalAlignment.Left, Child = reference });
+        scene.Pump();
+        Assert.Equal(box.Font.LineHeight, reference.Bounds.Height);
+        var frame = scene.Capture();
+        var fill = Color.Parse(surface.Tag.Background);
+
+        // The rows with ink, from a point down, across a width.
+        List<int> Ink(Visual v, double x, double top, double width, double height)
+        {
+            var at = v.TranslatePoint(new Point(x, top), scene.Window)!.Value;
+            var rows = new List<int>();
+            for (var y = 0; y < (int)height; y++)
+            {
+                for (var dx = 0; dx < (int)width; dx++)
+                {
+                    var c = Frames.PixelAt(frame, (int)at.X + dx, (int)at.Y + y);
+                    if (Math.Abs(c.R - fill.R) + Math.Abs(c.G - fill.G) + Math.Abs(c.B - fill.B) > 24)
+                    {
+                        rows.Add(y);
+                        break;
+                    }
+                }
+            }
+
+            return rows;
+        }
+
+        // The line's box where Base Web centres it, as tall as the line.
+        var lineTop = (box.Height - box.Font.LineHeight) / 2;
+        Assert.Equal(lineTop, drawn.TranslatePoint(default, root)!.Value.Y);
+        Assert.Equal(box.Font.LineHeight, drawn.Bounds.Height);
+
+        // Its ink, from the top of that line, through the tag's inside (its border kept out): the line's alone.
+        var x0 = text.TranslatePoint(default, root)!.Value.X;
+        var tag = Ink(root, x0, box.Border, text.Bounds.Width, box.Height - 2 * box.Border).Select(y => y + box.Border - lineTop).ToList();
+        var alone = Ink(reference, 0, 0, reference.Bounds.Width, reference.Bounds.Height).Select(y => (double)y).ToList();
+        Assert.NotEmpty(alone);
+        Assert.Equal(alone, tag);
     }
 
     [AvaloniaTheory]

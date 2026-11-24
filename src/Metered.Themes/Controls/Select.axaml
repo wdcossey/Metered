@@ -104,7 +104,15 @@
       <ControlTemplate>
         <b:RadioMark Name="Root" Theme="{DynamicResource SelectTag.StyledRoot}">
           <StackPanel Orientation="Horizontal">
-            <ContentPresenter Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Content="{TemplateBinding Content}" />
+            <ContentPresenter Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Content="{TemplateBinding Content}">
+              <ContentPresenter.DataTemplates>
+                <!-- A text label, its line (LabelSmall's 16 px) taller than the tag's 14 px inside: centred, drawn whole over
+                     the padding, as tag.js's flex row (alignItems: center) centres its Text span and lets it overflow. -->
+                <DataTemplate DataType="x:String">
+                  <TextBlock Text="{Binding}" Height="{Binding $self.LineHeight}" VerticalAlignment="Center" />
+                </DataTemplate>
+              </ContentPresenter.DataTemplates>
+            </ContentPresenter>
             <Border Name="Action" Theme="{DynamicResource SelectTag.StyledAction}">
               <b:InputIcon Name="ActionIcon" Theme="{DynamicResource SelectTag.StyledActionIcon}" />
             </Border>
