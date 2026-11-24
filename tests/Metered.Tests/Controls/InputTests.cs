@@ -649,6 +649,22 @@ public class InputTests
         Assert.Equal(default, page.Offset);
     }
 
+    // A drag that sets off the way the text can't go (towards its start, at its start) isn't the text's when it turns back:
+    // a browser gives a touch's scroll to a scroller as it starts.
+    [AvaloniaFact]
+    public void A_finger_drag_that_sets_off_towards_its_start_doesnt_take_the_text_turning_back()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchPath(scene, at, new Point(at.X + 60, at.Y), new Point(at.X - 100, at.Y));
+
+        Assert.Equal(0, scroller.Offset.X);
+        Assert.Equal(default, page.Offset);
+        Assert.False(input.IsFocused);
+    }
+
     // A drag that's more up than sideways on a long value is still the page's (#94): the text stays where it is. In few
     // moves too, as a quick flick's are, its first already past the gesture's start distance sideways.
     [AvaloniaTheory]
@@ -754,11 +770,15 @@ public class InputTests
     public void A_finger_drag_that_nothing_scrolls_focuses_nothing()
     {
         var input = new Input { Text = "one two" };
-        using var scene = new Scene(new StackPanel { Margin = new Thickness(20), Children = { input } },
-            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        var round = new StackPanel { Margin = new Thickness(20), Children = { input } };
+        // What is round it still sees the release, unhandled, as before.
+        var seen = new List<bool>();
+        round.AddHandler(InputElement.PointerReleasedEvent, (_, e) => seen.Add(e.Handled), handledEventsToo: true);
+        using var scene = new Scene(round, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
         var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
         TouchDrag(scene, at, new Point(at.X - 120, at.Y));
         Assert.False(input.IsFocused);
+        Assert.Equal([false], seen);
         TouchDrag(scene, at, new Point(at.X + 20, at.Y - 30));
         Assert.False(input.IsFocused);
 

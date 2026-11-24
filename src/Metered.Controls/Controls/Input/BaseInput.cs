@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
@@ -118,6 +119,8 @@ public abstract class BaseInput : TextBox
     private IDisposable[] _toggleLabel = [];
     private ScrollViewer? _scroller;
     private readonly HashSet<int> _latched = [];
+    private TextPresenter? _textPresenter;
+    private IPointer? _unfocused;
 
     /// <param name="component">The prefix of the parts' theme keys: <c>Input</c> for <c>Input.StyledRoot</c>.</param>
     /// <param name="parts">Every part of the control's template, by Base Web's names.</param>
@@ -211,6 +214,8 @@ public abstract class BaseInput : TextBox
         _scroller = e.NameScope.Find<ScrollViewer>(ScrollViewerPart);
         _scroller?.AddHandler(ScrollGestureEvent, OnScrollGesture, handledEventsToo: true);
         _scroller?.AddHandler(ScrollGestureEndedEvent, OnScrollGestureEnded, handledEventsToo: true);
+        _textPresenter = e.NameScope.Find<TextPresenter>("PART_TextPresenter");
+        _textPresenter?.AddHandler(PointerReleasedEvent, OnPresenterReleasedTunnel, RoutingStrategies.Tunnel, handledEventsToo: true);
         _clear = _parts[ClearIconPart] as InputIcon;
         _toggle = _parts[MaskToggleButtonPart] as Avalonia.Controls.Button;
         if (_clear is not null)
@@ -365,17 +370,27 @@ public abstract class BaseInput : TextBox
     }
 
     // Nor does that drag focus it: a drag in a phone's browser focuses nothing, and Chrome's sideways scroll of a long value
-    // leaves it as it was (#117). Avalonia's focus manager focuses a finger's text box on its release, wherever it moved: the
-    // release is taken on its way down, before the focus manager sees it at the text presenter that has the pointer. The
-    // text box's own release would do nothing for it (above). A drag that a scroller took (the page, or the text itself)
-    // isn't the text box's by then: a scroll gesture has the pointer, and its release is the gesture's.
+    // leaves it as it was (#117). Avalonia's focus manager focuses a finger's text box on its release, wherever it moved,
+    // from the text presenter the text box's press captured the pointer to: the release is marked handled on its way down,
+    // so the focus manager passes it by there, and unmarked at the presenter after it (below), so the rest of its way is as
+    // before: the text box's own release does nothing for it (above), and what is round it sees it. Only the text box's
+    // own capture: a control inside with a press of its own (a resize grip) keeps its release, and a drag that a scroller
+    // took (the page, or the text itself) has gone to the scroll gesture.
     private void OnPointerReleasedTunnel(object? sender, PointerReleasedEventArgs e)
     {
         if (e.Pointer.Type == PointerType.Mouse || _held == e.Pointer) return;
+        if (_textPresenter is null || e.Pointer.Captured != _textPresenter) return;
         if (_press is not { } press || press.Pointer != e.Pointer || IsTap(e, press.At)) return;
-        if (e.Pointer.Captured is not Visual captured || !(captured == this || this.IsVisualAncestorOf(captured))) return;
-        _press = null;
+        _unfocused = e.Pointer;
         e.Handled = true;
+    }
+
+    // After the focus manager's class handler at the presenter: the release goes on unhandled.
+    private void OnPresenterReleasedTunnel(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_unfocused != e.Pointer) return;
+        _unfocused = null;
+        e.Handled = false;
     }
 
     protected override void OnHolding(HoldingRoutedEventArgs e)
@@ -507,6 +522,9 @@ public abstract class BaseInput : TextBox
         _scroller?.RemoveHandler(ScrollGestureEndedEvent, OnScrollGestureEnded);
         _scroller = null;
         _latched.Clear();
+        _textPresenter?.RemoveHandler(PointerReleasedEvent, OnPresenterReleasedTunnel);
+        _textPresenter = null;
+        _unfocused = null;
         _clear = null;
         _toggle = null;
         _clearPress = null;
