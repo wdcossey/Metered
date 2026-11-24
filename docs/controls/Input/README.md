@@ -165,11 +165,11 @@ From base-input.js and input.js, and its e2e test:
   after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
-- `Controls/InputTouchMenuTests`: 34: the place against Android's in each of its cases (8, worked by hand from its
+- `Controls/InputTouchMenuTests`: 35: the place against Android's in each of its cases (8, worked by hand from its
   source); a coarse pointer by platform and `:pointer-coarse`; on a phone the theme's menu without shortcuts while open
   and with them again after, above the word a long press selects and centred on it, below the handles near the top, 16
   from the side, below the handles under the Pixel's status bar, as high as it fits above a keyboard, placed again as the
-  page scrolls, as the keyboard opens, as the selection moves and as the handles' height changes, above the caret of an empty input (the focus kept), a long selection by the
+  page scrolls, as the keyboard opens, as the selection moves and as the handles' height changes, above the caret of an empty input, the focus left on the input, a long selection by the
   part the box shows and one it doesn't show by the box, an app's own menu (local, or by a style, its items untouched)
   placed the same, a cancelled opening left shut, a placement rect on its popup, the menu's own place left as it was,
   #109's work round on a phone, a Textarea's; a fine pointer's shortcuts and place; the word drawn selected under the

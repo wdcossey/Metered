@@ -312,6 +312,17 @@ public class InputTouchMenuTests
         Assert.Equal(FlyoutShowMode.Standard, menu.ShowMode);
         Assert.Null(menu.CustomPopupPlacementCallback);
         menu.Hide();
+        scene.Pump();
+
+        // Asked for with no touch path round it (a mouse's, a key's).
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+
+        Assert.True(menu.IsOpen);
+        Assert.Equal(PlacementMode.Bottom, menu.Placement);
+        Assert.Equal(FlyoutShowMode.Standard, menu.ShowMode);
+        Assert.Null(menu.CustomPopupPlacementCallback);
+        menu.Hide();
     }
 
     // A long press on an empty input gives the menu (Paste) for its caret: above the caret's line.
@@ -335,6 +346,24 @@ public class InputTouchMenuTests
         var line = presenter.TextLayout.HitTestTextPosition(0);
         var lineTop = presenter.TranslatePoint(line.TopLeft, scene.Window)!.Value.Y;
         Assert.Equal(lineTop - Above, Menu(scene).Bottom, tolerance: 0.5);
+        input.ContextFlyout.Hide();
+    }
+
+    // Shown without taking the focus, as an Avalonia flyout on a phone: the input keeps it, and the keyboard stays. (A
+    // desktop's menu, Standard, takes it.)
+    [AvaloniaFact]
+    public void Its_menu_leaves_the_focus_on_the_input()
+    {
+        var input = new Input { Text = "hello world", CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Click(input);
+        Assert.True(input.IsFocused);
+
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.True(input.IsFocused);
         input.ContextFlyout.Hide();
     }
 
