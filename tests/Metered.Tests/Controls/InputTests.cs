@@ -450,18 +450,6 @@ public class InputTests
         scene.Window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TextSelectorLayer>().Single()
             .Children.Count(canvas => canvas.IsVisible);
 
-    // Each input has its own cut, copy and paste menu: Avalonia's text box keeps its selection and its handles when it loses
-    // the focus while its menu is open, so one menu for all, opened by another input's hold, left them on the first (#109).
-    [AvaloniaFact]
-    public void Each_input_has_a_menu_of_its_own()
-    {
-        var (a, b, scene) = TwoInputs();
-        using var _ = scene;
-        Assert.IsType<MenuFlyout>(a.ContextFlyout);
-        Assert.IsType<MenuFlyout>(b.ContextFlyout);
-        Assert.NotSame(a.ContextFlyout, b.ContextFlyout);
-    }
-
     // The Pixel's (#109): a long press selects a word in one input, with its handles and its menu; once the menu has gone,
     // a long press on another selects there and takes the focus, and the first is left with no selection and no handles,
     // as a phone's browser leaves it. Avalonia's text box kept both on the first, unfocused, until it was touched again.
@@ -488,6 +476,10 @@ public class InputTests
 
         Assert.True(b.IsFocused);
         Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        // The theme's one menu, opened for B by its hold, before the finger lifted and focused it.
+        Assert.Same(a.ContextFlyout, b.ContextFlyout);
+        Assert.Same(b, b.ContextFlyout!.Target);
+        Assert.True(b.ContextFlyout.IsOpen);
         Assert.False(a.IsFocused);
         Assert.Equal(a.SelectionStart, a.SelectionEnd);
         Assert.Equal(1, ShownHandles(scene));
@@ -538,8 +530,8 @@ public class InputTests
         Assert.Equal(0, ShownHandles(scene));
     }
 
-    // An app's own menu given to two inputs stays one menu: Avalonia's behaviour (docs/avalonia-issues.md, 1), and the
-    // menu another input's hold opened isn't closed by the first's losing the focus.
+    // An app's own menu given to two inputs is as the theme's: the one another input's hold opened is left open for it, and
+    // the first is left with no selection and no handles.
     [AvaloniaFact]
     public void An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it()
     {
@@ -558,7 +550,50 @@ public class InputTests
         Assert.True(b.IsFocused);
         Assert.True(menu.IsOpen);
         Assert.Same(b, menu.Target);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(1, ShownHandles(scene));
         menu.Hide();
+    }
+
+    // The focus taken from it to nowhere with its menu open: the menu closes and the selection and handles go.
+    [AvaloniaFact]
+    public void Its_menu_closes_with_its_selection_when_the_focus_goes_nowhere()
+    {
+        var (a, _, scene) = TwoInputs();
+        using var __ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        ((FocusManager)scene.Window.FocusManager!).Focus(null);
+        scene.Pump();
+
+        Assert.False(a.IsFocused);
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // Only its menu's popup is the menu: a popup of its content's (an app's, in an enhancer) is elsewhere.
+    [AvaloniaFact]
+    public void The_focus_going_into_another_popup_of_its_content_closes_its_menu()
+    {
+        var inside = new Avalonia.Controls.Button { Content = "Inside" };
+        var popup = new Avalonia.Controls.Primitives.Popup { Child = inside };
+        var a = new Input { StartEnhancer = "@", Text = "hello world", InnerRightContent = new Panel { Children = { popup } } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Children = { a } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        popup.IsOpen = true;
+        scene.Pump();
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        inside.Focus();
+        scene.Pump();
+
+        Assert.True(inside.IsFocused);
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        popup.IsOpen = false;
     }
 
     // The focus that goes into the menu (a mouse's right click opens it and focuses it) keeps the selection the menu is for,

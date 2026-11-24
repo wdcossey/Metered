@@ -326,23 +326,32 @@ public abstract class BaseInput : TextBox
         if (e.Source != this) return;
         _eatSpace = false;
         // Avalonia's text box keeps its selection, its touch handles and a password's reveal when it loses the focus while
-        // its menu is open, for the focus that goes into the menu; nothing takes them away when the menu closes later. Its
-        // own menu left open while the focus went elsewhere (a key, the soft keyboard's next, code) would leave them on an
-        // input that isn't focused (#109): the menu closes first, so they go as they do with it closed. That's also so for
-        // a control of its own template (the clear icon), where Avalonia lets them go with the menu closed. Each input has
-        // its own menu (Input.ContextFlyout isn't shared), so one another input's hold opened isn't this one's.
-        if (ContextFlyout is { IsOpen: true } menu && menu.Target == this && e.NewFocusedElement is Visual to && !InAPopup(to))
+        // its menu is open, for the focus that goes into the menu, and nothing takes them away when the menu closes later
+        // (#109, docs/avalonia-issues.md). Only the focus going into its own menu keeps them here.
+        if (ContextFlyout is { IsOpen: true } menu)
         {
-            menu.Hide();
+            if (menu.Target != this)
+            {
+                // One menu shared by several inputs (Input.ContextFlyout is, as Avalonia's themes' are), open for another:
+                // that one's hold opened it before the finger lifted and focused it. Not this input's menu, so Avalonia's
+                // text box lets them go as with no menu, and the menu stays the other's.
+                using (SetValue(ContextFlyoutProperty, null, BindingPriority.Animation)) base.OnLostFocus(e);
+                return;
+            }
+
+            // Its own, left open while the focus went elsewhere (a key, the soft keyboard's next, code, its own clear icon,
+            // or nowhere): it closes first, so they go as they do with it closed.
+            if (!(e.NewFocusedElement is { } to && InMenu(menu, to))) menu.Hide();
         }
 
         base.OnLostFocus(e);
     }
 
-    // In a popup of the input's, as its menu is (the popup's logical parent is the input): the input's logically, not in
-    // its visual tree. A control of its template, or of its content, is in both.
-    private bool InAPopup(Visual element) =>
-        element is ILogical logical && logical.GetLogicalAncestors().Contains(this) && !this.IsVisualAncestorOf(element);
+    // In the menu's popup, whose logical parent is the input it opened for. A flyout that isn't a popup's can't be told
+    // apart: Avalonia's behaviour.
+    private static bool InMenu(FlyoutBase menu, IInputElement element) =>
+        menu is not PopupFlyoutBase popupMenu
+        || element is ILogical logical && logical.GetSelfAndLogicalAncestors().Contains(popupMenu.Popup);
 
     // The text box's pointer: a press moves its caret and takes the pointer (and so its release). Not a control of its
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)

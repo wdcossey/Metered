@@ -121,24 +121,19 @@ public class TextareaTests
         Assert.Equal(TextWrapping.Wrap, Presenter(textarea).TextWrapping);
     }
 
-    // Input's cut, copy and paste menu (by a dynamic resource: Input.axaml is another dictionary), one of its own, as each
-    // input's is (#109): one menu for all, opened by another's hold, left the selection and the handles on this one.
+    // Input's cut, copy and paste menu, the one shared flyout (by a dynamic resource: Input.axaml is another dictionary).
     [AvaloniaFact]
     public void Its_menu_is_Inputs()
     {
         var textarea = new Textarea();
-        var other = new Textarea();
         var input = new Input();
-        using var scene = Show(textarea, other, input);
-        var menu = Assert.IsType<MenuFlyout>(textarea.ContextFlyout);
-        var inputs = Assert.IsType<MenuFlyout>(input.ContextFlyout);
-        Assert.Equal(inputs.Items.OfType<MenuItem>().Select(i => i.Header), menu.Items.OfType<MenuItem>().Select(i => i.Header));
-        Assert.NotSame(inputs, menu);
-        Assert.NotSame(other.ContextFlyout, menu);
+        using var scene = Show(textarea, input);
+        Assert.NotNull(textarea.ContextFlyout);
+        Assert.Same(input.ContextFlyout, textarea.ContextFlyout);
     }
 
-    // As an input's (#109): a long press on another textarea, once the first's menu has gone, leaves the first with no
-    // selection and no handles.
+    // As an input's (#109): a long press on another textarea, once the first's menu has gone, opens the one menu for that
+    // one, and leaves the first with no selection and no handles.
     [AvaloniaFact]
     public void A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles()
     {
@@ -156,6 +151,8 @@ public class TextareaTests
 
         Assert.True(b.IsFocused);
         Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        Assert.Same(b, b.ContextFlyout!.Target);
+        Assert.True(b.ContextFlyout.IsOpen);
         Assert.False(a.IsFocused);
         Assert.Equal(a.SelectionStart, a.SelectionEnd);
         var layer = scene.Window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TextSelectorLayer>().Single();

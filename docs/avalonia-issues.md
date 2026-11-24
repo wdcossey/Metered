@@ -15,9 +15,9 @@ and its handles, unfocused, until it is touched again.
 Nothing does it later, when the menu closes. Two ways that leaves them on a text box that isn't focused:
 
 - **The menu is shared.** Avalonia's Simple theme gives every text box the same `MenuFlyout` (measured: B's menu is open
-  while A's is), and so did Metered's `Input.ContextFlyout`, a `StaticResource` in a theme setter. A long press on text box B opens that one menu for B
-  as the hold fires (`TextBox.OnHolding`, then `TextSelectionHandleCanvas.ShowFlyout`), before the finger lifts, and a
-  finger's focus moves on its release (`FocusManager`), so A loses the focus while "its" menu is open.
+  while A's is), and so does Metered's `Input.ContextFlyout`, a `StaticResource` in a theme setter. A long press on text
+  box B opens that one menu for B as the hold fires (`TextBox.OnHolding`, then `TextSelectionHandleCanvas.ShowFlyout`), before the finger lifts,
+  and a finger's focus moves on its release (`FocusManager`), so A loses the focus while "its" menu is open.
 - **Its own menu left open** while the focus goes elsewhere without a press (the light-dismiss layer takes a press, and
   closes the menu first): a key, the soft keyboard's next, code.
 
@@ -28,24 +28,25 @@ selected and its handles shown, still after the menu closes, 6 s later and after
 `B.Focus()` leaves them on A the same way. A tap on B straight after the hold on A doesn't reach B at all: the
 light-dismiss layer takes it and closes the menu.
 
-**Metered's work round** (`BaseInput`, `Input.axaml`): each input and textarea has its own menu (`x:Shared="False"`,
-given by `DynamicResource`), and an input whose own menu is open when the focus goes to an element outside it and its
-menu (its template's controls too, such as the clear icon, where Avalonia lets them go with the menu closed) closes the
-menu first, so Avalonia's own cleanup runs. Focus into the menu (a mouse's right click, a menu item) keeps the selection,
-as Avalonia's does; so does a tap on Copy, which leaves the focus on the input, and the menu a right click focused gives
-the focus back to the input when it closes (measured). Held by `InputTests` (`Each_input_has_a_menu_of_its_own`,
-`A_long_press_on_another_input_leaves_the_first_with_no_selection_or_handles`,
+**Metered's work round** (`BaseInput.OnLostFocus`): only the focus going into the input's own menu keeps them. A menu
+open for another input (the shared one another's hold has just opened, the theme's or an app's) is hidden from the text
+box's check while it loses the focus, so Avalonia lets them go as with no menu, and the menu stays the other's. Its own
+menu, open as the focus goes anywhere but into it (another control, its own clear icon, where Avalonia lets them go with
+the menu closed, another popup of its content, or nowhere), closes first, so Avalonia's own cleanup runs. Focus into the
+menu (a mouse's right click focuses it) keeps the selection, as Avalonia's does; so does a tap on Copy, which leaves the
+focus on the input, and the menu a right click focused gives the focus back to the input when it closes (measured). Held
+by `InputTests` (`A_long_press_on_another_input_leaves_the_first_with_no_selection_or_handles`,
+`An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it`,
 `Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on` (by Tab and by code),
 `Its_menu_closes_with_its_selection_when_the_focus_goes_to_its_clear_icon`,
-`The_focus_going_into_its_menu_keeps_the_selection`, `An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it`) and `TextareaTests`
-(`A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles`, `Its_menu_is_Inputs`).
+`Its_menu_closes_with_its_selection_when_the_focus_goes_nowhere`,
+`The_focus_going_into_another_popup_of_its_content_closes_its_menu`, `The_focus_going_into_its_menu_keeps_the_selection`)
+and `TextareaTests` (`A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles`).
 
-**Not covered:** an app that gives several inputs one menu of its own (a shared `ContextFlyout`), or a `ContextMenu`,
-still meets Avalonia's behaviour (the work round leaves a menu another input opened alone); so does a focus change that
-names no element (`FocusChangedEventArgs.NewFocusedElement` null), where Metered can't tell the menu from elsewhere. Not
-yet tried on the phone.
+**Not covered:** a `ContextMenu` (Metered gives none), and a flyout that isn't a `PopupFlyoutBase`, whose inside can't
+be told from elsewhere, still meet Avalonia's behaviour. Not yet tried on the phone.
 
-**Look again** when Avalonia is upgraded: if `TextBox.OnLostFocus` checks that the focus went into its menu (or the
-themes stop sharing it), the work round can go. Not reported upstream yet; the nearest open issues are
+**Look again** when Avalonia is upgraded: if `TextBox.OnLostFocus` checks that the open menu is its own and that the
+focus went into it, the work round can go. Not reported upstream yet; the nearest open issues are
 [#12878](https://github.com/AvaloniaUI/Avalonia/issues/12878) and [#16132](https://github.com/AvaloniaUI/Avalonia/issues/16132)
 (touch selection on mobile in general).
