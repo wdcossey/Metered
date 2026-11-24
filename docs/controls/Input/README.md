@@ -126,8 +126,9 @@ From base-input.js and input.js, and its e2e test:
   handles' height), the part of it the text's box shows, as Blink clips an input's selection and `FloatingActionMode`
   keeps the rect inside its view; with nothing selected, the caret's line. The room is the window's safe area above the soft keyboard (Android's
   visible display frame). While it is open it is placed again as the input moves (a page's scroll, the keyboard making
-  room), as its selection or caret moves, as the handles' height changes once they are laid out, and as the keyboard or
-  the bars change, as Android's toolbar follows its content. A selection the box doesn't
+  room), as its text, selection or caret moves or its text scrolls (the caret brought into view), as the handles' height
+  changes once they are laid out, and as the keyboard or the bars change, as Android's toolbar follows its content: once
+  for however many change together, after the layout they cause. A selection the box doesn't
   show at all places it by the box. An app's own `ContextFlyout` (local or by a style) replaces the menu, keeps its
   items as they are, and is placed the same; one whose opening the app cancels stays shut. A fine pointer keeps the
   desktop's menu, its shortcuts and Avalonia's place. `BaseInput` does this (`TouchMenu`), so Textarea's text has
@@ -165,11 +166,13 @@ From base-input.js and input.js, and its e2e test:
   after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a
   click could, the toggle a button, the input an edit).
-- `Controls/InputTouchMenuTests`: 35: the place against Android's in each of its cases (8, worked by hand from its
+- `Controls/InputTouchMenuTests`: 38: the place against Android's in each of its cases (8, worked by hand from its
   source); a coarse pointer by platform and `:pointer-coarse`; on a phone the theme's menu without shortcuts while open
   and with them again after, above the word a long press selects and centred on it, below the handles near the top, 16
   from the side, below the handles under the Pixel's status bar, as high as it fits above a keyboard, placed again as the
-  page scrolls, as the keyboard opens, as the selection moves and as the handles' height changes, above the caret of an empty input, the focus left on the input, a long selection by the
+  page scrolls, as the keyboard opens, as the selection moves (once for its start, end and caret, and past the box's edge after the text scrolls to it), as
+  the text scrolls in its box, as the handles' height changes, settling
+  with nothing to place it by, above the caret of an empty input, the focus left on the input, a long selection by the
   part the box shows and one it doesn't show by the box, an app's own menu (local, or by a style, its items untouched)
   placed the same, a cancelled opening left shut, a placement rect on its popup, the menu's own place left as it was,
   #109's work round on a phone, a Textarea's; a fine pointer's shortcuts and place; the word drawn selected under the

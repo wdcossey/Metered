@@ -8,6 +8,7 @@ using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -159,9 +160,11 @@ internal static class TouchMenu
         private readonly TopLevel? _top;
         private readonly IKeyboard? _keyboard;
         private readonly SafeArea.ISource? _safe;
-        private readonly TextSelectorLayer? _layer;
+        private readonly TextSelectionHandle[] _handleParts;
+        private ScrollViewer? _scroller;
         private IDisposable? _shortcuts;
         private double _handles;
+        private bool _posted;
 
         public Shown(BaseInput input, PopupFlyoutBase menu)
         {
@@ -170,20 +173,25 @@ internal static class TouchMenu
             _top = TopLevel.GetTopLevel(input);
             _keyboard = _top is null ? null : KeyboardOf(_top);
             _safe = _top is null ? null : SafeArea.Of(_top);
-            _layer = TextSelectorLayer.GetTextSelectorLayer(input);
+            // The handles a hold or a tap has made by now (the layer holds each text box's; only the focused one's are shown).
+            _handleParts = TextSelectorLayer.GetTextSelectorLayer(input)?.GetVisualDescendants().OfType<TextSelectionHandle>()
+                .ToArray() ?? [];
             _shortcuts = HideShortcuts(input, menu);
         }
 
         /// <summary>
         /// Placed again while it is open as what it is placed by changes: the input's place on the window (a page's scroll,
-        /// the keyboard making room), its selection or caret, the handles' height once they are laid out, the keyboard and
-        /// the bars. Let go when it closes.
+        /// the keyboard making room), its text, selection or caret, its text's scroll (the caret brought into view), the
+        /// handles' height once they are laid out, the keyboard and the bars. Once for however many change together, after
+        /// the layout they cause. Let go when it closes.
         /// </summary>
         public void Follow()
         {
             _input.EffectiveViewportChanged += OnMoved;
             _input.PropertyChanged += OnInputChanged;
-            if (_layer is not null) _layer.LayoutUpdated += OnHandlesLaidOut;
+            _scroller = _input.TextScrollerPart;
+            if (_scroller is not null) _scroller.ScrollChanged += OnScrolled;
+            foreach (var handle in _handleParts) handle.PropertyChanged += OnHandleChanged;
             if (_keyboard is not null) _keyboard.Changed += OnChanged;
             if (_safe is not null) _safe.Changed += OnChanged;
             _menu.Closed += OnClosed;
@@ -200,27 +208,43 @@ internal static class TouchMenu
             _menu.Closed -= OnClosed;
             _input.EffectiveViewportChanged -= OnMoved;
             _input.PropertyChanged -= OnInputChanged;
-            if (_layer is not null) _layer.LayoutUpdated -= OnHandlesLaidOut;
+            if (_scroller is not null) _scroller.ScrollChanged -= OnScrolled;
+            foreach (var handle in _handleParts) handle.PropertyChanged -= OnHandleChanged;
             if (_keyboard is not null) _keyboard.Changed -= OnChanged;
             if (_safe is not null) _safe.Changed -= OnChanged;
             Release();
         }
 
-        private void OnMoved(object? sender, EffectiveViewportChangedEventArgs e) => PlaceAgain();
+        private void OnMoved(object? sender, EffectiveViewportChangedEventArgs e) => PlaceSoon();
 
-        private void OnChanged(object? sender, EventArgs e) => PlaceAgain();
+        private void OnChanged(object? sender, EventArgs e) => PlaceSoon();
+
+        private void OnScrolled(object? sender, ScrollChangedEventArgs e) => PlaceSoon();
 
         private void OnInputChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
             if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty
-                || e.Property == TextBox.CaretIndexProperty)
-                PlaceAgain();
+                || e.Property == TextBox.CaretIndexProperty || e.Property == TextBox.TextProperty)
+                PlaceSoon();
         }
 
-        // Only when their height has changed: a layout pass of its own is no reason.
-        private void OnHandlesLaidOut(object? sender, EventArgs e)
+        // A handle's size or showing: only a change of their height places it again (they move with the selection, which
+        // places it itself).
+        private void OnHandleChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (HandleHeight() != _handles) PlaceAgain();
+            if ((e.Property == Visual.BoundsProperty || e.Property == Visual.IsVisibleProperty) && HandleHeight() != _handles)
+                PlaceSoon();
+        }
+
+        /// <summary>
+        /// Placed again once, after the layout under way (the text's scroller brings the caret into view in it), however
+        /// many changes ask for it before then.
+        /// </summary>
+        private void PlaceSoon()
+        {
+            if (_posted) return;
+            _posted = true;
+            Dispatcher.UIThread.Post(PlaceAgain, DispatcherPriority.Loaded);
         }
 
         /// <summary>
@@ -229,6 +253,7 @@ internal static class TouchMenu
         /// </summary>
         private void PlaceAgain()
         {
+            _posted = false;
             if (!_menu.IsOpen || _menu.Target != _input) return;
             var popup = _menu.Popup;
             var offset = popup.HorizontalOffset;
@@ -238,6 +263,8 @@ internal static class TouchMenu
 
         public void Position(CustomPopupPlacement placement)
         {
+            // The handles' height this place is for, read whether or not there is a selection to place it by.
+            _handles = HandleHeight();
             if (_top is null || Content() is not { } content)
             {
                 // Nothing to place it by: above the input.
@@ -292,7 +319,6 @@ internal static class TouchMenu
             }
 
             // Clear of the handles below it.
-            _handles = HandleHeight();
             return content.WithHeight(content.Height + _handles);
         }
 
@@ -306,14 +332,13 @@ internal static class TouchMenu
         }
 
         /// <summary>
-        /// The touch handles' height, as Chrome adds it below the selection: the tallest shown in the top level's text
-        /// selector layer, where only the focused text box's are shown. None shown, none added.
+        /// The touch handles' height, as Chrome adds it below the selection: the tallest shown of those in the top level's
+        /// text selector layer, where only the focused text box's are shown. None shown, none added.
         /// </summary>
         private double HandleHeight()
         {
-            if (_layer is null) return 0;
             var height = 0.0;
-            foreach (var handle in _layer.GetVisualDescendants().OfType<TextSelectionHandle>())
+            foreach (var handle in _handleParts)
             {
                 if (handle.IsEffectivelyVisible) height = Math.Max(height, handle.Bounds.Height);
             }

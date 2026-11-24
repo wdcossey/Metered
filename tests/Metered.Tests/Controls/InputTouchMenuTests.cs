@@ -447,12 +447,20 @@ public class InputTouchMenuTests
         Hold(scene, input, 7);
         Assert.Equal(Selection(scene, input).Center.X, Menu(scene).Center.X, tolerance: 1);
 
+        var nudges = 0;
+        ((PopupFlyoutBase)input.ContextFlyout!).Popup.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Popup.HorizontalOffsetProperty) nudges++;
+        };
+
         input.SelectionStart = 0;
         input.SelectionEnd = 5;
         scene.Pump();
 
         Assert.True(input.ContextFlyout!.IsOpen);
         Assert.Equal(Selection(scene, input).Center.X, Menu(scene).Center.X, tolerance: 1);
+        // Once for the change, its start, end and caret together (a nudge there and back).
+        Assert.Equal(2, nudges);
         input.ContextFlyout.Hide();
     }
 
@@ -472,6 +480,98 @@ public class InputTouchMenuTests
 
         Assert.Equal(Handles(scene).Max(h => h.Bottom) + Above, Menu(scene).Top, tolerance: 0.5);
         input.ContextFlyout!.Hide();
+    }
+
+    // A selection moved past the box's edge (a hardware keyboard's Shift and End): the text's scroller brings the caret
+    // into view in the layout after, and the menu follows to the part of the selection now shown.
+    [AvaloniaFact]
+    public void It_follows_the_selection_as_the_text_scrolls_to_it()
+    {
+        var input = new Input { Text = string.Concat(Enumerable.Repeat("a long value ", 8)), CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Click(input);
+        input.CaretIndex = 0;
+        scene.Pump();
+        var scroller = input.GetVisualDescendants().OfType<ScrollViewer>().First();
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.Equal(0, scroller.Offset.X);
+
+        // Shift and End from the caret, as a hardware keyboard selects, past the box's edge.
+        input.CaretIndex = 45;
+        scene.Pump();
+        scene.Window.KeyPress(Key.End, RawInputModifiers.Shift, PhysicalKey.End, null);
+        scene.Pump();
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout.IsOpen);
+        Assert.Equal((45, input.Text!.Length), (input.SelectionStart, input.SelectionEnd));
+        Assert.True(scroller.Offset.X > 0);
+        var shown = new Rect(scroller.TranslatePoint(default, scene.Window)!.Value, scroller.Bounds.Size);
+        var word = Selection(scene, input).Intersect(shown);
+        Assert.True(word.Width > 0);
+        Assert.Equal(word.Center.X, Menu(scene).Center.X, tolerance: 1);
+        input.ContextFlyout.Hide();
+    }
+
+    // And as the text scrolls in its box, the selection with it.
+    [AvaloniaFact]
+    public void It_follows_the_text_as_it_scrolls()
+    {
+        var input = new Input { Text = string.Concat(Enumerable.Repeat("a long value ", 8)), CoarsePointer = true };
+        using var scene = Show(input);
+        scene.Click(input);
+        input.CaretIndex = 0;
+        scene.Pump();
+        input.SelectionStart = 30;
+        input.SelectionEnd = 60;
+        var scroller = input.GetVisualDescendants().OfType<ScrollViewer>().First();
+        Presenter(input).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.Equal(0, scroller.Offset.X);
+        Rect Shown() => Selection(scene, input).Intersect(new Rect(scroller.TranslatePoint(default, scene.Window)!.Value, scroller.Bounds.Size));
+        Assert.Equal(Shown().Center.X, Menu(scene).Center.X, tolerance: 1);
+        var before = Menu(scene).Center.X;
+
+        scroller.Offset = new Vector(120, 0);
+        scene.Pump();
+        scene.Pump();
+
+        Assert.True(input.ContextFlyout!.IsOpen);
+        Assert.True(Math.Abs(Menu(scene).Center.X - before) > 20);
+        Assert.Equal(Shown().Center.X, Menu(scene).Center.X, tolerance: 1);
+        input.ContextFlyout.Hide();
+    }
+
+    // Nothing to place it by (no text presenter in the input's template) while another's handles are shown: it is placed
+    // once and settles, not placed again at every layout pass.
+    [AvaloniaFact]
+    public void A_menu_with_nothing_to_place_it_by_settles()
+    {
+        var a = new Input { Text = "hello world", CoarsePointer = true };
+        var b = new Input { Text = "no presenter", CoarsePointer = true };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Spacing = 20, Children = { a, b } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        // B's text presenter taken out of the window, so its selection can't be found on it.
+        var presenter = Presenter(b);
+        ((Panel)presenter.GetVisualParent()!).Children.Remove(presenter);
+        scene.Pump();
+        Hold(scene, a, 7);
+        a.ContextFlyout!.Hide();
+        scene.Pump();
+        Assert.Equal(2, Handles(scene).Count);
+        var menu = Assert.IsAssignableFrom<PopupFlyoutBase>(b.ContextFlyout);
+        var nudges = 0;
+        menu.Popup.PropertyChanged += (_, e) => { if (e.Property == Popup.HorizontalOffsetProperty) nudges++; };
+
+        b.RaiseEvent(new ContextRequestedEventArgs());
+        scene.Advance(1000);
+
+        // Placed again once at most, as it starts to follow the input.
+        Assert.True(menu.IsOpen);
+        Assert.True(nudges <= 2, $"{nudges} changes of the popup's offset");
+        menu.Hide();
     }
 
     // A selection the box doesn't show at all (scrolled out of a long value): the menu goes by the box.
