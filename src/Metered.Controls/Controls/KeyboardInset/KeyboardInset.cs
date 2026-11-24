@@ -215,10 +215,9 @@ public class KeyboardInset : Decorator
 
     /// <summary>
     /// The inset for a keyboard <paramref name="open"/> or not, at <paramref name="occluded"/> in the top level's
-    /// coordinates: where the keyboard's rect overlaps the decorator's, on both axes, as much of the decorator as lies
-    /// below the top of that overlap, as it is laid out now; nothing where they don't overlap (a keyboard beside it, as
-    /// Windows' touch keyboard floating beside the window, or above or below it). Laid out first, so that a decorator
-    /// inside another that has just made room is read in that room, and pads nothing more.
+    /// coordinates: as much of the decorator as lies below the keyboard's top edge, if the keyboard reaches across it
+    /// (#120), as it is laid out now. Laid out first, so that a decorator inside another that has just made room is read
+    /// in that room, and pads nothing more.
     /// </summary>
     private void Apply(bool open, Rect occluded)
     {
@@ -241,7 +240,7 @@ public class KeyboardInset : Decorator
             }
 
             UpdateLayout();
-            Inset = this.TranslatePoint(default, top) is { } origin ? Covered(new Rect(origin, Bounds.Size), occluded) : 0;
+            Inset = this.TranslatePoint(default, top) is { } origin ? Covered(new Rect(origin, Bounds.Size), occluded, top.RenderScaling) : 0;
             _room = Bounds.Height - Inset;
             UpdateLayout();
         }
@@ -253,13 +252,17 @@ public class KeyboardInset : Decorator
 
     /// <summary>
     /// How much of <paramref name="decorator"/> the keyboard at <paramref name="occluded"/> keeps its child out of, both in
-    /// the top level's coordinates: from the top of their overlap to the decorator's foot, the room below the keyboard's
-    /// top being lost as a whole; 0 where they don't overlap. An empty intersection is Avalonia's default rect.
+    /// the top level's coordinates: all of it below the keyboard's top, the room under a keyboard being no room for the
+    /// child even where the keyboard's rect ends above the decorator's foot (Android's ends above the navigation bar), if
+    /// the keyboard reaches across it; nothing for a keyboard beside it, as Windows' touch keyboard floating beside the
+    /// window, or under another column. Across less than a device pixel is beside it: the keyboard's rect is converted
+    /// from the screen's pixels and the decorator's bounds rounded by layout, so edges that meet can overlap by a
+    /// fraction.
     /// </summary>
-    private static double Covered(Rect decorator, Rect occluded)
+    private static double Covered(Rect decorator, Rect occluded, double scaling)
     {
-        var overlap = decorator.Intersect(occluded);
-        return overlap.Width > 0 && overlap.Height > 0 ? decorator.Bottom - overlap.Top : 0;
+        var across = Math.Min(decorator.Right, occluded.Right) - Math.Max(decorator.Left, occluded.Left);
+        return across * scaling >= 1 ? Math.Clamp(decorator.Bottom - occluded.Top, 0, decorator.Height) : 0;
     }
 
     /// <summary>

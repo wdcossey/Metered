@@ -180,6 +180,25 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void A_Keyboard_That_Overlaps_It_By_Less_Than_A_Device_Pixel_Is_Beside_It()
+    {
+        // The decorator fills the left half of the view, to 195; the keyboard under the right half starts at 194.8, its
+        // rect converted from the screen's pixels: at a render scaling of 1, 0.2 across is less than a pixel (#120).
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+        Assert.Equal(1, scene.Window.RenderScaling);
+        Assert.Equal(Scene.Width / 2, inset.Bounds.Right);
+
+        pane.Open(new Rect(Scene.Width / 2 - 0.2, Scene.Height - 300, Scene.Width / 2 + 0.2, 300));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Keyboard_Over_Part_Of_Its_Width_Pads_It_From_The_Keyboards_Top()
     {
         // A keyboard 200 wide, from 100, at the view's foot: it overlaps the decorator, and the room below its top is lost.
@@ -209,6 +228,24 @@ public class KeyboardInsetTests
         scene.Pump();
 
         Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Decorator_Wholly_Below_The_Keyboards_Rect_Is_Padded_Whole()
+    {
+        // As a strip at the view's foot under Android's navigation bar, below the keyboard's rect, which ends above the
+        // bar: the keyboard spans 544 to 744 and the decorator 744 to 844, all of it below the keyboard's top.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("*,100") };
+        Grid.SetRow(inset, 1);
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(0, Scene.Height - 300, Scene.Width, 200));
+        scene.Pump();
+
+        Assert.Equal(100, inset.Inset);
     }
 
     [AvaloniaFact]
