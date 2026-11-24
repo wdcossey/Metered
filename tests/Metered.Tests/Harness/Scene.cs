@@ -36,10 +36,10 @@ internal sealed class Scene : IDisposable
             Height = height,
             RequestedThemeVariant = variant ?? ThemeVariant.Light,
         };
-        Clock = realTime ? null : TestClock.Of(Window);
-        Window.Styles.AddRange(themes ?? [new BaseTheme()]);
         try
         {
+            Clock = realTime ? null : TestClock.Of(Window);
+            Window.Styles.AddRange(themes ?? [new BaseTheme()]);
             Window.Content = content;
             Window.Show();
             Pump();

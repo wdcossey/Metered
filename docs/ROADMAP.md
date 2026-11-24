@@ -75,7 +75,7 @@ unless Avonic is named.
 
 | What | Where it is there | Take it when |
 |---|---|---|
-| **A manual render timer**: `ManualRenderTimer` (a frame only on a forced tick), and its harness tests. Metered's own `TestClock` (#127) already holds Avalonia's dispatcher, animation and input clocks, so `Transitions` and `Animation` run on the test's time; a frame still comes whenever the harness forces a render tick (every `Pump`), not only when a test asks for one | `tests/Cornflower.Tests/ManualRenderTimer.cs`, `Harness/` | The first control whose motion must match Base Web frame by frame (#13); the spinner's ring and the progress bar's animations (#53) are the first candidates |
+| **A manual render timer**: `ManualRenderTimer` (a frame only on a forced tick), and its harness tests. Metered's own `TestClock` (#127) already holds Avalonia's dispatcher, animation and input clocks, so `Transitions` and `Animation` run on the test's time; a frame still comes on the headless render timer's own ticks (a dispatcher timer, so on the test clock during `Scene.Advance`) and whenever the harness forces one (every `Pump`), not only when a test asks for one | `tests/Cornflower.Tests/ManualRenderTimer.cs`, `Harness/` | The first control whose motion must match Base Web frame by frame (#13); the spinner's ring and the progress bar's animations (#53) are the first candidates |
 
 ## Inventory
 
