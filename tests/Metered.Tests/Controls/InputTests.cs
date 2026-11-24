@@ -414,6 +414,236 @@ public class InputTests
         flyout.Hide();
     }
 
+    /// <summary>
+    /// Two inputs in the app theme's window, as the sample's page has them: its text selector layer (the touch handles)
+    /// and its light-dismiss layer (the menu's).
+    /// </summary>
+    private static (Input A, Input B, Scene Scene) TwoInputs()
+    {
+        var a = new Input { StartEnhancer = "@", Text = "hello world" };
+        var b = new Input { Clearable = true, Text = "Clear me!" };
+        var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Spacing = 20, Children = { a, b } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        return (a, b, scene);
+    }
+
+    /// <summary>Where a character of the text is, on the window.</summary>
+    private static Point AtCharacter(Scene scene, BaseInput input, int index)
+    {
+        var presenter = Presenter(input);
+        var box = presenter.TextLayout.HitTestTextPosition(index);
+        return presenter.TranslatePoint(new Point(box.X + 2, box.Center.Y), scene.Window)!.Value;
+    }
+
+    /// <summary>A finger held past the platform's hold wait, then lifted: Avalonia's hold, which selects a word.</summary>
+    private static void TouchHold(Scene scene, Point at)
+    {
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Advance((int)Application.Current!.PlatformSettings!.HoldWaitDuration.TotalMilliseconds + 1);
+        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    /// <summary>The touch handles shown: each text box's are a canvas of its own in the window's text selector layer.</summary>
+    private static int ShownHandles(Scene scene) =>
+        scene.Window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TextSelectorLayer>().Single()
+            .Children.Count(canvas => canvas.IsVisible);
+
+    // The Pixel's (#109): a long press selects a word in one input, with its handles and its menu; once the menu has gone,
+    // a long press on another selects there and takes the focus, and the first is left with no selection and no handles,
+    // as a phone's browser leaves it. Avalonia's text box kept both on the first, unfocused, until it was touched again.
+    [AvaloniaFact]
+    public void A_long_press_on_another_input_leaves_the_first_with_no_selection_or_handles()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.IsFocused);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+        Assert.True(a.ContextFlyout!.IsOpen);
+        Assert.Equal(1, ShownHandles(scene));
+        // A tap on nothing closes the menu (the light-dismiss layer takes it), and the selection stays.
+        var nothing = new Point(Scene.Width - 10, Scene.Height - 10);
+        var touch = scene.Window.TouchBegin(nothing, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(touch, nothing, RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+
+        TouchHold(scene, AtCharacter(scene, b, 2));
+
+        Assert.True(b.IsFocused);
+        Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        // The theme's one menu, opened for B by its hold, before the finger lifted and focused it.
+        Assert.Same(a.ContextFlyout, b.ContextFlyout);
+        Assert.Same(b, b.ContextFlyout!.Target);
+        Assert.True(b.ContextFlyout.IsOpen);
+        Assert.False(a.IsFocused);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(1, ShownHandles(scene));
+    }
+
+    // The menu hidden from the text box's check comes back as it was: after a long press on another input, its own still
+    // opens on its text and not on its clear icon (BaseInput's handler before the flyout's).
+    [AvaloniaFact]
+    public void After_another_inputs_menu_its_own_opens_on_its_text_alone()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, b, 2));
+        b.ContextFlyout!.Hide();
+        scene.Pump();
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.Same(a, a.ContextFlyout!.Target);
+        Assert.Equal(b.SelectionStart, b.SelectionEnd);
+        a.ContextFlyout.Hide();
+        scene.Pump();
+
+        P<Control>(b, BaseInput.ClearIconPart).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.False(b.ContextFlyout.IsOpen);
+        P<Control>(b, BaseInput.InputPart).RaiseEvent(new ContextRequestedEventArgs());
+        scene.Pump();
+        Assert.True(b.ContextFlyout.IsOpen);
+        Assert.Same(b, b.ContextFlyout.Target);
+        b.ContextFlyout.Hide();
+    }
+
+    // Its own menu left open while the focus goes elsewhere (a key, the soft keyboard's next, code): the menu closes, and the
+    // selection and handles go with the focus, as they do with the menu closed; the focus is where it went.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on(bool byTab)
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        if (byTab) scene.Key(Key.Tab);
+        else
+        {
+            b.Focus();
+            scene.Pump();
+        }
+
+        Assert.True(b.IsFocused);
+        Assert.False(a.IsFocused);
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // The same to a control of its own (the clear icon), where Avalonia's text box lets the selection go with the menu
+    // closed: the menu is for the text's selection.
+    [AvaloniaFact]
+    public void Its_menu_closes_with_its_selection_when_the_focus_goes_to_its_clear_icon()
+    {
+        var (_, b, scene) = TwoInputs();
+        using var __ = scene;
+        TouchHold(scene, AtCharacter(scene, b, 2));
+        Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        Assert.True(b.ContextFlyout!.IsOpen);
+
+        scene.Key(Key.Tab);
+
+        Assert.True(P<InputElement>(b, BaseInput.ClearIconPart).IsFocused);
+        Assert.False(b.ContextFlyout.IsOpen);
+        Assert.Equal(b.SelectionStart, b.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // An app's own menu given to two inputs is as the theme's: the one another input's hold opened is left open for it, and
+    // the first is left with no selection and no handles.
+    [AvaloniaFact]
+    public void An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        var menu = new MenuFlyout { Items = { new MenuItem { Header = "Mine" } } };
+        a.ContextFlyout = menu;
+        b.ContextFlyout = menu;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(menu.IsOpen);
+        menu.Hide();
+        scene.Pump();
+
+        TouchHold(scene, AtCharacter(scene, b, 2));
+
+        Assert.True(b.IsFocused);
+        Assert.True(menu.IsOpen);
+        Assert.Same(b, menu.Target);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(1, ShownHandles(scene));
+        menu.Hide();
+    }
+
+    // The focus taken from it to nowhere with its menu open: the menu closes and the selection and handles go.
+    [AvaloniaFact]
+    public void Its_menu_closes_with_its_selection_when_the_focus_goes_nowhere()
+    {
+        var (a, _, scene) = TwoInputs();
+        using var __ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        ((FocusManager)scene.Window.FocusManager!).Focus(null);
+        scene.Pump();
+
+        Assert.False(a.IsFocused);
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // Only its menu's popup is the menu: a popup of its content's (an app's, in an enhancer) is elsewhere.
+    [AvaloniaFact]
+    public void The_focus_going_into_another_popup_of_its_content_closes_its_menu()
+    {
+        var inside = new Avalonia.Controls.Button { Content = "Inside" };
+        var popup = new Avalonia.Controls.Primitives.Popup { Child = inside };
+        var a = new Input { StartEnhancer = "@", Text = "hello world", InnerRightContent = new Panel { Children = { popup } } };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Children = { a } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        popup.IsOpen = true;
+        scene.Pump();
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        inside.Focus();
+        scene.Pump();
+
+        Assert.True(inside.IsFocused);
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        popup.IsOpen = false;
+    }
+
+    // The focus that goes into the menu (a mouse's right click opens it and focuses it) keeps the selection the menu is for,
+    // as Avalonia's text box keeps it, and the menu stays.
+    [AvaloniaFact]
+    public void The_focus_going_into_its_menu_keeps_the_selection()
+    {
+        var (a, _, scene) = TwoInputs();
+        using var __ = scene;
+        scene.Click(a);
+        a.SelectionStart = 6;
+        a.SelectionEnd = 11;
+        var at = AtCharacter(scene, a, 7);
+
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+
+        Assert.True(a.ContextFlyout!.IsOpen);
+        Assert.False(a.IsFocused);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+        a.ContextFlyout.Hide();
+    }
+
     [AvaloniaFact]
     public void Escape_clears_a_clearable_input_and_goes_no_further()
     {

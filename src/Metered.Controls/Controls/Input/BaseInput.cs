@@ -8,6 +8,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -324,8 +325,33 @@ public abstract class BaseInput : TextBox
     {
         if (e.Source != this) return;
         _eatSpace = false;
+        // Avalonia's text box keeps its selection, its touch handles and a password's reveal when it loses the focus while
+        // its menu is open, for the focus that goes into the menu, and nothing takes them away when the menu closes later
+        // (#109, docs/avalonia-issues.md). Only the focus going into its own menu keeps them here.
+        if (ContextFlyout is { IsOpen: true } menu)
+        {
+            if (menu.Target != this)
+            {
+                // One menu shared by several inputs (Input.ContextFlyout is, as Avalonia's themes' are), open for another:
+                // that one's hold opened it before the finger lifted and focused it. Not this input's menu, so Avalonia's
+                // text box lets them go as with no menu, and the menu stays the other's.
+                using (SetValue(ContextFlyoutProperty, null, BindingPriority.Animation)) base.OnLostFocus(e);
+                return;
+            }
+
+            // Its own, left open while the focus went elsewhere (a key, the soft keyboard's next, code, its own clear icon,
+            // or nowhere): it closes first, so they go as they do with it closed.
+            if (!(e.NewFocusedElement is { } to && InMenu(menu, to))) menu.Hide();
+        }
+
         base.OnLostFocus(e);
     }
+
+    // In the menu's popup, whose logical parent is the input it opened for. A flyout that isn't a popup's can't be told
+    // apart: Avalonia's behaviour.
+    private static bool InMenu(FlyoutBase menu, IInputElement element) =>
+        menu is not PopupFlyoutBase popupMenu
+        || element is ILogical logical && logical.GetSelfAndLogicalAncestors().Contains(popupMenu.Popup);
 
     // The text box's pointer: a press moves its caret and takes the pointer (and so its release). Not a control of its
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)
