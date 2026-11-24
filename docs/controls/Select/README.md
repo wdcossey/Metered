@@ -66,9 +66,10 @@ margin, no auto focus or focus lock, accessibility none), as Base Web spreads th
 
 **The tag**: `SelectTag`, Base Web's Tag at what `multi-value.js` gives it (gray, primary, small, closeable, its root's 2 px
 margins), with Tag's parts `Root` (a `RadioMark`, which draws its overlay and its ring), `Text`, `Action` and `ActionIcon`,
-their themes `SelectTag.Styled{Part}` and its own `Overrides` (known difference 6). A label that isn't a control (text, a
-number) is a line of LabelSmall's line height (16 px) centred in the tag's 24 px, over its padding and drawn whole, as tag.js's border-box root, a flex row
-that centres its items, centres its `Text` span (#137).
+their themes `SelectTag.Styled{Part}` and its own `Overrides` (known difference 6). A label that React renders as text, a
+string or a number (as `String(n)` writes it), is a line of LabelSmall's line height (16 px) centred in the tag's 24 px, over
+its padding and drawn whole, as tag.js's border-box root, a flex row that centres its items, centres its `Text` span
+(`SelectTag.TextTemplate`, #137); a control is laid out as itself, and any other label is drawn by the app's data templates.
 
 **States**, on the select and every part (getSharedProps): `:size-*`, `:is-focused`, `:is-pseudo-focused`, `:is-open`,
 `:error`, `:positive`, `:multi`, `:has-value` (`!$isEmpty`), `:searchable`, `:type-search`, `:is-loading`,
@@ -126,7 +127,7 @@ every part recorded, and each part's style function evaluated with the props it 
 Popover's `content` as the Popover renders it; each tag rendered as Base Web's own Tag with `multi-value.js`'s props; and its
 own `Select` class driven step by step in Node as a browser and React would drive it (focus events, the document's
 listeners, React's batched state). The themes come from `tools/tokens/select.js`, which checks them against the style
-functions for every combination of states. 158 tests:
+functions for every combination of states. 159 tests:
 
 - `SelectBehaviourTests` (30): Base Web's state (open, focused, pseudo-focused, the text) and value after each step of 30
   sequences, replayed with a real mouse, real touch, real keys and typing: the click, the tap and the drag, the keys that
@@ -142,15 +143,15 @@ functions for every combination of states. 158 tests:
   padding, height, fonts, the icons, the input's box and the input, the single value, the search icon, the tags' boxes and
   places; the clear icon's sizes; tags wrapping and a long value cut.
 - `SelectFilterTests` (12): `defaultFilterOptions` against Base Web's.
-- `SelectTests` (29): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
+- `SelectTests` (30): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
   outside; typing and the menu's keys, Space's key and its text, the dropdown opened by a key, a tag's keys, the back request, disabled, `autoFocus`,
   the search icon's click; `controlRef`; labels and creatable; options changing while it is open; the dropdown's width and
   height; overrides (its own parts, the popover's, the dropdown's, a tag's, a collection changed after it is set); a tag's
-  content; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; tags
+  content, and a label of the app's own type drawn by the app's data template; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; tags
   removed one after another while focused; a taller value container and a label that wraps; searchable changed at run
   time to UI Automation; an override based on another theme; UI Automation; the transition and the ring.
 - `SelectFrames` (5, and the gallery): drawn pixels of the control, a tag and a highlighted option; a tag's text drawn whole,
-  its line centred in the tag (a label that is text, and one that isn't). `SelectPageTests` (4):
+  its line centred in the tag (a string, and a number under another culture). `SelectPageTests` (4):
   the sample's page.
 
 ## Known differences

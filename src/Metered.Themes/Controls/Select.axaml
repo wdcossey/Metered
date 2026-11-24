@@ -106,12 +106,8 @@
           <StackPanel Orientation="Horizontal">
             <ContentPresenter Name="Text" Theme="{DynamicResource SelectTag.StyledText}" Content="{TemplateBinding Content}">
               <ContentPresenter.DataTemplates>
-                <!-- A label that isn't a control (text, a number) is a line as tall as its line height, centred in the row: where
-                     the line is taller than the tag's inside, it overflows the padding both ways, drawn whole, as tag.js's flex
-                     row (alignItems: center) centres its Text span and lets it overflow; a control is laid out as itself. -->
-                <DataTemplate DataType="x:Object">
-                  <TextBlock Text="{Binding StringFormat={}{0}}" Height="{Binding $self.LineHeight}" VerticalAlignment="Center" />
-                </DataTemplate>
+                <!-- A label that is text (a string, a number): a line centred in the row, drawn whole (SelectTag.TextTemplate). -->
+                <x:Static Member="b:SelectTag.TextTemplate" />
               </ContentPresenter.DataTemplates>
             </ContentPresenter>
             <Border Name="Action" Theme="{DynamicResource SelectTag.StyledAction}">

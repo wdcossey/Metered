@@ -56,7 +56,7 @@ public class SelectFrames
     [InlineData("Light", false)]
     [InlineData("Dark", false)]
     [InlineData("Light", true)]
-    public void A_tags_text_is_drawn_whole_its_line_centred_in_the_tag_as_Base_Webs(string theme, bool notText)
+    public void A_tags_text_is_drawn_whole_its_line_centred_in_the_tag_as_Base_Webs(string theme, bool number)
     {
         // tag.js's Root is border-box (styled-components.js: boxSizing, height, the padding) and an inline flex row that
         // centres its items (alignItems: center), so the Text span, a line of LabelSmall's line height, is centred in the
@@ -65,9 +65,16 @@ public class SelectFrames
         var surface = SelectOracle.Data.Surfaces.Single(s => s.Theme == theme);
         var options = SelectOracle.Options("OPTIONS");
         var multi = new Select { Options = options, Multi = true, Value = SelectOracle.Value(options, ["Aqua"]) };
-        // A label that isn't text (getValueLabel's node, a number say) is rendered as its text, as React renders it.
-        if (notText) multi.GetValueLabel = _ => new System.Text.StringBuilder("Aqua");
-        var reference = new TextBlock { Text = "Aqua" };
+        // A number from getValueLabel, which React renders as String(n) writes it, whatever the culture.
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        if (number)
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+            multi.GetValueLabel = _ => 1.5;
+        }
+
+        using var restore = new Restore(() => System.Globalization.CultureInfo.CurrentCulture = culture);
+        var reference = new TextBlock { Text = number ? "1.5" : "Aqua" };
         var page = new StackPanel { Margin = new Thickness(20), Spacing = 20, Children = { multi } };
         using var scene = SelectKit.Show(page, SelectColourTests.Variant(theme));
         var root = (Visual)multi.Tags[0].Part(SelectTag.RootPart)!;
@@ -120,6 +127,12 @@ public class SelectFrames
         var alone = Ink(reference, 0, 0, reference.Bounds.Width, reference.Bounds.Height).Select(y => (double)y).ToList();
         Assert.NotEmpty(alone);
         Assert.Equal(alone, tag);
+        Assert.Equal(reference.Text, drawn.Text);
+    }
+
+    private sealed class Restore(Action undo) : IDisposable
+    {
+        public void Dispose() => undo();
     }
 
     [AvaloniaTheory]

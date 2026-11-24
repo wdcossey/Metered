@@ -5,8 +5,10 @@ using Avalonia.Automation.Provider;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Metadata;
 
 namespace Metered.Controls;
@@ -66,6 +68,32 @@ public class SelectTag : TemplatedControl
 
     /// <summary>Base Web's Tag's <c>overrides</c>: <c>Root</c>, <c>Text</c>, <c>Action</c>, <c>ActionIcon</c>.</summary>
     public OverrideCollection? Overrides { get => GetValue(OverridesProperty); set => SetValue(OverridesProperty, value); }
+
+    /// <summary>
+    /// The &lt;c&gt;Text&lt;/c&gt; part's template for a label React renders as text, a string or a number (as JavaScript's
+    /// &lt;c&gt;String(n)&lt;/c&gt; writes it, whatever the culture): a line as tall as its line height, centred in the tag's row, so
+    /// that where the line is taller than the tag's inside it overflows the padding both ways and is drawn whole, as tag.js's
+    /// flex row (&lt;c&gt;alignItems: center&lt;/c&gt;) centres its Text span and lets it overflow. A control is laid out as itself,
+    /// and any other label is left to the app's data templates; an override's &lt;c&gt;ContentTemplate&lt;/c&gt; comes first.
+    /// </summary>
+    public static IDataTemplate TextTemplate { get; } = new FuncDataTemplate<object>(IsText, (label, _) =>
+    {
+        var line = new TextBlock { Text = TextOf(label), VerticalAlignment = VerticalAlignment.Center };
+        line.Bind(HeightProperty, line.GetObservable(TextBlock.LineHeightProperty));
+        return line;
+    });
+
+    private static bool IsText(object? label) =>
+        label is string or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
+
+    private static string TextOf(object? label) => label switch
+    {
+        string s => s,
+        double d => Slider.JsNumber(d),
+        float f => Slider.JsNumber(f),
+        IFormattable n => n.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+        _ => "",
+    };
 
     /// <summary>The option the tag shows.</summary>
     internal object? Value { get; set; }
