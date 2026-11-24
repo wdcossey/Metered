@@ -108,6 +108,11 @@ From base-input.js and input.js, and its e2e test:
   a finger's text box where it lifts, wherever it moved: the release is kept from the focus manager alone, and goes on
   to what is round the input as before; a tap is Avalonia's, a release within the platform's tap size of the press). After a hold, a drag extends the hold's selection, as the text box's. A mouse's drag selects, and a
   press anywhere on the box focuses it (known differences, 1). `BaseInput` does this, so Textarea's text has it too.
+- The selection and its touch handles go when the focus leaves for another control, as in a phone's browser, also when a
+  long press there has opened that one's menu (#109). Avalonia's text box keeps them while its menu is open, for the
+  focus that goes into the menu, and nothing takes them away later ([Avalonia's issues](../../avalonia-issues.md), 1). So
+  each input has a cut, copy and paste menu of its own (`Input.ContextFlyout` isn't shared), and an input whose menu is
+  open when the focus goes elsewhere closes it first; the focus going into the menu keeps the selection.
 - The icons are Base Web's own paths, rendered from its icons by the generator and the oracle, each drawn in its
   `viewBox` (24 × 24) at the size base-input.js gives it, filled with the colour its container passes down
   (`currentColor`). Metered has no icon set: these three are all Input needs.
@@ -121,10 +126,12 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 103: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 107: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
-  press and a menu on the template's own controls kept from the text box, and the text's selection kept;
+  press and a menu on the template's own controls kept from the text box, and the text's selection kept; a menu of its
+  own, a long press on another input leaving the first with no selection or handles, its menu left open closing with
+  its selection when the focus moves on, and the focus going into the menu keeping it (#109);
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
   focus; a finger's drag that moves the page and not the caret, focused or not; a sideways one on a long value that
@@ -162,7 +169,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
 - `tools/tokens/input.js`: `parts({ Root, InputContainer, Input })` makes the part definitions for other styled
   components, and `themes('Textarea', list)` writes them keyed `Textarea.Styled<Part>`; `AXES` is the states. The
   textarea's own differences (`resize`, `$alignTop`, no `$size` on its root) are its generator's.
-- `Input.ContextFlyout` (Input.axaml), the cut, copy and paste menu, by its key.
+- `Input.ContextFlyout` (Input.axaml), the cut, copy and paste menu, by its key: one for each (`x:Shared="False"`), so by a
+  dynamic resource (#109).
 
 ## Known differences
 
@@ -202,7 +210,8 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    focuses the input. Problems found there, each its own issue:
    - the keyboard covers a focused input near the page's foot, and the page can't scroll it into view (#108; the sample's
      shell now keeps its page clear with [`KeyboardInset`](../KeyboardInset/README.md), not yet run on the Pixel);
-   - selection handles stay on an input after the focus leaves it (#109);
+   - selection handles stayed on an input after the focus left it (#109): Avalonia's ([its issues](../../avalonia-issues.md),
+     1), worked round since (Behaviour), headless only, not yet tried on the phone;
    - the menu shows desktop shortcuts and covers the selection (#110).
 
    Holding isn't raised headless, so the drag after a hold is tested only on the phone.

@@ -95,7 +95,8 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
   the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a drag
   that nothing scrolls focusing nothing; `ScrollViewer.IsScrollChainingEnabled` reaching its text's scroller; a tap's caret; the clear
   icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later,
-  right to left, hidden when it doesn't resize; a layout that settles; the shared menu;
+  right to left, hidden when it doesn't resize; a layout that settles; Input's menu, one of its own,
+  and a long press on another textarea leaving the first with no selection or handles (#109);
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
 - `Controls/TextareaFrames`: the drawn border, fill and focus ring, the clear icon at the top, text drawn in the padding
   when scrolled, the grip, and the gallery above.

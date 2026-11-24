@@ -8,6 +8,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
 namespace Metered.Controls;
@@ -324,8 +325,22 @@ public abstract class BaseInput : TextBox
     {
         if (e.Source != this) return;
         _eatSpace = false;
+        // Avalonia's text box keeps its selection, its touch handles and a password's reveal when it loses the focus while
+        // its menu is open, for the focus that goes into the menu; nothing takes them away when the menu closes later. Its
+        // own menu left open while the focus went elsewhere (a key, the soft keyboard's next, code) would leave them on an
+        // input that isn't focused (#109): the menu closes first, so they go as they do with it closed. Each input has its
+        // own menu (Input.ContextFlyout isn't shared), so one another input's hold opened isn't this one's.
+        if (ContextFlyout is { IsOpen: true } menu && menu.Target == this && e.NewFocusedElement is Visual to && !IsOwn(to))
+        {
+            menu.Hide();
+        }
+
         base.OnLostFocus(e);
     }
+
+    // Inside the input (a control of its template) or its menu, whose popup's logical parent is the input.
+    private bool IsOwn(Visual element) =>
+        this.IsVisualAncestorOf(element) || element is ILogical logical && logical.GetLogicalAncestors().Contains(this);
 
     // The text box's pointer: a press moves its caret and takes the pointer (and so its release). Not a control of its
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)

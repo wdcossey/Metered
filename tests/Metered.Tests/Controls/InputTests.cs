@@ -414,6 +414,125 @@ public class InputTests
         flyout.Hide();
     }
 
+    /// <summary>
+    /// Two inputs in the app theme's window, as the sample's page has them: its text selector layer (the touch handles)
+    /// and its light-dismiss layer (the menu's).
+    /// </summary>
+    private static (Input A, Input B, Scene Scene) TwoInputs()
+    {
+        var a = new Input { StartEnhancer = "@", Text = "hello world" };
+        var b = new Input { Clearable = true, Text = "Clear me!" };
+        var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Spacing = 20, Children = { a, b } },
+            themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        return (a, b, scene);
+    }
+
+    /// <summary>Where a character of the text is, on the window.</summary>
+    private static Point AtCharacter(Scene scene, BaseInput input, int index)
+    {
+        var presenter = Presenter(input);
+        var box = presenter.TextLayout.HitTestTextPosition(index);
+        return presenter.TranslatePoint(new Point(box.X + 2, box.Center.Y), scene.Window)!.Value;
+    }
+
+    /// <summary>A finger held past the platform's hold wait, then lifted: Avalonia's hold, which selects a word.</summary>
+    private static void TouchHold(Scene scene, Point at)
+    {
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Advance((int)Application.Current!.PlatformSettings!.HoldWaitDuration.TotalMilliseconds + 1);
+        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    /// <summary>The touch handles shown: each text box's are a canvas of its own in the window's text selector layer.</summary>
+    private static int ShownHandles(Scene scene) =>
+        scene.Window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TextSelectorLayer>().Single()
+            .Children.Count(canvas => canvas.IsVisible);
+
+    // Each input has its own cut, copy and paste menu: Avalonia's text box keeps its selection and its handles when it loses
+    // the focus while its menu is open, so one menu for all, opened by another input's hold, left them on the first (#109).
+    [AvaloniaFact]
+    public void Each_input_has_a_menu_of_its_own()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        Assert.IsType<MenuFlyout>(a.ContextFlyout);
+        Assert.IsType<MenuFlyout>(b.ContextFlyout);
+        Assert.NotSame(a.ContextFlyout, b.ContextFlyout);
+    }
+
+    // The Pixel's (#109): a long press selects a word in one input, with its handles and its menu; once the menu has gone,
+    // a long press on another selects there and takes the focus, and the first is left with no selection and no handles,
+    // as a phone's browser leaves it. Avalonia's text box kept both on the first, unfocused, until it was touched again.
+    [AvaloniaFact]
+    public void A_long_press_on_another_input_leaves_the_first_with_no_selection_or_handles()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.IsFocused);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+        Assert.True(a.ContextFlyout!.IsOpen);
+        Assert.Equal(1, ShownHandles(scene));
+        // A tap on nothing closes the menu (the light-dismiss layer takes it), and the selection stays.
+        var nothing = new Point(Scene.Width - 10, Scene.Height - 10);
+        var touch = scene.Window.TouchBegin(nothing, RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchEnd(touch, nothing, RawInputModifiers.None);
+        scene.Pump();
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+
+        TouchHold(scene, AtCharacter(scene, b, 2));
+
+        Assert.True(b.IsFocused);
+        Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        Assert.False(a.IsFocused);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(1, ShownHandles(scene));
+    }
+
+    // Its own menu left open while the focus goes elsewhere (a key, the soft keyboard's next, code): the menu closes, and the
+    // selection and handles go with the focus, as they do with the menu closed.
+    [AvaloniaFact]
+    public void Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(a.ContextFlyout!.IsOpen);
+
+        b.Focus();
+        scene.Pump();
+
+        Assert.False(a.ContextFlyout.IsOpen);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // The focus that goes into the menu (a mouse's right click opens it and focuses it) keeps the selection the menu is for,
+    // as Avalonia's text box keeps it, and the menu stays.
+    [AvaloniaFact]
+    public void The_focus_going_into_its_menu_keeps_the_selection()
+    {
+        var (a, _, scene) = TwoInputs();
+        using var __ = scene;
+        scene.Click(a);
+        a.SelectionStart = 6;
+        a.SelectionEnd = 11;
+        var at = AtCharacter(scene, a, 7);
+
+        scene.Window.MouseDown(at, MouseButton.Right);
+        scene.Window.MouseUp(at, MouseButton.Right);
+        scene.Pump();
+
+        Assert.True(a.ContextFlyout!.IsOpen);
+        Assert.False(a.IsFocused);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+        a.ContextFlyout.Hide();
+    }
+
     [AvaloniaFact]
     public void Escape_clears_a_clearable_input_and_goes_no_further()
     {

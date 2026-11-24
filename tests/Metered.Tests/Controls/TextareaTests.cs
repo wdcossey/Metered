@@ -121,15 +121,58 @@ public class TextareaTests
         Assert.Equal(TextWrapping.Wrap, Presenter(textarea).TextWrapping);
     }
 
-    // Input's cut, copy and paste menu, the one shared flyout (by a dynamic resource: Input.axaml is another dictionary).
+    // Input's cut, copy and paste menu (by a dynamic resource: Input.axaml is another dictionary), one of its own, as each
+    // input's is (#109): one menu for all, opened by another's hold, left the selection and the handles on this one.
     [AvaloniaFact]
     public void Its_menu_is_Inputs()
     {
         var textarea = new Textarea();
+        var other = new Textarea();
         var input = new Input();
-        using var scene = Show(textarea, input);
-        Assert.NotNull(textarea.ContextFlyout);
-        Assert.Same(input.ContextFlyout, textarea.ContextFlyout);
+        using var scene = Show(textarea, other, input);
+        var menu = Assert.IsType<MenuFlyout>(textarea.ContextFlyout);
+        var inputs = Assert.IsType<MenuFlyout>(input.ContextFlyout);
+        Assert.Equal(inputs.Items.OfType<MenuItem>().Select(i => i.Header), menu.Items.OfType<MenuItem>().Select(i => i.Header));
+        Assert.NotSame(inputs, menu);
+        Assert.NotSame(other.ContextFlyout, menu);
+    }
+
+    // As an input's (#109): a long press on another textarea, once the first's menu has gone, leaves the first with no
+    // selection and no handles.
+    [AvaloniaFact]
+    public void A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles()
+    {
+        var a = new Textarea { Text = "hello world" };
+        var b = new Textarea { Text = "Clear me!" };
+        using var scene = new Scene(new StackPanel { Margin = new Thickness(20, 100), Spacing = 20, Children = { a, b } },
+            themes: [new SimpleTheme(), new BaseTheme()]);
+        Hold(scene, a, 7);
+        Assert.Equal((6, 11), (a.SelectionStart, a.SelectionEnd));
+        Assert.True(a.ContextFlyout!.IsOpen);
+        a.ContextFlyout.Hide();
+        scene.Pump();
+
+        Hold(scene, b, 2);
+
+        Assert.True(b.IsFocused);
+        Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        Assert.False(a.IsFocused);
+        Assert.Equal(a.SelectionStart, a.SelectionEnd);
+        var layer = scene.Window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TextSelectorLayer>().Single();
+        Assert.Equal(1, layer.Children.Count(canvas => canvas.IsVisible));
+    }
+
+    /// <summary>A finger held on a character past the platform's hold wait, then lifted: Avalonia's hold, which selects a word.</summary>
+    private static void Hold(Scene scene, Textarea textarea, int index)
+    {
+        var presenter = Presenter(textarea);
+        var box = presenter.TextLayout.HitTestTextPosition(index);
+        var at = presenter.TranslatePoint(new Point(box.X + 2, box.Center.Y), scene.Window)!.Value;
+        var touch = scene.Window.TouchBegin(at, RawInputModifiers.None);
+        scene.Pump();
+        scene.Advance((int)Application.Current!.PlatformSettings!.HoldWaitDuration.TotalMilliseconds + 1);
+        scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
+        scene.Pump();
     }
 
     public static TheoryData<int> PartsCases => new(Enumerable.Range(0, TextareaOracle.Value.Parts.Length));
