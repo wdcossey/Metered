@@ -328,9 +328,10 @@ public abstract class BaseInput : TextBox
         // Avalonia's text box keeps its selection, its touch handles and a password's reveal when it loses the focus while
         // its menu is open, for the focus that goes into the menu; nothing takes them away when the menu closes later. Its
         // own menu left open while the focus went elsewhere (a key, the soft keyboard's next, code) would leave them on an
-        // input that isn't focused (#109): the menu closes first, so they go as they do with it closed. Each input has its
-        // own menu (Input.ContextFlyout isn't shared), so one another input's hold opened isn't this one's.
-        if (ContextFlyout is { IsOpen: true } menu && menu.Target == this && e.NewFocusedElement is Visual to && !IsOwn(to))
+        // input that isn't focused (#109): the menu closes first, so they go as they do with it closed. That's also so for
+        // a control of its own template (the clear icon), where Avalonia lets them go with the menu closed. Each input has
+        // its own menu (Input.ContextFlyout isn't shared), so one another input's hold opened isn't this one's.
+        if (ContextFlyout is { IsOpen: true } menu && menu.Target == this && e.NewFocusedElement is Visual to && !InAPopup(to))
         {
             menu.Hide();
         }
@@ -338,9 +339,10 @@ public abstract class BaseInput : TextBox
         base.OnLostFocus(e);
     }
 
-    // Inside the input (a control of its template) or its menu, whose popup's logical parent is the input.
-    private bool IsOwn(Visual element) =>
-        this.IsVisualAncestorOf(element) || element is ILogical logical && logical.GetLogicalAncestors().Contains(this);
+    // In a popup of the input's, as its menu is (the popup's logical parent is the input): the input's logically, not in
+    // its visual tree. A control of its template, or of its content, is in both.
+    private bool InAPopup(Visual element) =>
+        element is ILogical logical && logical.GetLogicalAncestors().Contains(this) && !this.IsVisualAncestorOf(element);
 
     // The text box's pointer: a press moves its caret and takes the pointer (and so its release). Not a control of its
     // own's. (A finger's tap and hold on one still reach the text box: neither can be seen headless, #90.)

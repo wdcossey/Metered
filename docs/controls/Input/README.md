@@ -112,7 +112,8 @@ From base-input.js and input.js, and its e2e test:
   long press there has opened that one's menu (#109). Avalonia's text box keeps them while its menu is open, for the
   focus that goes into the menu, and nothing takes them away later ([Avalonia's issues](../../avalonia-issues.md), 1). So
   each input has a cut, copy and paste menu of its own (`Input.ContextFlyout` isn't shared), and an input whose menu is
-  open when the focus goes elsewhere closes it first; the focus going into the menu keeps the selection.
+  open when the focus goes elsewhere (its clear icon too) closes it first; the focus going into the menu keeps the
+  selection.
 - The icons are Base Web's own paths, rendered from its icons by the generator and the oracle, each drawn in its
   `viewBox` (24 × 24) at the size base-input.js gives it, filled with the colour its container passes down
   (`currentColor`). Metered has no icon set: these three are all Input needs.
@@ -126,12 +127,13 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 107: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 110: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept; a menu of its
   own, a long press on another input leaving the first with no selection or handles, its menu left open closing with
-  its selection when the focus moves on, and the focus going into the menu keeping it (#109);
+  its selection when the focus moves on (by Tab, by code, to its clear icon), the focus going into the menu keeping it,
+  and an app's one menu for two left open for the one that opened it (#109);
   Escape's rules (and that it stops there); the toggle, Enter in the input and on the toggle, hiding it and relabelling
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
   focus; a finger's drag that moves the page and not the caret, focused or not; a sideways one on a long value that

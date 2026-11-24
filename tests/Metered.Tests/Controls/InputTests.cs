@@ -494,21 +494,71 @@ public class InputTests
     }
 
     // Its own menu left open while the focus goes elsewhere (a key, the soft keyboard's next, code): the menu closes, and the
-    // selection and handles go with the focus, as they do with the menu closed.
-    [AvaloniaFact]
-    public void Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on()
+    // selection and handles go with the focus, as they do with the menu closed; the focus is where it went.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on(bool byTab)
     {
         var (a, b, scene) = TwoInputs();
         using var _ = scene;
         TouchHold(scene, AtCharacter(scene, a, 7));
         Assert.True(a.ContextFlyout!.IsOpen);
 
-        b.Focus();
-        scene.Pump();
+        if (byTab) scene.Key(Key.Tab);
+        else
+        {
+            b.Focus();
+            scene.Pump();
+        }
 
+        Assert.True(b.IsFocused);
+        Assert.False(a.IsFocused);
         Assert.False(a.ContextFlyout.IsOpen);
         Assert.Equal(a.SelectionStart, a.SelectionEnd);
         Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // The same to a control of its own (the clear icon), where Avalonia's text box lets the selection go with the menu
+    // closed: the menu is for the text's selection.
+    [AvaloniaFact]
+    public void Its_menu_closes_with_its_selection_when_the_focus_goes_to_its_clear_icon()
+    {
+        var (_, b, scene) = TwoInputs();
+        using var __ = scene;
+        TouchHold(scene, AtCharacter(scene, b, 2));
+        Assert.Equal((0, 5), (b.SelectionStart, b.SelectionEnd));
+        Assert.True(b.ContextFlyout!.IsOpen);
+
+        scene.Key(Key.Tab);
+
+        Assert.True(P<InputElement>(b, BaseInput.ClearIconPart).IsFocused);
+        Assert.False(b.ContextFlyout.IsOpen);
+        Assert.Equal(b.SelectionStart, b.SelectionEnd);
+        Assert.Equal(0, ShownHandles(scene));
+    }
+
+    // An app's own menu given to two inputs stays one menu: Avalonia's behaviour (docs/avalonia-issues.md, 1), and the
+    // menu another input's hold opened isn't closed by the first's losing the focus.
+    [AvaloniaFact]
+    public void An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it()
+    {
+        var (a, b, scene) = TwoInputs();
+        using var _ = scene;
+        var menu = new MenuFlyout { Items = { new MenuItem { Header = "Mine" } } };
+        a.ContextFlyout = menu;
+        b.ContextFlyout = menu;
+        TouchHold(scene, AtCharacter(scene, a, 7));
+        Assert.True(menu.IsOpen);
+        menu.Hide();
+        scene.Pump();
+
+        TouchHold(scene, AtCharacter(scene, b, 2));
+
+        Assert.True(b.IsFocused);
+        Assert.True(menu.IsOpen);
+        Assert.Same(b, menu.Target);
+        menu.Hide();
     }
 
     // The focus that goes into the menu (a mouse's right click opens it and focuses it) keeps the selection the menu is for,

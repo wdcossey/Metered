@@ -30,15 +30,20 @@ light-dismiss layer takes it and closes the menu.
 
 **Metered's work round** (`BaseInput`, `Input.axaml`): each input and textarea has its own menu (`x:Shared="False"`,
 given by `DynamicResource`), and an input whose own menu is open when the focus goes to an element outside it and its
-menu closes the menu first, so Avalonia's own cleanup runs. Focus into the menu (a mouse's right click, a menu item)
-keeps the selection, as Avalonia's does. Held by `InputTests` (`Each_input_has_a_menu_of_its_own`,
+menu (its template's controls too, such as the clear icon, where Avalonia lets them go with the menu closed) closes the
+menu first, so Avalonia's own cleanup runs. Focus into the menu (a mouse's right click, a menu item) keeps the selection,
+as Avalonia's does; so does a tap on Copy, which leaves the focus on the input, and the menu a right click focused gives
+the focus back to the input when it closes (measured). Held by `InputTests` (`Each_input_has_a_menu_of_its_own`,
 `A_long_press_on_another_input_leaves_the_first_with_no_selection_or_handles`,
-`Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on`,
-`The_focus_going_into_its_menu_keeps_the_selection`) and `TextareaTests`
+`Its_menu_left_open_closes_with_its_selection_when_the_focus_moves_on` (by Tab and by code),
+`Its_menu_closes_with_its_selection_when_the_focus_goes_to_its_clear_icon`,
+`The_focus_going_into_its_menu_keeps_the_selection`, `An_apps_one_menu_for_two_inputs_stays_open_for_the_one_that_opened_it`) and `TextareaTests`
 (`A_long_press_on_another_textarea_leaves_the_first_with_no_selection_or_handles`, `Its_menu_is_Inputs`).
 
 **Not covered:** an app that gives several inputs one menu of its own (a shared `ContextFlyout`), or a `ContextMenu`,
-still meets Avalonia's behaviour; so does a focus change that names no element. Not yet tried on the phone.
+still meets Avalonia's behaviour (the work round leaves a menu another input opened alone); so does a focus change that
+names no element (`FocusChangedEventArgs.NewFocusedElement` null), where Metered can't tell the menu from elsewhere. Not
+yet tried on the phone.
 
 **Look again** when Avalonia is upgraded: if `TextBox.OnLostFocus` checks that the focus went into its menu (or the
 themes stop sharing it), the work round can go. Not reported upstream yet; the nearest open issues are
