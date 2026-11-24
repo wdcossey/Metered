@@ -34,14 +34,29 @@
               IsEnabled="{Binding $parent[TextBox].CanPaste}" InputGesture="{x:Static TextBox.PasteGesture}" />
   </MenuFlyout>
 
-  <!-- The text's scroller: the text scrolls to keep the caret in view, with no bars (a single line's input has none). -->
+  <!--
+    The text's scroller: the text scrolls to keep the caret in view, and a long value under a finger's sideways drag (a
+    scroll gesture, flung as a browser's is), as Chrome scrolls an <input>'s on a phone, focused or not (#117). It scrolls
+    only sideways, and takes only a drag more sideways than up or down (Metered.Controls.InputScrollGestureRecognizer), so
+    a vertical drag is the page's. No bars: a single line's input has none.
+  -->
   <ControlTheme x:Key="Input.TextScrollViewer" TargetType="ScrollViewer">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Template">
       <ControlTemplate>
         <ScrollContentPresenter Name="PART_ContentPresenter"
                                 Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}" />
+                                Padding="{TemplateBinding Padding}"
+                                ScrollViewer.IsScrollInertiaEnabled="{TemplateBinding IsScrollInertiaEnabled}">
+          <ScrollContentPresenter.GestureRecognizers>
+            <b:InputScrollGestureRecognizer CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+                                            CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}"
+                                            IsScrollInertiaEnabled="{Binding (ScrollViewer.IsScrollInertiaEnabled), ElementName=PART_ContentPresenter}"
+                                            Offset="{Binding Offset, ElementName=PART_ContentPresenter}"
+                                            Viewport="{Binding Viewport, ElementName=PART_ContentPresenter}"
+                                            Extent="{Binding Extent, ElementName=PART_ContentPresenter}" />
+          </ScrollContentPresenter.GestureRecognizers>
+        </ScrollContentPresenter>
       </ControlTemplate>
     </Setter>
   </ControlTheme>
@@ -78,6 +93,8 @@
                                 VerticalAlignment="Center"
                                 HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                                 VerticalScrollBarVisibility="Disabled"
+                                IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+                                IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
                                 BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
                     <Panel>
                       <TextBlock Name="PART_Placeholder"

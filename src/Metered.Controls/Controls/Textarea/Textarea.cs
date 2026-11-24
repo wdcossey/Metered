@@ -20,10 +20,10 @@ namespace Metered.Controls;
 /// <see cref="Resize"/> set (none while it is unset, Base Web's default).</para>
 /// <para>A long text scrolls inside it, and a touch drag on it scrolls it, not a page round it, unless it is already at
 /// its end that way when the drag starts; once the drag has taken the textarea, it stays the textarea's until the finger
-/// lifts, as a browser latches a touch's scroll to the first scroller that moves.</para>
+/// lifts, as a browser latches a touch's scroll to the first scroller that moves (BaseInput's latch, which Input's sideways
+/// scroll shares).</para>
 /// </remarks>
 [TemplatePart(RootPart, typeof(StyledElement))]
-[TemplatePart("PART_ScrollViewer", typeof(ScrollViewer))]
 [PseudoClasses(":resize-none", ":resize-both", ":resize-horizontal", ":resize-vertical")]
 public class Textarea : BaseInput
 {
@@ -40,9 +40,6 @@ public class Textarea : BaseInput
 
     public static readonly StyledProperty<TextareaResize?> ResizeProperty =
         AvaloniaProperty.Register<Textarea, TextareaResize?>(nameof(Resize));
-
-    private ScrollViewer? _scroller;
-    private readonly HashSet<int> _latched = [];
 
     public Textarea()
         : base("Textarea", PartNames)
@@ -61,34 +58,11 @@ public class Textarea : BaseInput
 
     protected override Type StyleKeyOverride => typeof(Textarea);
 
-    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-    {
-        _scroller?.RemoveHandler(ScrollGestureEvent, OnScrollGesture);
-        _scroller?.RemoveHandler(ScrollGestureEndedEvent, OnScrollGestureEnded);
-        _latched.Clear();
-        base.OnApplyTemplate(e);
-        _scroller = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
-        _scroller?.AddHandler(ScrollGestureEvent, OnScrollGesture, handledEventsToo: true);
-        _scroller?.AddHandler(ScrollGestureEndedEvent, OnScrollGestureEnded, handledEventsToo: true);
-    }
-
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == ResizeProperty) UpdateResize();
     }
-
-    // A browser's scroll latching: a touch's scroll that has moved the textarea stays the textarea's until the finger
-    // lifts, and goes no further at its end. One that hasn't moved it (it was at its end that way) goes on to the page.
-    // The presenter has already moved what it could: handled, by Avalonia's ScrollContentPresenter, if it moved.
-    private void OnScrollGesture(object? sender, ScrollGestureEventArgs e)
-    {
-        if (_scroller?.Presenter is not { } presenter || e.Source != presenter) return;
-        if (e.Handled) _latched.Add(e.Id);
-        else if (_latched.Contains(e.Id)) e.Handled = true;
-    }
-
-    private void OnScrollGestureEnded(object? sender, ScrollGestureEndedEventArgs e) => _latched.Remove(e.Id);
 
     private void UpdateResize()
     {

@@ -66,6 +66,34 @@ public class InputTests
         scene.Pump();
     }
 
+    /// <summary>A finger's drag through each point in turn, in even steps.</summary>
+    private static void TouchPath(Scene scene, params Point[] points)
+    {
+        var touch = scene.Window.TouchBegin(points[0], RawInputModifiers.None);
+        scene.Pump();
+        for (var p = 1; p < points.Length; p++)
+        {
+            const int steps = 15;
+            for (var i = 1; i <= steps; i++)
+            {
+                scene.Window.TouchMove(touch, points[p - 1] + (points[p] - points[p - 1]) * ((double)i / steps), RawInputModifiers.None);
+                scene.Pump();
+            }
+        }
+
+        scene.Window.TouchEnd(touch, points[^1], RawInputModifiers.None);
+        scene.Pump();
+    }
+
+    /// <summary>A value far longer than a phone's input is wide.</summary>
+    private const string LongValue =
+        "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen";
+
+    private static ScrollViewer Scroller(BaseInput input) =>
+        P<Visual>(input, BaseInput.InputPart).GetVisualDescendants().OfType<ScrollViewer>().Single();
+
+    private static double End(ScrollViewer scroller) => scroller.Extent.Width - scroller.Viewport.Width;
+
     private static TextPresenter Presenter(BaseInput input) =>
         P<Visual>(input, BaseInput.InputPart).GetVisualDescendants().OfType<TextPresenter>().Single();
 
@@ -569,6 +597,194 @@ public class InputTests
         Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
         Assert.Equal(0, input.CaretIndex);
         Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
+    }
+
+    // A finger's sideways drag on a value longer than the input scrolls its text, focused or not, and focuses nothing, as
+    // Chrome scrolls an <input>'s on a phone (the Pixel 8, 2026-11-23, #117): the caret stays, nothing is selected and the
+    // page stays where it is. Back the other way scrolls it back; at its start, that way moves nothing.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_finger_drag_sideways_on_a_long_value_scrolls_its_text(bool focused)
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        Assert.True(End(scroller) > 200, $"the text overflows by {End(scroller)}");
+        if (focused)
+        {
+            Tap(scene, P<Visual>(input, BaseInput.InputPart));
+            Assert.True(input.IsFocused);
+        }
+
+        input.CaretIndex = 0;
+        scene.Pump();
+        Assert.Equal(0, scroller.Offset.X);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+
+        // At its start, a drag that way has nothing to show, and is no tap: it focuses nothing either. (Each gesture
+        // a second after the last, so that a press isn't a double tap's.)
+        scene.Advance(1000);
+        TouchDrag(scene, at, new Point(at.X + 80, at.Y));
+        Assert.Equal(0, scroller.Offset.X);
+        Assert.Equal(focused, input.IsFocused);
+
+        scene.Advance(1000);
+        TouchDrag(scene, at, new Point(at.X - 120, at.Y));
+        Assert.True(scroller.Offset.X > 60, $"the text moved {scroller.Offset.X}");
+        Assert.Equal(focused, input.IsFocused);
+        Assert.Equal(0, input.CaretIndex);
+        Assert.Equal(0, input.SelectionEnd - input.SelectionStart);
+        Assert.Equal(default, page.Offset);
+
+        // The caret's blinking, focused, doesn't bring it back.
+        var was = scroller.Offset.X;
+        scene.Advance(1200);
+        Assert.Equal(was, scroller.Offset.X);
+
+        TouchDrag(scene, at, new Point(at.X + 50, at.Y));
+        Assert.InRange(scroller.Offset.X, 1, was - 20);
+        Assert.Equal(focused, input.IsFocused);
+        Assert.Equal(0, input.CaretIndex);
+        Assert.Equal(default, page.Offset);
+    }
+
+    // A drag that sets off the way the text can't go (towards its start, at its start) isn't the text's when it turns back:
+    // a browser gives a touch's scroll to a scroller as it starts.
+    [AvaloniaFact]
+    public void A_finger_drag_that_sets_off_towards_its_start_doesnt_take_the_text_turning_back()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchPath(scene, at, new Point(at.X + 60, at.Y), new Point(at.X - 100, at.Y));
+
+        Assert.Equal(0, scroller.Offset.X);
+        Assert.Equal(default, page.Offset);
+        Assert.False(input.IsFocused);
+    }
+
+    // A drag that's more up than sideways on a long value is still the page's (#94): the text stays where it is. In few
+    // moves too, as a quick flick's are, its first already past the gesture's start distance sideways.
+    [AvaloniaTheory]
+    [InlineData(15)]
+    [InlineData(3)]
+    public void A_vertical_finger_drag_on_a_long_value_moves_the_page(int steps)
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchDrag(scene, at, new Point(at.X - 40, at.Y - 150), steps);
+
+        Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
+        Assert.Equal(0, scroller.Offset.X);
+        Assert.False(input.IsFocused);
+    }
+
+    // And one more sideways than up is the text's, the page left where it is.
+    [AvaloniaFact]
+    public void A_mostly_sideways_finger_drag_on_a_long_value_scrolls_its_text()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchDrag(scene, at, new Point(at.X - 120, at.Y - 60), steps: 3);
+
+        Assert.True(scroller.Offset.X > 60, $"the text moved {scroller.Offset.X}");
+        Assert.Equal(default, page.Offset);
+        Assert.False(input.IsFocused);
+    }
+
+    // A fling that has carried the text to its end ends there: the scroll latched to it, at its end, still goes no further,
+    // and asks the gesture to stop (Avalonia's recognizer reads it while it flings). The next gesture isn't latched: at the
+    // end, it is the page's. Raised as the recognizer raises them: the fling runs on a stopwatch, not the test's clock.
+    [AvaloniaFact]
+    public void A_latched_scroll_at_the_texts_end_ends_there()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var presenter = scroller.Presenter!;
+        var id = ScrollGestureEventArgs.GetNextFreeId();
+
+        var moving = new ScrollGestureEventArgs(id, new Vector(End(scroller) + 50, 0));
+        presenter.RaiseEvent(moving);
+        scene.Pump();
+        Assert.True(moving.Handled);
+        Assert.False(moving.ShouldEndScrollGesture);
+        Assert.Equal(End(scroller), scroller.Offset.X, 1);
+
+        var atEnd = new ScrollGestureEventArgs(id, new Vector(30, 40));
+        presenter.RaiseEvent(atEnd);
+        scene.Pump();
+        Assert.True(atEnd.Handled);
+        Assert.True(atEnd.ShouldEndScrollGesture);
+        Assert.Equal(default, page.Offset);
+
+        presenter.RaiseEvent(new ScrollGestureEndedEventArgs(id));
+        var next = new ScrollGestureEventArgs(ScrollGestureEventArgs.GetNextFreeId(), new Vector(30, 40));
+        presenter.RaiseEvent(next);
+        scene.Pump();
+        Assert.Equal(40, page.Offset.Y, 1);
+        Assert.False(next.ShouldEndScrollGesture);
+    }
+
+    // An app's ScrollViewer.IsScrollChainingEnabled on the input is its text scroller's, as on Avalonia's own text box.
+    [AvaloniaFact]
+    public void Scroll_chaining_set_on_the_input_reaches_its_text()
+    {
+        var input = new Input { Text = LongValue };
+        ScrollViewer.SetIsScrollChainingEnabled(input, false);
+        using var scene = Show(input);
+        Assert.False(Scroller(input).IsScrollChainingEnabled);
+        Assert.False(((ScrollContentPresenter)Scroller(input).Presenter!).IsScrollChainingEnabled);
+    }
+
+    // A browser latches a touch's scroll to the scroller that took it: a sideways drag that carries the text to its end goes
+    // no further in that drag, even as it turns up the page.
+    [AvaloniaFact]
+    public void A_sideways_drag_past_its_end_stops_there()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var end = End(scroller);
+        // 60 short of its end, then twice as far: the rest, and the turn up, would move the page.
+        scroller.Offset = new Vector(end - 60, 0);
+        scene.Pump();
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        var past = new Point(at.X - 120, at.Y);
+
+        TouchPath(scene, at, past, new Point(past.X, past.Y - 150));
+        Assert.Equal(end, scroller.Offset.X, 1);
+        Assert.Equal(default, page.Offset);
+        Assert.False(input.IsFocused);
+    }
+
+    // A finger's drag that nothing scrolls (a short value, where nothing round it scrolls) is no tap: it focuses nothing,
+    // as in a phone's browser. A tap after it does.
+    [AvaloniaFact]
+    public void A_finger_drag_that_nothing_scrolls_focuses_nothing()
+    {
+        var input = new Input { Text = "one two" };
+        var round = new StackPanel { Margin = new Thickness(20), Children = { input } };
+        // What is round it still sees the release, unhandled, as before.
+        var seen = new List<bool>();
+        round.AddHandler(InputElement.PointerReleasedEvent, (_, e) => seen.Add(e.Handled), handledEventsToo: true);
+        using var scene = new Scene(round, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchDrag(scene, at, new Point(at.X - 120, at.Y));
+        Assert.False(input.IsFocused);
+        Assert.Equal([false], seen);
+        TouchDrag(scene, at, new Point(at.X + 20, at.Y - 30));
+        Assert.False(input.IsFocused);
+
+        scene.Advance(1000);
+        Tap(scene, P<Visual>(input, BaseInput.InputPart));
+        Assert.True(input.IsFocused);
     }
 
     // A finger's drag that nothing scrolls (sideways, where nothing scrolls) still isn't the caret's: it doesn't move it, by
