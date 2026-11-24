@@ -30,6 +30,9 @@ public class PopoverSafeAreaTests
 
         public event EventHandler? Changed;
 
+        /// <summary>How many popovers listen for a change.</summary>
+        public int Listeners => Changed?.GetInvocationList().Length ?? 0;
+
         public void Set(Thickness padding)
         {
             Padding = padding;
@@ -213,11 +216,20 @@ public class PopoverSafeAreaTests
         scene.Click(anchor);
         PopoverTests.Settle(scene);
         Assert.Equal(Safe(Bars), Cut(popover, scene));
+        Assert.Equal(1, insets.Listeners);
         scene.Key(Key.Escape);
         PopoverTests.Settle(scene);
         Assert.False(popover.PopupHost!.IsOpen);
+        // Closed, it has let the safe area go: a change places nothing and opens nothing.
+        Assert.Equal(0, insets.Listeners);
+        insets.Set(new Thickness(0, 30, 0, 40));
+        PopoverTests.Settle(scene);
+        Assert.False(popover.IsOpen);
+        Assert.False(popover.PopupHost!.IsOpen);
+        insets.Set(Bars);
         scene.Click(anchor);
         PopoverTests.Settle(scene);
+        Assert.Equal(1, insets.Listeners);
         Assert.Equal(Safe(Bars), Cut(popover, scene));
     }
 

@@ -238,7 +238,7 @@ entrance's transition and the hover body's pointer as Base Web's.
    document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
    is a scroll viewer: Metered takes what it scrolls as the document, so a popover goes with its anchor, as on
    baseweb.design (`flip` keeps to the window, the viewport). A popover in a small scrolling box inside a page leaves
-   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the window. The overlay layer is the
+   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the viewport: the window's safe area (#129). The overlay layer is the
    window's: a popover whose anchor scrolls under something above the page (an app's bar) is drawn over it, where a
    browser's page takes it off the top of the screen. The system's bars are not: nothing is drawn over them (#129: Built
    on Avalonia's `Popup`).
@@ -263,7 +263,9 @@ entrance's transition and the hover body's pointer as Base Web's.
     nothing is drawn over the system bars; since, the popover is cut to the safe area (above), tried headless only, with a
     fake safe area. Still to check on the phone: the cut at the Pixel's own bars (the issue's case, the Overrides
     example, and one under the status bar), a flip against the navigation bar (a Select near the screen's foot), a
-    rotation, and gesture and three-button navigation. Again on 2026-11-24 (main with #123): a tap on a hover
+    rotation, gesture and three-button navigation, and the keyboard up (the safe area is read as the bars alone: Avalonia's
+    `SafeAreaPadding`, which `AutoSafeAreaPadding` pads the page by, holds no keyboard, as its Android backend was read for
+    KeyboardInset, docs/controls/KeyboardInset). Again on 2026-11-24 (main with #123): a tap on a hover
     anchor opens it and a second closes it; with one open, Back closes it and the page stays. Not tried yet: the
     placements' flips near the edges, a text field in a popover under the keyboard, and everything in a real window (the
     hover trigger under a mouse, focus, the overlay unclipped).

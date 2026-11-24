@@ -25,7 +25,7 @@ internal readonly record struct TetherResult(PopoverPlacement Placement, Point O
 /// margins, and <c>auto</c>'s areas are the viewport's unpadded width and height.</para>
 /// <para>Two boundaries, as popper.js's: the viewport, which <c>auto</c> and <c>flip</c> keep to (the window's safe
 /// area: its client area less the system's bars, #129), and <c>preventOverflow</c>'s, the document (a page that scrolls in a scroll viewer: all it scrolls; with none,
-/// the window).
+/// the viewport).
 /// tools/reference/tether.js runs popper.js itself on the same boxes; the tests compare.</para>
 /// </remarks>
 internal static class Tether

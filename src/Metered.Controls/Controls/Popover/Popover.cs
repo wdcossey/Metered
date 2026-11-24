@@ -29,7 +29,7 @@ namespace Metered.Controls;
 /// <remarks>
 /// <para>The anchor is Base Web's <c>children</c>: <see cref="Anchor"/>, the XAML content. The popover's content is
 /// Base Web's <c>content</c>: <see cref="Content"/>, any content (text, a control, data with
-/// <see cref="ContentTemplate"/>), or a <c>Func<Action, object?></c> called with a function that closes it, as
+/// <see cref="ContentTemplate"/>), or a <c>Func&lt;Action, object?&gt;</c> called with a function that closes it, as
 /// StatefulPopover's render prop is; it is shown by the <c>Inner</c> part.</para>
 /// <para>Parts, by Base Web's names: <c>Body</c> (the box placed against the anchor), <c>Arrow</c>, <c>Inner</c>. States,
 /// set on the control and each part (popover.js's sharedProps): <c>:is-open</c>, <c>:is-animating</c>,
@@ -185,7 +185,7 @@ public class Popover : TemplatedControl
     public IDataTemplate? AnchorTemplate { get => GetValue(AnchorTemplateProperty); set => SetValue(AnchorTemplateProperty, value); }
 
     /// <summary>
-    /// Base Web's <c>content</c>: what the popover shows, any content; or a <c>Func<Action, object?></c>, called
+    /// Base Web's <c>content</c>: what the popover shows, any content; or a <c>Func&lt;Action, object?&gt;</c>, called
     /// each time it opens with a function that closes it.
     /// </summary>
     public object? Content { get => GetValue(ContentProperty); set => SetValue(ContentProperty, value); }
@@ -479,7 +479,7 @@ public class Popover : TemplatedControl
             v.ClipToBounds = false;
             if (v is not OverlayPopupHost host) continue;
             _unclipped = true;
-            // Cut to the safe area (Cut), as the layer's whole.
+            // The host is what is cut to the safe area (Cut): the layer's whole.
             _host = host;
             // Base Web's layer is in the page's tab order: without a focus lock, Tab leaves it. Avalonia's popup host
             // cycles Tab inside itself; Continue lets it out (with the lock, the body cycles: UpdateParts).
@@ -594,7 +594,8 @@ public class Popover : TemplatedControl
     /// <summary>
     /// popper.js's <c>preventOverflow</c> boundaries: a layer in the body keeps to the document, the whole page however far
     /// it scrolls. An app's page scrolls in a scroll viewer: what it scrolls (its content, all of it) is the document, so a
-    /// popover whose anchor scrolls away goes with it. Without one, the window. Found when it opens.
+    /// popover whose anchor scrolls away goes with it. Without one, the viewport: the window's safe area (Seen). Found when
+    /// it opens.
     /// </summary>
     private Rect? ScrollParent() =>
         _scrollParent is { Child: Visual page } shown && _top is not null && page.TranslatePoint(default, _top) is { } at
