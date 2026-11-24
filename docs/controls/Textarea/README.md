@@ -77,7 +77,7 @@ From the browser, since Base Web renders a `<textarea>`:
   textarea's width and height as the way allows, within the Input part's `MinWidth`, `MaxWidth`, `MinHeight` and
   `MaxHeight` (the documentation: set by an override), never smaller than the grip. Right to left, the grip is in the
   bottom-left corner and widens it dragged outward, to the left. A press, a drag or a tap on the grip leaves the focus
-  where it was, as Chrome's grip does on a desktop (Chrome on a phone draws none): it doesn't focus the textarea, so a
+  where it was, as Chrome's grip does on a desktop (the developer's observation in #111; Chrome on a phone draws none): it doesn't focus the textarea, so a
   finger's drag doesn't open the soft keyboard over it (#111).
 - Where nothing stretches it (its root `fit-content`), its width is a browser's for HTML's 20 columns (Base Web gives no
   `cols`): Chrome's 20 times the font's average character width (its `OS/2` table's `xAvgCharWidth`, rounded to a pixel)

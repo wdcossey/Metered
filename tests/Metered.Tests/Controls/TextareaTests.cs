@@ -637,6 +637,10 @@ public class TextareaTests
     {
         var other = new Avalonia.Controls.Button { Content = "Elsewhere" };
         var textarea = new Textarea { Resize = TextareaResize.Both, Text = "Resize me" };
+        // An app's handler on the textarea's way down sees the grip's press and release as before.
+        var (pressed, released) = (0, 0);
+        textarea.AddHandler(InputElement.PointerPressedEvent, (_, _) => pressed++, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        textarea.AddHandler(InputElement.PointerReleasedEvent, (_, _) => released++, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         using var scene = Show(other, textarea);
         Assert.True((focused ? (Control)textarea : other).Focus());
         scene.Pump();
@@ -658,6 +662,7 @@ public class TextareaTests
         Assert.Equal(start + new Size(40, 30), field.Bounds.Size);
         Assert.Equal(focused, textarea.IsFocused);
         Assert.Equal(!focused, other.IsFocused);
+        Assert.Equal((2, 2), (pressed, released));
     }
 
     // A width dragged to is kept within the width the textarea is later given (a phone turned upright): never past its

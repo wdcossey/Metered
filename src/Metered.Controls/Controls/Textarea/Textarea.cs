@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 
 namespace Metered.Controls;
 
@@ -45,9 +44,6 @@ public class Textarea : BaseInput
     public Textarea()
         : base("Textarea", PartNames)
     {
-        // A press or a release on the resize grip focuses nothing (#111): on its way down, before the grip.
-        AddHandler(PointerPressedEvent, TextareaResizer.PassFocusBy, RoutingStrategies.Tunnel);
-        AddHandler(PointerReleasedEvent, TextareaResizer.PassFocusBy, RoutingStrategies.Tunnel);
         UpdateResize();
     }
 

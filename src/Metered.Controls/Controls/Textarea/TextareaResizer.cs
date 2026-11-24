@@ -38,6 +38,7 @@ public class TextareaResizer : Control, ICustomHitTest
     private Point _from;
     private Size _start;
     private RoutedEventArgs? _passed;
+    private Interactive? _host;
 
     static TextareaResizer()
     {
@@ -89,15 +90,16 @@ public class TextareaResizer : Control, ICustomHitTest
     }
 
     /// <summary>
-    /// A press or a release on a grip, on its way down at an element round it (its textarea): marked handled, so that
-    /// Avalonia's focus manager, whose class handler at the grip focuses the first focusable element from it up (the
-    /// textarea: a mouse's on its press, a finger's or a pen's on its release), passes it by. The grip unmarks it after
-    /// that handler (below), so the rest of its way is as before.
+    /// A press or a release on the grip, on its way down at its parent: marked handled, so that Avalonia's focus manager,
+    /// whose class handler at the grip focuses the first focusable element from it up (the textarea: a mouse's on its
+    /// press, a finger's or a pen's on its release), passes it by. The grip unmarks it after that handler (below), so the
+    /// rest of its way is as before. At its parent, the nearest it can be: a handler of the textarea's, or an app's, on the
+    /// way down sees it as it did. It ran only on an unhandled event, so unhandled is what it goes back to.
     /// </summary>
-    internal static void PassFocusBy(object? sender, PointerEventArgs e)
+    private void PassFocusBy(object? sender, PointerEventArgs e)
     {
-        if (e.Source is not TextareaResizer grip || grip.Direction == TextareaResize.None) return;
-        grip._passed = e;
+        if (e.Source != this || Direction == TextareaResize.None) return;
+        _passed = e;
         e.Handled = true;
     }
 
@@ -107,6 +109,23 @@ public class TextareaResizer : Control, ICustomHitTest
         if (!ReferenceEquals(_passed, e)) return;
         _passed = null;
         e.Handled = false;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _host = this.GetVisualParent() as Interactive;
+        _host?.AddHandler(PointerPressedEvent, PassFocusBy, RoutingStrategies.Tunnel);
+        _host?.AddHandler(PointerReleasedEvent, PassFocusBy, RoutingStrategies.Tunnel);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _host?.RemoveHandler(PointerPressedEvent, PassFocusBy);
+        _host?.RemoveHandler(PointerReleasedEvent, PassFocusBy);
+        _host = null;
+        _passed = null;
     }
 
     /// <summary>Its whole box takes the pointer, drawn or not.</summary>
