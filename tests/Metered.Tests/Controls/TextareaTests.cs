@@ -292,6 +292,17 @@ public class TextareaTests
         Assert.Equal(0, page.Offset.Y);
     }
 
+    // An app's ScrollViewer.IsScrollChainingEnabled on the textarea is its text scroller's, as on Avalonia's own text box.
+    [AvaloniaFact]
+    public void Scroll_chaining_set_on_the_textarea_reaches_its_text()
+    {
+        var textarea = new Textarea { Text = Long };
+        ScrollViewer.SetIsScrollChainingEnabled(textarea, false);
+        using var scene = Show(textarea);
+        Assert.False(Scroller(textarea).IsScrollChainingEnabled);
+        Assert.False(((ScrollContentPresenter)Scroller(textarea).Presenter!).IsScrollChainingEnabled);
+    }
+
     // A finger's drag on a textarea that nothing scrolls (its text short, nothing round it scrolling) is no tap: it focuses
     // nothing, as in a phone's browser (BaseInput's, #117). A tap after it does.
     [AvaloniaFact]

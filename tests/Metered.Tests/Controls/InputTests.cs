@@ -649,19 +649,82 @@ public class InputTests
         Assert.Equal(default, page.Offset);
     }
 
-    // A drag that's more up than sideways on a long value is still the page's (#94): the text stays where it is.
-    [AvaloniaFact]
-    public void A_vertical_finger_drag_on_a_long_value_moves_the_page()
+    // A drag that's more up than sideways on a long value is still the page's (#94): the text stays where it is. In few
+    // moves too, as a quick flick's are, its first already past the gesture's start distance sideways.
+    [AvaloniaTheory]
+    [InlineData(15)]
+    [InlineData(3)]
+    public void A_vertical_finger_drag_on_a_long_value_moves_the_page(int steps)
     {
         var (input, page, scene) = InAPage(new Input { Text = LongValue });
         using var _ = scene;
         var scroller = Scroller(input);
         var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
-        TouchDrag(scene, at, new Point(at.X - 40, at.Y - 150));
+        TouchDrag(scene, at, new Point(at.X - 40, at.Y - 150), steps);
 
         Assert.True(page.Offset.Y > 60, $"the page moved {page.Offset.Y}");
         Assert.Equal(0, scroller.Offset.X);
         Assert.False(input.IsFocused);
+    }
+
+    // And one more sideways than up is the text's, the page left where it is.
+    [AvaloniaFact]
+    public void A_mostly_sideways_finger_drag_on_a_long_value_scrolls_its_text()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var at = scene.CentreOf(P<Visual>(input, BaseInput.InputPart));
+        TouchDrag(scene, at, new Point(at.X - 120, at.Y - 60), steps: 3);
+
+        Assert.True(scroller.Offset.X > 60, $"the text moved {scroller.Offset.X}");
+        Assert.Equal(default, page.Offset);
+        Assert.False(input.IsFocused);
+    }
+
+    // A fling that has carried the text to its end ends there: the scroll latched to it, at its end, still goes no further,
+    // and asks the gesture to stop (Avalonia's recognizer reads it while it flings). The next gesture isn't latched: at the
+    // end, it is the page's. Raised as the recognizer raises them: the fling runs on a stopwatch, not the test's clock.
+    [AvaloniaFact]
+    public void A_latched_scroll_at_the_texts_end_ends_there()
+    {
+        var (input, page, scene) = InAPage(new Input { Text = LongValue });
+        using var _ = scene;
+        var scroller = Scroller(input);
+        var presenter = scroller.Presenter!;
+        var id = ScrollGestureEventArgs.GetNextFreeId();
+
+        var moving = new ScrollGestureEventArgs(id, new Vector(End(scroller) + 50, 0));
+        presenter.RaiseEvent(moving);
+        scene.Pump();
+        Assert.True(moving.Handled);
+        Assert.False(moving.ShouldEndScrollGesture);
+        Assert.Equal(End(scroller), scroller.Offset.X, 1);
+
+        var atEnd = new ScrollGestureEventArgs(id, new Vector(30, 40));
+        presenter.RaiseEvent(atEnd);
+        scene.Pump();
+        Assert.True(atEnd.Handled);
+        Assert.True(atEnd.ShouldEndScrollGesture);
+        Assert.Equal(default, page.Offset);
+
+        presenter.RaiseEvent(new ScrollGestureEndedEventArgs(id));
+        var next = new ScrollGestureEventArgs(ScrollGestureEventArgs.GetNextFreeId(), new Vector(30, 40));
+        presenter.RaiseEvent(next);
+        scene.Pump();
+        Assert.Equal(40, page.Offset.Y, 1);
+        Assert.False(next.ShouldEndScrollGesture);
+    }
+
+    // An app's ScrollViewer.IsScrollChainingEnabled on the input is its text scroller's, as on Avalonia's own text box.
+    [AvaloniaFact]
+    public void Scroll_chaining_set_on_the_input_reaches_its_text()
+    {
+        var input = new Input { Text = LongValue };
+        ScrollViewer.SetIsScrollChainingEnabled(input, false);
+        using var scene = Show(input);
+        Assert.False(Scroller(input).IsScrollChainingEnabled);
+        Assert.False(((ScrollContentPresenter)Scroller(input).Presenter!).IsScrollChainingEnabled);
     }
 
     // A browser latches a touch's scroll to the scroller that took it: a sideways drag that carries the text to its end goes

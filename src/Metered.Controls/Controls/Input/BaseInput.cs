@@ -392,12 +392,17 @@ public abstract class BaseInput : TextBox
     // A browser's scroll latching: a touch's scroll that has moved the text (a textarea's lines, an input's long value
     // sideways) stays the text's until the finger lifts, and goes no further at its end. One that hasn't moved it (it was
     // at its end that way) goes on to the page. The presenter has already moved what it could: handled, by Avalonia's
-    // ScrollContentPresenter, if it moved.
+    // ScrollContentPresenter, if it moved. A fling that has carried it to its end ends there (the recognizer reads
+    // ShouldEndScrollGesture only while it flings), rather than going on unseen until it slows.
     private void OnScrollGesture(object? sender, ScrollGestureEventArgs e)
     {
         if (_scroller?.Presenter is not { } presenter || e.Source != presenter) return;
         if (e.Handled) _latched.Add(e.Id);
-        else if (_latched.Contains(e.Id)) e.Handled = true;
+        else if (_latched.Contains(e.Id))
+        {
+            e.Handled = true;
+            e.ShouldEndScrollGesture = true;
+        }
     }
 
     private void OnScrollGestureEnded(object? sender, ScrollGestureEndedEventArgs e) => _latched.Remove(e.Id);

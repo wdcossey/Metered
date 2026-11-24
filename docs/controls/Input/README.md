@@ -96,7 +96,10 @@ From base-input.js and input.js, and its e2e test:
 - **A finger's (or a pen's) drag on the input scrolls**, focused or not, as a phone's browser does with an `<input>`
   (Chrome on the Pixel 8, 2026-11-23): a sideways drag on a value longer than the box scrolls its text (a scroll gesture
   on the text's scroller, sideways only, flung as a browser's: #117), and a drag up or down, or one the text can't take
-  (it is at its end that way, or fits), scrolls the page round it. A drag that has moved the text stays the text's until
+  (it is at its end that way, or fits), scrolls the page round it. Which it is, the drag's way decides once it has gone
+  the gesture's start distance: more sideways than up or down is the text's, even in a quick flick whose first move is
+  already past that distance sideways (`InputScrollGestureRecognizer`; Avalonia's own would start on any sideways part,
+  and the text's scroller sees each move before the page's). A fling that reaches the text's end stops there. A drag that has moved the text stays the text's until
   the finger lifts, even past its end: a browser's scroll latching. A drag is no tap: it focuses nothing, and the caret
   moves by a tap or its handle, never by a drag, nor where a drag lifts, nor where a finger lifts after another has
   pressed (Avalonia's text box would move it by a drag and keep the page from panning, #94, and its focus manager focuses
@@ -116,7 +119,7 @@ From base-input.js and input.js, and its e2e test:
 - `Controls/InputLayoutTests`: 48: the four sizes × no enhancer, a start one, an end one, both × no trailing icon, the
   clear icon, the toggle: adjoined, the trailing flag, every length and font, the icons' sizes, the height, and where
   each part is.
-- `Controls/InputTests`: 98: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
+- `Controls/InputTests`: 102: Base Web's defaults, and `IsMasked` by type and toggle; the parts it renders and their
   labels in 48 cases of clearable, value, disabled, read-only, type and mask; the clear icon by click, touch (and a
   second finger), a press dragged off, Enter and Space (its text not typed, and not eaten later); keys, text, focus, a
   press and a menu on the template's own controls kept from the text box, and the text's selection kept;
@@ -124,7 +127,9 @@ From base-input.js and input.js, and its e2e test:
   it and the clear icon by an override; `MaxLength`; typing and `:is-focused` on every part; the tab order; a touch's
   focus; a finger's drag that moves the page and not the caret, focused or not; a sideways one on a long value that
   scrolls its text, focused or not, focusing nothing, the caret left, and back again, the caret's blinking not bringing it
-  back; a mostly vertical one on it that is still the page's; one latched past the text's end as it turns up the page; one
+  back; a mostly vertical one on it that is still the page's, in fifteen moves or three; a mostly sideways one in three
+  that is the text's; one latched past the text's end as it turns up the page, and a latched scroll at the end that asks
+  its fling to stop, the next gesture the page's; `ScrollViewer.IsScrollChainingEnabled` reaching the text's scroller; one
   that nothing scrolls (focusing nothing, the caret left, and a tap after it that focuses and places it), a finger lifted
   after another pressed, and a mouse's that selects; enhancers (JavaScript's truth, NaN
   and 0) and adjoined; Before and After; overrides on six parts; the icons' paths, viewBox and fill rule; transitions after load; UI Automation (the clear icon a button that invokes only where a

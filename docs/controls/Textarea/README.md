@@ -93,7 +93,7 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
 - `Controls/TextareaTests`: Base Web's defaults; the parts it renders and their labels (16); typing, Enter, wrapping; a
   long text scrolled by the caret and the wheel, under the padding; rows; a finger's drag in a page that scrolls (it moves
   the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a drag
-  that nothing scrolls focusing nothing; a tap's caret; the clear
+  that nothing scrolls focusing nothing; `ScrollViewer.IsScrollChainingEnabled` reaching its text's scroller; a tap's caret; the clear
   icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later,
   right to left, hidden when it doesn't resize; a layout that settles; the shared menu;
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
