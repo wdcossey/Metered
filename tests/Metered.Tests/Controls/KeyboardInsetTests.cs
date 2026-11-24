@@ -146,6 +146,72 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void A_Keyboard_Beside_The_Window_Pads_Nothing()
+    {
+        // Windows' touch keyboard floating beside the window, as Avonic measured it on Windows 11 at 125% (its #189): at
+        // 547.2, 797.6, 1194.4 x 488 in the client's coordinates, right of a 389.6 wide window. Its top is 46.4 above the
+        // scene's foot, but it covers none of it (#120).
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(547.2, 797.6, 1194.4, 488));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+        Assert.Equal(Scene.Height, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_Beside_The_Decorator_Pads_Nothing()
+    {
+        // The decorator fills the left half of the view; the keyboard covers the foot of the right half only (#120).
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(Scene.Width / 2, Scene.Height - 300, Scene.Width / 2, 300));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_Over_Part_Of_Its_Width_Pads_It_From_The_Keyboards_Top()
+    {
+        // A keyboard 200 wide, from 100, at the view's foot: it overlaps the decorator, and the room below its top is lost.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(100, Scene.Height - 300, 200, 300));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+        Assert.Equal(Scene.Height - 300, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_That_Ends_Above_Its_Foot_Pads_It_From_The_Keyboards_Top()
+    {
+        // The keyboard spans 544 to 744 and the decorator reaches the view's foot at 844: the 100 below the keyboard is no
+        // room for the child either, so the inset is 300, not the overlap's 200 high.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(0, Scene.Height - 300, Scene.Width, 200));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Keyboard_Over_All_Of_It_Pads_No_More_Than_Its_Height()
     {
         var pane = new FakeInputPane();

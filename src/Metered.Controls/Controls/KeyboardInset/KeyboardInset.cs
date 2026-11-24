@@ -84,8 +84,12 @@ public class KeyboardInset : Decorator
     }
 
     /// <summary>
-    /// The input pane read in place of the top level's, for a test: Avalonia's headless platform has none, and Avalonia's
-    /// <see cref="IInputPane"/> can't be implemented outside it. Set before the decorator is attached.
+    /// The input pane read in place of the top level's, for a test: Avalonia's headless platform has none, and a top
+    /// level's <see cref="TopLevel.InputPane"/> can't be set, so a test needs a way in. An interface of its own, as C#
+    /// can't implement <see cref="IInputPane"/> (its reference assembly is <c>[NotClientImplementable]</c>, with an
+    /// internal member), and it carries the insets' change too. A pane made at runtime by <c>DispatchProxy</c>, as Avonic's
+    /// tests make one, would also do, with an <see cref="IInsetsManager"/> made the same way. Set before the decorator is
+    /// attached.
     /// </summary>
     internal IPane? InputPane { get; set; }
 
@@ -211,8 +215,10 @@ public class KeyboardInset : Decorator
 
     /// <summary>
     /// The inset for a keyboard <paramref name="open"/> or not, at <paramref name="occluded"/> in the top level's
-    /// coordinates: as much of the decorator as lies below the keyboard's top edge, as it is laid out now. Laid out first,
-    /// so that a decorator inside another that has just made room is read in that room, and pads nothing more.
+    /// coordinates: where the keyboard's rect overlaps the decorator's, on both axes, as much of the decorator as lies
+    /// below the top of that overlap, as it is laid out now; nothing where they don't overlap (a keyboard beside it, as
+    /// Windows' touch keyboard floating beside the window, or above or below it). Laid out first, so that a decorator
+    /// inside another that has just made room is read in that room, and pads nothing more.
     /// </summary>
     private void Apply(bool open, Rect occluded)
     {
@@ -235,9 +241,7 @@ public class KeyboardInset : Decorator
             }
 
             UpdateLayout();
-            Inset = this.TranslatePoint(default, top) is { } origin
-                ? Math.Clamp(origin.Y + Bounds.Height - occluded.Y, 0, Bounds.Height)
-                : 0;
+            Inset = this.TranslatePoint(default, top) is { } origin ? Covered(new Rect(origin, Bounds.Size), occluded) : 0;
             _room = Bounds.Height - Inset;
             UpdateLayout();
         }
@@ -245,6 +249,17 @@ public class KeyboardInset : Decorator
         {
             _applying = false;
         }
+    }
+
+    /// <summary>
+    /// How much of <paramref name="decorator"/> the keyboard at <paramref name="occluded"/> keeps its child out of, both in
+    /// the top level's coordinates: from the top of their overlap to the decorator's foot, the room below the keyboard's
+    /// top being lost as a whole; 0 where they don't overlap. An empty intersection is Avalonia's default rect.
+    /// </summary>
+    private static double Covered(Rect decorator, Rect occluded)
+    {
+        var overlap = decorator.Intersect(occluded);
+        return overlap.Width > 0 && overlap.Height > 0 ? decorator.Bottom - overlap.Top : 0;
     }
 
     /// <summary>

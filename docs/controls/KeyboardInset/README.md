@@ -16,8 +16,11 @@ browser does, for the content an app puts in it. Opt-in; the sample's shell (`Sa
 ## What it does
 
 - **While the keyboard is up, the child ends above it.** The child's foot is padded by as much of the decorator as the
-  keyboard covers: its own bounds against the keyboard's rect, in the top level's coordinates, so a decorator that ends
-  above the keyboard pads nothing, and one with a footer below it pads only what the keyboard reaches. Its own
+  keyboard covers: its own bounds against the keyboard's rect, in the top level's coordinates, on both axes, so a
+  decorator that ends above the keyboard pads nothing, one with a footer below it pads only what the keyboard reaches,
+  and one the keyboard is beside (Windows' touch keyboard floating beside the window, or a keyboard under another
+  column) pads nothing (#120). Where they overlap, all of the decorator below the top of the overlap is padded, as the
+  room below the keyboard's top is no room for the child, even where the keyboard's rect ends above the decorator's foot. Its own
   `Padding` is kept, above the keyboard. A `ScrollViewer` inside ends above the keyboard, so its range grows by the
   inset and its last control can be scrolled clear. `Inset`, read-only, says by how much.
 - **When the keyboard opens, the focused control is brought into view** if it is inside the decorator
@@ -83,15 +86,20 @@ Read from Avalonia 12.1.4's Android backend (`Avalonia.Android`, `AndroidInsetsM
 5. **Tried on a Pixel 8** (Android 17, Gboard, 2026-11-23, #108): a textarea near the page's foot ends just above the
    keyboard and its last line is brought into view; the same in landscape and back; Back closes the keyboard and leaves
    no gap; Home and back again, the keyboard is closed and nothing is left padded. Not tried: Gboard's own height
-   changing, nor the focus moved to another input with the keyboard up (below). Headless, Avalonia has no input pane, and its `IInputPane` can't be implemented outside
-   Avalonia (its reference assembly carries a member user code can't write), so the tests drive the decorator through an
-   internal seam (`KeyboardInset.InputPane`, a `KeyboardInset.IPane`), a fake that raises `StateChanged` as Android's
-   backend does. The device run checks the rest (below).
+   changing, nor the focus moved to another input with the keyboard up (below). Headless, Avalonia has no input pane, and a top level's `InputPane` can't be set, so a
+   test needs a way in: the tests drive the decorator through an internal seam (`KeyboardInset.InputPane`, a
+   `KeyboardInset.IPane`), a fake that raises `StateChanged` as Android's backend does. The seam is an interface of
+   its own, not Avalonia's `IInputPane`, because C# can't implement that one (its reference assembly is
+   `[NotClientImplementable]`, with an internal member), and because it carries the insets' change too. An
+   `IInputPane` made at runtime by `DispatchProxy`, as Avonic's tests make one, would also do, through the same seam
+   and with an `IInsetsManager` made the same way (#120). The device run checks the rest (below).
 
 ## Tests
 
 `tests/Metered.Tests/Controls/KeyboardInsetTests.cs`: the padding by the overlap, from the decorator's own place (under
-a bar, over a footer), nothing when closed (and for a closed pane with a rect, Avalonia's floating keyboard, or an open
+a bar, over a footer), on both axes (nothing for a keyboard beside the window, as Avonic measured Windows' floating
+one, or beside the decorator; a keyboard over part of its width, or ending above its foot, padding it from the
+keyboard's top), nothing when closed (and for a closed pane with a rect, Avalonia's floating keyboard, or an open
 one with none), nothing for a keyboard below it, no more than its height, its own padding kept, the focused input at a
 page's foot scrolled above the keyboard, the caret of a text taller than the room left (scrolled in its own scroller, read-only too), a reading posted before
 the state event, the page's range grown by the
