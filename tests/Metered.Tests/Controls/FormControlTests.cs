@@ -8,6 +8,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Input.TextInput;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -340,6 +341,95 @@ public class FormControlTests
         scene.Window.TouchEnd(touch, at, RawInputModifiers.None);
         scene.Pump();
         Assert.True(input.IsFocused);
+    }
+
+    /// <summary>
+    /// How many times the soft keyboard is asked for, for a text box: its input method client's
+    /// <c>InputPaneActivationRequested</c>, which Android's input method answers with <c>ShowSoftInput</c> (Avalonia.Headless
+    /// has no input method, nor any keyboard). The client is the one Avalonia's input method manager takes for the focused
+    /// element, asked for as it asks: Avalonia's text box answers with the one client it keeps (headless, the manager keeps
+    /// none, having no input method to give it to).
+    /// </summary>
+    private static Func<int> KeyboardRequests(InputElement box)
+    {
+        var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = InputElement.TextInputMethodClientRequestedEvent };
+        box.RaiseEvent(request);
+        Assert.NotNull(request.Client);
+        var count = 0;
+        request.Client!.InputPaneActivationRequested += (_, _) => count++;
+        return () => count;
+    }
+
+    // #124: a label's click on a text field it has already focused shows its keyboard again, as a tap on the field does (a
+    // browser's; Avalonia's text box asks on its own tap). Focusing a focused text box does nothing, so once Back had put
+    // the keyboard away the label's tap left it closed.
+    [AvaloniaTheory]
+    [InlineData("Input", false)]
+    [InlineData("Input", true)]
+    [InlineData("Textarea", false)]
+    [InlineData("Textarea", true)]
+    public void A_click_or_a_tap_on_the_label_of_a_focused_text_box_asks_for_its_keyboard_again(string type, bool touch)
+    {
+        BaseInput box = type == "Input" ? new Input() : new Textarea();
+        var form = new FormControl { Label = "Input label", Content = box };
+        using var scene = Show(form);
+        var requests = KeyboardRequests(box);
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(box.IsFocused);
+        Assert.Equal(1, requests());
+
+        // Back has put the keyboard away; the text box keeps its focus.
+        scene.Advance(1000);
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(box.IsFocused);
+        Assert.Equal(2, requests());
+
+        // The same request as a tap on the text box itself makes.
+        scene.Advance(1000);
+        ClickAt(scene, scene.CentreOf(box), touch);
+        Assert.Equal(3, requests());
+    }
+
+    // A text box inside what the label is for (as a searchable Select's input is inside it), focused by a tap on it.
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_tap_on_the_label_asks_for_the_keyboard_of_a_focused_text_box_inside_its_target(bool touch)
+    {
+        var input = new Input();
+        var wrapper = new ContentControl { Content = input };
+        var form = new FormControl { Label = "Input label", Content = wrapper };
+        using var scene = Show(form);
+        var requests = KeyboardRequests(input);
+        ClickAt(scene, scene.CentreOf(input), touch);
+        Assert.True(input.IsFocused);
+        var before = requests();
+
+        scene.Advance(1000);
+        ClickAt(scene, CentreOfLabel(scene, form), touch);
+        Assert.True(input.IsFocused);
+        Assert.Equal(before + 1, requests());
+    }
+
+    // Only for what the label is for: the focus left on another text box asks for nothing.
+    [AvaloniaFact]
+    public void The_label_asks_for_no_keyboard_for_a_text_box_it_couldnt_focus()
+    {
+        var input = new Input { Focusable = false };
+        var other = new Input();
+        var form = new FormControl { Label = "Input label", Content = input };
+        using var scene = Show(new StackPanel { Children = { form, other } });
+        var requests = KeyboardRequests(input);
+        var others = KeyboardRequests(other);
+        other.Focus();
+        scene.Pump();
+
+        ClickAt(scene, CentreOfLabel(scene, form), touch: true);
+        Assert.False(input.IsFocused);
+        Assert.True(other.IsFocused);
+        Assert.Equal(0, requests());
+        Assert.Equal(0, others());
     }
 
     /// <summary>A real click (a mouse) or tap (a finger) at a point of the window.</summary>
