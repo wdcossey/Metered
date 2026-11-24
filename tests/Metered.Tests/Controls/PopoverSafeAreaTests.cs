@@ -70,6 +70,17 @@ public class PopoverSafeAreaTests
         return (popover, anchor, page);
     }
 
+    /// <summary>The body drawn in its fill just inside its top and its foot: nothing of it cut off.</summary>
+    private static void DrawnWhole(Popover popover, Scene scene)
+    {
+        var fill = Color.Parse(PopoverOracle.Value.Colours.Single(c => c.Theme == "Light").Body.Background);
+        var body = PopoverTests.BoxOf(Body(popover), scene);
+        var frame = scene.Capture();
+        var x = (int)body.Center.X;
+        Assert.Equal(fill, Frames.PixelAt(frame, x, (int)body.Top + 3));
+        Assert.Equal(fill, Frames.PixelAt(frame, x, (int)body.Bottom - 3));
+    }
+
     private static bool Inside(IInputElement? hit, Visual box) => hit is Visual v && (v == box || v.GetVisualAncestors().Contains(box));
 
     // ---- The cut ----
@@ -177,6 +188,7 @@ public class PopoverSafeAreaTests
         var (popover, anchor, _) = PopoverTests.Fixed(150, 720);
         popover.Placement = PopoverPlacement.Bottom;
         using var scene = PopoverTests.Show(popover);
+        scene.Window.Background = Brushes.White;
         var insets = Fake(scene, default);
         scene.Click(anchor);
         PopoverTests.Settle(scene);
@@ -191,6 +203,8 @@ public class PopoverSafeAreaTests
         PopoverTests.Settle(scene);
         Assert.Equal(PopoverPlacement.Top, popover.ActualPlacement);
         Assert.Equal(Safe(Bars), Cut(popover, scene));
+        // Moved by the flip, it is cut where it is now, not where it was: drawn whole, its foot and its top.
+        DrawnWhole(popover, scene);
 
         var side = new Thickness(48, 0, 30, 0);
         insets.Set(side);
@@ -199,6 +213,7 @@ public class PopoverSafeAreaTests
         PopoverTests.Settle(scene);
         Assert.Equal(PopoverPlacement.Bottom, popover.ActualPlacement);
         Assert.Equal(Safe(side), Cut(popover, scene));
+        DrawnWhole(popover, scene);
 
         insets.Set(default);
         Assert.Null(Cut(popover, scene));

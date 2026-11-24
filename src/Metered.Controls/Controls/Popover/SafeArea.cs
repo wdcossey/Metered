@@ -50,12 +50,16 @@ internal static class SafeArea
         return new Rect(Math.Min(left, client.Width), Math.Min(top, client.Height), width, height);
     }
 
-    /// <summary>The platform's insets manager, as <see cref="ISource"/>.</summary>
+    /// <summary>
+    /// The platform's insets manager, as <see cref="ISource"/>: its padding as the last change gave it, which is the one
+    /// the change is about, or as it reads before any.
+    /// </summary>
     private sealed class Platform(IInsetsManager insets) : ISource
     {
         private EventHandler? _changed;
+        private Thickness? _given;
 
-        public Thickness Padding => insets.SafeAreaPadding;
+        public Thickness Padding => _given ?? insets.SafeAreaPadding;
 
         public event EventHandler? Changed
         {
@@ -71,6 +75,10 @@ internal static class SafeArea
             }
         }
 
-        private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e) => _changed?.Invoke(this, EventArgs.Empty);
+        private void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e)
+        {
+            _given = e.SafeAreaPadding;
+            _changed?.Invoke(this, EventArgs.Empty);
+        }
     }
 }
