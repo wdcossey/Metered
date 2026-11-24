@@ -19,7 +19,8 @@ namespace Metered.Tests.Sample;
 /// <c>METERED ready</c> line, which a tool that drives the sample reads, so its format is held here: a page has no
 /// timing code of its own. A Debug build also writes a <c>METERED cost</c> line after it and shows it in a footer over
 /// the page's foot, which takes nothing from the page's size.
-/// From Cornflower's, without its page transition.
+/// From Cornflower's, without its page transition. Its scenes are on real time, not the test's clock: the shell times a
+/// page by a stopwatch, and its wait for a view's size is a dispatcher timer these tests run in the dispatcher's own loop.
 /// </summary>
 public class PageTimingTests
 {
@@ -46,7 +47,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         Draw();
@@ -67,7 +68,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         scene.Click(ListButtons(shell)[^1]);
         Draw();
@@ -80,7 +81,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("slow page");
         Draw();
@@ -91,13 +92,13 @@ public class PageTimingTests
 
     // Until the frame that first draws the page has been drawn, the page hasn't opened: nothing is written as it's shown,
     // and the line has the page's laid-out size. Which frame it waits for isn't held here: the headless render timer
-    // ticks on real time, so a test can't hold a frame back (a manual one is on the roadmap, with Cornflower's TestClock).
+    // ticks on its own, so a test can't hold a frame back (a manual one is on the roadmap, #13).
     [AvaloniaFact]
     public void The_Line_Comes_Once_The_Page_Is_Drawn()
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         var sinceOpen = System.Diagnostics.Stopwatch.StartNew();
         shell.Open("slow page");
@@ -115,7 +116,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = new SampleShell { Report = lines.Add };
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         foreach (var page in SampleShell.Pages)
         {
@@ -132,7 +133,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         shell.ShowIndex();
@@ -146,7 +147,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         shell.Open("slow page");
@@ -160,7 +161,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         // In and out with no dispatcher work between, so no render pass can run the frame requests before it leaves.
         shell.Open("plain");
@@ -176,7 +177,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         scene.Window.Content = null;
@@ -196,7 +197,7 @@ public class PageTimingTests
         shell.Open("slow page");
         Assert.Empty(lines);
 
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         Draw();
 
         var line = Assert.Single(Ready(lines));
@@ -214,7 +215,7 @@ public class PageTimingTests
         shell.Open("slow page");
         Thread.Sleep(WaitMs);
 
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         Draw();
 
         var line = Assert.Single(Ready(lines));
@@ -239,7 +240,7 @@ public class PageTimingTests
             pageAsWritten.Add(shell.Shown!.Bounds.Size);
         };
         shell.Open("plain");
-        using var scene = new Scene(shell, width: 1, height: 1);
+        using var scene = new Scene(shell, width: 1, height: 1, realTime: true);
 
         Draw();
         Draw();
@@ -266,7 +267,7 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         shell.Open("plain");
-        using var scene = new Scene(shell, width: 1, height: 1);
+        using var scene = new Scene(shell, width: 1, height: 1, realTime: true);
         Draw();
 
         // Only the resizes: a layout pass asks the headless window for its size, which it gives at Send priority; the
@@ -300,7 +301,7 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         shell.SizeWait = TimeSpan.FromMilliseconds(100);
-        using var scene = new Scene(shell, width: 1, height: 1);
+        using var scene = new Scene(shell, width: 1, height: 1, realTime: true);
 
         shell.Open("plain");
         Draw();
@@ -327,7 +328,7 @@ public class PageTimingTests
             lines.Add(line);
             written.Cancel();
         };
-        using var scene = new Scene(shell, width: 1, height: 1);
+        using var scene = new Scene(shell, width: 1, height: 1, realTime: true);
 
         var sinceOpen = System.Diagnostics.Stopwatch.StartNew();
         shell.Open("plain");
@@ -358,7 +359,7 @@ public class PageTimingTests
             lines.Add(line);
             shownAsWritten.Add(footer.IsVisible);
         };
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         Draw();
@@ -387,7 +388,7 @@ public class PageTimingTests
     public void The_Footer_Lies_Over_The_Pages_Foot_Across_The_View_And_Takes_Nothing_From_It()
     {
         var shell = HandShown();
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         var page = new Border();
         shell.ShowPage(page, "a page");
         Draw();
@@ -415,7 +416,7 @@ public class PageTimingTests
     {
         var lines = new List<string>();
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         var bar = Bar(shell).Bounds.Height;
         var under = new Rect(0, bar, Scene.Width, Scene.Height - bar);
 
@@ -444,7 +445,7 @@ public class PageTimingTests
     {
         const string Title = "a page whose title alone is longer than a phone's view is wide, so its line must wrap";
         var shell = HandShown();
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         var footer = Footer(shell);
         var shown = InShell<TextBlock>(shell, "PerformanceLine");
         var page = new Border();
@@ -471,7 +472,7 @@ public class PageTimingTests
     public void A_Tap_On_The_Footer_Hides_It_And_Uncovers_The_Page()
     {
         var shell = HandShown();
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         var page = new Border { Background = Brushes.Transparent };
         var pressed = 0;
         page.PointerPressed += (_, _) => pressed++;
@@ -502,7 +503,7 @@ public class PageTimingTests
     public void Leaving_A_Page_Hides_Its_Footer()
     {
         var shell = ShellOf([]);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         var footer = Footer(shell);
 
         shell.ShowPage(new Border(), "a page");
@@ -524,7 +525,7 @@ public class PageTimingTests
         var lines = new List<string>();
         var shell = ShellOf(lines);
         shell.ShowsCost = false;
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
 
         shell.Open("plain");
         Draw();
@@ -547,7 +548,7 @@ public class PageTimingTests
         Assert.Equal(before, PerformanceMonitor.Listening);
 
         var shell = ShellOf(lines);
-        using var scene = new Scene(shell);
+        using var scene = new Scene(shell, realTime: true);
         shell.Open("plain");
         Assert.Equal(before + 1, PerformanceMonitor.Listening);
         Draw();

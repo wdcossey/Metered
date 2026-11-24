@@ -70,13 +70,13 @@ and the colour to `Color`, so an override's setters still win over all of them (
 
 A style animation of `RotateTransform.Angle`, 0 to 360, as Button's ring turns; Avalonia puts a group of transforms in
 the ring's `RenderTransform` to hold the rotation. It is tested at its end values: the animation's keyframes,
-duration, easing and count against Base Web's, and that the angle moves on Avalonia's clock. A frame-by-frame
-comparison needs a test clock (#13), which doesn't exist yet: Avalonia 12's animation clock is internal, so the turn
-runs on real time. A test's `Dispatcher.UIThread.RunJobs()` promotes the dispatcher's due timers (among them the one
-that asks for the animations' next frame) only after it runs a job, and runs none when nothing is queued; an app's main
-loop doesn't wait for a job. So the tests queue an empty job before each frame they read, or the ring can stand still
-for a whole test. Beside Button's ring tests (#69), with the job in Button's helper only, an angle test failed so in 3
-of 12 runs (`The_ring_turns` among them); with it in both, in none of 12.
+duration, easing and count against Base Web's, and that the angle moves on Avalonia's clock, which in the tests is the
+test's own (`TestClock`, #127): the ring stands still however long a test takes, and turns by `Scene.Advance`. A
+frame-by-frame comparison with Base Web's is still to come (#13). A test's `Dispatcher.UIThread.RunJobs()` promotes the
+dispatcher's due timers (among them the one that asks for the animations' next frame) only after it runs a job, and runs
+none when nothing is queued; an app's main loop doesn't wait for a job. So `Scene.Advance` queues an empty job at each
+millisecond, and the angle helper one before each frame it reads. Before the test clock, on real time, the angle tests
+retried a 150 ms sleep up to five times for a slow runner (#69); now one `Advance(150)` is the same on any machine.
 
 **`:metered-still`.** A turn without end would keep `PreviewGallery` from ever drawing a picture at rest, so it runs
 only while the ring isn't `:metered-still`. Only the tests set it: `PreviewGallery` sets it on every element of a
