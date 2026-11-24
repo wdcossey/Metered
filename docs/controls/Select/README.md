@@ -66,8 +66,8 @@ margin, no auto focus or focus lock, accessibility none), as Base Web spreads th
 
 **The tag**: `SelectTag`, Base Web's Tag at what `multi-value.js` gives it (gray, primary, small, closeable, its root's 2 px
 margins), with Tag's parts `Root` (a `RadioMark`, which draws its overlay and its ring), `Text`, `Action` and `ActionIcon`,
-their themes `SelectTag.Styled{Part}` and its own `Overrides` (known difference 6). A text label is a line of LabelSmall's
-line height (16 px) centred in the tag's 24 px, over its padding and drawn whole, as tag.js's border-box root, a flex row
+their themes `SelectTag.Styled{Part}` and its own `Overrides` (known difference 6). A label that isn't a control (text, a
+number) is a line of LabelSmall's line height (16 px) centred in the tag's 24 px, over its padding and drawn whole, as tag.js's border-box root, a flex row
 that centres its items, centres its `Text` span (#137).
 
 **States**, on the select and every part (getSharedProps): `:size-*`, `:is-focused`, `:is-pseudo-focused`, `:is-open`,
@@ -126,7 +126,7 @@ every part recorded, and each part's style function evaluated with the props it 
 Popover's `content` as the Popover renders it; each tag rendered as Base Web's own Tag with `multi-value.js`'s props; and its
 own `Select` class driven step by step in Node as a browser and React would drive it (focus events, the document's
 listeners, React's batched state). The themes come from `tools/tokens/select.js`, which checks them against the style
-functions for every combination of states. 157 tests:
+functions for every combination of states. 158 tests:
 
 - `SelectBehaviourTests` (30): Base Web's state (open, focused, pseudo-focused, the text) and value after each step of 30
   sequences, replayed with a real mouse, real touch, real keys and typing: the click, the tap and the drag, the keys that
@@ -149,8 +149,8 @@ functions for every combination of states. 157 tests:
   content; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; tags
   removed one after another while focused; a taller value container and a label that wraps; searchable changed at run
   time to UI Automation; an override based on another theme; UI Automation; the transition and the ring.
-- `SelectFrames` (4, and the gallery): drawn pixels of the control, a tag and a highlighted option; a tag's text drawn whole,
-  its line centred in the tag. `SelectPageTests` (4):
+- `SelectFrames` (5, and the gallery): drawn pixels of the control, a tag and a highlighted option; a tag's text drawn whole,
+  its line centred in the tag (a label that is text, and one that isn't). `SelectPageTests` (4):
   the sample's page.
 
 ## Known differences

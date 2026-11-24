@@ -53,9 +53,10 @@ public class SelectFrames
     }
 
     [AvaloniaTheory]
-    [InlineData("Light")]
-    [InlineData("Dark")]
-    public void A_tags_text_is_drawn_whole_its_line_centred_in_the_tag_as_Base_Webs(string theme)
+    [InlineData("Light", false)]
+    [InlineData("Dark", false)]
+    [InlineData("Light", true)]
+    public void A_tags_text_is_drawn_whole_its_line_centred_in_the_tag_as_Base_Webs(string theme, bool notText)
     {
         // tag.js's Root is border-box (styled-components.js: boxSizing, height, the padding) and an inline flex row that
         // centres its items (alignItems: center), so the Text span, a line of LabelSmall's line height, is centred in the
@@ -64,6 +65,8 @@ public class SelectFrames
         var surface = SelectOracle.Data.Surfaces.Single(s => s.Theme == theme);
         var options = SelectOracle.Options("OPTIONS");
         var multi = new Select { Options = options, Multi = true, Value = SelectOracle.Value(options, ["Aqua"]) };
+        // A label that isn't text (getValueLabel's node, a number say) is rendered as its text, as React renders it.
+        if (notText) multi.GetValueLabel = _ => new System.Text.StringBuilder("Aqua");
         var reference = new TextBlock { Text = "Aqua" };
         var page = new StackPanel { Margin = new Thickness(20), Spacing = 20, Children = { multi } };
         using var scene = SelectKit.Show(page, SelectColourTests.Variant(theme));
@@ -87,6 +90,8 @@ public class SelectFrames
         List<int> Ink(Visual v, double x, double top, double width, double height)
         {
             var at = v.TranslatePoint(new Point(x, top), scene.Window)!.Value;
+            // Whole pixels, so that the two lines' rows are read alike.
+            Assert.Equal(new Point(Math.Round(at.X), Math.Round(at.Y)), at);
             var rows = new List<int>();
             for (var y = 0; y < (int)height; y++)
             {
