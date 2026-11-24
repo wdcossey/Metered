@@ -142,7 +142,7 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   Checkbox and a Switch, checking a Radio and its group's value, clicking a Button, each focused, with its `Click` and
   `Command`, not on a press alone, not for a disabled target, and a button in the label's content keeping its own press;
   a click or a tap on the label of a focused Input or Textarea asking for its keyboard again, as a tap on it does, and
-  not where its input method is off;
+  not for one it couldn't focus;
   the label's hit area over its row's margins, the oracle's `controlTop`, taking no press from the control above or the
   child below, nor from a Button's tap band reaching over the margin, and no click let go over the child; a label outside
   the row keeping its box; another button's release clicking nothing, and the main one's clicking once, or not at all

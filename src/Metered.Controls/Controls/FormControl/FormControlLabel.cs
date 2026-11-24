@@ -134,11 +134,12 @@ public class FormControlLabel : AvaloniaLabel, ICustomHitTest
     /// its own tap (its input method client's <c>InputPaneActivationRequested</c>, which Android's input method answers
     /// with <c>ShowSoftInput</c>); the label asks that client, the one Avalonia's input method manager takes for the
     /// focused element, through the client's own protected raiser (no public member asks). Nothing for a target that
-    /// hasn't focus, has no client (a read-only text box, a button) or has its input method turned off.
+    /// hasn't taken the focus or has no client (a read-only text box, a button). Android's input method listens only to the
+    /// client the manager has given it, which is none where the focused element's input method is turned off.
     /// </summary>
     internal static void ShowInputPane(IInputElement target)
     {
-        if (target is not InputElement element || !element.IsFocused || !InputMethod.GetIsInputMethodEnabled(element)) return;
+        if (target is not InputElement { IsFocused: true } element) return;
         var request = new TextInputMethodClientRequestedEventArgs { RoutedEvent = TextInputMethodClientRequestedEvent };
         element.RaiseEvent(request);
         if (request.Client is { } client) RequestInputPane?.Invoke(client, null);

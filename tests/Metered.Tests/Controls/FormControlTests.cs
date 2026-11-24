@@ -390,18 +390,17 @@ public class FormControlTests
         Assert.Equal(3, requests());
     }
 
-    // The input method manager takes no client for an element whose input method is off: no keyboard for it.
+    // Only the focused text box's: the input method manager's client is the focused element's.
     [AvaloniaFact]
-    public void The_label_asks_for_no_keyboard_for_a_text_box_whose_input_method_is_off()
+    public void The_label_asks_for_no_keyboard_for_a_text_box_it_couldnt_focus()
     {
-        var input = new Input();
-        InputMethod.SetIsInputMethodEnabled(input, false);
+        var input = new Input { Focusable = false };
         var form = new FormControl { Label = "Input label", Content = input };
         using var scene = Show(form);
         var requests = KeyboardRequests(input);
 
         ClickAt(scene, CentreOfLabel(scene, form), touch: true);
-        Assert.True(input.IsFocused);
+        Assert.False(input.IsFocused);
         Assert.Equal(0, requests());
     }
 
