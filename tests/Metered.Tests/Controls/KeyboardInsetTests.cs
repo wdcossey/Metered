@@ -146,6 +146,130 @@ public class KeyboardInsetTests
     }
 
     [AvaloniaFact]
+    public void A_Keyboard_Beside_The_Window_Pads_Nothing()
+    {
+        // Windows' touch keyboard floating beside the window, as Avonic measured it on Windows 11 at 125% (its #189): at
+        // 547.2, 797.6, 1194.4 x 488 in the client's coordinates, right of a 389.6 wide window. Its top is 46.4 above the
+        // scene's foot, but it covers none of it (#120).
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(547.2, 797.6, 1194.4, 488));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+        Assert.Equal(Scene.Height, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_Beside_The_Decorator_Pads_Nothing()
+    {
+        // The decorator fills the left half of the view; the keyboard covers the foot of the right half only (#120).
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(Scene.Width / 2, Scene.Height - 300, Scene.Width / 2, 300));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_That_Overlaps_It_By_Less_Than_A_Device_Pixel_Is_Beside_It()
+    {
+        // The decorator fills the left half of the view, to 195; the keyboard under the right half starts at 194.8, its
+        // rect converted from the screen's pixels: at a render scaling of 1, 0.2 across is less than a pixel (#120).
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+        Assert.Equal(1, scene.Window.RenderScaling);
+        Assert.Equal(Scene.Width / 2, inset.Bounds.Right);
+
+        pane.Open(new Rect(Scene.Width / 2 - 0.2, Scene.Height - 300, Scene.Width / 2 + 0.2, 300));
+        scene.Pump();
+
+        Assert.Equal(0, inset.Inset);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(Scene.Width / 2)]
+    [InlineData(0)]
+    public void A_Docked_Keyboard_Is_Read_For_Its_Top_Alone(double width)
+    {
+        // On a phone: the decorator fills the right half of the view, and the keyboard's rect, from the view's left, is
+        // as wide as the left half (Android's, its width the client's before a rotation) or has no width at all. The
+        // keyboard is the screen's own, docked across it, and covers the decorator's last 300 (#120).
+        var pane = new FakeInputPane { Docked = true };
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        Grid.SetColumn(inset, 1);
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(0, Scene.Height - 300, width, 300));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_Over_Part_Of_Its_Width_Pads_It_From_The_Keyboards_Top()
+    {
+        // A keyboard 200 wide, from 100, at the view's foot: it overlaps the decorator, and the room below its top is lost.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(100, Scene.Height - 300, 200, 300));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+        Assert.Equal(Scene.Height - 300, child.Bounds.Height);
+    }
+
+    [AvaloniaFact]
+    public void A_Keyboard_That_Ends_Above_Its_Foot_Pads_It_From_The_Keyboards_Top()
+    {
+        // The keyboard spans 544 to 744 and the decorator reaches the view's foot at 844: the 100 below the keyboard is no
+        // room for the child either, so the inset is 300, not the overlap's 200 high.
+        var pane = new FakeInputPane();
+        var child = new Border();
+        var inset = new KeyboardInset { InputPane = pane, Child = child };
+        using var scene = new Scene(inset);
+
+        pane.Open(new Rect(0, Scene.Height - 300, Scene.Width, 200));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
+    [AvaloniaFact]
+    public void A_Decorator_Wholly_Below_The_Keyboards_Rect_Is_Padded_Whole()
+    {
+        // As a strip at the view's foot under Android's navigation bar, below the keyboard's rect, which ends above the
+        // bar: the keyboard spans 544 to 744 and the decorator 744 to 844, all of it below the keyboard's top.
+        var pane = new FakeInputPane();
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("*,100") };
+        Grid.SetRow(inset, 1);
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(0, Scene.Height - 300, Scene.Width, 200));
+        scene.Pump();
+
+        Assert.Equal(100, inset.Inset);
+    }
+
+    [AvaloniaFact]
     public void A_Keyboard_Over_All_Of_It_Pads_No_More_Than_Its_Height()
     {
         var pane = new FakeInputPane();
@@ -563,6 +687,9 @@ internal sealed class FakeInputPane : KeyboardInset.IPane
     public InputPaneState State { get; private set; }
 
     public Rect OccludedRect { get; private set; }
+
+    /// <summary>A phone's keyboard, read for its top alone; else, as by default, a desktop's, its sides read too.</summary>
+    public bool Docked { get; init; }
 
     public event EventHandler<InputPaneStateEventArgs>? StateChanged;
 
