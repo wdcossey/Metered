@@ -198,6 +198,27 @@ public class KeyboardInsetTests
         Assert.Equal(0, inset.Inset);
     }
 
+    [AvaloniaTheory]
+    [InlineData(Scene.Width / 2)]
+    [InlineData(0)]
+    public void A_Docked_Keyboard_Is_Read_For_Its_Top_Alone(double width)
+    {
+        // On a phone: the decorator fills the right half of the view, and the keyboard's rect, from the view's left, is
+        // as wide as the left half (Android's, its width the client's before a rotation) or has no width at all. The
+        // keyboard is the screen's own, docked across it, and covers the decorator's last 300 (#120).
+        var pane = new FakeInputPane { Docked = true };
+        var inset = new KeyboardInset { InputPane = pane, Child = new Border() };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+        Grid.SetColumn(inset, 1);
+        grid.Children.Add(inset);
+        using var scene = new Scene(grid);
+
+        pane.Open(new Rect(0, Scene.Height - 300, width, 300));
+        scene.Pump();
+
+        Assert.Equal(300, inset.Inset);
+    }
+
     [AvaloniaFact]
     public void A_Keyboard_Over_Part_Of_Its_Width_Pads_It_From_The_Keyboards_Top()
     {
@@ -666,6 +687,9 @@ internal sealed class FakeInputPane : KeyboardInset.IPane
     public InputPaneState State { get; private set; }
 
     public Rect OccludedRect { get; private set; }
+
+    /// <summary>A phone's keyboard, read for its top alone; else, as by default, a desktop's, its sides read too.</summary>
+    public bool Docked { get; init; }
 
     public event EventHandler<InputPaneStateEventArgs>? StateChanged;
 

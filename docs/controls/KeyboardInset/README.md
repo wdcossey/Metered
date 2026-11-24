@@ -22,7 +22,11 @@ browser does, for the content an app puts in it. Opt-in; the sample's shell (`Sa
   ends above the decorator's foot (Android's ends above the navigation bar), but only if the keyboard reaches across
   it: one beside it (Windows' touch keyboard floating beside the window, or a keyboard under another column) pads
   nothing, and so does one across less than a device pixel of it, the fraction by which edges that meet can overlap
-  once the keyboard's rect is converted from the screen's pixels (#120). Its own
+  once the keyboard's rect is converted from the screen's pixels (#120). On Android and iOS the keyboard is the
+  screen's own, docked across the view, and its rect is read for its top alone, as Avonic's `KeyboardAssist` reads it:
+  Android's spans the client's width as it was when the insets came (`AndroidInsetsManager`), which a rotation can
+  leave stale, and iOS's is UIKit's keyboard frame in the screen's coordinates, which an iPad's window in Split View
+  doesn't share. Its own
   `Padding` is kept, above the keyboard. A `ScrollViewer` inside ends above the keyboard, so its range grows by the
   inset and its last control can be scrolled clear. `Inset`, read-only, says by how much.
 - **When the keyboard opens, the focused control is brought into view** if it is inside the decorator
@@ -98,14 +102,14 @@ Read from Avalonia 12.1.4's Android backend (`Avalonia.Android`, `AndroidInsetsM
 6. **A floating keyboard over the window pads all of the decorator below its top.** A keyboard the pane says is open is
    read as docked at the foot: everything below its top is padded if it reaches across the decorator. Windows' touch
    keyboard, floating, is reported open (Avonic measured it, beside the window, on Windows 11), so one dragged over the
-   middle of the window would leave the child only the room above it. What a browser's visual viewport does for a
+   middle of the window would leave the child only the room above it, and a decorator wholly below it none. What a browser's visual viewport does for a
    floating keyboard wasn't measured. Not tried in a real window; one beside the window or the decorator pads nothing (#120).
 
 ## Tests
 
 `tests/Metered.Tests/Controls/KeyboardInsetTests.cs`: the padding by the overlap, from the decorator's own place (under
 a bar, over a footer), across it (nothing for a keyboard beside the window, as Avonic measured Windows' floating
-one, beside the decorator, or across less than a device pixel of it; a keyboard over part of its width, ending above
+one, beside the decorator, or across less than a device pixel of it; a docked keyboard, a phone's, whatever its sides; a keyboard over part of its width, ending above
 its foot, or above all of it, padding it from the keyboard's top), nothing when closed (and for a closed pane with a rect, Avalonia's floating keyboard, or an open
 one with none), nothing for a keyboard below it, no more than its height, its own padding kept, the focused input at a
 page's foot scrolled above the keyboard, the caret of a text taller than the room left (scrolled in its own scroller, read-only too), a reading posted before
