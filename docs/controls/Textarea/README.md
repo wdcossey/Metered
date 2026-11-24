@@ -76,7 +76,9 @@ From the browser, since Base Web renders a `<textarea>`:
 - `resize`: a grip in the textarea's end corner, two strokes as Chrome draws it; a drag on it by any pointer sets the
   textarea's width and height as the way allows, within the Input part's `MinWidth`, `MaxWidth`, `MinHeight` and
   `MaxHeight` (the documentation: set by an override), never smaller than the grip. Right to left, the grip is in the
-  bottom-left corner and widens it dragged outward, to the left.
+  bottom-left corner and widens it dragged outward, to the left. A press, a drag or a tap on the grip leaves the focus
+  where it was, as Chrome's grip does on a desktop (Chrome on a phone draws none): it doesn't focus the textarea, so a
+  finger's drag doesn't open the soft keyboard over it (#111).
 - Where nothing stretches it (its root `fit-content`), its width is a browser's for HTML's 20 columns (Base Web gives no
   `cols`): Chrome's 20 times the font's average character width (its `OS/2` table's `xAvgCharWidth`, rounded to a pixel)
   and its padding, with no scroll bar's width, as on a phone.
@@ -94,7 +96,7 @@ From its e2e test: the preset value is shown; typing after a click adds to it; t
   long text scrolled by the caret and the wheel, under the padding; rows; a finger's drag in a page that scrolls (it moves
   the textarea, not the page; latched past its end; the page's at its top, when it turns, or when the text fits); a drag
   that nothing scrolls focusing nothing; `ScrollViewer.IsScrollChainingEnabled` reaching its text's scroller; a tap's caret; the clear
-  icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later,
+  icon and Escape; maxLength; `:resize-*`; the grip by mouse and finger, within its bounds and a narrower space later, leaving the focus where it was,
   right to left, hidden when it doesn't resize; a layout that settles; the shared menu,
   and a long press on another textarea leaving the first with no selection or handles (#109);
   its 20 columns against the font file; overrides; the icon's path; transitions after load; UI Automation.
@@ -124,7 +126,8 @@ recorder, on the real light and dark themes.
    baseweb.design), and only where the root is `fit-content`; with no OS/2 width, the width of `0`.
 6. **Tried on a Pixel 8** (Android 17 (API 37), Gboard, Release, 2026-11-21, #90). Enter on the soft keyboard makes a new line;
    a finger's drag in a long text scrolls the text, not the page; the resize grip resizes it under a finger. One problem of its
-   own: dragging the grip also focuses the textarea and opens the keyboard (#111). Not checked there: Input's findings
+   own: dragging the grip also focused the textarea and opened the keyboard (#111: fixed since, headless only, by mouse and
+   real touch; not tried on the phone again). Not checked there: Input's findings
    (#108 to #110), the latch at a long text's end, a fling, the clear icon under a finger, and a hold and the drag after
    it (holding isn't raised headless, so that drag is untested). The real-window run (2026-11-21) has a check of the latch
    under Windows' injected touch; its first run's drag fell short of the text's end (the script's, fixed), and it hasn't run since.

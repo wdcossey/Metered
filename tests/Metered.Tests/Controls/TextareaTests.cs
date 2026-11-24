@@ -625,6 +625,41 @@ public class TextareaTests
         Assert.Equal(0, page.Offset.Y);
     }
 
+    // A drag on the grip, by a mouse or a finger, resizes it and leaves the focus where it was, as a desktop browser's grip
+    // does (Chrome's leaves it); a finger's focus would open the soft keyboard over the textarea it resized (#111). A tap on
+    // it focuses nothing either.
+    [AvaloniaTheory]
+    [InlineData(PointerType.Mouse, false)]
+    [InlineData(PointerType.Touch, false)]
+    [InlineData(PointerType.Mouse, true)]
+    [InlineData(PointerType.Touch, true)]
+    public void A_drag_on_the_grip_leaves_the_focus_where_it_was(PointerType pointer, bool focused)
+    {
+        var other = new Avalonia.Controls.Button { Content = "Elsewhere" };
+        var textarea = new Textarea { Resize = TextareaResize.Both, Text = "Resize me" };
+        using var scene = Show(other, textarea);
+        Assert.True((focused ? (Control)textarea : other).Focus());
+        scene.Pump();
+        var field = P<TextareaField>(textarea, BaseInput.InputPart);
+        var start = field.Bounds.Size;
+        var at = scene.CentreOf(Grip(textarea));
+
+        if (pointer == PointerType.Mouse) MouseDrag(scene, at, at + new Vector(40, 30));
+        else TouchDrag(scene, at, at + new Vector(40, 30));
+
+        Assert.Equal(start + new Size(40, 30), field.Bounds.Size);
+        Assert.Equal(focused, textarea.IsFocused);
+        Assert.Equal(!focused, other.IsFocused);
+
+        at = scene.CentreOf(Grip(textarea));
+        if (pointer == PointerType.Mouse) MouseDrag(scene, at, at);
+        else TouchDrag(scene, at, at, steps: 0);
+
+        Assert.Equal(start + new Size(40, 30), field.Bounds.Size);
+        Assert.Equal(focused, textarea.IsFocused);
+        Assert.Equal(!focused, other.IsFocused);
+    }
+
     // A width dragged to is kept within the width the textarea is later given (a phone turned upright): never past its
     // root, so the grip stays in reach.
     [AvaloniaFact]

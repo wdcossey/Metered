@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Rendering;
 using Avalonia.VisualTree;
@@ -21,6 +22,9 @@ namespace Metered.Controls;
 /// corner, and a drag outward, to the left, widens it.</para>
 /// <para>Its look is a browser's, not Base Web's: two diagonal strokes, as Chrome draws its resizer, in
 /// <see cref="Foreground"/>. A drag on it is the grip's alone: it isn't the text's press, and no scroller pans.</para>
+/// <para>Nor does a press or a release on it focus the textarea, by any pointer: a desktop browser's grip leaves the focus
+/// where it was (Chrome's does), and on a phone the focus would open the soft keyboard over the textarea just resized
+/// (#111). The focus stays where it was, the textarea's too.</para>
 /// </remarks>
 public class TextareaResizer : Control, ICustomHitTest
 {
@@ -33,10 +37,17 @@ public class TextareaResizer : Control, ICustomHitTest
     private IPointer? _dragging;
     private Point _from;
     private Size _start;
+    private RoutedEventArgs? _passed;
 
     static TextareaResizer()
     {
         AffectsRender<TextareaResizer>(ForegroundProperty);
+    }
+
+    public TextareaResizer()
+    {
+        AddHandler(PointerPressedEvent, OnPassedBy, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, OnPassedBy, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     /// <summary>Which way it drags: the field's <see cref="TextareaField.Resize"/>.</summary>
@@ -75,6 +86,27 @@ public class TextareaResizer : Control, ICustomHitTest
         // Chrome's: two strokes across the corner, the longer outside.
         context.DrawLine(pen, new Point(w - 11, h - 2), new Point(w - 2, h - 11));
         context.DrawLine(pen, new Point(w - 6, h - 2), new Point(w - 2, h - 6));
+    }
+
+    /// <summary>
+    /// A press or a release on a grip, on its way down at an element round it (its textarea): marked handled, so that
+    /// Avalonia's focus manager, whose class handler at the grip focuses the first focusable element from it up (the
+    /// textarea: a mouse's on its press, a finger's or a pen's on its release), passes it by. The grip unmarks it after
+    /// that handler (below), so the rest of its way is as before.
+    /// </summary>
+    internal static void PassFocusBy(object? sender, PointerEventArgs e)
+    {
+        if (e.Source is not TextareaResizer grip || grip.Direction == TextareaResize.None) return;
+        grip._passed = e;
+        e.Handled = true;
+    }
+
+    // An instance handler, after the class handlers at the grip: the focus manager's has passed it by.
+    private void OnPassedBy(object? sender, PointerEventArgs e)
+    {
+        if (!ReferenceEquals(_passed, e)) return;
+        _passed = null;
+        e.Handled = false;
     }
 
     /// <summary>Its whole box takes the pointer, drawn or not.</summary>
