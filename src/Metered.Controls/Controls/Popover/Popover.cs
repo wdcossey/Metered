@@ -12,6 +12,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Media.Transformation;
 using Avalonia.Metadata;
 using Avalonia.Threading;
@@ -28,7 +29,7 @@ namespace Metered.Controls;
 /// <remarks>
 /// <para>The anchor is Base Web's <c>children</c>: <see cref="Anchor"/>, the XAML content. The popover's content is
 /// Base Web's <c>content</c>: <see cref="Content"/>, any content (text, a control, data with
-/// <see cref="ContentTemplate"/>), or a <c>Func&lt;Action, object?&gt;</c> called with a function that closes it, as
+/// <see cref="ContentTemplate"/>), or a <c>Func<Action, object?></c> called with a function that closes it, as
 /// StatefulPopover's render prop is; it is shown by the <c>Inner</c> part.</para>
 /// <para>Parts, by Base Web's names: <c>Body</c> (the box placed against the anchor), <c>Arrow</c>, <c>Inner</c>. States,
 /// set on the control and each part (popover.js's sharedProps): <c>:is-open</c>, <c>:is-animating</c>,
@@ -157,7 +158,10 @@ public class Popover : TemplatedControl
     private bool _mounted;
     private bool _animating;
     private PopoverPlacement _actualPlacement;
-    private (Rect Anchor, Size Body, Size View, Rect? Bounds, Thickness Margin, double? Arrow)? _tethered;
+    private (Rect Anchor, Size Body, Rect View, Rect? Bounds, Thickness Margin, double? Arrow)? _tethered;
+    private SafeArea.ISource? _safe;
+    private OverlayPopupHost? _host;
+    private (Rect Area, Point At)? _cut;
     private ScrollContentPresenter? _scrollParent;
     private IDisposable? _animateIn, _animateOut, _animateOutComplete, _enter, _leave;
     private (int Time, Easing? Easing, Transitions Transitions)? _exit;
@@ -181,7 +185,7 @@ public class Popover : TemplatedControl
     public IDataTemplate? AnchorTemplate { get => GetValue(AnchorTemplateProperty); set => SetValue(AnchorTemplateProperty, value); }
 
     /// <summary>
-    /// Base Web's <c>content</c>: what the popover shows, any content; or a <c>Func&lt;Action, object?&gt;</c>, called
+    /// Base Web's <c>content</c>: what the popover shows, any content; or a <c>Func<Action, object?></c>, called
     /// each time it opens with a function that closes it.
     /// </summary>
     public object? Content { get => GetValue(ContentProperty); set => SetValue(ContentProperty, value); }
@@ -441,6 +445,8 @@ public class Popover : TemplatedControl
         FindScrollParent();
         _top.LayoutUpdated += OnTopLayoutUpdated;
         if (_top is Window window) window.Closing += OnWindowClosing;
+        _safe = SafeArea.Of(_top);
+        if (_safe is not null) _safe.Changed += OnSafeAreaChanged;
         Retether();
     }
 
@@ -470,11 +476,14 @@ public class Popover : TemplatedControl
     {
         for (var v = (_parts[BodyPart] as Visual)?.GetVisualParent(); v is not null and not OverlayLayer; v = v.GetVisualParent())
         {
-            if (v is OverlayPopupHost) _unclipped = true;
             v.ClipToBounds = false;
+            if (v is not OverlayPopupHost host) continue;
+            _unclipped = true;
+            // Cut to the safe area (Cut), as the layer's whole.
+            _host = host;
             // Base Web's layer is in the page's tab order: without a focus lock, Tab leaves it. Avalonia's popup host
             // cycles Tab inside itself; Continue lets it out (with the lock, the body cycles: UpdateParts).
-            if (v is OverlayPopupHost host) KeyboardNavigation.SetTabNavigation(host, KeyboardNavigationMode.Continue);
+            KeyboardNavigation.SetTabNavigation(host, KeyboardNavigationMode.Continue);
         }
     }
 
@@ -493,6 +502,12 @@ public class Popover : TemplatedControl
         _layerClicks = null;
         if (_top is not null) _top.LayoutUpdated -= OnTopLayoutUpdated;
         if (_top is Window window) window.Closing -= OnWindowClosing;
+        if (_safe is not null) _safe.Changed -= OnSafeAreaChanged;
+        _safe = null;
+        // The host's cut goes with this opening: a host is made for each.
+        _host?.ClearValue(ClipProperty);
+        _host = null;
+        _cut = null;
         if (closePopup && _popup is not null) _popup.IsOpen = false;
 
         ActualPlacement = Placement;
@@ -527,11 +542,16 @@ public class Popover : TemplatedControl
 
     // ---- Placement: TetherBehavior and popper.js ----
 
-    private void OnTopLayoutUpdated(object? sender, EventArgs e) => Retether();
+    private void OnTopLayoutUpdated(object? sender, EventArgs e)
+    {
+        Retether();
+        Cut();
+    }
 
     /// <summary>
-    /// popper.js's update: when it opens, and when the anchor or the body changes its box or the window its size (Tether's
-    /// componentDidUpdate, popper.js's scroll and resize listeners). The margin is read as popper.js reads it, the body's
+    /// popper.js's update: when it opens, and when the anchor or the body changes its box or the window its size or its
+    /// safe area (Tether's componentDidUpdate, popper.js's scroll and resize listeners). The viewport is the safe area
+    /// (<see cref="Seen"/>). The margin is read as popper.js reads it, the body's
     /// own (Base Web's, at the placement its state has then). A new margin (the placement chosen gives the body its own)
     /// is popper.js's next update too: Base Web's runs at the next scroll or resize, its first leaving a body that opens
     /// above or to the left of its anchor with no gap; Metered's runs at once, so it never shows that (docs/controls/Popover).
@@ -547,12 +567,12 @@ public class Popover : TemplatedControl
         double? arrow = ShowArrow && _parts[ArrowPart] is Avalonia.Layout.Layoutable a
             ? (a.Bounds.Width > 0 ? a.Bounds.Width : double.IsNaN(a.Width) ? 0 : a.Width)
             : null;
-        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, _top.ClientSize, ScrollParent(), body.Margin, arrow);
+        var key = (new Rect(anchorAt, anchor.Bounds.Size), size, Seen(), ScrollParent(), body.Margin, arrow);
         if (_tethered == key) return;
         _tethered = key;
         if (!_unclipped) Unclip();
 
-        var result = Tether.Compute(key.Item1, size, key.Margin, arrow, Placement, new Rect(_top.ClientSize), !IgnoreBoundary, key.Item4);
+        var result = Tether.Compute(key.Item1, size, key.Margin, arrow, Placement, key.Item3, !IgnoreBoundary, key.Item4);
         ActualPlacement = result.Placement;
         if (_parts[ArrowPart] is { } arrowPart && result.ArrowOffset is { } ao)
         {
@@ -588,6 +608,53 @@ public class Popover : TemplatedControl
     {
         var anchor = Anchor is Visual v && v.IsAttachedToVisualTree() ? v : _anchorPresenter as Visual ?? this;
         _scrollParent = anchor.GetVisualAncestors().OfType<ScrollContentPresenter>().FirstOrDefault();
+    }
+
+    // ---- What is seen: the safe area (#129) ----
+
+    /// <summary>
+    /// Where a popover can be seen: the window's safe area, its client area less the system's bars (a phone's status and
+    /// navigation bars), as a phone's browser's viewport ends at them (#129, the developer, 2026-11-24). It is popper.js's
+    /// viewport, which <c>auto</c> and <c>flip</c> keep to, and the popover is cut off at its edges (<see cref="Cut"/>). With no
+    /// bars, the client area.
+    /// </summary>
+    /// <remarks>
+    /// The popover still follows its anchor (preventOverflow's boundaries are what the page scrolls: <see cref="ScrollParent"/>),
+    /// so one whose anchor has scrolled under a bar or out of view is cut away with it, as a browser's below the fold. Any
+    /// other handling of an anchor out of view (a popover kept in view, or hidden until its anchor is back) would be a
+    /// choice made here and in <see cref="Cut"/>, on what they are given; there is none.
+    /// </remarks>
+    private Rect Seen() => _top is null ? default : SafeArea.Area(_top.ClientSize, _safe?.Padding ?? default);
+
+    /// <summary>
+    /// Nothing of the popover is drawn over the system's bars (#129): its popup's host, the body, its arrow and its shadow,
+    /// is clipped to the safe area, which also keeps a press there from reaching it. The host's place is read once each
+    /// layout pass is done, when the popup has moved it. With no bars, no clip.
+    /// </summary>
+    private void Cut()
+    {
+        if (!_mounted || _top is null || _host is null) return;
+        var padding = _safe?.Padding ?? default;
+        if (padding == default)
+        {
+            if (_cut is null) return;
+            _cut = null;
+            _host.ClearValue(ClipProperty);
+            return;
+        }
+
+        if (_host.TranslatePoint(default, _top) is not { } at) return;
+        var area = Seen();
+        if (_cut is { } cut && cut.Area == area && cut.At == at) return;
+        _cut = (area, at);
+        _host.Clip = new RectangleGeometry(area.Translate(-(Vector)at));
+    }
+
+    /// <summary>The bars have changed (a rotation, the bars shown or hidden): placed again in the new safe area, and cut to it.</summary>
+    private void OnSafeAreaChanged(object? sender, EventArgs e)
+    {
+        Retether();
+        Cut();
     }
 
     private void AnimateIn()
