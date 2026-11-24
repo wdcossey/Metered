@@ -101,7 +101,10 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
 - **A click or a tap on the label activates what it labels**, as a browser's label: it focuses it, then clicks it. A
   checkbox or a switch toggles, a radio is checked (never unchecked), a button is clicked; a text box, or any other
   control that isn't an Avalonia `Button`, is only focused, as a browser's label clicks only a button or an input it
-  labels. The click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its
+  labels. A text box's soft keyboard is asked for too, as a tap on the text box asks for it (Avalonia's input method
+  client's `InputPaneActivationRequested`, which Android's input method answers with `ShowSoftInput`), so a tap on the
+  label of an input that already has the focus opens the keyboard again after Back put it away, as a browser's does
+  (#124); focusing a focused text box alone asks for nothing. The click is the target's own, through its automation peer's toggle, else its invoke, which run its click: its
   `Click`, its `Command`, and a radio group's value. A disabled target is neither focused nor clicked. A click is a press of the main
   button (a mouse's left, a finger, a pen's tip) on the label and its release on it, the pointer not taken from it in
   between, as a browser's `click`; another button let go meanwhile clicks nothing, and a second finger neither clicks
@@ -138,6 +141,8 @@ From the browser, since Base Web renders a block flow and a `<label htmlFor>`:
   gives an Input), and a Textarea in error drawn as Base Web's textarea in error; the label's click or tap toggling a
   Checkbox and a Switch, checking a Radio and its group's value, clicking a Button, each focused, with its `Click` and
   `Command`, not on a press alone, not for a disabled target, and a button in the label's content keeping its own press;
+  a click or a tap on the label of a focused Input or Textarea asking for its keyboard again, as a tap on it does, and
+  not where its input method is off;
   the label's hit area over its row's margins, the oracle's `controlTop`, taking no press from the control above or the
   child below, nor from a Button's tap band reaching over the margin, and no click let go over the child; a label outside
   the row keeping its box; another button's release clicking nothing, and the main one's clicking once, or not at all
@@ -191,7 +196,8 @@ themes, and computes the block flow's positions from the style functions' margin
    label's top margin does too; a Checkbox's label toggles it and toggles it back; the counter follows the soft keyboard
    and draws its digits whole; the validation example's error shows once the field is left. Found: a tap on the label of
    an input that already has the focus, after Back closed the keyboard, doesn't open it again (a tap on the input does):
-   #124.
+   #124, built and tried headless (the keyboard asked for as the input's own tap asks for it); the Pixel is
+   still to show the keyboard opening.
 9. **A Textarea is given the form control's error, as an Input is** (the developer, 2026-11-21 night, #105). Base Web's
    Textarea has `error: false` in its defaultProps, so under a form control in error its border stays as it is while the
    caption turns red: an accident of its defaults. The oracle keeps Base Web's case; the test expects, for a Textarea, what
