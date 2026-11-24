@@ -172,9 +172,15 @@ public class SelectLayoutTests
         var value = single.P<ContentPresenter>(Select.SingleValuePart);
         var row = single.P<SelectValueContainer>(Select.ValueContainerPart);
         Assert.True(value.Bounds.Right <= row.Bounds.Width - row.Padding.Right + 0.01);
-        // It shrinks so that the input's box after it is in the row too.
-        var box = single.P<SelectInputContainer>(Select.InputContainerPart);
-        Assert.True(box.Bounds.Right <= row.Bounds.Width - row.Padding.Right + 0.01, "the input's box ends at " + box.Bounds.Right);
+        // A label that can't cut itself (a box of its own width) shrinks so that the input's box after it is in the row too,
+        // as CSS's flex-shrink takes the overflow from what hides its own.
+        var boxed = new Select { Options = single.Options, Value = single.Value, GetValueLabel = _ => new Border { Width = 1000, Height = 10 } };
+        ((StackPanel)scene.Window.Content!).Children.Add(boxed);
+        scene.Pump();
+        var wide = boxed.P<SelectValueContainer>(Select.ValueContainerPart);
+        var box = boxed.P<SelectInputContainer>(Select.InputContainerPart);
+        Assert.True(box.Bounds.Right <= wide.Bounds.Width - wide.Padding.Right + 0.01, "the input's box ends at " + box.Bounds.Right);
+        Assert.True(boxed.P<ContentPresenter>(Select.SingleValuePart).Bounds.Width < wide.Bounds.Width - wide.Padding.Left);
         Assert.Equal(48, single.Bounds.Height);
     }
 }
