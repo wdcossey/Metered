@@ -52,7 +52,7 @@ namespace Metered.Controls;
 [TemplatePart(MaskToggleHideIconPart, typeof(StyledElement))]
 [TemplatePart(ScrollViewerPart, typeof(ScrollViewer))]
 [PseudoClasses(":loaded", ":size-mini", ":size-compact", ":size-default", ":size-large", ":is-focused", ":error", ":positive",
-    ":is-read-only")]
+    ":is-read-only", ":pointer-coarse")]
 public abstract class BaseInput : TextBox
 {
     public const string InputContainerPart = "InputContainer";
@@ -122,6 +122,7 @@ public abstract class BaseInput : TextBox
     private readonly HashSet<int> _latched = [];
     private TextPresenter? _textPresenter;
     private IPointer? _unfocused;
+    private bool? _coarse;
 
     /// <param name="component">The prefix of the parts' theme keys: <c>Input</c> for <c>Input.StyledRoot</c>.</param>
     /// <param name="parts">Every part of the control's template, by Base Web's names.</param>
@@ -133,6 +134,7 @@ public abstract class BaseInput : TextBox
         SetState(":positive", Positive);
         SetState(":is-read-only", IsReadOnly);
         SetState(":is-focused", false);
+        SetState(":pointer-coarse", CoarsePointer);
         // Before the text box's flyout's own handler (added later, with ContextFlyout): a menu asked for on a control of
         // its own isn't the text box's.
         AddHandler(ContextRequestedEvent, OnContextRequestedFromPart);
@@ -174,6 +176,27 @@ public abstract class BaseInput : TextBox
 
     /// <summary>Whether Base Web's <c>type</c> is <c>"password"</c>: the text is masked, and the toggle shown.</summary>
     protected virtual bool IsPassword => false;
+
+    /// <summary>
+    /// A coarse pointer, as the v2 controls' <c>@media (pointer: coarse)</c>: true on a phone or tablet (Android, iOS), where
+    /// the cut, copy and paste menu has no shortcuts and opens above the selection, as a phone's browser's (#110):
+    /// <c>:pointer-coarse</c> on the input and its parts. Once set, it holds whatever the platform; tests set it.
+    /// </summary>
+    internal bool CoarsePointer
+    {
+        get => _coarse ?? (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS());
+        set
+        {
+            _coarse = value;
+            SetState(":pointer-coarse", value);
+        }
+    }
+
+    /// <summary>The current template's text presenter (Avalonia's <c>PART_TextPresenter</c>), for the menu's place.</summary>
+    internal TextPresenter? TextPresenterPart => _textPresenter;
+
+    /// <summary>The current template's text scroller (<see cref="ScrollViewerPart"/>), for the menu's place.</summary>
+    internal ScrollViewer? TextScrollerPart => _scroller;
 
     /// <summary>A part of the current template by its Base Web name, for tests and tools.</summary>
     internal StyledElement? Part(string name) => _parts[name];
@@ -471,7 +494,22 @@ public abstract class BaseInput : TextBox
 
     private void OnContextRequestedFromPart(object? sender, ContextRequestedEventArgs e)
     {
-        if (FromOwnControl(e.Source)) e.Handled = true;
+        if (FromOwnControl(e.Source))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        // On a phone the menu opens above the selection without the theme's shortcuts, as a phone's browser's (#110),
+        // whoever asked for it (a hold, a handle, a mouse); Avalonia's flyout handler, after this one, would open it at the
+        // pointer or over the selection, with them. Taken even when an app cancels its opening, so it isn't opened there
+        // after all. A context menu is Avalonia's to open. The hold's feedback is the text box's own (its hold, a handle's
+        // request): the flyout handler's would be a second.
+        if (CoarsePointer && ContextMenu is null && ContextFlyout is PopupFlyoutBase menu
+            && TouchMenu.Show(this, menu))
+        {
+            e.Handled = true;
+        }
     }
 
     // A part that takes focus isn't a text box: the IME and the soft keyboard aren't the text box's while it has focus.
