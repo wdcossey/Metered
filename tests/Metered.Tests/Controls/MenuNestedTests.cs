@@ -223,7 +223,71 @@ public class MenuNestedTests
         Assert.False(ShellFrames.Back(scene.Window));
     }
 
-    // The child's layer is above the popover the menu is in: Back closes the child first, then that popover, as Escape would.
+    // A child its parent keeps open (forceHighlight highlights its option again after resetMenu, as stateful-container.js's
+    // componentDidUpdate does) isn't closed by that Escape, so Back is left for the app, as for a popover Escape wouldn't close.
+    [AvaloniaFact]
+    public void The_back_request_is_left_for_the_app_when_Escape_leaves_the_child_open()
+    {
+        var child = new Menu { ItemsSource = RecentFiles.Select(l => (object)new MenuItemData { Label = l }).ToList(), Width = 200 };
+        var props = new ControlTheme(typeof(MenuOptionList));
+        props.Setters.Add(new Setter(MenuOptionBase.GetChildMenuProperty, (Func<object, object?>)(item => item is MenuItemData { Label: "New File" } ? child : null)));
+        var parent = new Menu
+        {
+            ItemsSource = File.Select(l => (object)new MenuItemData { Label = l }).ToList(), Width = 300,
+            Overrides = [new Override { Part = Menu.OptionPart, Props = props }],
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
+        using var scene = Show(new Nest(new NestedMenus { Child = parent, Margin = new Thickness(20) }, parent, child));
+        var wentBack = 0;
+        scene.Window.BackRequested += (_, e) =>
+        {
+            wentBack++;
+            e.Handled = true;
+        };
+        // Set once it is shown: componentDidUpdate, not its mount, highlights the first option.
+        parent.ForceHighlight = true;
+        PopoverTests.Settle(scene);
+        var popover = parent.OptionAt(0)!.ChildMenuPopover!;
+        Assert.Equal(0, parent.HighlightedIndex);
+        Assert.True(popover.IsOpen);
+        var escapes = 0;
+        popover.Esc += (_, _) => escapes++;
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.Equal(1, escapes);
+        Assert.Equal(0, parent.HighlightedIndex);
+        Assert.True(popover.IsOpen);
+        Assert.Equal(1, wentBack);
+    }
+
+    // A child the mouse opened, the focus never in it (its parent's list has it): after Back, no closing popup gives any
+    // focus back, so the next focus on the parent's list, within the time one would come, is the menu's.
+    [AvaloniaFact]
+    public void After_the_back_request_closes_an_unfocused_child_the_parents_next_focus_is_its_own()
+    {
+        var n = Make();
+        var elsewhere = new Avalonia.Controls.Button { Content = "Elsewhere" };
+        using var scene = new Scene(new StackPanel { Children = { n.Root, elsewhere } }, width: 900, height: 700, themes: [new Avalonia.Themes.Simple.SimpleTheme(), new Metered.Themes.BaseTheme()]);
+        scene.Window.MouseMove(scene.CentreOf(n.Parent.OptionAt(4)!));
+        scene.Pump();
+        PopoverTests.Settle(scene);
+        Assert.True(Open(n.Parent));
+        Assert.True(List(n.Parent).IsFocused);
+        Assert.False(List(n.Child).IsFocused);
+
+        Assert.True(ShellFrames.Back(scene.Window));
+        Assert.False(Popover(n.Parent).IsOpen);
+        Assert.False(n.Parent.IsMenuFocused);
+        elsewhere.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        List(n.Parent).Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(List(n.Parent).IsFocused);
+        Assert.True(n.Parent.IsMenuFocused);
+    }
+
+    // The child's layer is above the popover the menu is in: Back closes the child first, then that popover, as Escape would;
+    // the child closing (its exit, its layer still there) passes the next request on.
     [AvaloniaFact]
     public void The_back_request_closes_the_child_before_the_popover_the_menu_is_in()
     {
@@ -237,14 +301,14 @@ public class MenuNestedTests
         Assert.True(Open(n.Parent));
 
         Assert.True(ShellFrames.Back(scene.Window));
-        PopoverTests.Settle(scene);
-        Assert.False(Open(n.Parent));
+        Assert.False(Popover(n.Parent).IsOpen);
         Assert.Equal(-1, n.Parent.HighlightedIndex);
         Assert.True(outer.IsOpen);
 
         Assert.True(ShellFrames.Back(scene.Window));
         Assert.False(outer.IsOpen);
         PopoverTests.Settle(scene);
+        Assert.False(Open(n.Parent));
         Assert.False(ShellFrames.Back(scene.Window));
     }
 
