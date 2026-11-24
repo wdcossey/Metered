@@ -395,6 +395,24 @@ public class SelectTests
     }
 
     [AvaloniaFact]
+    public void A_tags_label_of_the_apps_own_type_is_drawn_by_the_apps_data_template()
+    {
+        // Only a label React renders as text gets the tag's line (SelectTag.TextTemplate); the app's template draws its own type.
+        var (select, scene, _) = Make(s =>
+        {
+            s.Multi = true;
+            s.GetValueLabel = o => new Chip(Select.LabelText(o));
+            s.DataTemplates.Add(new Avalonia.Controls.Templates.FuncDataTemplate<Chip>((c, _) => new Border { Width = 30, Height = 10, Tag = c.Name }));
+        }, ["Aqua"]);
+        using var _s = scene;
+        var text = (ContentPresenter)select.Tags[0].Part(SelectTag.TextPart)!;
+        var border = Assert.IsType<Border>(text.Child);
+        Assert.Equal("Aqua", border.Tag);
+    }
+
+    private sealed record Chip(string Name);
+
+    [AvaloniaFact]
     public void Overrides_set_before_it_is_shown_follow_their_collections_changes()
     {
         var overrides = new OverrideCollection();
