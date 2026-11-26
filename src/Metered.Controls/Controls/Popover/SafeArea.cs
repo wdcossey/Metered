@@ -27,8 +27,9 @@ internal static class SafeArea
 
     /// <summary>
     /// The source read in place of a top level's insets manager, for a test: Avalonia's headless platform has no system
-    /// bars, and Avalonia's <see cref="IInsetsManager"/> can't be implemented outside it. Set before a popover opens;
-    /// null gives the platform's back.
+    /// bars, and C# can't implement <see cref="IInsetsManager"/> (its reference assembly is <c>[NotClientImplementable]</c>,
+    /// with an internal member). One made at runtime by <c>DispatchProxy</c> would also do; an interface of its own carries
+    /// only what the popover reads. Set before a popover opens; null gives the platform's back.
     /// </summary>
     internal static void Fake(TopLevel top, ISource? source)
     {

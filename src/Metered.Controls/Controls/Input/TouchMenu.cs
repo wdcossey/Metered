@@ -56,8 +56,9 @@ internal static class TouchMenu
     }
 
     /// <summary>
-    /// The keyboard read in place of a top level's input pane, for a test: Avalonia.Headless has none, and Avalonia's
-    /// <see cref="IInputPane"/> can't be implemented outside it. Null gives the platform's back.
+    /// The keyboard read in place of a top level's input pane, for a test: Avalonia.Headless has none, and C# can't
+    /// implement <see cref="IInputPane"/> (its reference assembly is <c>[NotClientImplementable]</c>, with an internal
+    /// member; one made at runtime by <c>DispatchProxy</c> would also do). Null gives the platform's back.
     /// </summary>
     internal static void FakeKeyboard(TopLevel top, IKeyboard? keyboard)
     {
