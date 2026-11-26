@@ -27,8 +27,8 @@ public partial class MenuPage : UserControl
     {
         InitializeComponent();
 
-        // profile.tsx: four of David Smith, by OptionProfile, the picture a box of the theme's tertiary background.
-        Profile.ItemsSource = Enumerable.Range(0, 4).Select(_ => (object)new Person("David Smith", "Senior Engineering Manager", "Uber Everything")).ToList();
+        // profile.tsx: four of David Smith, by OptionProfile (its third line Metered's own, PROCESS §2: no Uber mark), the picture a box of the theme's tertiary background.
+        Profile.ItemsSource = Enumerable.Range(0, 4).Select(_ => (object)new Person("David Smith", "Senior Engineering Manager", "Design Systems")).ToList();
         var profile = new ControlTheme(typeof(MenuOptionProfile));
         profile.Setters.Add(new Setter(MenuOptionProfile.GetProfileItemLabelsProperty,
             (Func<object?, MenuProfileLabels?>)(item => item is Person p ? new MenuProfileLabels(p.Title, p.Subtitle, p.Body) : null)));
