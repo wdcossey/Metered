@@ -140,7 +140,7 @@ public class MenuList : ScrollViewer
     /// </summary>
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
-        _quietFocus = e.Source == this && e.NavigationMethod == NavigationMethod.Pointer;
+        if (e.Source == this) _quietFocus = e.NavigationMethod == NavigationMethod.Pointer;
         base.OnGotFocus(e);
     }
 

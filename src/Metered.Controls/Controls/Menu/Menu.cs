@@ -491,9 +491,10 @@ public class Menu : TemplatedControl
     /// <summary>
     /// A child menu's Escape (or the back request, #131): resetMenu. Its popover closes, and if the focus was in the child,
     /// Avalonia's popup gives it back to the list, where a browser leaves it on the page (the child's list, focused, is
-    /// gone): that focus isn't the menu's, and is let go. With the focus elsewhere, none comes back, and none is let go.
+    /// gone): that focus isn't the menu's, and is let go, and moves no page (#132). With the focus elsewhere, none comes back,
+    /// and none is let go. The popup closes once its exit is over: <paramref name="animateOutTime"/> (ms) later.
     /// </summary>
-    internal void ResetFromChild(Visual? child)
+    internal void ResetFromChild(Visual? child, int animateOutTime = 0)
     {
         // Only ever set here, so a second call with the focus elsewhere doesn't clear a first one's.
         if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused && Layers.IsWithin(focused, child))
@@ -503,10 +504,10 @@ public class Menu : TemplatedControl
 
         ResetMenu();
         // The popup gives the focus back as it closes; if it doesn't come, the next focus is the menu's again.
-        DispatcherTimer.RunOnce(() => _childClosing = false, ChildClosingTime);
+        DispatcherTimer.RunOnce(() => _childClosing = false, ChildClosingTime + TimeSpan.FromMilliseconds(Math.Max(0, animateOutTime)));
     }
 
-    /// <summary>How long a child's closing may take to give the focus back.</summary>
+    /// <summary>How long a child's closing may take to give the focus back, after its exit.</summary>
     private static readonly TimeSpan ChildClosingTime = TimeSpan.FromMilliseconds(300);
 
     /// <summary>focusMenu: focused, the first item highlighted if none is, the list focused.</summary>

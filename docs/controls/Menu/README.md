@@ -114,7 +114,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 113 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 114 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -138,9 +138,9 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
   the back request as that Escape (a child a tap opened, a focused child, a child above the popover the menu is in, a
   child that Escape leaves open, the parent's focus after an unfocused child closed), the nested hover, a hidden menu not
   nested, a click and a tap on a parent option (its popover never closed), the `ChildMenuPopover` override.
-- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (8): the sample's
+- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (9): the sample's
   page, a tap on Open Recent near the foot leaving the page where it is, and the child menu closed by Escape or the back
-  request with the focus in it leaving it there too (#132), and in the shell Back closing the child menu before it goes
+  request with the focus in it leaving it there too, after an exit of 400 ms as well (#132), and in the shell Back closing the child menu before it goes
   back.
 
 ## Known differences
@@ -201,8 +201,8 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     `focus()` does: each `ScrollViewer` round the list brings it into view as its focus comes
     (`BringIntoViewOnFocusChange`). Here the focus a pointer gives the list (`NavigationMethod.Pointer`) scrolls no
     scroller round it, so the option under the finger or the mouse is the one chosen; nor does the focus a closing child
-    menu's popup gives back to its parent's list (known difference 15's, let go as a browser leaves it on the page, where
-    nothing moves). The keyboard's focus (Tab, the
+    menu's popup gives back to its parent's list once its exit (its `AnimateOutTime`) is over (known difference 15's, let
+    go as a browser leaves it on the page, where nothing moves). The keyboard's focus (Tab, the
     arrows between nested menus) and an app's `Focus()` still bring the list into view, as a browser's do (Tab, measured:
     the same 137 px), and the keys' highlight scrolls only the list, by `scrollItemIntoView`, never the page. A menu in a
     popover, and Select's dropdown, are in the window's overlay layer, not in the page, so their focus scrolled no page
