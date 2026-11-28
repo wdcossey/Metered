@@ -286,7 +286,7 @@ Buttons under the app's theme, then the same in a subtree given its own by `Them
 ## Not shown
 
 The pages at rest only. Hover, press and the keyboard's focus ring are in the Button's frames
-([`docs/controls/Button/`](docs/controls/Button/)); the Button's loading spinner and the Spinner's rings turn (held still at 0° for the pictures by `:metered-still`; no page shows a Button loading at rest), and the background's 200 ms
+([`docs/controls/Button/`](docs/controls/Button/)); the Button's loading spinner and the Spinner's rings turn (held still at 0° for the pictures by `:metered-still`; the Button page's `Loading` button is drawn loading), and the background's 200 ms
 transition moves, which still pictures can't show. The shell's Debug footer (what a page cost to open,
 [`docs/performance/README.md`](docs/performance/README.md)) is turned off for the pictures, as its times change on
 every run. The scroll bar is Avalonia's Simple theme, which the sample puts under Metered's for the controls Metered
