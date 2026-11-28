@@ -68,7 +68,8 @@ browser, so a long tooltip stays inside the window (known difference 3).
 
 The Popover's (its README's **Behaviour, as Base Web's**) at the tooltip's defaults: a mouse resting on the anchor opens
 it after 200 ms and leaving closes it 200 ms later unless the mouse reaches the body; keyboard focus on the anchor (Tab)
-opens it and focus leaving the anchor closes it (`autoFocus` false); Escape closes it; a click on the anchor does
+opens it and focus leaving the anchor closes it (`autoFocus` false; with it true, as the complex content example's, it
+stays open, but no focus moves into a tooltip, as `popover.js` moves none); Escape closes it; a click on the anchor does
 nothing. **Touch first:** a finger never hovers, so a finger's or a pen's tap on the anchor toggles it, and a tap
 elsewhere closes one a tap opened (Popover, known difference 2, #123); Avalonia's back request closes it before the
 app goes back (Popover, known difference 12).
@@ -101,7 +102,9 @@ app goes back (Popover, known difference 12).
    dismissal unless it is given `onClickOutside` or `onEsc`; Metered's has StatefulTooltip's, `DismissOnClickOutside`
    and `DismissOnEsc` true, which false turns off.
 2. **The Popover's differences are the tooltip's**: a tap toggling it (2), the page's scroll (3), focus given back (4),
-   the anchor's help text (5), the window's overlay layer (7, 8), what isn't ported (9: `renderAll`, `popperOptions`,
+   the anchor's help text (5: a text content's alone, a string's or a `TextBlock`'s, followed when the content is
+   replaced but not when a `TextBlock`'s text changes in place; the complex content example's anchor has none, where
+   `aria-describedby` reads the whole body), the window's overlay layer (7, 8), what isn't ported (9: `renderAll`, `popperOptions`,
    `stateReducer`, `mountNode`, `id`, `data-baseweb`), the margin placed at once (11) and Back (12).
 3. **A long text is as wide as its widest line.** Inner's text wraps at the room it has, as a browser's. But a browser's
    body, a block, takes all the room once its text wraps, where Avalonia's text block is as wide as its longest line: six

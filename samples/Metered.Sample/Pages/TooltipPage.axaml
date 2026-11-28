@@ -55,7 +55,7 @@
 
       <TextBlock Classes="heading" Text="Complex content" />
       <!-- stateful-complex-content.tsx: its content in Base Web's dark theme, with a link; autoFocus, so it stays open when
-           focus leaves its anchor. -->
+           focus leaves its anchor. As Base Web's popover.js, a tooltip's autoFocus moves no focus into it. -->
       <WrapPanel x:Name="ComplexText">
           <b:Tooltip x:Name="Complex" AutoFocus="True">
             <b:Tooltip.Content>
