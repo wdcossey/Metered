@@ -1,0 +1,43 @@
+<!--
+  Base Web's Tabs (baseui 18.2.0, tabs-motion/tabs.js), as a template of named parts. Each part's look is its own theme,
+  Tabs.Styled<Part> (Tabs.Parts.g.axaml), which the tabs' Overrides merge over (a tab's own parts: its Overrides):
+  this file holds only the structure.
+
+  Root                       (a block; a row when vertical)
+    TabBar                   (drawn over the border, its theme's ZIndex: the highlight's z-index 1 in the root's stacking context)
+      TabList                (the scroller: Metered.Controls.TabList, its own template)
+        PART_Tabs            (the line: the tabs make their children before the highlight)
+          Tab                (a tab's button: Metered.Controls.TabButton)
+            ArtworkContainer (with an artwork)
+          TabHighlight
+      EndEnhancerContainer   (horizontal, with an end enhancer)
+    TabBorder
+    PART_Panels              (a TabPanel for each tab, only the active one shown)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Tabs}" TargetType="b:Tabs">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <b:TabsRootPanel Name="Root" Theme="{DynamicResource Tabs.StyledRoot}">
+          <Grid Name="TabBar" ColumnDefinitions="*,Auto" Theme="{DynamicResource Tabs.StyledTabBar}">
+            <b:TabList Name="TabList" Theme="{DynamicResource Tabs.StyledTabList}">
+              <b:TabListPanel Name="PART_Tabs">
+                <!-- aria-hidden, role="presentation". -->
+                <b:TabHighlight Name="TabHighlight" AutomationProperties.AccessibilityView="Raw" Theme="{DynamicResource Tabs.StyledTabHighlight}" />
+              </b:TabListPanel>
+            </b:TabList>
+            <ContentPresenter Name="EndEnhancerContainer" Grid.Column="1" Theme="{DynamicResource Tabs.StyledEndEnhancerContainer}"
+                              Content="{TemplateBinding EndEnhancer}" />
+          </Grid>
+          <Border Name="TabBorder" AutomationProperties.AccessibilityView="Raw" Theme="{DynamicResource Tabs.StyledTabBorder}" />
+          <Panel Name="PART_Panels" />
+        </b:TabsRootPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

@@ -246,6 +246,21 @@ highlights an option and chooses it, and a tap on Open Recent or New Breakpoint 
 <img src="docs/preview/dark__menu-4.png" width="270" alt="Menu, dark, at its end: links, dividers, the empty state">
 </p>
 
+## Tabs
+
+Base Web's tabs-motion, as its documentation's examples show them: basic, keyboard activation, an end enhancer,
+vertical, fixed fill, disabled, a leading icon, and its scroll scenario's twenty tabs with the ninth centred
+([`docs/controls/Tabs/`](docs/controls/Tabs/)).
+
+<p>
+<img src="docs/preview/light__tabs-1.png" width="270" alt="Tabs, light: basics, keyboard activation, the end enhancer, vertical">
+<img src="docs/preview/dark__tabs-1.png" width="270" alt="Tabs, dark: basics, keyboard activation, the end enhancer, vertical">
+</p>
+<p>
+<img src="docs/preview/light__tabs-2.png" width="270" alt="Tabs, light, at its end: fixed fill, disabled, the leading icon, scroll">
+<img src="docs/preview/dark__tabs-2.png" width="270" alt="Tabs, dark, at its end: fixed fill, disabled, the leading icon, scroll">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by
