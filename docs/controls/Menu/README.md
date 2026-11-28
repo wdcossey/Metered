@@ -81,7 +81,9 @@ From `stateful-container.js`, `menu.js` and `utils.js`:
   scroll the focused list a page, as a browser does for a key Base Web lets through.
 - **Focus**: the list focused (onFocus) focuses the menu, the first item highlighted if none is; losing focus unfocuses
   it, its highlight kept (drawn as `menuFontSelected`). A mouse over the list focuses it too (onMouseOver), and over an
-  option highlights it, not a disabled one; a click chooses it and highlights it.
+  option highlights it, not a disabled one; a click chooses it and highlights it. The focus a pointer gives the list (a
+  mouse over it, a click, a tap) moves no page round it, where a browser scrolls the page to show the whole list (known
+  difference 16); the keyboard's focus brings it into the page's view, as a browser's does.
 - **Touch first**: a phone's browser sends no mouse events for a drag that scrolls, and mouseover, mouseenter and click as a
   tap lifts. A finger's drag over a long menu scrolls it (its scroll gesture) and focuses, highlights and chooses nothing; a
   tap focuses the menu, highlights the option and chooses it. A finger's press doesn't focus the list as it lands, before it
@@ -112,7 +114,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 105 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 114 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -124,7 +126,10 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 - `MenuBehaviourTests` (21): Base Web's container's state after each step of 21 sequences, replayed with real keys, focus
   and a real mouse: highlight, focus, the items chosen, the reducer's change types.
 - `MenuScrollTests` (4): the list's offset after each key, against `scrollItemIntoView`'s scrollTop.
-- `MenuTests` (24): a finger's drag and a tap (its changes: focus, mouseEnter, click), a press let go elsewhere, a mouse moving on one option, the menu's focus reaching every option, keys while the menu isn't focused, Page Down and Space
+- `MenuTests` (29): a finger's drag and a tap (its changes: focus, mouseEnter, click), a press let go elsewhere, in a page
+  that scrolls a tap and a mouse's hover and click leaving the page where it is (the list's own bring-into-view after them
+  still scrolling it), Tab bringing the list into its view and the arrows scrolling only the list, a tap in a popover's
+  menu (#132), a mouse moving on one option, the menu's focus reaching every option, keys while the menu isn't focused, Page Down and Space
   (not the parent's, from a child's content), `keyboardControlNode` as Select uses it (the text's caret kept), overrides (an
   option's own, its template, a theme's template after the option is made again), the profile option by override (a picture that isn't an image: none), links (followed
   whatever `ItemSelect` does), UI Automation, items that change, options made again taking their controls, a menu following
@@ -133,8 +138,10 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
   the back request as that Escape (a child a tap opened, a focused child, a child above the popover the menu is in, a
   child that Escape leaves open, the parent's focus after an unfocused child closed), the nested hover, a hidden menu not
   nested, a click and a tap on a parent option (its popover never closed), the `ChildMenuPopover` override.
-- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (5): the sample's
-  page, and in the shell Back closing the child menu before it goes back.
+- `MenuFrames` (2, and the gallery): drawn pixels of the list and a highlighted option. `MenuPageTests` (9): the sample's
+  page, a tap on Open Recent near the foot leaving the page where it is, and the child menu closed by Escape or the back
+  request with the focus in it leaving it there too, after an exit of 400 ms as well (#132), and in the shell Back closing the child menu before it goes
+  back.
 
 ## Known differences
 
@@ -171,7 +178,8 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 13. **Right to left** (not yet).
 14. **On a phone, tried on a Pixel 8** (Android 17, 2026-11-24, #126): a tap highlights an option, a tap on a disabled one
     does nothing, a finger's drag in the long list scrolls the list, and a tap opens a child menu. Found: a tap on an
-    option of a menu partly below the screen's foot scrolls the page to bring the whole menu into view (#132); the
+    option of a menu partly below the screen's foot scrolls the page to bring the whole menu into view (#132: since left
+    where it is, known difference 16, tried headless only); the
     child menu's popover reaches over Android's navigation bar (#129: since cut to the safe area, as every popover is,
     tried headless only). Not tried yet: the keys, the profile pictures,
     links, and everything in a real window.
@@ -183,4 +191,20 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     before the app goes back (the sample's shell); with no child open, or one that Escape leaves open (as `ForceHighlight`
     highlights its option again, its Escape run all the same), the request goes on as before, to the popover below or the
     app. Tried headless (`MenuNestedTests`, `MenuPageTests`), not yet on a phone.
+16. **The focus a pointer gives the list moves no page round it** (chosen, #132, found on a Pixel 8; as built). Base Web's
+    focusMenu calls the list's `focus()` as a mouse comes over it, and as a tap's mouseover comes, and a browser's
+    `focus()` scrolls the page to show the whole list. Measured in headless Chromium (Base Web's own `StatefulMenu`, its
+    list 250 px high, 266 with its padding, 137 px of it below the window's foot): a mouse moved onto the first option, a
+    click on it, and on a phone (Pixel 7 emulated) a tap on it each scrolled the page 137 px, the list's foot to the
+    window's, and the click and the tap then chose the fifth option, which had come under the pointer. A browser's own click
+    or tap focus on a list scrolls nothing (measured the same way: 0 px). Avalonia's scrollers do what Base Web's
+    `focus()` does: each `ScrollViewer` round the list brings it into view as its focus comes
+    (`BringIntoViewOnFocusChange`). Here the focus a pointer gives the list (`NavigationMethod.Pointer`) scrolls no
+    scroller round it, so the option under the finger or the mouse is the one chosen; nor does the focus a closing child
+    menu's popup gives back to its parent's list once its exit (its `AnimateOutTime`) is over (known difference 15's, let
+    go as a browser leaves it on the page, where nothing moves). The keyboard's focus (Tab, the
+    arrows between nested menus) and an app's `Focus()` still bring the list into view, as a browser's do (Tab, measured:
+    the same 137 px), and the keys' highlight scrolls only the list, by `scrollItemIntoView`, never the page. A menu in a
+    popover, and Select's dropdown, are in the window's overlay layer, not in the page, so their focus scrolled no page
+    before either. Tried headless (`MenuTests`, `MenuPageTests`, `SelectTests`), not yet on a phone.
 

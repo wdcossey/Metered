@@ -103,6 +103,64 @@ public class MenuPageTests
         Assert.True(option.ChildMenuPopover!.IsOpen);
     }
 
+    // #132, found on a Pixel 8: with the child menu example's list partly below the screen's foot, a tap on Open Recent (in
+    // view) scrolled the page about 200 px before its child opened. The page stays where it is.
+    [AvaloniaFact]
+    public void A_Tap_On_Open_Recent_Near_The_Foot_Leaves_The_Page_Where_It_Is()
+    {
+        var page = new MenuPage();
+        using var scene = PopoverTests.Show(page);
+        var scroller = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var parent = page.Child;
+        var option = parent.OptionAt(4)!;
+        var list = (Control)parent.Part(Menu.ListPart)!;
+        // Open Recent's foot 20 px above the window's, the rest of the list below it.
+        var foot = option.TranslatePoint(new Point(0, option.Bounds.Height), (Visual)scroller.Content!)!.Value.Y;
+        scroller.Offset = new Vector(0, foot - scroller.Viewport.Height + 20);
+        scene.Pump();
+        Assert.True(list.TranslatePoint(new Point(0, list.Bounds.Height), scene.Window)!.Value.Y > Scene.Height);
+        var at = scroller.Offset.Y;
+        MenuTests.Tap(scene, scene.CentreOf(option));
+        PopoverTests.Settle(scene);
+        Assert.Equal(at, scroller.Offset.Y);
+        Assert.Equal(4, parent.HighlightedIndex);
+        Assert.True(option.ChildMenuPopover!.IsOpen);
+    }
+
+    // A child menu closed with the focus in it gives the focus back to its parent's list as its popup closes: a browser leaves
+    // the focus on the page, and moves nothing (#132).
+    // Its popup gives the focus back once its exit is over: an AnimateOutTime of 400 ms gives it back after that.
+    [AvaloniaTheory]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 400)]
+    public void A_Child_Menu_Closed_With_The_Focus_In_It_Leaves_The_Page_Where_It_Is(bool back, int animateOutTime)
+    {
+        var page = new MenuPage();
+        using var scene = PopoverTests.Show(page);
+        var scroller = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var parent = page.Child;
+        var option = parent.OptionAt(4)!;
+        var foot = option.TranslatePoint(new Point(0, option.Bounds.Height), (Visual)scroller.Content!)!.Value.Y;
+        scroller.Offset = new Vector(0, foot - scroller.Viewport.Height + 20);
+        scene.Pump();
+        var at = scroller.Offset.Y;
+        MenuTests.Tap(scene, scene.CentreOf(option));
+        PopoverTests.Settle(scene);
+        var child = Assert.IsType<Menu>(option.ChildMenu);
+        option.ChildMenuPopover!.AnimateOutTime = animateOutTime;
+        MenuTests.Tap(scene, scene.CentreOf(child.OptionAt(1)!));
+        Assert.True(((Control)child.Part(Menu.ListPart)!).IsFocused);
+        if (back) Assert.True(ShellFrames.Back(scene.Window));
+        else MenuKit.Press(scene, "Escape");
+        PopoverTests.Settle(scene, 200 + animateOutTime);
+        Assert.False(option.ChildMenuPopover!.IsOpen);
+        Assert.False(((Control)child.Part(Menu.ListPart)!).IsFocused);
+        Assert.Equal(at, scroller.Offset.Y);
+        // The focus given back is let go, as a browser leaves it on the page (known difference 15's).
+        Assert.False(parent.IsMenuFocused);
+    }
+
     // Back with the child menu open is its Escape: the parent reset and the child closed, and the shell stays on the page;
     // with the child closed, the shell goes back (#131).
     [AvaloniaFact]
