@@ -95,10 +95,9 @@ public class TooltipTests
     public void Its_parts_are_the_popovers_with_the_tooltips_themes()
     {
         var (tooltip, _, _) = Fixed(150, 400);
-        tooltip.ShowArrow = true;
         tooltip.IsOpen = true;
         var page = new Panel { Children = { tooltip } };
-        page.Styles.Add(new Style(x => x.OfType<Popover>()) { Setters = { new Setter(Popover.ShowArrowProperty, false) } });
+        page.Styles.Add(new Style(x => x.OfType<Popover>()) { Setters = { new Setter(Popover.ShowArrowProperty, true) } });
         using var scene = PopoverTests.Show(page);
         PopoverTests.Settle(scene);
         foreach (var part in new[] { Popover.BodyPart, Popover.ArrowPart, Popover.InnerPart })
@@ -108,7 +107,7 @@ public class TooltipTests
             Assert.Same(tooltip.FindResource($"Tooltip.Styled{part}"), element.Theme);
         }
 
-        Assert.True(tooltip.ShowArrow);
+        Assert.False(tooltip.ShowArrow);
         Assert.Contains(":is-open", tooltip.Classes);
         Assert.Contains(":is-hover-trigger", tooltip.Part(Popover.BodyPart)!.Classes);
     }
@@ -296,5 +295,21 @@ public class TooltipTests
         PopoverTests.Settle(scene);
         Assert.False(tooltip.IsOpen);
         Assert.Null(AutomationProperties.GetHelpText(button));
+    }
+
+    // aria-describedby names the body, so the anchor is described by whatever it shows: new content while it is open is
+    // the anchor's help text at once.
+    [AvaloniaFact]
+    public void New_content_while_it_is_open_describes_its_anchor()
+    {
+        var button = new MeteredButton { Content = "Copy" };
+        var tooltip = new Tooltip { Anchor = button, Content = "Copy to the clipboard", Margin = new Thickness(100), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        using var scene = PopoverTests.Show(tooltip);
+        Tap(scene, scene.CentreOf(button));
+        PopoverTests.Settle(scene);
+        Assert.Equal("Copy to the clipboard", AutomationProperties.GetHelpText(button));
+        tooltip.Content = "Copied";
+        scene.Pump();
+        Assert.Equal("Copied", AutomationProperties.GetHelpText(button));
     }
 }

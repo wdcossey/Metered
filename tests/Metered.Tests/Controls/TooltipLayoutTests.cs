@@ -9,14 +9,18 @@ using Metered.Controls;
 namespace Metered.Tests.Controls;
 
 /// <summary>
-/// Where the tooltip's body and arrow are drawn: popper.js's placement and offsets at the tooltip's popoverMargin, 0
-/// (PopoverOracle's tether cases at that margin, popper.js itself), Body's margin there (getPopoverMarginStyles), and
-/// the arrow where getArrowPositionStyles puts it; and that its body never moves as it fades in and out
+/// Where the tooltip's body and arrow are drawn: popper.js's placement and offsets at the tooltip's popoverMargin, 0, without
+/// the arrow, and at 8 with it, stateful-tooltip.test.tsx's (PopoverOracle's tether cases, popper.js itself: tether.g.json
+/// has no arrow at a margin of 0), Body's margin there (getPopoverMarginStyles), and the arrow where
+/// getArrowPositionStyles puts it; and that its body never moves as it fades in and out
 /// (tooltip/styled-components.js's Body: its transform getEndPosition in every state).
 /// </summary>
 public class TooltipLayoutTests
 {
-    /// <summary>The tether cases at a margin of 0 drawn: the 120 × 60 body round the anchors in the middle and in a corner it must flip from.</summary>
+    /// <summary>
+    /// The tether cases drawn, the 120 × 60 body round the anchors in the middle and in a corner it must flip from: at the
+    /// tooltip's margin, 0 (no arrow), and at 8 with the arrow.
+    /// </summary>
     public static TheoryData<int> Drawn()
     {
         var data = new TheoryData<int>();
@@ -24,7 +28,8 @@ public class TooltipLayoutTests
         for (var i = 0; i < cases.Length; i++)
         {
             var c = cases[i];
-            if (c.PopoverMargin == 0 && !c.IgnoreBoundary && c.BodyWidth == 120 && c.BodyHeight == 60 && c.Anchor is "middle" or "bottomRight") data.Add(i);
+            if (!c.IgnoreBoundary && c.BodyWidth == 120 && c.BodyHeight == 60 && c.Anchor is "middle" or "bottomRight"
+                && (c.PopoverMargin == TooltipOracle.Value.Defaults.Stateful.PopoverMargin || (c.PopoverMargin == 8 && c.ShowArrow))) data.Add(i);
         }
 
         return data;
@@ -35,12 +40,12 @@ public class TooltipLayoutTests
     public void The_body_and_arrow_are_drawn_where_popper_js_and_Base_Web_put_them(int index)
     {
         var c = PopoverOracle.Value.Tether.Cases[index];
-        Assert.Equal(TooltipOracle.Value.Defaults.Stateful.PopoverMargin, c.PopoverMargin);
         // The content's size for a body of the case's: Inner's padding round it.
         var pad = TooltipOracle.Value.Colours[0].Inner.Padding;
         var (tooltip, anchor, _) = TooltipTests.Fixed(c.X, c.Y, c.Width, c.Height, c.BodyWidth - pad[0] - pad[2], c.BodyHeight - pad[1] - pad[3]);
         tooltip.Placement = PopoverOracle.Placement(c.Placement);
         tooltip.ShowArrow = c.ShowArrow;
+        tooltip.PopoverMargin = c.PopoverMargin;
         using var scene = PopoverTests.Show(tooltip);
         tooltip.IsOpen = true;
         PopoverTests.Settle(scene, 180);

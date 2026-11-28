@@ -339,7 +339,12 @@ public class Popover : TemplatedControl
         var p = change.Property;
         if (p == IsOpenProperty) OnIsOpenChanged(change.GetNewValue<bool>());
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
-        else if (p == ContentProperty || p == ContentTemplateProperty) GiveContent();
+        else if (p == ContentProperty || p == ContentTemplateProperty)
+        {
+            GiveContent();
+            // A tooltip's anchor is described by what it shows now (aria-describedby names the body).
+            GiveAnchorHelp();
+        }
         else if (p == ShowArrowProperty || p == TriggerTypeProperty || p == PopoverMarginProperty || p == FocusLockProperty
             || p == AccessibilityTypeProperty || p == AnimateOutTimeProperty)
         {

@@ -79,14 +79,16 @@ app goes back (Popover, known difference 12).
   font, light and dark (`tooltip.oracle.json`); a string's text in Inner's font and colour; the fade in over 0.1 s on
   `easeOutCurve` of the opacity alone and none before or at the exit (the 16 motion cases, each `opacity` alone); the exit
   at an `animateOutTime`, its opacity alone; a hover body's first 0.1 s.
-- `Controls/TooltipLayoutTests`: the body and the arrow drawn where popper.js puts them at a margin of 0 (26 cases of
-  `tether.g.json`'s, popper.js itself: the anchors in the middle and in a corner it must flip from, each placement, with
-  and without the arrow), Inner's padding round the content; every margin case (72: `getPopoverMarginStyles`) and its
+- `Controls/TooltipLayoutTests`: the body and the arrow drawn where popper.js puts them (52 cases of `tether.g.json`'s,
+  popper.js itself: the anchors in the middle and in a corner it must flip from, each placement, at the tooltip's margin,
+  0, without the arrow, and at 8 with it, `stateful-tooltip.test.tsx`'s: `tether.g.json` has no arrow at a margin of 0),
+  Inner's padding round the content; every margin case (72: `getPopoverMarginStyles`) and its
   start its end; the body not moving as it fades in and out (a popover's does); a long text wrapped inside the window.
 - `Controls/TooltipTests`: the defaults as StatefulTooltip resolves them, and a Tooltip's; its parts and their themes
   (a style for Popovers not applied); overrides of the three parts; a mouse's hover and the delays; a click not toggling
   it; a tap toggling it and a tap elsewhere closing it; keyboard focus and the blur; Escape and Back; no focus taken nor
-  locked, where a popover's takes it; UI Automation.
+  locked, where a popover's takes it; UI Automation, and new content while it is open describing its anchor at once
+  (the Popover gave the anchor its help text only as it opened, until #154).
 - `Controls/TooltipFrames`: the body, its text and the arrow's tip drawn in Base Web's colours, light and dark; the
   gallery above.
 - `Sample/TooltipPageTests`: the page's place (154, after Menu, before the theme), its examples as set, a tap toggling

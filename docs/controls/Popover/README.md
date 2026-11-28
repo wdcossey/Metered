@@ -146,7 +146,7 @@ From `stateful-container.js` and `popover.js`:
   inside the body and gives focus back to where it was when it closes (`returnFocus`; Avalonia's popup does this for every popover: known difference 4), never for a hover popover or a
   tooltip.
 - **Accessibility** (`getAnchorProps`, `getPopoverBodyProps`): a tooltip's body is a tooltip to UI Automation, and its
-  text is the anchor's help text while it is open (`aria-describedby`).
+  text is the anchor's help text while it is open (`aria-describedby`), new content's at once (#154).
 
 From its style functions (`styled-components.js`): `Body` in `backgroundTertiary`, `popoverBorderRadius`, `shadow600`,
 its margin on the side facing the anchor `ARROW_SIZE + popoverMargin` (`getPopoverMarginStyles`); `Arrow` a 9 px
