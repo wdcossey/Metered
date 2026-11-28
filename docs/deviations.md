@@ -81,6 +81,8 @@ These are the ones to revisit first.
 | Select | `placeholder` is any node | Text | as built (#97) | [Select 5](controls/Select/README.md#known-differences) |
 | Select | No counterpart: a browser's back button leaves the page | Avalonia's back request closes an open dropdown as Escape does (#123's rule) | as built (#97) | [Select 7](controls/Select/README.md#known-differences) |
 | Tooltip | `Tooltip` and `StatefulTooltip` are separate: a controlled `Tooltip` has no dismissal unless it is given `onClickOutside` or `onEsc` | One tooltip, as the Popover: StatefulTooltip's dismissals by default (`DismissOnClickOutside`, `DismissOnEsc`); the Popover's other rows are the tooltip's | as built (#154) | [Tooltip 1, 2](controls/Tooltip/README.md#known-differences) |
+| Tabs | `Tabs` and `StatefulTabs` are separate | One: a click, a tap and the keys set `ActiveKey` whatever bound it | as built (#155) | [Tabs 1](controls/Tabs/README.md#known-differences) |
+| Tabs | A tab's plain `:hover`, kept after a tap on a phone | A mouse's only | as built (#155) | [Tabs 2](controls/Tabs/README.md#known-differences) |
 
 ## Forced
 
@@ -113,12 +115,14 @@ These are the ones to revisit first.
 | **Menu: no `renderAll`, and no `List` of another element** (the virtualized example) | Nothing reads hidden content; an override is a theme (ADR 0001) | [Menu 9](controls/Menu/README.md#known-differences) |
 | **Tooltip: a long text is as wide as its widest line**: a browser's body takes all the room once its text wraps (390 px in the phone's window, 365 measured for six of the documentation's message) | Avalonia measures text by its lines | [Tooltip 3](controls/Tooltip/README.md#known-differences) |
 | **Tooltip (sample): the inline examples' text is a `WrapPanel` of its words** round the anchor, a span in a line of text in Base Web's | Avalonia's `InlineUIContainer` puts an inline control's foot on the baseline; `TextBlock.BaselineOffset` changed nothing | [Tooltip 4](controls/Tooltip/README.md#known-differences) |
+| **Tabs: a panel's content is the app's control, kept** when its tab isn't active, where Base Web unmounts it and mounts a new one | Avalonia's content is an instance, not a render function | [Tabs 3](controls/Tabs/README.md#known-differences) |
+| **Tabs: the artwork is content**, its colour its container's and its size the resource `Tabs.ArtworkSize`; no `uid`, `tabRef` or ids; `transition: all` written for what moves; the highlight drawn over the border by the bar; a tab's min-content width read, not measured | Avalonia's content model, no DOM, no stacking contexts, no min-content measure | [Tabs 5 to 10](controls/Tabs/README.md#known-differences) |
 
 ## Not yet
 
 | What | Detail |
 |---|---|
-| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences) |
+| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences), [Tabs 13](controls/Tabs/README.md#known-differences) |
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** under `KeyboardInset`, Gboard's height changing, the focus moved to another input with the keyboard up and the ready line's `page=` (#108; its other checks passed on the Pixel 8 on 2026-11-23), handles left on an input the focus left (#109: Avalonia's, worked round and tried headless only), the desktop menu (#110: a phone's since, headless only), the grip focusing the textarea (#111: fixed since, headless only) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences), [KeyboardInset 5](controls/KeyboardInset/README.md#known-differences) |
@@ -132,3 +136,6 @@ These are the ones to revisit first.
 | **Select:** the Tag control (its tag is `SelectTag`, only what the select uses); `onFocus`, `onBlur`, `inputRef`, `mountNode`, `id`; the `aria-` props but its name; Base Web's locale | [Select 6, 9, 10, 11](controls/Select/README.md#known-differences) |
 | **On a phone and in a real window:** the Select (#133) | [Select 14](controls/Select/README.md#known-differences) |
 | **On a phone and in a real window:** the Tooltip (#161) | [Tooltip 6](controls/Tooltip/README.md#known-differences) |
+| **Tabs:** a new active tab brought into view at once, where Base Web's `scrollIntoView` is smooth | [Tabs 4](controls/Tabs/README.md#known-differences) |
+| **Tabs:** vertical tabs in a root too narrow for them don't shrink; a tab moved among the tabs loses the focus | [Tabs 11, 12](controls/Tabs/README.md#known-differences) |
+| **On a phone and in a real window:** the Tabs (#159) | [Tabs 15](controls/Tabs/README.md#known-differences) |

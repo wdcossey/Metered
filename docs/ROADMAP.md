@@ -138,3 +138,9 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       select-component.js's own handlers (against its own class driven in Node), a click or a tap that opens it and a drag
       that doesn't, a finger down outside closing it, the back request, its parts and overrides (`docs/controls/Select/`).
       On the Pixel and in a real window: #133. The Tag control is still to come
+- [x] Tabs (#155): Base Web's `baseui/tabs-motion` (its `baseui/tabs` is deprecated in its favour), `Tabs` and `StatefulTabs`
+      in one: the tab list that scrolls when intrinsic (its tabs shrinking to their longest word first, as CSS's flex
+      items do) and shares its room when fixed, vertical, the highlight placed on mount and moved by its transition (at its
+      end values: #13), the border, the panels and `renderAll`, disabled tabs, artwork, the end enhancer, the keys as its
+      own handlers give them (against Base Web's driven in Node), a tap that chooses and a sideways drag that scrolls, its
+      parts and a tab's own overrides (`docs/controls/Tabs/`). On the Pixel and in a real window: #159

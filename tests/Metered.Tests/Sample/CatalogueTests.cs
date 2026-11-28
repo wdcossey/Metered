@@ -115,6 +115,7 @@ public class CatalogueTests
                 ("Popover", typeof(PopoverPage)),
                 ("Menu", typeof(MenuPage)),
                 ("Tooltip", typeof(TooltipPage)),
+                ("Tabs", typeof(TabsPage)),
                 ("Theme", typeof(ThemePage)),
             ],
             SampleShell.Pages.Select(page => (page.Title, page.Type)));
@@ -136,7 +137,7 @@ public class CatalogueTests
     [AvaloniaFact]
     public void Every_Page_Can_Name_Its_Pictures_And_None_Takes_The_Lists()
     {
-        Assert.Equal(["button", "buttongroup", "checkbox", "radio", "switch", "progressbar", "spinner", "slider", "input", "textarea", "formcontrol", "select", "popover", "menu", "tooltip", "theme"], SampleShell.Pages.Select(page => PreviewGallery.PictureName(page.Title)));
+        Assert.Equal(["button", "buttongroup", "checkbox", "radio", "switch", "progressbar", "spinner", "slider", "input", "textarea", "formcontrol", "select", "popover", "menu", "tooltip", "tabs", "theme"], SampleShell.Pages.Select(page => PreviewGallery.PictureName(page.Title)));
         Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("List"));
         Assert.Throws<InvalidOperationException>(() => PreviewGallery.PictureName("Date/Time"));
     }
@@ -217,10 +218,10 @@ public class CatalogueTests
     {
         var shell = new SampleShell();
 
-        var error = Assert.Throws<ArgumentException>(() => shell.Open("Tabs"));
+        var error = Assert.Throws<ArgumentException>(() => shell.Open("Accordion"));
 
-        Assert.Contains("'Tabs'", error.Message);
-        Assert.Contains("'Button', 'ButtonGroup', 'Checkbox', 'Radio', 'Switch', 'ProgressBar', 'Spinner', 'Slider', 'Input', 'Textarea', 'FormControl', 'Select', 'Popover', 'Menu', 'Tooltip', 'Theme'", error.Message);
+        Assert.Contains("'Accordion'", error.Message);
+        Assert.Contains("'Button', 'ButtonGroup', 'Checkbox', 'Radio', 'Switch', 'ProgressBar', 'Spinner', 'Slider', 'Input', 'Textarea', 'FormControl', 'Select', 'Popover', 'Menu', 'Tooltip', 'Tabs', 'Theme'", error.Message);
         Assert.False(shell.IsShowingPage);
     }
 

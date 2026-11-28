@@ -131,7 +131,9 @@ public class RadioMark : Decorator
         {
             // The line's centre: past the offset and half the line's width, its corners grown as much.
             var grow = OutlineOffset + OutlineThickness / 2;
-            var radii = new CornerRadius(outer.TopLeft + grow, outer.TopRight + grow, outer.BottomRight + grow, outer.BottomLeft + grow);
+            // An outline inside the box (a negative offset, a tab's) has its corners shrunk as much, to no less than square.
+            var radii = new CornerRadius(Math.Max(0, outer.TopLeft + grow), Math.Max(0, outer.TopRight + grow),
+                Math.Max(0, outer.BottomRight + grow), Math.Max(0, outer.BottomLeft + grow));
             _outlinePen ??= new ImmutablePen(brush.ToImmutable(), OutlineThickness);
             context.DrawRectangle(null, _outlinePen, new RoundedRect(box.Inflate(grow), radii));
         }

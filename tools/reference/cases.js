@@ -162,6 +162,8 @@ const files = {
   'menu.oracle.json': require('./menu').oracle(version),
   // Base Web's Select: rendered with its dropdown and tags, its own class driven, its filter (select.js).
   'select.oracle.json': require('./select').oracle(version),
+  // Base Web's Tabs (tabs-motion): rendered, its keys' handlers driven (tabs.js).
+  'tabs.oracle.json': require('./tabs').oracle(version),
   'button.oracle.json': { baseui: version, colours, layout, spinner, enhancers },
   'button-group.oracle.json': { baseui: version, root: groupRoot },
   // Base Web's createTheme and createDarkTheme on a few foundations and overrides (themes.js).

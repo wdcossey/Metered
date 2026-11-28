@@ -106,6 +106,20 @@ internal sealed class Parts
         }
     }
 
+    /// <summary>
+    /// Lets every part go: the theme bindings &lt;see cref="Place"/&gt; made (to the owner's resources, which would keep the
+    /// elements as long as the owner lives) and the override themes given, for elements the control no longer shows.
+    /// </summary>
+    public void Detach()
+    {
+        foreach (var element in _themed) element.ClearValue(StyledElement.ThemeProperty);
+        _themed.Clear();
+        foreach (var binding in _placed.Values) binding.Dispose();
+        _placed.Clear();
+        _found.Clear();
+        SetOverrides(null);
+    }
+
     /// <summary>Sets a state pseudoclass on every part (the control sets its own).</summary>
     public void SetState(string pseudoClass, bool on)
     {
