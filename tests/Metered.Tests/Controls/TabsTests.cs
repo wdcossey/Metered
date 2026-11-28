@@ -132,7 +132,8 @@ public class TabsTests
         var (page, scene) = InAPage(tabs);
         using var _ = scene;
         var list = (TabList)tabs.Part(Tabs.TabListPart)!;
-        Drag(scene, scene.CentreOf(Buttons(tabs)[1]), new Vector(-45, -150));
+        // Its first move already past the start distance sideways, as a quick flick's is.
+        Drag(scene, scene.CentreOf(Buttons(tabs)[1]), new Vector(-40, -150), steps: 1);
         Assert.True(page.Offset.Y > 50, $"the page moved {page.Offset.Y}");
         Assert.Equal(0, list.Offset.X);
         Assert.Equal("0", tabs.ActiveKey);
