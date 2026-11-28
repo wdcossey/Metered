@@ -121,6 +121,10 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       parts and overrides (`docs/controls/Popover/`). `Tether` and `Layers` are for Select (#97) and Menu (#107). On
       the Pixel (partly, 2026-11-23) and in a real window: #119; its popover over Android's navigation bar: #129, since cut to the window's safe area (headless; the phone to check). Then (#123): a finger's or a pen's tap toggles a hover popover, and
       Avalonia's back request closes the top popover that Escape would close before the shell goes back
+- [x] Tooltip (#154): Base Web's `baseui/tooltip` (no v2), `Tooltip` and `StatefulTooltip` in one, a Popover with the
+      tooltip's defaults (a hover trigger, a tap toggling it, the accessibility type tooltip, a margin of 0, no focus taken)
+      and its look (its body fading in place, Inner's padding and font), its parts and overrides (`docs/controls/Tooltip/`).
+      On the Pixel and in a real window: #161
 - [x] Menu (#107): Base Web's `baseui/menu` (no v2), `StatefulMenu` and `Menu` in one: items, groups, dividers, the empty
       state, the keyboard highlight, type-ahead and scrolling as its own container and `scrollItemIntoView` do (against
       Base Web's container driven in Node), a mouse's hover and click, a finger's drag that scrolls it and a tap that

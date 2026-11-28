@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             xmlns:t="using:Metered.Themes"
+             x:Class="Metered.Sample.Pages.TooltipPage">
+  <!-- Base Web's tooltip, as its documentation's examples and its scenarios show it: one open from the start, the
+       stateful example in a line of text, one with complex content, one with an arrow and a margin, and two on buttons.
+       Headings are the shell's. A mouse resting on an anchor opens its tooltip; a finger never hovers, so a tap on an
+       anchor opens it and another, or a tap elsewhere, closes it (#123). Keyboard focus on an anchor opens it. Back closes
+       the top tooltip before the shell goes back (#123). -->
+  <UserControl.Styles>
+    <!-- Base Web's ParagraphMedium, the examples' text round the anchors. -->
+    <Style Selector="TextBlock.paragraph">
+      <Setter Property="FontFamily" Value="{DynamicResource typography.ParagraphMedium.fontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource typography.ParagraphMedium.fontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource typography.ParagraphMedium.fontWeight}" />
+      <Setter Property="LineHeight" Value="{DynamicResource typography.ParagraphMedium.lineHeight}" />
+      <Setter Property="Foreground" Value="{DynamicResource colors.contentPrimary}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- The examples' anchor: a span in primary500 with a dotted underline of 1 px, focusable (tabIndex 0). -->
+    <Style Selector="TextBlock.anchor">
+      <Setter Property="Focusable" Value="True" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource colors.primary500}" />
+      <Setter Property="TextDecorations">
+        <TextDecorationCollection>
+          <TextDecoration Location="Underline" StrokeThickness="1" StrokeThicknessUnit="Pixel" StrokeDashArray="1,1"
+                          Stroke="{DynamicResource colors.primary500}" />
+        </TextDecorationCollection>
+      </Setter>
+    </Style>
+    <Style Selector="WrapPanel#Buttons > b|Tooltip">
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Open from the start" />
+      <!-- stateful-tooltip.test.tsx's props: initialState isOpen, placement topLeft, popoverMargin 8, showArrow. Room above
+           it for its body. -->
+      <b:Tooltip x:Name="Open" IsOpen="True" Placement="TopLeft" PopoverMargin="8" ShowArrow="True"
+                 Content="Tooltips display short messages." HorizontalAlignment="Left" Margin="0,48,0,0">
+        <TextBlock Classes="paragraph anchor" Text="anchor" />
+      </b:Tooltip>
+
+      <TextBlock Classes="heading" Text="Tooltip" />
+      <!-- stateful.tsx: in a line of text, its words round it (TooltipPage.axaml.cs). -->
+      <WrapPanel x:Name="StatefulText">
+        <b:Tooltip x:Name="Stateful" Content="Tooltips display short messages.">
+          <TextBlock Classes="paragraph anchor" Text="such as this" />
+        </b:Tooltip>
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="Complex content" />
+      <!-- stateful-complex-content.tsx: its content in Base Web's dark theme, with a link; autoFocus, so it stays open when
+           focus leaves its anchor. As Base Web's popover.js, a tooltip's autoFocus moves no focus into it. -->
+      <WrapPanel x:Name="ComplexText">
+          <b:Tooltip x:Name="Complex" AutoFocus="True">
+            <b:Tooltip.Content>
+              <WrapPanel x:Name="ComplexContent" t:ThemeProvider.Theme="{x:Static t:BaseTheme.DarkTheme}">
+                <TextBlock Text="Please click this link here: " VerticalAlignment="Center" />
+                <HyperlinkButton x:Name="ComplexLink" Padding="0" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource colors.linkText}">
+                  <TextBlock Text="Click Me!" TextDecorations="Underline" />
+                </HyperlinkButton>
+              </WrapPanel>
+            </b:Tooltip.Content>
+            <TextBlock Classes="paragraph anchor" Text="such as this" />
+          </b:Tooltip>
+      </WrapPanel>
+
+      <TextBlock Classes="heading" Text="With an arrow" />
+      <!-- tooltip-arrow-margin.scenario.tsx: showArrow, popoverMargin 20. -->
+      <b:Tooltip x:Name="Arrow" ShowArrow="True" PopoverMargin="20" Content="Tooltips display short messages." HorizontalAlignment="Left">
+        <TextBlock Classes="paragraph anchor" Text="such as this" />
+      </b:Tooltip>
+
+      <TextBlock Classes="heading" Text="On buttons" />
+      <!-- tooltip-interactive-element.scenario.tsx: two buttons, each with its tooltip. -->
+      <WrapPanel x:Name="Buttons">
+        <b:Tooltip Content="Tooltips display short messages.">
+          <b:Button Content="Button" />
+        </b:Tooltip>
+        <b:Tooltip Content="Tooltips display short messages.">
+          <b:Button Content="Button" />
+        </b:Tooltip>
+      </WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

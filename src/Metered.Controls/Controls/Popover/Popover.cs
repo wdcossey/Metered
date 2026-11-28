@@ -172,10 +172,22 @@ public class Popover : TemplatedControl
     private bool? _layerClicks;
     private (long Id, Point At)? _tapDown;
 
-    public Popover()
+    public Popover() : this("Popover")
     {
-        _parts = new Parts(this, "Popover", PartNames);
     }
+
+    /// <summary>A popover whose parts' themes are another component's, <c>{component}.Styled{Part}</c> (Tooltip's).</summary>
+    private protected Popover(string component)
+    {
+        _parts = new Parts(this, component, PartNames);
+    }
+
+    /// <summary>
+    /// Whether the body slides in from towards its anchor and back (getBodyStyles' transform, getStartPosition to
+    /// getEndPosition); a tooltip's stays where it is placed (tooltip/styled-components.js: its transform is
+    /// getEndPosition and only its opacity has a transition).
+    /// </summary>
+    private protected virtual bool BodySlides => true;
 
     /// <summary>Base Web's <c>children</c>: what the popover is anchored to, and what a click or hover on opens it.</summary>
     [Content]
@@ -327,7 +339,12 @@ public class Popover : TemplatedControl
         var p = change.Property;
         if (p == IsOpenProperty) OnIsOpenChanged(change.GetNewValue<bool>());
         else if (p == OverridesProperty) _parts.SetOverrides(Overrides);
-        else if (p == ContentProperty || p == ContentTemplateProperty) GiveContent();
+        else if (p == ContentProperty || p == ContentTemplateProperty)
+        {
+            GiveContent();
+            // A tooltip's anchor is described by what it shows now (aria-describedby names the body).
+            GiveAnchorHelp();
+        }
         else if (p == ShowArrowProperty || p == TriggerTypeProperty || p == PopoverMarginProperty || p == FocusLockProperty
             || p == AccessibilityTypeProperty || p == AnimateOutTimeProperty)
         {
@@ -711,7 +728,7 @@ public class Popover : TemplatedControl
         {
             Give(body, MarginProperty, MarginFor(_actualPlacement, arrowSize, PopoverMargin));
             var open = IsOpen && _mounted;
-            var start = open && _animating ? new Point(0, 0) : StartFor(_actualPlacement, arrowSize, PopoverMargin);
+            var start = (open && _animating) || !BodySlides ? new Point(0, 0) : StartFor(_actualPlacement, arrowSize, PopoverMargin);
             Give(body, RenderTransformProperty, Translate(start));
             var tooltip = AccessibilityType == PopoverAccessibilityType.Tooltip;
             Give(body, KeyboardNavigation.TabNavigationProperty, FocusLock && !tooltip ? KeyboardNavigationMode.Cycle : null);
@@ -760,7 +777,7 @@ public class Popover : TemplatedControl
         };
     }
 
-    /// <summary>The body's exit: opacity and transform over animateOutTime on easeInCurve (getBodyStyles).</summary>
+    /// <summary>The body's exit: opacity and transform (opacity alone if it doesn't slide) over animateOutTime on easeInCurve (getBodyStyles).</summary>
     private Transitions ExitTransitions()
     {
         // The curve as the theme has it now (a subtree's own theme may give another).
@@ -768,11 +785,8 @@ public class Popover : TemplatedControl
         if (_exit is { } made && made.Time == AnimateOutTime && ReferenceEquals(made.Easing, themed)) return made.Transitions;
         var duration = TimeSpan.FromMilliseconds(AnimateOutTime);
         var easing = themed ?? new LinearEasing();
-        Transitions transitions =
-        [
-            new DoubleTransition { Property = OpacityProperty, Duration = duration, Easing = easing },
-            new TransformOperationsTransition { Property = RenderTransformProperty, Duration = duration, Easing = easing },
-        ];
+        Transitions transitions = [new DoubleTransition { Property = OpacityProperty, Duration = duration, Easing = easing }];
+        if (BodySlides) transitions.Add(new TransformOperationsTransition { Property = RenderTransformProperty, Duration = duration, Easing = easing });
         _exit = (AnimateOutTime, themed, transitions);
         return transitions;
     }
