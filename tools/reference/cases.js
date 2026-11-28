@@ -156,6 +156,8 @@ const files = {
   'form-control.oracle.json': require('./form-control').oracle(version),
   // Base Web's Popover: its style functions, and popper.js's placements (popover.js, tether.g.json).
   'popover.oracle.json': require('./popover').oracle(version),
+  // Base Web's Tooltip: its style functions over the popover's, its defaults as resolved (tooltip.js).
+  'tooltip.oracle.json': require('./tooltip').oracle(version),
   // Base Web's Menu: rendered, its stateful container driven, its scrollItemIntoView (menu.js).
   'menu.oracle.json': require('./menu').oracle(version),
   // Base Web's Select: rendered with its dropdown and tags, its own class driven, its filter (select.js).

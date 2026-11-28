@@ -89,24 +89,7 @@ function parts() {
         return { Background: colour(s.backgroundColor, what), CornerRadius: radius(s, what), BoxShadow: token(s.boxShadow, what), Opacity: String(s.opacity) };
       },
     },
-    {
-      part: 'Arrow', type: 'Border',
-      styled: (t, c) => flat(sc.Arrow, T, c),
-      convert(s, c) {
-        const what = 'Arrow';
-        check(s, what, ['backgroundColor', 'boxShadow', 'width', 'height', 'transform', 'position', ...SIDES]);
-        if (s.position !== 'absolute' || s.transform !== 'rotate(45deg)') throw new Error(`${what} box`);
-        // The side along the placement's side is popper.js's offset (0 here), which the Popover gives as the margin; the
-        // other is the side it sits beyond.
-        const along = ['top', 'bottom'].includes(c.placement.replace(/[A-Z].*/, '')) ? 'left' : 'top';
-        if (s[along] !== '0px') throw new Error(`${what} ${along} ${s[along]}`);
-        const at = Object.fromEntries(SIDES.map((k) => [`Canvas.${k[0].toUpperCase()}${k.slice(1)}`, k === along || s[k] === undefined ? 'NaN' : String(css.px(s[k]))]));
-        return {
-          Background: colour(s.backgroundColor, what), BoxShadow: token(s.boxShadow, what),
-          Width: String(css.px(s.width)), Height: String(css.px(s.height)), RenderTransform: 'rotate(45deg)', ...at,
-        };
-      },
-    },
+    arrowPart(sc.Arrow),
     {
       part: 'Inner', type: 'ContentPresenter',
       styled: (t, c) => flat(sc.Inner, T, c),
@@ -120,24 +103,57 @@ function parts() {
   ];
 }
 
+/** The Arrow part of a popover's arrow style function (Popover's, Tooltip's: getArrowStyles, its fill by token). */
+function arrowPart(Arrow) {
+  return {
+    part: 'Arrow', type: 'Border',
+    styled: (t, c) => flat(Arrow, T, c),
+    convert(s, c) {
+      const what = 'Arrow';
+      check(s, what, ['backgroundColor', 'boxShadow', 'width', 'height', 'transform', 'position', ...SIDES]);
+      if (s.position !== 'absolute' || s.transform !== 'rotate(45deg)') throw new Error(`${what} box`);
+      // The side along the placement's side is popper.js's offset (0 here), which the Popover gives as the margin; the
+      // other is the side it sits beyond.
+      const along = ['top', 'bottom'].includes(c.placement.replace(/[A-Z].*/, '')) ? 'left' : 'top';
+      if (s[along] !== '0px') throw new Error(`${what} ${along} ${s[along]}`);
+      const at = Object.fromEntries(SIDES.map((k) => [`Canvas.${k[0].toUpperCase()}${k.slice(1)}`, k === along || s[k] === undefined ? 'NaN' : String(css.px(s[k]))]));
+      return {
+        Background: colour(s.backgroundColor, what), BoxShadow: token(s.boxShadow, what),
+        Width: String(css.px(s.width)), Height: String(css.px(s.height)), RenderTransform: 'rotate(45deg)', ...at,
+      };
+    },
+  };
+}
+
 const DEFAULT = Object.fromEntries(AXES.map((a) => [a.name, a.values[0]]));
 const at = (x) => ({ ...DEFAULT, ...x });
 
+/** CSS's transition properties as Avalonia's transitions: the element and the property each animates. */
+const TRANSITIONS = {
+  opacity: ['DoubleTransition', 'Opacity'],
+  transform: ['TransformOperationsTransition', 'RenderTransform'],
+};
+
 /**
- * The body's entrance: while open and animating, opacity and transform over 0.1 s on easeOutCurve. Every other state's
- * duration is 0 at Base Web's default animateOutTime (0): no transition; the Popover gives the exit's for another.
+ * The body's entrance: while open and animating, its transitionProperty (a popover's opacity and transform, a tooltip's
+ * opacity) over 0.1 s on easeOutCurve. Every other state's duration is 0 at Base Web's default animateOutTime (0): no
+ * transition; the Popover gives the exit's for another.
  */
-function entrance() {
-  const on = flat(sc.Body, L, at({ isOpen: true, isAnimating: true }));
+function entrance(Body = sc.Body) {
+  const on = flat(Body, L, at({ isOpen: true, isAnimating: true }));
   for (const c of [at({}), at({ isOpen: true }), at({ isAnimating: true })]) {
-    if (css.seconds(flat(sc.Body, L, c).transitionDuration) !== 0) throw new Error(`Body transition in ${JSON.stringify(c)}`);
+    if (css.seconds(flat(Body, L, c).transitionDuration) !== 0) throw new Error(`Body transition in ${JSON.stringify(c)}`);
   }
   const { span, easing } = timing(on);
+  const each = on.transitionProperty.split(',').map((name) => {
+    const t = TRANSITIONS[name.trim()];
+    if (!t) throw new Error(`Body transition of ${name}`);
+    return `          <${t[0]} Property="${t[1]}" Duration="${span}" Easing="${easing}" />`;
+  });
   return `    <Style Selector="^:is-open:is-animating">
       <Setter Property="Transitions">
         <Transitions>
-          <DoubleTransition Property="Opacity" Duration="${span}" Easing="${easing}" />
-          <TransformOperationsTransition Property="RenderTransform" Duration="${span}" Easing="${easing}" />
+${each.join('\n')}
         </Transitions>
       </Setter>
     </Style>`;
@@ -147,10 +163,10 @@ function entrance() {
  * A hover popover's body takes no pointer for its first 0.1 s (Body's animationName: pointer-events none to 99%, auto at
  * 100%), as IsHitTestVisible. CSS runs it when the body is made, each time it opens: here when it opens.
  */
-function hitTest() {
-  const s = evaluate(sc.Body, L, props(at({ isHoverTrigger: true, isOpen: true })));
+function hitTest(Body = sc.Body) {
+  const s = evaluate(Body, L, props(at({ isHoverTrigger: true, isOpen: true })));
   const frames = Object.entries(s.animationName).map(([cue, f]) => [cue, f.pointerEvents !== 'none' ? 'True' : 'False']);
-  if (evaluate(sc.Body, L, props(at({}))).animationName !== undefined) throw new Error('Body animation without hover');
+  if (evaluate(Body, L, props(at({}))).animationName !== undefined) throw new Error('Body animation without hover');
   const span = new Date(css.seconds(s.animationDuration) * 1000).toISOString().substr(11, 12);
   return `    <Style Selector="^:is-hover-trigger:is-open">
       <Style.Animations>
@@ -206,4 +222,4 @@ ${padding()}
 `;
 }
 
-module.exports = { file, parts, AXES };
+module.exports = { file, parts, AXES, T, token, flat, radius, entrance, hitTest, arrowPart, props, RADII, MARGINS };

@@ -1,0 +1,46 @@
+<!--
+  Base Web's Tooltip (baseui 18.2.0, tooltip/tooltip.js): its Popover, as a template of the Popover's named parts. Each
+  part's look is its own theme, Tooltip.Styled<Part> (Tooltip.Parts.g.axaml), which the tooltip's Overrides merge over:
+  this file holds only the structure, the Popover's (Popover.axaml).
+
+    the anchor               (the tooltip's Anchor, Base Web's children: the tooltip is its size)
+    Popup                    (Base Web's Layer: the window's overlay layer, placed by Metered.Controls.Tether)
+      Body                   (the box placed against the anchor)
+        PopoverBodyPanel     (CSS's flow: the arrow positioned absolutely, Inner over it)
+          Arrow              (only with ShowArrow)
+          Inner              (the tooltip's Content)
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="https://github.com/wdcossey/Metered">
+
+  <ControlTheme x:Key="{x:Type b:Tooltip}" TargetType="b:Tooltip">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <ContentPresenter Name="PART_AnchorPresenter"
+                            Content="{TemplateBinding Anchor}"
+                            ContentTemplate="{TemplateBinding AnchorTemplate}" />
+          <!-- Light dismiss and Avalonia's placement are off: the Popover does Base Web's (Layers, Tether). -->
+          <Popup Name="PART_Popup"
+                 ShouldUseOverlayLayer="True"
+                 IsLightDismissEnabled="False"
+                 Placement="AnchorAndGravity"
+                 PlacementAnchor="TopLeft"
+                 PlacementGravity="BottomRight"
+                 PlacementConstraintAdjustment="None">
+            <Border Name="Body" Theme="{DynamicResource Tooltip.StyledBody}">
+              <b:PopoverBodyPanel>
+                <Border Name="Arrow" b:PopoverBodyPanel.IsAbsolute="True" Theme="{DynamicResource Tooltip.StyledArrow}" />
+                <ContentPresenter Name="Inner"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Theme="{DynamicResource Tooltip.StyledInner}" />
+              </b:PopoverBodyPanel>
+            </Border>
+          </Popup>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>
