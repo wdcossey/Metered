@@ -64,10 +64,9 @@ if (-not $NoBuild) {
 New-Item -ItemType Directory -Force $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 $stdout = Join-Path $Out 'stdout.txt'
-# The run's own report, every line it prints from here on, so a failure can be read after the run however much of its
-# output a terminal or a tool kept (#136).
+# The run's own report, every line it prints from the sample's start, so a failure can be read after the run however much
+# of its output a terminal or a tool kept (#136). Started just before the try whose finally closes it.
 $report = Join-Path $Out 'report.txt'
-Start-Transcript -Path $report -Force | Out-Null
 
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 Add-Type @'
@@ -486,6 +485,7 @@ function Section($title, [scriptblock]$body) {
     if ($p.HasExited) { throw "The app exited during $title, with code $($p.ExitCode)" }
 }
 
+Start-Transcript -Path $report -Force | Out-Null
 $p = Start-Process $Exe -PassThru -RedirectStandardOutput $stdout
 # A process from Start-Process -PassThru reports no ExitCode unless its handle was opened while it ran.
 $null = $p.Handle
@@ -1186,19 +1186,23 @@ try {
     Check 'a section ran' ($script:sections -gt 0) "none is like '$Only'"
     Check 'the app is still running' (-not $p.HasExited)
 }
+# A run that stops (the app exits, the window never appears) is a failure too, in the report and its list, and then the
+# error it was.
+catch { Check "the run stopped: $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)" $false; throw }
 finally {
     LetGo
     [void][RealInput]::SetCursorPos($cursor.X, $cursor.Y)
     if (-not $p.HasExited) { [void]$p.CloseMainWindow(); Start-Sleep -Milliseconds 500 }
     if (-not $p.HasExited) { $p.Kill() }
+    # Every failure again at the end, with its section, where a cut output still shows it; and the report closed, after
+    # an error or Ctrl+C too.
+    if ($script:failed) {
+        '== the failures, again'
+        $script:failed | ForEach-Object { "  FAIL  $_" }
+    }
+    "$($script:checks - $script:failures) of $($script:checks) checks passed"
+    "report in $report"
+    Stop-Transcript | Out-Null
 }
 
-# Every failure again at the end, with its section, where a cut output still shows it.
-if ($script:failed) {
-    '== the failures, again'
-    $script:failed | ForEach-Object { "  FAIL  $_" }
-}
-"$($script:checks - $script:failures) of $($script:checks) checks passed"
-"report in $report"
-Stop-Transcript | Out-Null
 if ($script:failures -gt 0) { exit 1 }
