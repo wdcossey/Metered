@@ -99,10 +99,10 @@ app goes back (Popover, known difference 12).
 
 ## Known differences
 
-1. **Controlled and stateful are one**, as the Popover's (its known difference 1): Base Web's controlled `Tooltip` has no
+1. **Controlled and stateful are one** (kept on the 2026-11-28 decisions page), as the Popover's (its known difference 1): Base Web's controlled `Tooltip` has no
    dismissal unless it is given `onClickOutside` or `onEsc`; Metered's has StatefulTooltip's, `DismissOnClickOutside`
    and `DismissOnEsc` true, which false turns off.
-2. **The Popover's differences are the tooltip's**: a tap toggling it (2), the page's scroll (3), focus given back (4),
+2. **The Popover's differences are the tooltip's** (kept on the 2026-11-28 decisions page; the page's scroll, 3, is to change by #166): a tap toggling it (2), the page's scroll (3), focus given back (4),
    the anchor's help text (5: a text content's alone, a string's or a `TextBlock`'s, followed when the content is
    replaced but not when a `TextBlock`'s text changes in place; the complex content example's anchor has none, where
    `aria-describedby` reads the whole body), the window's overlay layer (7, 8), what isn't ported (9: `renderAll`, `popperOptions`,
