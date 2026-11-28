@@ -123,7 +123,8 @@ public class TabsTests
         Assert.Equal("0", tabs.ActiveKey);
     }
 
-    // A drag mostly up or down is the page's: it scrolls, and chooses no tab.
+    // A drag mostly up or down is the page's, though it goes sideways past the scroll's start distance (Input's recogniser,
+    // #117): it scrolls, and chooses no tab.
     [AvaloniaFact]
     public void A_fingers_drag_up_is_the_pages()
     {
@@ -131,7 +132,7 @@ public class TabsTests
         var (page, scene) = InAPage(tabs);
         using var _ = scene;
         var list = (TabList)tabs.Part(Tabs.TabListPart)!;
-        Drag(scene, scene.CentreOf(Buttons(tabs)[1]), new Vector(-20, -150));
+        Drag(scene, scene.CentreOf(Buttons(tabs)[1]), new Vector(-45, -150));
         Assert.True(page.Offset.Y > 50, $"the page moved {page.Offset.Y}");
         Assert.Equal(0, list.Offset.X);
         Assert.Equal("0", tabs.ActiveKey);
@@ -521,6 +522,8 @@ public class TabsTests
         scene.Pump();
         Assert.DoesNotContain(":is-hovered", Buttons(tabs)[2].Classes);
         var touch = scene.Window.TouchBegin(scene.CentreOf(Buttons(tabs)[2]), RawInputModifiers.None);
+        scene.Pump();
+        scene.Window.TouchMove(touch, scene.CentreOf(Buttons(tabs)[2]) + new Vector(1, 0), RawInputModifiers.None);
         scene.Pump();
         Assert.DoesNotContain(":is-hovered", Buttons(tabs)[2].Classes);
         scene.Window.TouchEnd(touch, scene.CentreOf(Buttons(tabs)[2]), RawInputModifiers.None);

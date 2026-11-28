@@ -37,6 +37,8 @@ public class TabsStructureTests
             var b = buttons[i];
             Assert.Equal(e.Key, tabs.Keys[i]);
             Assert.Equal(e.Text, tabs.TextOf(b));
+            // What the button shows: the title, or the key without one (the oracle's titles are text).
+            Assert.Equal(e.Text, b.TitlePresenter!.Content as string);
             Assert.Equal(e.Text, ControlAutomationPeer.CreatePeerForElement(b).GetName());
             var peer = (TabButtonAutomationPeer)ControlAutomationPeer.CreatePeerForElement(b);
             Assert.Equal(AutomationControlType.TabItem, peer.GetAutomationControlType());

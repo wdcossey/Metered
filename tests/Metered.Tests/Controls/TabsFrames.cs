@@ -72,6 +72,8 @@ public class TabsFrames
         using var scene = new Scene(new StackPanel { Orientation = Orientation.Horizontal, Children = { left, right } },
             dark ? ThemeVariant.Dark : ThemeVariant.Light, width: 780, height: 700);
         scene.Window.Background = dark ? Brushes.Black : Brushes.White;
+        // The panels' text is the page's colour, as Base Web's: the window's, here.
+        scene.Window.Foreground = dark ? Brushes.White : Brushes.Black;
         ((TabButton)focused.Elements(Tabs.TabPart)[2]).Focus(Avalonia.Input.NavigationMethod.Directional);
         scene.Hover((Visual)focused.Elements(Tabs.TabPart)[0]);
         scene.Advance(300);
