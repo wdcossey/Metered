@@ -202,7 +202,7 @@ public class TabsTests
         Assert.Equal(Math.Round(b.Bounds.Width), highlight.Length);
     }
 
-    // scrollParentToCentreTarget: on mount the active tab (tabs-motion-scroll.scenario.tsx's eighth) at the list's centre.
+    // scrollParentToCentreTarget: on mount the active tab (tabs-motion-scroll.scenario.tsx's key 8, the ninth) at the list's centre.
     [AvaloniaFact]
     public void The_active_tab_is_centred_on_mount()
     {
@@ -345,10 +345,13 @@ public class TabsTests
         using var scene = new Scene(new StackPanel { Children = { tabs } });
         Assert.Equal(Brushes.Transparent, ((Border)tabs.Part(Tabs.TabBorderPart)!).Background);
         Assert.Equal(2, ((TabHighlight)tabs.Part(Tabs.TabHighlightPart)!).Bounds.Height);
+        // The other tab and panel keep Base Web's padding (styled-components.js: scale600).
+        var layout = TabsOracle.Data.Layout[0];
+        Thickness T(double[] s) => new(s[0], s[1], s[2], s[3]);
         Assert.Equal(new Thickness(4), Buttons(tabs)[1].Padding);
-        Assert.Equal(new Thickness(16), Buttons(tabs)[0].Padding);
+        Assert.Equal(T(layout.Tab.Padding), Buttons(tabs)[0].Padding);
         Assert.Equal(new Thickness(0), ((ContentPresenter)tabs.Elements(Tabs.TabPanelPart)[1]).Padding);
-        Assert.Equal(new Thickness(16), ((ContentPresenter)tabs.Elements(Tabs.TabPanelPart)[0]).Padding);
+        Assert.Equal(T(layout.PanelPadding), ((ContentPresenter)tabs.Elements(Tabs.TabPanelPart)[0]).Padding);
     }
 
     // UI Automation: selecting a tab item is its click; a disabled one isn't chosen.
@@ -379,6 +382,91 @@ public class TabsTests
         Assert.Equal("Dragon", tabs.TextOf(Buttons(tabs)[2]));
         tabs.Items[2].Title = "Lizard";
         Assert.Equal("Lizard", tabs.TextOf(Buttons(tabs)[2]));
+    }
+
+    // styled-components.js: the tab's fill moves over timing200, linearly, once the tab is loaded: midway it is neither.
+    [AvaloniaFact]
+    public void A_tabs_fill_fades_under_the_mouse()
+    {
+        var tabs = Three();
+        using var scene = new Scene(tabs);
+        var tab = Buttons(tabs)[1];
+        Assert.Contains(":loaded", tab.Classes);
+        var rest = TabsColourTests.Colour(tab.Background);
+        var motion = TabsOracle.Data.Motion.Tab;
+        Assert.Equal("background", motion.Property);
+        scene.Hover(tab);
+        scene.Advance((int)(motion.Seconds * 1000 / 2));
+        var hover = TabsOracle.Data.Colours.Single(c => c.Theme == "Light" && c.State == "hover").Background;
+        var midway = TabsColourTests.Colour(tab.Background);
+        Assert.NotEqual(rest, midway);
+        Assert.NotEqual(hover, midway);
+        scene.Advance((int)(motion.Seconds * 1000 / 2) + 20);
+        Assert.Equal(hover, TabsColourTests.Colour(tab.Background));
+    }
+
+    // React renders a changed tab's same elements again: a focused tab stays focused, and the keys go on from it.
+    [AvaloniaFact]
+    public void A_tab_that_changes_keeps_the_focus()
+    {
+        var tabs = Three();
+        using var scene = new Scene(tabs);
+        var focused = Buttons(tabs)[0];
+        Assert.True(focused.Focus(NavigationMethod.Tab));
+        tabs.Items[2].Title = "Melon";
+        tabs.Items[1].Artwork = new Border { Width = 20, Height = 20 };
+        tabs.Items[2].Disabled = true;
+        tabs.Items.Add(new Tab { Title = "Dragon" });
+        scene.Pump();
+        Assert.Same(focused, Buttons(tabs)[0]);
+        Assert.Same(focused, scene.Window.FocusManager!.GetFocusedElement());
+        Assert.Contains(":focus-visible", focused.Classes);
+        scene.Key(Key.Right);
+        Assert.Equal("1", tabs.ActiveKey);
+        Assert.Single(tabs.Elements(Tabs.ArtworkContainerPart));
+        Assert.Equal("Melon", tabs.TextOf(Buttons(tabs)[2]));
+    }
+
+    // styled-components.js: a disabled tab's cursor is not-allowed; Avalonia hits nothing disabled, so its line shows it.
+    [AvaloniaFact]
+    public void A_disabled_tab_shows_its_not_allowed_cursor()
+    {
+        var tabs = Three();
+        tabs.Items[1].Disabled = true;
+        using var scene = new Scene(tabs);
+        var line = (TabListPanel)tabs.Part(Tabs.TabPart)!.Parent!;
+        scene.Hover(Buttons(tabs)[1]);
+        Assert.NotNull(Buttons(tabs)[1].Cursor);
+        Assert.Same(Buttons(tabs)[1].Cursor, line.Cursor);
+        scene.Hover(Buttons(tabs)[2]);
+        Assert.Null(line.Cursor);
+    }
+
+    // A button's text names it: a title that is a control is named by its own text.
+    [AvaloniaFact]
+    public void A_tab_titled_by_a_control_is_named_by_its_text()
+    {
+        var tabs = Three();
+        tabs.Items[1].Title = new TextBlock { Text = "Inbox" };
+        using var scene = new Scene(tabs);
+        Assert.Equal("Inbox", ControlAutomationPeer.CreatePeerForElement(Buttons(tabs)[1]).GetName());
+        Assert.Equal("Inbox", Avalonia.Automation.AutomationProperties.GetName((ContentPresenter)tabs.Elements(Tabs.TabPanelPart)[1]));
+    }
+
+    // tabs.js's $animate stays once the key has changed: a new template's highlight moves too.
+    [AvaloniaFact]
+    public void A_new_template_keeps_the_highlight_moving()
+    {
+        var tabs = Three();
+        using var scene = new Scene(tabs);
+        scene.Click(Buttons(tabs)[1]);
+        var template = tabs.Template;
+        tabs.Template = null;
+        scene.Pump();
+        tabs.Template = template;
+        scene.Pump();
+        Assert.Contains(":animate", tabs.Part(Tabs.TabHighlightPart)!.Classes);
+        Assert.True(Buttons(tabs)[1].IsActive);
     }
 
     // A mouse over a disabled tab is its :hover too (styled-components.js's :disabled:hover, background none).

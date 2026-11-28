@@ -150,6 +150,19 @@ public class TabButton : AvaloniaButton
 
     protected override Type StyleKeyOverride => typeof(TabButton);
 
+    /// <summary>&lt;c&gt;:loaded&lt;/c&gt; once loaded, so its fill's transition doesn't run on its first paint, as CSS's doesn't.</summary>
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        PseudoClasses.Set(":loaded", true);
+    }
+
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        PseudoClasses.Set(":loaded", false);
+    }
+
     /// <summary>Its growth and basis are its line's to lay it out by: a change lays the line out again.</summary>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

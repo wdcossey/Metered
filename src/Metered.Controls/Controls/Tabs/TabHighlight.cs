@@ -25,7 +25,6 @@ public class TabHighlight : Control
     static TabHighlight()
     {
         AffectsRender<TabHighlight>(BackgroundProperty);
-        AffectsMeasure<TabHighlight>(LengthProperty);
         IsHitTestVisibleProperty.OverrideDefaultValue<TabHighlight>(false);
     }
 
@@ -38,15 +37,12 @@ public class TabHighlight : Control
     /// <summary>Base Web's &lt;c&gt;$distance&lt;/c&gt;: the bar's start along the tab list, in pixels.</summary>
     public double Distance { get => GetValue(DistanceProperty); set => SetValue(DistanceProperty, value); }
 
-    /// <summary>As long as its length either way: its thickness is its own &lt;c&gt;Width&lt;/c&gt; or &lt;c&gt;Height&lt;/c&gt;, which wins.</summary>
-    protected override Size MeasureOverride(Size availableSize) => new(Math.Max(0, Length), Math.Max(0, Length));
-
-    /// <summary>Its length and distance are its line's to place it by: a change lays the line out again.</summary>
+    /// <summary>Its length and distance are its line's to place it by: a change arranges the line again.</summary>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == LengthProperty) (Parent as TabListPanel)?.InvalidateMeasure();
-        else if (change.Property == DistanceProperty) (Parent as TabListPanel)?.InvalidateArrange();
+        // Absolute: neither changes its line's size, only where the line puts it.
+        if (change.Property == LengthProperty || change.Property == DistanceProperty) (Parent as TabListPanel)?.InvalidateArrange();
     }
 
     public override void Render(DrawingContext context)

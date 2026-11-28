@@ -185,8 +185,10 @@ const PARTS = [
         ZIndex: String(s.zIndex),
         Width: horizontal ? 'NaN' : px(s.width),
         Height: horizontal ? px(s.height) : 'NaN',
-        HorizontalAlignment: horizontal ? 'Left' : 'Right',
-        VerticalAlignment: horizontal ? 'Bottom' : 'Top',
+        // left: 0 and its translate (top and translateY): its line places it at its distance, as long as its length, so it
+        // stretches along the line; across it, at the bottom (the right).
+        HorizontalAlignment: horizontal ? 'Stretch' : 'Right',
+        VerticalAlignment: horizontal ? 'Bottom' : 'Stretch',
         Length: '0',
         Distance: '0',
       };

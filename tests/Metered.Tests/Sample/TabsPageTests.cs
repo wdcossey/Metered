@@ -12,7 +12,7 @@ namespace Metered.Tests.Sample;
 /// <summary>
 /// The sample's Tabs page: its place in the catalogue (its issue's number, 155, before the theme), Metered's tabs
 /// throughout, each within a phone's width, its examples' props (tabs-motion's docs examples), and the scroll scenario's
-/// eighth tab centred.
+/// ninth tab (key 8) centred.
 /// </summary>
 public class TabsPageTests
 {
@@ -61,7 +61,7 @@ public class TabsPageTests
         Assert.False(((Control)disabled.Elements(Tabs.TabPart)[1]).IsEnabled);
     }
 
-    // tabs-motion-scroll.scenario.tsx: the eighth tab centred in the list on mount.
+    // tabs-motion-scroll.scenario.tsx: the ninth tab (key 8) centred in the list on mount.
     [AvaloniaFact]
     public void The_Scroll_Examples_Active_Tab_Is_Centred()
     {

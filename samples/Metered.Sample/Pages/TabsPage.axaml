@@ -3,7 +3,7 @@
              xmlns:b="https://github.com/wdcossey/Metered"
              x:Class="Metered.Sample.Pages.TabsPage">
   <!-- Base Web's tabs (tabs-motion), as its documentation's examples show them: basic, keyboard activation, an end
-       enhancer, vertical, fixed fill, disabled, a leading icon; and its scroll scenario's twenty tabs, the eighth active.
+       enhancer, vertical, fixed fill, disabled, a leading icon; and its scroll scenario's twenty tabs, the ninth (key 8) active.
        Headings are the shell's. A tap chooses a tab; a finger's drag sideways along tabs that overflow scrolls them; the
        highlight moves to the tab chosen. -->
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -89,7 +89,7 @@
       </b:Tabs>
 
       <TextBlock Classes="heading" Text="Scroll" />
-      <!-- tabs-motion-scroll.scenario.tsx: twenty tabs, the eighth (key 8, Nine) active and centred. -->
+      <!-- tabs-motion-scroll.scenario.tsx: twenty tabs, the ninth (key 8, Nine) active and centred. -->
       <b:Tabs x:Name="Scroll" ActiveKey="8">
         <b:Tab Title="One">One</b:Tab>
         <b:Tab Title="Two">Two</b:Tab>

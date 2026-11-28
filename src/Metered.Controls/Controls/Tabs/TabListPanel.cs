@@ -19,7 +19,8 @@ namespace Metered.Controls;
 /// (&lt;see cref="TabList.Room"/&gt;): tabs that need more overflow it and scroll. Across the line, each tab is as tall (wide)
 /// as the line (&lt;c&gt;align-items: stretch&lt;/c&gt;), which is as tall as its tallest.&lt;/para&gt;
 /// &lt;para&gt;A mouse over a tab, disabled or not, is its CSS &lt;c&gt;:hover&lt;/c&gt; (&lt;see cref="TabButton.IsHovered"/&gt;): the line
-/// follows the mouse, since a disabled button takes no pointer events of its own in Avalonia.&lt;/para&gt;
+/// follows the mouse, since a disabled button takes no pointer events of its own in Avalonia, and shows a disabled tab's
+/// cursor (&lt;c&gt;not-allowed&lt;/c&gt;) as its own.&lt;/para&gt;
 /// &lt;/remarks&gt;
 public class TabListPanel : Panel
 {
@@ -108,8 +109,8 @@ public class TabListPanel : Panel
             at += lengths[i];
         }
 
-        // Absolute, in the list's padding box: along the line by its distance and length, across it the whole box, its
-        // thickness and alignment (bottom: 0, right: 0) placing it there.
+        // Absolute, in the list's padding box: along the line by its distance and length (it stretches along it), across it
+        // the whole box, its thickness and alignment (bottom: 0, right: 0) placing it there.
         if (Highlight is { } h)
         {
             var length = Math.Max(0, h.Length);
@@ -205,6 +206,9 @@ public class TabListPanel : Panel
         if (_hovered is not null) _hovered.IsHovered = false;
         _hovered = tab;
         if (tab is not null) tab.IsHovered = true;
+        // A disabled tab isn't hit, so the line's cursor is the one shown over it: its own (not-allowed).
+        if (tab is { IsEnabled: false }) Cursor = tab.Cursor;
+        else ClearValue(CursorProperty);
     }
 
     /// <summary>A tab taken out of the line loses its hover.</summary>

@@ -99,8 +99,25 @@ public class Tabs : TemplatedControl
     private int _keyUpdated;
     private bool _mounted;
 
-    /// <summary>What it made of a tab: its button, its artwork's container, its title's presenter, its panel, their parts.</summary>
-    private sealed record Built(Tab Tab, string Key, TabButton Button, ContentPresenter? Artwork, ContentPresenter Title, ContentPresenter Panel, Parts Parts);
+/// <summary>What it made of a tab: its button, its artwork's container, its title's presenter, its panel, their parts.</summary>
+    private sealed class Built(Tab tab, TabButton button, Grid content, ContentPresenter title, ContentPresenter panel, Parts parts)
+    {
+        public Tab Tab { get; } = tab;
+
+        public string Key { get; set; } = "";
+
+        public TabButton Button { get; } = button;
+
+        public Grid Content { get; } = content;
+
+        public ContentPresenter? Artwork { get; set; }
+
+        public ContentPresenter Title { get; } = title;
+
+        public ContentPresenter Panel { get; } = panel;
+
+        public Parts Parts { get; } = parts;
+    }
 
     static Tabs()
     {
@@ -186,7 +203,9 @@ public class Tabs : TemplatedControl
         {
             string s => s,
             IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
-            _ => null,
+            // A control's text, as a button's text content names it: its own peer's name (a text block's text).
+            Control c => ControlAutomationPeer.CreatePeerForElement(c).GetName() is { Length: > 0 } name ? name : b.Key,
+            var other => other?.ToString() ?? b.Key,
         };
     }
 
@@ -203,6 +222,8 @@ public class Tabs : TemplatedControl
         _list = e.NameScope.Find<TabList>(TabListPart);
         _endEnhancer = e.NameScope.Find<ContentPresenter>(EndEnhancerContainerPart);
         _highlight = e.NameScope.Find<TabHighlight>(TabHighlightPart);
+        // Once the key has changed, a new template's highlight moves too.
+        if (_highlight is not null) ((IPseudoClasses)_highlight.Classes).Set(":animate", _keyUpdated > 0);
         UpdateShared();
         Build();
     }
@@ -298,9 +319,22 @@ public class Tabs : TemplatedControl
         UpdateHighlight();
     }
 
+    /// <summary>A tab's change, its own parts updated in place, as React renders the same elements again: the focus stays.</summary>
     private void OnTabChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        Build();
+        if (_built.FirstOrDefault(x => x.Tab == sender) is not { } b) return;
+        if (e.Property == Tab.OverridesProperty) b.Parts.SetOverrides(b.Tab.Overrides);
+        else if (e.Property == Tab.ArtworkProperty)
+        {
+            SetArtwork(b);
+            Place(b);
+        }
+        else if (e.Property == Tab.KeyProperty)
+        {
+            for (var i = 0; i < _built.Count; i++) _built[i].Key = KeyAt(i);
+        }
+
+        UpdateTabs();
         UpdateHighlight();
     }
 
@@ -308,57 +342,103 @@ public class Tabs : TemplatedControl
 
     private static bool IsBlank(object? title) => title is null || title is string { Length: 0 };
 
-    /// <summary>The content each part made before let go, so the tabs' content can be shown again by new ones.</summary>
+    /// <summary>A tab's parts let go, its content given back, so the tab's content can be shown again by new ones.</summary>
+    private static void Release(Built b)
+    {
+        b.Title.Content = null;
+        if (b.Artwork is not null) b.Artwork.Content = null;
+        b.Panel.Content = null;
+        b.Parts.SetOverrides(null);
+    }
+
+    /// <summary>Every part it made let go (a new template makes them again).</summary>
     private void Release()
     {
         foreach (var b in _built)
         {
             b.Button.PropertyChanged -= OnButtonChanged;
-            b.Title.Content = null;
-            if (b.Artwork is not null) b.Artwork.Content = null;
-            b.Panel.Content = null;
-            b.Parts.SetOverrides(null);
+            Release(b);
         }
 
         _built.Clear();
     }
 
-    /// <summary>tabs.js's render: for each tab its button (its artwork's container and its title) and its panel.</summary>
+    /// <summary>
+    /// tabs.js's render: for each tab its button (its artwork's container and its title) and its panel. A tab already shown
+    /// keeps its parts, as React keeps an element it renders again, so a focused tab stays focused; a new one is made, a
+    /// tab gone lets its parts go.
+    /// </summary>
     private void Build()
     {
-        Release();
         if (_line is null || _panels is null) return;
-        foreach (var old in _line.Children.OfType<TabButton>().ToList()) _line.Children.Remove(old);
-        _panels.Children.Clear();
-        var at = 0;
-        for (var i = 0; i < Items.Count; i++)
+        var kept = _built.ToDictionary(b => b.Tab);
+        var next = new List<Built>();
+        foreach (var tab in Items)
         {
-            var tab = Items[i];
-            var key = KeyAt(i);
-            var title = new ContentPresenter { VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(title, 1);
-            ContentPresenter? artwork = null;
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
-            if (tab.Artwork is not null)
+            if (kept.Remove(tab, out var b))
             {
-                artwork = new ContentPresenter { VerticalAlignment = VerticalAlignment.Center, Content = tab.Artwork };
-                grid.Children.Add(artwork);
+                next.Add(b);
+                continue;
             }
 
-            grid.Children.Add(title);
+            var title = new ContentPresenter { VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(title, 1);
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { title } };
             var button = new TabButton { Owner = this, Tab = tab, TitlePresenter = title, Content = grid };
-            var panel = new ContentPresenter();
             var parts = new Parts(this, "Tabs", []);
             parts.SetOverrides(tab.Overrides);
-            var built = new Built(tab, key, button, artwork, title, panel, parts);
-            _built.Add(built);
-            Place(built);
+            b = new Built(tab, button, grid, title, new ContentPresenter(), parts);
+            SetArtwork(b);
+            Place(b);
             button.PropertyChanged += OnButtonChanged;
-            _line.Children.Insert(at++, button);
-            _panels.Children.Add(panel);
+            next.Add(b);
         }
 
+        foreach (var gone in kept.Values)
+        {
+            gone.Button.PropertyChanged -= OnButtonChanged;
+            Release(gone);
+        }
+
+        _built.Clear();
+        _built.AddRange(next);
+        for (var i = 0; i < _built.Count; i++) _built[i].Key = KeyAt(i);
+        Order(_line.Children, _built.Select(b => (Control)b.Button).ToList(), c => c is TabButton);
+        Order(_panels.Children, _built.Select(b => (Control)b.Panel).ToList(), _ => true);
         UpdateTabs();
+    }
+
+    /// <summary>The children in this order, at the start, those that stay left where they are, so they keep their focus.</summary>
+    private static void Order(Avalonia.Controls.Controls children, List<Control> wanted, Func<Control, bool> ours)
+    {
+        foreach (var c in children.Where(ours).Where(c => !wanted.Contains(c)).ToList()) children.Remove(c);
+        for (var i = 0; i < wanted.Count; i++)
+        {
+            if (i < children.Count && children[i] == wanted[i]) continue;
+            children.Remove(wanted[i]);
+            children.Insert(i, wanted[i]);
+        }
+    }
+
+    /// <summary>The artwork's container, only with an artwork, before the title (tabs.js renders it only then).</summary>
+    private static void SetArtwork(Built b)
+    {
+        if (b.Tab.Artwork is null)
+        {
+            if (b.Artwork is null) return;
+            b.Artwork.Content = null;
+            b.Content.Children.Remove(b.Artwork);
+            b.Artwork = null;
+            return;
+        }
+
+        if (b.Artwork is null)
+        {
+            b.Artwork = new ContentPresenter { VerticalAlignment = VerticalAlignment.Center };
+            b.Content.Children.Insert(0, b.Artwork);
+        }
+
+        b.Artwork.Content = b.Tab.Artwork;
     }
 
     private void Place(Built b)

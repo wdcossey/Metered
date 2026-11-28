@@ -54,8 +54,9 @@ its animated highlight and its WAI-ARIA 1.1 keys. No prop of tabs-motion is mark
   `ArtworkContainer` and title. Each tab has a `TabPanel`, hidden but the active tab's, holding its content only while
   active, or always with `RenderAll` (e2e: "does not mount non selected tab content", "[renderAll] mounts").
 - **A tab**: `LabelSmall`, `contentPrimary` on `backgroundPrimary`, 16 (`scale600`) of padding; under a mouse
-  `backgroundSecondary` (its fill's change takes `timing200`, linear); disabled `contentStateDisabled`, and no fill at all
-  hovered (`:disabled:hover { background: none }`); focused by the keyboard a 3 px `borderAccent` outline drawn inside it
+  `backgroundSecondary` (its fill's change takes `timing200`, linear, once it is loaded); disabled `contentStateDisabled`
+  with a not-allowed cursor (its line shows it: Avalonia hits nothing disabled), and no fill at all hovered
+  (`:disabled:hover { background: none }`); focused by the keyboard a 3 px `borderAccent` outline drawn inside it
   (`outline-offset: -3px`). A vertical tab's content sits at its end (`justify-content: flex-end`).
 - **The line**: a flex row (a column vertically) that doesn't wrap. Intrinsic tabs are as long as their titles, shrink as
   CSS's flex items do (`flex-shrink: 1`) to no less than their min-content width (their title's longest word, with the
@@ -81,15 +82,20 @@ its animated highlight and its WAI-ARIA 1.1 keys. No prop of tabs-motion is mark
   finger's drag sideways along tabs that overflow scrolls them and chooses none; a drag mostly up or down is the page's;
   a drag that moves past the platform's tap size chooses nothing, as a browser gives no click for a drag. The wheel goes
   on to the page.
+- **A changed tab keeps its parts**: a tab's title, artwork, content, key, disabled state or overrides changing, or tabs
+  added or removed, update the parts already shown, as React renders the same elements again, so a focused tab stays
+  focused.
 - **UI Automation**: the list a tab control (`role="tablist"`), each tab a tab item, selected while active
-  (`aria-selected`), named by its text; selecting one chooses it. Each panel a pane named by its tab
+  (`aria-selected`), named by its text (a title that is a control by its own text); selecting one chooses it. Each panel a pane named by its tab
   (`aria-labelledby`). The highlight and the border are hidden from it (`aria-hidden`).
 
 ## Motion
 
 The highlight's transition and the tab's fill transition are written from Base Web's style functions into the part
-themes. **They are tested at their end values** and once midway (the highlight is between the two tabs halfway through
-`timing400`), as ProgressBar's are: frame by frame against Base Web needs #13.
+themes. **They are tested at their end values** and once midway (the highlight between the two tabs halfway through
+`timing400`, the fill neither colour halfway through `timing200`), as ProgressBar's are: frame by frame against Base Web
+needs #13. The highlight's motion only arranges its line again, as a CSS transform moves a box without laying out the
+page; its length stretches it along the line.
 
 ## Held by
 
@@ -106,7 +112,8 @@ themes. **They are tested at their end values** and once midway (the highlight i
   longest word; single words overflowing (7 in all).
 - `Controls/TabsTests`: click, tap, disabled, a finger's drag sideways and up, the wheel, the highlight's motion and
   resize, centring and bringing into view, the tab stops, a vertical list's arrows, renderAll, content kept, the
-  reducer, binding, overrides, UI Automation, tabs that change, hover (21).
+  reducer, binding, overrides, UI Automation, tabs that change (the focus kept), hover, the fill's fade midway, a
+  disabled tab's cursor, a title that is a control named, a new template's highlight still moving (26).
 - `Controls/TabsFrames`: the highlight drawn over the border, light and dark; the gallery (`METERED_FRAMES`).
 - `Sample/TabsPageTests`: the sample's page, 4.
 

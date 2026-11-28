@@ -98,7 +98,7 @@
     <Setter Property="ZIndex" Value="1" />
     <Setter Property="Width" Value="NaN" />
     <Setter Property="Height" Value="5" />
-    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Bottom" />
     <Setter Property="Length" Value="0" />
     <Setter Property="Distance" Value="0" />
@@ -115,7 +115,7 @@
       <Setter Property="Width" Value="5" />
       <Setter Property="Height" Value="NaN" />
       <Setter Property="HorizontalAlignment" Value="Right" />
-      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
   </ControlTheme>
   <!-- TabBorder: the line under the tabs (beside them when vertical). -->
