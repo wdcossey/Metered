@@ -127,10 +127,10 @@ tab with stand-ins for the buttons: nothing of tabs.js is ported to get the expe
 
 1. **`Tabs` and `StatefulTabs` are one**, as Menu's and Select's are: a click, a tap or the keys set `ActiveKey` whatever
    bound it, through `StateReducer`. Base Web's controlled `Tabs` changes nothing itself and leaves it to `onChange`.
-   As built; the alternative is a separate controlled mode.
+   Kept on the 2026-11-28 decisions page; the alternative was a separate controlled mode.
 2. **A finger never hovers.** Base Web's tab `:hover` isn't inside `@media (hover: hover)`, so a phone's browser keeps a
    tapped tab `backgroundSecondary` until something else is tapped. Here only a mouse hovers (`:is-hovered`), as on
-   Metered's other controls (ADR 0001). As built.
+   Metered's other controls (ADR 0001). Kept on the 2026-11-28 decisions page.
 3. **A panel's content is the app's control, kept.** Base Web unmounts an inactive panel's children and mounts new ones
    when its tab is chosen again (their state gone); here the same content is taken out of the panel and shown again as it
    was. Avalonia's content is an instance, not a render function.

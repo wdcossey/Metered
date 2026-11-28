@@ -156,26 +156,26 @@ functions for every combination of states. 160 tests:
 
 ## Known differences
 
-1. **One control for `Select` and `StatefulSelect`** (chosen, as Popover's and Menu's): `Value`, `IsOpen` and
+1. **One control for `Select` and `StatefulSelect`** (chosen, as Popover's and Menu's; kept on the 2026-11-28 decisions page): `Value`, `IsOpen` and
    `InputValue` are set by the select whatever bound them.
-2. **Options** (chosen): Base Web's options are any objects it reads `valueKey` and `labelKey` from. Here a
+2. **Options** (chosen; kept on the 2026-11-28 decisions page): Base Web's options are any objects it reads `valueKey` and `labelKey` from. Here a
    `SelectOption` has `Id` and `Label` (the default keys); any other object is its own label and its own value. A
    `SelectGroup` is a grouped key; the dropdown lists the ungrouped options first, as Base Web's `groupOptions` does, and
    highlights the value in that order (Base Web's index is the options' given order, the same whenever its `__ungrouped`
    key comes first, as it conventionally does). As Base Web's `expandValue`, a value is shown as the option with the same
    id (as text).
-3. **The dropdown's list never takes the focus** (chosen): Base Web's list (`tabIndex={0}`) takes it on a press, and a
+3. **The dropdown's list never takes the focus** (chosen; kept on the 2026-11-28 decisions page): Base Web's list (`tabIndex={0}`) takes it on a press, and a
    single select's choice gives it back to the input (`focus()`); a multi select's leaves it on the list, which goes as the
    dropdown closes, so the page has no focus while the select looks focused. Here the input keeps it in both. The
    alternative: the list focusable, as Base Web's.
-4. **A tag's Backspace and Delete are the tag's alone** (chosen): in Base Web the key removes the focused tag (tag.js) and
+4. **A tag's Backspace and Delete are the tag's alone** (chosen; kept on the 2026-11-28 decisions page): in Base Web the key removes the focused tag (tag.js) and
    then reaches the select's own handler, whose `popValue`, reading the value from before the first removal, removes the
    last value in its place, so the focused tag stays unless it is the last. Here only the focused tag goes. The
    alternative: Base Web's.
-5. **`Placeholder` is text** (chosen): Base Web's is any node. The alternative: any content, as `NoResultsMsg` is.
+5. **`Placeholder` is text** (chosen; kept on the 2026-11-28 decisions page): Base Web's is any node. The alternative: any content, as `NoResultsMsg` is.
 6. **The tag is `SelectTag`, only what the select uses of Base Web's Tag** (not yet): until Metered has the Tag control. Its
    parts and overrides are Base Web's Tag's; a `Tag` override's `component` can't replace it (ADR 0001, forced).
-7. **Back closes the dropdown** (chosen, as built; Base Web has no back request): Avalonia's back request is the popover's
+7. **Back closes the dropdown** (chosen, kept on the 2026-11-28 decisions page; Base Web has no back request): Avalonia's back request is the popover's
    Escape while it is open (#123's rule), so the shell stays on its page.
 8. **No hidden `Input` in a select that isn't searchable** (forced): its input's box is the focusable element, as
    Checkbox's control is the native input.

@@ -243,6 +243,8 @@ entrance's transition and the hover body's pointer as Base Web's.
    window's: a popover whose anchor scrolls under something above the page (an app's bar) is drawn over it, where a
    browser's page takes it off the top of the screen. The system's bars are not: nothing is drawn over them (#129: Built
    on Avalonia's `Popup`).
+   **To change** (decided on the 2026-11-28 decisions page, #166, not built yet): a property that, by default, hides the
+   popover while its anchor is wholly out of its scroll viewer's view; following it, as now, on request.
 4. **Focus goes back to the anchor when it closes, with or without a focus lock, whatever `ReturnFocus` says.** Base Web's leaves focus on the page when the
    focused element inside goes; Avalonia's popup gives focus back to what had it before it opened.
 5. **A menu's anchor isn't marked as having a popup or expanded** (`aria-haspopup`, `aria-expanded`,
