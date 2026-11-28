@@ -8,10 +8,16 @@ $WindowWidth = 390
 $WindowHeight = 844
 $BarHeight = 56
 
-# A check's line, counted in the script that dot-sources this: drive.ps1 and selftest.ps1 print the same.
+# A check's line, counted in the script that dot-sources this: drive.ps1 and selftest.ps1 print the same. A failure is also
+# kept in $script:failed, with the section it was in ($script:section, drive.ps1's), for the summary to list again (#136).
 function Check($name, [bool]$ok, $detail = '') {
     $script:checks++
-    if ($ok) { "  ok    $name" } else { $script:failures++; "  FAIL  $name $detail" }
+    if ($ok) { return "  ok    $name" }
+    $script:failures++
+    if ($null -eq $script:failed) { $script:failed = New-Object 'Collections.Generic.List[string]' }
+    $where = if ($script:section) { "$($script:section): " } else { '' }
+    $script:failed.Add("$where$name $detail".TrimEnd())
+    "  FAIL  $name $detail".TrimEnd()
 }
 
 # A section runs when its title is like -Only, as -like matches, or like one of its comma-separated parts: so a title with a

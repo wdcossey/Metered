@@ -92,6 +92,19 @@ Check 'RoomLeft: a quarter of the way down a view that scrolls 400, 300 are left
 Check 'RoomLeft is nothing at the end, or for a view that can''t scroll' (((RoomLeft 100 50 400) -eq 0) -and ((RoomLeft 0 100 400) -eq 0) -and ((RoomLeft -1 50 400) -eq 0))
 Check 'ScrollPercentFor leaves a view that can''t scroll' (((ScrollPercentFor 0 100 400 100) -eq 0) -and ((ScrollPercentFor -1 50 400 100) -eq -1))
 
+# A failure is kept for the summary to list again (#136), with its section. Made on a copy of the counts, so the failures
+# made here aren't this run's.
+$saved = $script:checks, $script:failures
+$script:section = 'a section'
+$said = Check 'a name' $false 'a detail'
+$script:section = $null
+$null = Check 'another' $false
+$kept = @($script:failed)
+$script:checks, $script:failures = $saved
+$script:failed = $null
+Check 'Check prints a failure' ($said -ceq '  FAIL  a name a detail') $said
+Check 'and keeps it, with its section, for the summary' (($kept.Count -eq 2) -and ($kept[0] -ceq 'a section: a name a detail') -and ($kept[1] -ceq 'another')) ($kept -join ' | ')
+
 '== the sizes it expects, against the sample'
 $repo = (Resolve-Path (Join-Path (Join-Path $PSScriptRoot '..') '..')).Path
 $sample = Join-Path $repo 'samples'
@@ -277,6 +290,15 @@ $unquoted = @($ast.FindAll({ param($n)
                 $n.CommandElements[2].StringConstantType -eq 'SingleQuoted')
         }, $true) | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Extent.Text)" })
 Check 'every label it reads and part it finds by name is named in single quotes' ($unquoted.Count -eq 0) ($unquoted -join '; ')
+
+# Its own report in -Out (#136), opened once and closed before the exit, so a failure can be read after the run.
+function CallsTo($name) { @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq $name }, $true)) }
+$starts = CallsTo 'Start-Transcript'
+$stops = CallsTo 'Stop-Transcript'
+$exits = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.ExitStatementAst] }, $true))
+$inOut = [regex]::IsMatch($ast.Extent.Text, '(?m)^\$report = Join-Path \$Out ''report\.txt''$')
+Check 'it writes its report to report.txt in -Out' ($inOut -and $starts.Count -eq 1 -and $starts[0].Extent.Text -cmatch '-Path \$report\b') (($starts | ForEach-Object { $_.Extent.Text }) -join '; ')
+Check 'and closes it before it exits' ($stops.Count -eq 1 -and $exits.Count -gt 0 -and $stops[0].Extent.StartOffset -lt $exits[-1].Extent.StartOffset -and $stops[0].Extent.StartOffset -gt $starts[0].Extent.StartOffset)
 
 "$($script:checks - $script:failures) of $($script:checks) checks passed"
 if ($script:failures -gt 0) { exit 1 }

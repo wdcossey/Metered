@@ -64,6 +64,10 @@ if (-not $NoBuild) {
 New-Item -ItemType Directory -Force $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 $stdout = Join-Path $Out 'stdout.txt'
+# The run's own report, every line it prints from here on, so a failure can be read after the run however much of its
+# output a terminal or a tool kept (#136).
+$report = Join-Path $Out 'report.txt'
+Start-Transcript -Path $report -Force | Out-Null
 
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 Add-Type @'
@@ -473,10 +477,12 @@ function Open($title) {
 function Section($title, [scriptblock]$body) {
     if (-not (Selected $title $Only)) { return }
     $script:sections++
+    $script:section = $title
     "== $title"
     try { & $body }
-    # Counted as a check, so the summary's count of checks includes it.
-    catch { LetGo; $script:checks++; $script:failures++; "  FAIL  the section stopped: $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)" }
+    # Counted as a check, so the summary's count of checks includes it and lists it again.
+    catch { LetGo; Check "the section stopped: $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)" $false }
+    finally { $script:section = $null }
     if ($p.HasExited) { throw "The app exited during $title, with code $($p.ExitCode)" }
 }
 
@@ -1187,5 +1193,12 @@ finally {
     if (-not $p.HasExited) { $p.Kill() }
 }
 
+# Every failure again at the end, with its section, where a cut output still shows it.
+if ($script:failed) {
+    '== the failures, again'
+    $script:failed | ForEach-Object { "  FAIL  $_" }
+}
 "$($script:checks - $script:failures) of $($script:checks) checks passed"
+"report in $report"
+Stop-Transcript | Out-Null
 if ($script:failures -gt 0) { exit 1 }

@@ -24,7 +24,9 @@ It builds the sample first, from the repo so that `global.json` picks the SDK, a
 build runs the old code, and fails checks the new code passes. `-Configuration Release` builds and runs Release instead
 of Debug; only a Debug build has the cost line to check. `-NoBuild` runs the build as it is. **Close the sample first**
 if it's open: it locks its files, so the script stops rather than build. Frames go to a new folder in the temp folder for
-each run, which it prints, unless you pass `-Out`; the sample's standard output goes there too, as `stdout.txt`. It
+each run, which it prints, unless you pass `-Out`; the sample's standard output goes there too, as `stdout.txt`, and the
+run's own report, every line it prints after the build, as `report.txt` (#136), so a failure can be read after the run
+however much of its output a terminal or a tool kept. Every failure is listed again at the end, with its section. It
 exits 1 if a check fails.
 
 `-Only` runs the sections whose title is like the pattern, or like one of its comma-separated parts (`'switch*'`,
