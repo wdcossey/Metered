@@ -191,7 +191,7 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
     before the app goes back (the sample's shell); with no child open, or one that Escape leaves open (as `ForceHighlight`
     highlights its option again, its Escape run all the same), the request goes on as before, to the popover below or the
     app. Tried headless (`MenuNestedTests`, `MenuPageTests`), not yet on a phone.
-16. **The focus a pointer gives the list moves no page round it** (chosen, #132, found on a Pixel 8; as built). Base Web's
+16. **The focus a pointer gives the list moves no page round it** (chosen, #132, found on a Pixel 8; kept on the 2026-11-28 decisions page). Base Web's
     focusMenu calls the list's `focus()` as a mouse comes over it, and as a tap's mouseover comes, and a browser's
     `focus()` scrolls the page to show the whole list. Measured in headless Chromium (Base Web's own `StatefulMenu`, its
     list 250 px high, 266 with its padding, 137 px of it below the window's foot): a mouse moved onto the first option, a

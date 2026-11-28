@@ -175,7 +175,7 @@ functions for every combination of states. 160 tests:
 5. **`Placeholder` is text** (chosen): Base Web's is any node. The alternative: any content, as `NoResultsMsg` is.
 6. **The tag is `SelectTag`, only what the select uses of Base Web's Tag** (not yet): until Metered has the Tag control. Its
    parts and overrides are Base Web's Tag's; a `Tag` override's `component` can't replace it (ADR 0001, forced).
-7. **Back closes the dropdown** (chosen, as built; Base Web has no back request): Avalonia's back request is the popover's
+7. **Back closes the dropdown** (chosen, kept on the 2026-11-28 decisions page; Base Web has no back request): Avalonia's back request is the popover's
    Escape while it is open (#123's rule), so the shell stays on its page.
 8. **No hidden `Input` in a select that isn't searchable** (forced): its input's box is the focusable element, as
    Checkbox's control is the native input.

@@ -239,7 +239,7 @@ entrance's transition and the hover body's pointer as Base Web's.
    document, so a popover goes off the screen with its anchor; in a scrolling element, that element's box. An app's page
    is a scroll viewer: Metered takes what it scrolls as the document, so a popover goes with its anchor, as on
    baseweb.design (`flip` keeps to the window, the viewport). A popover in a small scrolling box inside a page leaves
-   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the viewport: the window's safe area (#129). The overlay layer is the
+   that box with its anchor, where popper.js would hold it at the box's edge. Without a scroll viewer, the viewport: the window's safe area (#129). **To change** (the 2026-11-28 decisions page, #166): a property, by default hiding the popover while its anchor is wholly out of its scroll viewer's view. The overlay layer is the
    window's: a popover whose anchor scrolls under something above the page (an app's bar) is drawn over it, where a
    browser's page takes it off the top of the screen. The system's bars are not: nothing is drawn over them (#129: Built
    on Avalonia's `Popup`).

@@ -47,7 +47,8 @@ You're building one Metered issue while one or two other agents build others. Re
   (`3adb0478c96569dc4e593ab39c24f36dc59e39f5`, the commit that set `package.json` from 18.1.0 to 18.2.0; the
   repository has no `v18.2.0` tag). Every value a
   test expects comes from Base Web: the oracle (`tools/reference/`), or a value read from its source with
-  the file named (CLAUDE.md, rule 3). Never re-record an expected value from Avalonia's output.
+  the file named (CLAUDE.md, rule 3); where Base Web leaves a behaviour to the browser, from the browser's platform
+  source, named the same way. Never re-record an expected value from Avalonia's output.
 - **Build the component's v2 if Base Web has one.** Metered reproduces Base Web's v2 controls (the developer,
   2026-11-17). Before you choose, read the component's docs page at that commit
   (`documentation-site/pages/components/`) for a deprecation notice, and look for a `<component>-v2` folder in

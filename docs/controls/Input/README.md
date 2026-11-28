@@ -256,7 +256,7 @@ Base Web's Textarea renders the same `BaseInput` with `StyledTextAreaRoot`, `Sty
    none), whose hover after a tap is kept from scrolling the text, and whose release on a control inside the input (a
    textarea's grip) is that control's; and the phone itself (#140).
 12. **A phone's menu is Avalonia's menu, placed as Android's toolbar** (#110, option 1 of the 2026-11-21 late decisions
-   page; Android's place as built). A phone's browser shows the platform's floating text toolbar: a row (Android's: Cut, Copy, Paste,
+   page; Android's place kept on the 2026-11-28 decisions page). A phone's browser shows the platform's floating text toolbar: a row (Android's: Cut, Copy, Paste,
    Select all) above the selection. Here it is the same cut, copy and paste menu as on a desktop, a column, without its
    shortcuts while it is open there, placed where Android places its toolbar (Behaviour). Avalonia's own place for a touch's menu hangs it over
    the selection ([Avalonia's issues](../../avalonia-issues.md), 2), and a fine pointer keeps it: a Windows touch screen
