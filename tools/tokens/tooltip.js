@@ -11,7 +11,8 @@
 //   margin is still getPopoverMarginStyles', which the Popover gives, and a hover body's 0.1 s of not taking the pointer
 //   is getBodyStyles' own.
 // - Arrow: getArrowStyles in tooltipBackground; its shadow, box and side are the Popover's.
-// - Inner: tooltipBackground, radius300, tooltipText, padding scale300 by scale600 and font150.
+// - Inner: tooltipBackground, radius300, tooltipText, padding scale300 by scale600 and font150; and a browser's own
+//   white-space, normal, so a text content wraps.
 'use strict';
 
 const sc = require('baseui/tooltip/styled-components');
@@ -49,6 +50,9 @@ function parts() {
     arrowPart(sc.Arrow),
     {
       part: 'Inner', type: 'ContentPresenter',
+      // CSS's white-space: normal, a browser's own: a text content wraps at the room it has, as a long tooltip's does in
+      // the page.
+      fixed: { TextWrapping: 'Wrap' },
       styled: (t, c) => flat(sc.Inner, T, c),
       convert(s) {
         const what = 'Inner';
@@ -66,7 +70,7 @@ function parts() {
 const DESCRIBE = {
   Body: 'the box placed against the anchor: its fill, radius, shadow and text colour; its opacity and fade by state, in place.',
   Arrow: 'the arrow, a box turned 45° behind Inner: its fill, shadow, size, and the side it sits beyond by placement.',
-  Inner: 'the content\'s box over the arrow: its fill, radius, padding, font and text colour.',
+  Inner: 'the content\'s box over the arrow: its fill, radius, padding, font and text colour; its text wrapped.',
 };
 
 function file(version) {

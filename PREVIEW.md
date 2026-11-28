@@ -246,6 +246,18 @@ highlights an option and chooses it, and a tap on Open Recent or New Breakpoint 
 <img src="docs/preview/dark__menu-4.png" width="270" alt="Menu, dark, at its end: links, dividers, the empty state">
 </p>
 
+## Tooltip
+
+Base Web's tooltip, as its documentation's examples and scenarios: one open from the start (with the arrow, above its
+anchor), the stateful example in a line of text, complex content in the dark theme with a link, the arrow with a margin
+of 20, and two on buttons. A tap on an anchor opens its tooltip and another, or a tap elsewhere, closes it; a tooltip
+opens under a mouse or by keyboard focus.
+
+<p>
+<img src="docs/preview/light__tooltip-1.png" width="270" alt="Tooltip, light: one open from the start, the examples' anchors">
+<img src="docs/preview/dark__tooltip-1.png" width="270" alt="Tooltip, dark: one open from the start, the examples' anchors">
+</p>
+
 ## Theme
 
 Buttons under the app's theme, then the same in a subtree given its own by `ThemeProvider`, built by

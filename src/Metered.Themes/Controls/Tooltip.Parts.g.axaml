@@ -102,8 +102,9 @@
       <Setter Property="Canvas.Bottom" Value="NaN" />
     </Style>
   </ControlTheme>
-  <!-- Inner: the content's box over the arrow: its fill, radius, padding, font and text colour. -->
+  <!-- Inner: the content's box over the arrow: its fill, radius, padding, font and text colour; its text wrapped. -->
   <ControlTheme x:Key="Tooltip.StyledInner" TargetType="ContentPresenter">
+    <Setter Property="TextWrapping" Value="Wrap" />
     <Setter Property="Background" Value="{DynamicResource colors.tooltipBackground}" />
     <Setter Property="CornerRadius" Value="{DynamicResource borders.radius300}" />
     <Setter Property="Padding" Value="16,8,16,8" />

@@ -80,6 +80,7 @@ These are the ones to revisit first.
 | Select | Backspace or Delete on a focused tag removes it, then the select's handler removes the last value in its place | Only the focused tag is removed | as built (#97) | [Select 4](controls/Select/README.md#known-differences) |
 | Select | `placeholder` is any node | Text | as built (#97) | [Select 5](controls/Select/README.md#known-differences) |
 | Select | No counterpart: a browser's back button leaves the page | Avalonia's back request closes an open dropdown as Escape does (#123's rule) | as built (#97) | [Select 7](controls/Select/README.md#known-differences) |
+| Tooltip | `Tooltip` and `StatefulTooltip` are separate: a controlled `Tooltip` has no dismissal unless it is given `onClickOutside` or `onEsc` | One tooltip, as the Popover: StatefulTooltip's dismissals by default (`DismissOnClickOutside`, `DismissOnEsc`); the Popover's other rows are the tooltip's | as built (#154) | [Tooltip 1, 2](controls/Tooltip/README.md#known-differences) |
 
 ## Forced
 
@@ -110,6 +111,8 @@ These are the ones to revisit first.
 | **Menu: the reducer sees focusMenu's change once**, where React's batched state calls it twice | Avalonia applies a state at once | [Menu 4](controls/Menu/README.md#known-differences) |
 | **Menu: `ItemSelect` gives the item, not a DOM event**; a relative `href` isn't opened | Avalonia's routed event; no page to resolve it against | [Menu 5, 11](controls/Menu/README.md#known-differences) |
 | **Menu: no `renderAll`, and no `List` of another element** (the virtualized example) | Nothing reads hidden content; an override is a theme (ADR 0001) | [Menu 9](controls/Menu/README.md#known-differences) |
+| **Tooltip: a long text is as wide as its widest line**: a browser's body takes all the room once its text wraps (390 px in the phone's window, 365 measured for six of the documentation's message) | Avalonia measures text by its lines | [Tooltip 3](controls/Tooltip/README.md#known-differences) |
+| **Tooltip (sample): the inline examples' text is a `WrapPanel` of its words** round the anchor, a span in a line of text in Base Web's | Avalonia's `InlineUIContainer` puts an inline control's foot on the baseline; `TextBlock.BaselineOffset` changed nothing | [Tooltip 4](controls/Tooltip/README.md#known-differences) |
 
 ## Not yet
 
@@ -128,3 +131,4 @@ These are the ones to revisit first.
 | **In a real window:** the Menu; **on a phone:** the keys, its profile pictures and links (#126; the rest passed on the Pixel 8 on 2026-11-24; found #132, a tap on an option scrolling the page, and #129, its child menu's popover over Android's navigation bar, cut to the safe area since, headless only) | [Menu 14](controls/Menu/README.md#known-differences) |
 | **Select:** the Tag control (its tag is `SelectTag`, only what the select uses); `onFocus`, `onBlur`, `inputRef`, `mountNode`, `id`; the `aria-` props but its name; Base Web's locale | [Select 6, 9, 10, 11](controls/Select/README.md#known-differences) |
 | **On a phone and in a real window:** the Select (#133) | [Select 14](controls/Select/README.md#known-differences) |
+| **On a phone and in a real window:** the Tooltip (#161) | [Tooltip 6](controls/Tooltip/README.md#known-differences) |

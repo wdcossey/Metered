@@ -67,7 +67,7 @@ public class TooltipFrames
             var tooltip = new Tooltip
             {
                 Anchor = new Metered.Controls.Button { Content = placement.ToString(), Size = ButtonSize.Compact, Kind = ButtonKind.Secondary },
-                Content = "Tooltips display short messages.",
+                Content = "Short message",
                 Placement = placement, ShowArrow = i++ % 2 == 1, IsOpen = true,
             };
             Canvas.SetLeft(tooltip, x);

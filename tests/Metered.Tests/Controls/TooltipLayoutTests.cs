@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Metered.Controls;
 
@@ -60,6 +61,26 @@ public class TooltipLayoutTests
         double x = side == "left" ? c.SteadyArrowLeft!.Value : at.Left ?? (at.Right is { } r ? c.BodyWidth - r - w : 0);
         double y = side == "top" ? c.SteadyArrowTop!.Value : at.Top ?? (at.Bottom is { } b ? c.BodyHeight - b - h : 0);
         Assert.Equal(new Rect(x, y, w, h), arrow.Bounds);
+    }
+
+    // A text content wraps at the room it has (CSS's white-space, normal, a browser's own): a long one is kept inside the
+    // window, on more than one line, its lines Inner's line height (font150's) each.
+    [AvaloniaFact]
+    public void A_long_text_wraps_inside_the_window()
+    {
+        var (tooltip, _, _) = TooltipTests.Fixed(150, 400);
+        tooltip.Content = string.Join(" ", Enumerable.Repeat("Tooltips display short messages.", 6));
+        tooltip.Placement = PopoverPlacement.Bottom;
+        tooltip.IsOpen = true;
+        using var scene = PopoverTests.Show(tooltip);
+        PopoverTests.Settle(scene);
+        var c = TooltipOracle.Value.Colours[0].Inner;
+        var body = PopoverTests.BoxOf((Visual)tooltip.Part(Popover.BodyPart)!, scene);
+        Assert.True(body.Left >= 0 && body.Right <= Scene.Width, $"{body}");
+        var text = ((Visual)tooltip.Part(Popover.InnerPart)!).GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.Equal(TextWrapping.Wrap, text.TextWrapping);
+        var lines = (body.Height - c.Padding[1] - c.Padding[3]) / c.Font.LineHeight;
+        Assert.True(lines >= 2 && lines == Math.Floor(lines), $"{lines} lines");
     }
 
     // Body's margin is the popover's getPopoverMarginStyles; its transform is the same closed as open: no start position.

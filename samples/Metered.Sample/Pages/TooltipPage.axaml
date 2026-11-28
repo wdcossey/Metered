@@ -19,16 +19,18 @@
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <!-- The examples' anchor: a span in primary500 with a dotted underline of 1 px, focusable (tabIndex 0). -->
-    <Style Selector="Border.anchor">
+    <Style Selector="TextBlock.anchor">
       <Setter Property="Focusable" Value="True" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="{DynamicResource colors.primary500}" />
-      <Setter Property="BorderThickness" Value="0,0,0,1" />
-    </Style>
-    <Style Selector="Border.anchor > TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource colors.primary500}" />
+      <Setter Property="TextDecorations">
+        <TextDecorationCollection>
+          <TextDecoration Location="Underline" StrokeThickness="1" StrokeThicknessUnit="Pixel" StrokeDashArray="1,1"
+                          Stroke="{DynamicResource colors.primary500}" />
+        </TextDecorationCollection>
+      </Setter>
     </Style>
-    <Style Selector="WrapPanel > b|Tooltip">
+    <Style Selector="WrapPanel#Buttons > b|Tooltip">
       <Setter Property="Margin" Value="0,0,8,8" />
     </Style>
   </UserControl.Styles>
@@ -40,31 +42,21 @@
            it for its body. -->
       <b:Tooltip x:Name="Open" IsOpen="True" Placement="TopLeft" PopoverMargin="8" ShowArrow="True"
                  Content="Tooltips display short messages." HorizontalAlignment="Left" Margin="0,48,0,0">
-        <Border Classes="anchor">
-          <TextBlock Classes="paragraph" Text="anchor" />
-        </Border>
+        <TextBlock Classes="paragraph anchor" Text="anchor" />
       </b:Tooltip>
 
       <TextBlock Classes="heading" Text="Tooltip" />
-      <!-- stateful.tsx: inline in its text. -->
-      <TextBlock Classes="paragraph">
-        <Run Text="You can use tooltips in many places, including inline text " />
-        <InlineUIContainer BaselineAlignment="TextBottom">
-          <b:Tooltip x:Name="Stateful" Content="Tooltips display short messages.">
-            <Border Classes="anchor">
-              <TextBlock Classes="paragraph" Text="such as this" />
-            </Border>
-          </b:Tooltip>
-        </InlineUIContainer>
-        <Run Text=". Tooltips are essentially just a Popover with a few style tweaks, so you can use all the features that Popover supports." />
-      </TextBlock>
+      <!-- stateful.tsx: in a line of text, its words round it (TooltipPage.axaml.cs). -->
+      <WrapPanel x:Name="StatefulText">
+        <b:Tooltip x:Name="Stateful" Content="Tooltips display short messages.">
+          <TextBlock Classes="paragraph anchor" Text="such as this" />
+        </b:Tooltip>
+      </WrapPanel>
 
       <TextBlock Classes="heading" Text="Complex content" />
       <!-- stateful-complex-content.tsx: its content in Base Web's dark theme, with a link; autoFocus, so it stays open when
            focus leaves its anchor. -->
-      <TextBlock Classes="paragraph">
-        <Run Text="You can use tooltips in many places, including inline text " />
-        <InlineUIContainer BaselineAlignment="TextBottom">
+      <WrapPanel x:Name="ComplexText">
           <b:Tooltip x:Name="Complex" AutoFocus="True">
             <b:Tooltip.Content>
               <WrapPanel x:Name="ComplexContent" t:ThemeProvider.Theme="{x:Static t:BaseTheme.DarkTheme}">
@@ -75,20 +67,14 @@
                 </HyperlinkButton>
               </WrapPanel>
             </b:Tooltip.Content>
-            <Border Classes="anchor">
-              <TextBlock Classes="paragraph" Text="such as this" />
-            </Border>
+            <TextBlock Classes="paragraph anchor" Text="such as this" />
           </b:Tooltip>
-        </InlineUIContainer>
-        <Run Text=". Tooltips with interactive content, such as links or buttons, should use the autoFocus or focusLock props." />
-      </TextBlock>
+      </WrapPanel>
 
       <TextBlock Classes="heading" Text="With an arrow" />
       <!-- tooltip-arrow-margin.scenario.tsx: showArrow, popoverMargin 20. -->
       <b:Tooltip x:Name="Arrow" ShowArrow="True" PopoverMargin="20" Content="Tooltips display short messages." HorizontalAlignment="Left">
-        <Border Classes="anchor">
-          <TextBlock Classes="paragraph" Text="such as this" />
-        </Border>
+        <TextBlock Classes="paragraph anchor" Text="such as this" />
       </b:Tooltip>
 
       <TextBlock Classes="heading" Text="On buttons" />
