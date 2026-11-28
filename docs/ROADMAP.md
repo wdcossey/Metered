@@ -126,7 +126,8 @@ tooltip, popover, menu, select), then the small new ones, then the overlays and 
       Base Web's container driven in Node), a mouse's hover and click, a finger's drag that scrolls it and a tap that
       chooses, `keyboardControlNode` and `forceHighlight` for Select (#97), links, the profile option by the `Option`
       override, nested menus in a Popover (`NestedMenus`), its parts and overrides (`docs/controls/Menu/`). On the Pixel
-      and in a real window: #126
+      and in a real window: #126. Then (#132): the focus a pointer gives the list scrolls no page round it (headless; the
+      phone to check)
 - [x] Select (#97): Base Web's `baseui/select` (no v2), `Select` and `StatefulSelect` in one, its dropdown Metered's Popover
       round Metered's Menu: single and multi, searchable and creatable, clearable, its tags (`SelectTag`, the part of Base
       Web's Tag it uses), sizes, error and positive, loading, the search type, grouped options, its state through

@@ -71,6 +71,26 @@ public class SelectTests
         Assert.True(select.IsSelectFocused);
     }
 
+    // Its dropdown's menu never takes the focus, and its popup is in the window's overlay layer, not in the page: a tap on an
+    // option leaves a page that scrolls where it is (#132).
+    [AvaloniaFact]
+    public void A_tap_on_an_option_leaves_the_page_that_scrolls_where_it_is()
+    {
+        var select = new Select { Options = SelectOracle.Options("OPTIONS") };
+        var scroller = new ScrollViewer
+        {
+            Content = new StackPanel { Margin = new Thickness(20), Children = { new Border { Height = 600 }, select, new Border { Height = 1200 } } },
+        };
+        using var scene = SelectKit.Show(scroller);
+        SelectKit.Tap(scene, SelectKit.ControlPoint(scene, select));
+        PopoverTests.Settle(scene);
+        Assert.True(select.IsOpen);
+        Assert.Equal(0, scroller.Offset.Y);
+        SelectKit.Tap(scene, scene.CentreOf(SelectKit.Option(select, "Azure")));
+        Assert.Equal(["Azure"], SelectKit.Labels(select.Value));
+        Assert.Equal(0, scroller.Offset.Y);
+    }
+
     [AvaloniaFact]
     public void A_fingers_drag_in_a_long_dropdown_scrolls_it_and_chooses_nothing()
     {

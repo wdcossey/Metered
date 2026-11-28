@@ -103,6 +103,30 @@ public class MenuPageTests
         Assert.True(option.ChildMenuPopover!.IsOpen);
     }
 
+    // #132, found on a Pixel 8: with the child menu example's list partly below the screen's foot, a tap on Open Recent (in
+    // view) scrolled the page about 200 px before its child opened. The page stays where it is.
+    [AvaloniaFact]
+    public void A_Tap_On_Open_Recent_Near_The_Foot_Leaves_The_Page_Where_It_Is()
+    {
+        var page = new MenuPage();
+        using var scene = PopoverTests.Show(page);
+        var scroller = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var parent = page.Child;
+        var option = parent.OptionAt(4)!;
+        var list = (Control)parent.Part(Menu.ListPart)!;
+        // Open Recent's foot 20 px above the window's, the rest of the list below it.
+        var foot = option.TranslatePoint(new Point(0, option.Bounds.Height), (Visual)scroller.Content!)!.Value.Y;
+        scroller.Offset = new Vector(0, foot - scroller.Viewport.Height + 20);
+        scene.Pump();
+        Assert.True(list.TranslatePoint(new Point(0, list.Bounds.Height), scene.Window)!.Value.Y > Scene.Height);
+        var at = scroller.Offset.Y;
+        MenuTests.Tap(scene, scene.CentreOf(option));
+        PopoverTests.Settle(scene);
+        Assert.Equal(at, scroller.Offset.Y);
+        Assert.Equal(4, parent.HighlightedIndex);
+        Assert.True(option.ChildMenuPopover!.IsOpen);
+    }
+
     // Back with the child menu open is its Escape: the parent reset and the child closed, and the shell stays on the page;
     // with the child closed, the shell goes back (#131).
     [AvaloniaFact]

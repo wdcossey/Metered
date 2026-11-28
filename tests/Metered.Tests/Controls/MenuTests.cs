@@ -125,6 +125,108 @@ public class MenuTests
         Assert.Single(chosen);
     }
 
+    // ---- The page round it (Metered's, #132) ----
+
+    /// <summary>
+    /// A menu in a page that scrolls, its list from 700 px down the window's 844: its first options in view, the rest of it
+    /// below the window's foot.
+    /// </summary>
+    private static (Menu Menu, MenuList List, ScrollViewer Page, Scene Scene) InAPage()
+    {
+        var menu = MenuKit.Make(Numbered(12), Height(266));
+        var page = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 700 }, menu, new Border { Height = 2000 } } } };
+        // SimpleTheme's template, so the page scrolls.
+        var scene = PopoverTests.Show(page);
+        var list = (MenuList)menu.Part(Menu.ListPart)!;
+        Assert.True(scene.CentreOf(menu.OptionAt(1)!).Y < Scene.Height);
+        Assert.True(Foot(list, scene) > Scene.Height);
+        return (menu, list, page, scene);
+    }
+
+    private static double Foot(Visual v, Scene scene) => v.TranslatePoint(new Point(0, v.Bounds.Height), scene.Window)!.Value.Y;
+
+    // A tap on an option in view chooses it and leaves the page where it is: a deviation (Metered's, #132, found on a
+    // Pixel 8). Base Web's focusMenu focuses the list as the tap's mouseover comes, and a browser's focus() then scrolls the
+    // page to show the whole list: in Chromium, measured, a tap on the first option of a list 137 px below the foot scrolled
+    // the page 137 px and chose the fifth, which had come under the finger (docs/controls/Menu).
+    [AvaloniaFact]
+    public void A_tap_on_an_option_in_a_page_that_scrolls_leaves_the_page_where_it_is_and_chooses_it()
+    {
+        var (menu, list, page, scene) = InAPage();
+        using var _s = scene;
+        var chosen = new List<object>();
+        menu.ItemSelect += (_, e) => chosen.Add(e.Item);
+        Tap(scene, scene.CentreOf(menu.OptionAt(1)!));
+        Assert.Equal(0, page.Offset.Y);
+        Assert.True(list.IsFocused);
+        Assert.True(menu.IsMenuFocused);
+        Assert.Equal(1, menu.HighlightedIndex);
+        Assert.Same(menu.FlatItems[1], Assert.Single(chosen));
+        Assert.Equal(0, list.Offset.Y);
+    }
+
+    // The same for a mouse: coming over the list focuses the menu (focusMenu), and neither that focus nor the click's moves
+    // the page (#132).
+    [AvaloniaFact]
+    public void A_mouse_over_an_option_and_its_click_leave_the_page_where_it_is()
+    {
+        var (menu, list, page, scene) = InAPage();
+        using var _s = scene;
+        var chosen = new List<object>();
+        menu.ItemSelect += (_, e) => chosen.Add(e.Item);
+        var at = scene.CentreOf(menu.OptionAt(1)!);
+        scene.Window.MouseMove(new Point(at.X, 600));
+        scene.Window.MouseMove(at);
+        scene.Pump();
+        Assert.True(list.IsFocused);
+        Assert.Equal(1, menu.HighlightedIndex);
+        Assert.Equal(0, page.Offset.Y);
+        scene.Window.MouseDown(at, MouseButton.Left);
+        scene.Window.MouseUp(at, MouseButton.Left);
+        scene.Pump();
+        Assert.Equal(0, page.Offset.Y);
+        Assert.Same(menu.FlatItems[1], Assert.Single(chosen));
+    }
+
+    // The keyboard's focus shows what it focuses, as a browser's does: Tab onto the list brings it into the page's view, its
+    // foot to the window's (Chromium's focus, measured, scrolled the page by the list's overflow). Then the arrows scroll only
+    // the list, as Base Web's scrollItemIntoView sets the list's scrollTop and never the page's (utils.js).
+    [AvaloniaFact]
+    public void Tab_brings_the_list_into_the_pages_view_and_the_arrows_scroll_only_the_list()
+    {
+        var (menu, list, page, scene) = InAPage();
+        using var _s = scene;
+        list.Focus(NavigationMethod.Tab);
+        scene.Pump();
+        Assert.True(page.Offset.Y > 0);
+        Assert.Equal(Scene.Height, Foot(list, scene), 3);
+        var pageAt = page.Offset.Y;
+        for (var i = 0; i < 8; i++) MenuKit.Press(scene, "ArrowDown");
+        Assert.Equal(8, menu.HighlightedIndex);
+        Assert.True(list.Offset.Y > 0, $"the list at {list.Offset.Y}");
+        Assert.Equal(pageAt, page.Offset.Y);
+    }
+
+    // A menu in a popover is in the window's overlay layer, not in the page: a tap on its option leaves the page where it is.
+    [AvaloniaFact]
+    public void A_tap_on_an_option_of_a_menu_in_a_popover_leaves_the_page_where_it_is()
+    {
+        var menu = MenuKit.Make(Numbered(12), Height(266));
+        var anchor = new Border { Width = 120, Height = 40, Background = Brushes.Transparent };
+        var popover = new Popover { Anchor = anchor, Content = menu, HorizontalAlignment = HorizontalAlignment.Left };
+        var page = new ScrollViewer { Content = new StackPanel { Children = { new Border { Height = 700 }, popover, new Border { Height = 2000 } } } };
+        using var scene = PopoverTests.Show(page);
+        var chosen = new List<object>();
+        menu.ItemSelect += (_, e) => chosen.Add(e.Item);
+        Tap(scene, scene.CentreOf(anchor));
+        PopoverTests.Settle(scene);
+        Assert.True(popover.IsOpen);
+        Assert.Equal(0, page.Offset.Y);
+        Tap(scene, scene.CentreOf(menu.OptionAt(1)!));
+        Assert.Equal(0, page.Offset.Y);
+        Assert.Same(menu.FlatItems[1], Assert.Single(chosen));
+    }
+
     // menu.js gives every option the menu's $isFocused as it changes: the highlighted one's text and its selection follow.
     [AvaloniaFact]
     public void The_menus_focus_reaches_every_option_as_it_changes()

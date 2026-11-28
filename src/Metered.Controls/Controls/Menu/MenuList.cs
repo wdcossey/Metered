@@ -5,6 +5,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Input.GestureRecognizers;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 
@@ -23,6 +24,9 @@ namespace Metered.Controls;
 /// clips the options to its round corners, the scroller in it, and the outline over them. It draws no scroll bars, as
 /// Metered's other scrollers. The keys are the menu's: it gives none to the scroller but Page Up and Page Down, which a
 /// browser's own scrolls a focused box by, as Base Web lets them through (docs/controls/Menu).
+/// <para>The focus a pointer gives it (a mouse coming over it, a press, a tap) scrolls no page round it, where Avalonia's
+/// scrollers would bring the whole list into view and move the option under the pointer: a deviation (#132,
+/// docs/controls/Menu). The keyboard's focus still brings it into view, as a browser's does.</para>
 /// </remarks>
 public class MenuList : ScrollViewer
 {
@@ -87,7 +91,17 @@ public class MenuList : ScrollViewer
             };
             return new Panel { Children = { shadow, outline } };
         }));
+        // The pointer's focus let go as its GotFocus has been to every ancestor, each scroller among them.
+        GotFocusEvent.RouteFinished.Subscribe(new FocusRouteFinished());
     }
+
+    public MenuList()
+    {
+        AddHandler(RequestBringIntoViewEvent, OnRequestBringIntoView);
+    }
+
+    /// <summary>The list is being focused by a pointer: its focus's GotFocus is on its way to the scrollers round it.</summary>
+    private bool _pointerFocus;
 
     /// <summary>The shadow round the box; none by default.</summary>
     public BoxShadows BoxShadow { get => GetValue(BoxShadowProperty); set => SetValue(BoxShadowProperty, value); }
@@ -111,6 +125,35 @@ public class MenuList : ScrollViewer
     }
 
     protected override Type StyleKeyOverride => typeof(MenuList);
+
+    /// <summary>
+    /// Focused by a pointer: each <see cref="ScrollViewer"/> round it brings it into view as its GotFocus comes
+    /// (<see cref="ScrollViewer.BringIntoViewOnFocusChange"/>), which would scroll the page under the pointer. A browser's
+    /// click and tap focus scroll nothing; Base Web's focusMenu's <c>focus()</c> does, which Metered leaves out (#132).
+    /// </summary>
+    protected override void OnGotFocus(FocusChangedEventArgs e)
+    {
+        _pointerFocus = e.Source == this && e.NavigationMethod == NavigationMethod.Pointer;
+        base.OnGotFocus(e);
+    }
+
+    /// <summary>The scrollers' requests for the list itself, while a pointer's focus is on its way to them, taken and done nothing with.</summary>
+    private void OnRequestBringIntoView(object? sender, RequestBringIntoViewEventArgs e)
+    {
+        if (_pointerFocus && e.TargetObject == this) e.Handled = true;
+    }
+
+    private sealed class FocusRouteFinished : IObserver<RoutedEventArgs>
+    {
+        public void OnNext(RoutedEventArgs e)
+        {
+            if (e.Source is MenuList list) list._pointerFocus = false;
+        }
+
+        public void OnError(Exception error) { }
+
+        public void OnCompleted() { }
+    }
 
     protected override Avalonia.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new MenuListAutomationPeer(this);
 
