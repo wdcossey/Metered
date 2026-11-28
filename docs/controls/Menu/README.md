@@ -114,7 +114,7 @@ The oracle, `tools/reference/menu.js`, runs Base Web itself: its `StatefulMenu` 
 with every part recorded, and each part's style function evaluated with the props it was given; its own
 `MenuStatefulContainer` driven step by step in Node as a browser and React would drive it (DOM focus, React's batched
 state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry its styles give. The themes come from
-`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 110 tests:
+`tools/tokens/menu.js`, which checks them against the style functions for every combination of states. 111 tests:
 
 - `MenuStructureTests` (14): what each case renders, in order, against Base Web's (basic, its states, compact, dividers,
   grouped, empty, empty groups, a message, href, href not as a link, named, profile): text, size, the parts' states, links,
@@ -126,9 +126,10 @@ state, `componentDidUpdate`); and its own `scrollItemIntoView` on the geometry i
 - `MenuBehaviourTests` (21): Base Web's container's state after each step of 21 sequences, replayed with real keys, focus
   and a real mouse: highlight, focus, the items chosen, the reducer's change types.
 - `MenuScrollTests` (4): the list's offset after each key, against `scrollItemIntoView`'s scrollTop.
-- `MenuTests` (28): a finger's drag and a tap (its changes: focus, mouseEnter, click), a press let go elsewhere, in a page
-  that scrolls a tap and a mouse's hover and click leaving the page where it is, Tab bringing the list into its view and
-  the arrows scrolling only the list, a tap in a popover's menu (#132), a mouse moving on one option, the menu's focus reaching every option, keys while the menu isn't focused, Page Down and Space
+- `MenuTests` (29): a finger's drag and a tap (its changes: focus, mouseEnter, click), a press let go elsewhere, in a page
+  that scrolls a tap and a mouse's hover and click leaving the page where it is (the list's own bring-into-view after them
+  still scrolling it), Tab bringing the list into its view and the arrows scrolling only the list, a tap in a popover's
+  menu (#132), a mouse moving on one option, the menu's focus reaching every option, keys while the menu isn't focused, Page Down and Space
   (not the parent's, from a child's content), `keyboardControlNode` as Select uses it (the text's caret kept), overrides (an
   option's own, its template, a theme's template after the option is made again), the profile option by override (a picture that isn't an image: none), links (followed
   whatever `ItemSelect` does), UI Automation, items that change, options made again taking their controls, a menu following

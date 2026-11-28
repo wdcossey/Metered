@@ -165,6 +165,20 @@ public class MenuTests
         Assert.Equal(0, list.Offset.Y);
     }
 
+    // Only the focus's own scroll is let go: once the tap's focus has been, the app's BringIntoView of the list scrolls the page.
+    [AvaloniaFact]
+    public void After_a_taps_focus_the_lists_own_bring_into_view_scrolls_the_page()
+    {
+        var (menu, list, page, scene) = InAPage();
+        using var _s = scene;
+        Tap(scene, scene.CentreOf(menu.OptionAt(1)!));
+        Assert.True(list.IsFocused);
+        Assert.Equal(0, page.Offset.Y);
+        list.BringIntoView();
+        scene.Pump();
+        Assert.Equal(Scene.Height, Foot(list, scene), 3);
+    }
+
     // The same for a mouse: coming over the list focuses the menu (focusMenu), and neither that focus nor the click's moves
     // the page (#132).
     [AvaloniaFact]
