@@ -66,6 +66,22 @@ public class TooltipColourTests
         Assert.Equal(Matrix.CreateRotation(Math.PI * a.Rotate / 180).M12, arrow.RenderTransform!.Value.M12, 6);
     }
 
+    // Body's and Inner's radius is the theme's radius300 (createTheme's overrides), not popoverBorderRadius as a popover's.
+    [AvaloniaFact]
+    public void Its_radius_is_the_themes_radius300()
+    {
+        var t = TooltipOracle.Value.Themed;
+        var (tooltip, _, _) = TooltipTests.Fixed(150, 400);
+        tooltip.IsOpen = true;
+        var page = new Panel { Children = { tooltip } };
+        Metered.Themes.ThemeProvider.SetTheme(page, Metered.Themes.BaseTheme.CreateTheme(new Dictionary<string, object> { ["borders.radius300"] = new CornerRadius(t.Radius300) }));
+        using var scene = PopoverTests.Show(page);
+        PopoverTests.Settle(scene);
+        Assert.Equal(new CornerRadius(t.PopoverBorderRadius), page.FindResource("borders.popoverBorderRadius"));
+        Assert.Equal(new CornerRadius(t.Body), ((Border)tooltip.Part(Popover.BodyPart)!).CornerRadius);
+        Assert.Equal(new CornerRadius(t.Inner), ((ContentPresenter)tooltip.Part(Popover.InnerPart)!).CornerRadius);
+    }
+
     // Its text, a string's, is shown in Inner's font and colour.
     [AvaloniaFact]
     public void Its_text_takes_Inners_font_and_colour()

@@ -77,7 +77,8 @@ app goes back (Popover, known difference 12).
 ## Held by
 
 - `Controls/TooltipColourTests`: Body's, Arrow's and Inner's fill, radius, shadow and text colour, Inner's padding and
-  font, light and dark (`tooltip.oracle.json`); a string's text in Inner's font and colour; the fade in over 0.1 s on
+  font, light and dark (`tooltip.oracle.json`); their radius the theme's `radius300` on a theme given its own (3 px, where
+  `popoverBorderRadius`, a popover's, stays 8); a string's text in Inner's font and colour; the fade in over 0.1 s on
   `easeOutCurve` of the opacity alone and none before or at the exit (the 16 motion cases, each `opacity` alone); the exit
   at an `animateOutTime`, its opacity alone; a hover body's first 0.1 s.
 - `Controls/TooltipLayoutTests`: the body and the arrow drawn where popper.js puts them (52 cases of `tether.g.json`'s,
@@ -86,7 +87,7 @@ app goes back (Popover, known difference 12).
   Inner's padding round the content; every margin case (72: `getPopoverMarginStyles`) and its
   start its end; the body not moving as it fades in and out (a popover's does); a long text wrapped inside the window.
 - `Controls/TooltipTests`: the defaults as StatefulTooltip resolves them, and a Tooltip's; its parts and their themes
-  (a style for Popovers not applied); overrides of the three parts; a mouse's hover and the delays; a click not toggling
+  (a style for Popovers not applied); overrides of the three parts, merged over the tooltip's themes; a mouse's hover and the delays; a click not toggling
   it; a tap toggling it and a tap elsewhere closing it; keyboard focus and the blur; Escape and Back; no focus taken nor
   locked, where a popover's takes it; UI Automation, and new content while it is open describing its anchor at once
   (the Popover gave the anchor its help text only as it opened, until #154).

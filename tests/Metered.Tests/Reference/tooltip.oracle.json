@@ -101,6 +101,12 @@
    }
   }
  ],
+ "themed": {
+  "radius300": 3,
+  "body": 3,
+  "inner": 3,
+  "popoverBorderRadius": 8
+ },
  "body": [
   {
    "placement": "topLeft",

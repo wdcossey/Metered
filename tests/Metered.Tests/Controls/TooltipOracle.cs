@@ -21,7 +21,11 @@ internal static class TooltipOracle
 }
 
 internal sealed record TooltipOracleFile(
-    string Baseui, TooltipConstants Constants, TooltipDefaultsFile Defaults, TooltipColours[] Colours, PopoverBodyCase[] Body, TooltipMotionCase[] Motion);
+    string Baseui, TooltipConstants Constants, TooltipDefaultsFile Defaults, TooltipColours[] Colours, TooltipThemed Themed, PopoverBodyCase[] Body,
+    TooltipMotionCase[] Motion);
+
+/// <summary>Body's and Inner's radius on a theme given its own radius300 (popoverBorderRadius left as it is).</summary>
+internal sealed record TooltipThemed(double Radius300, double Body, double Inner, double PopoverBorderRadius);
 
 internal sealed record TooltipConstants(double ArrowSize, double ArrowWidth, int AnimateInTime);
 

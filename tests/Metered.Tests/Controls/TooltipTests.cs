@@ -137,7 +137,11 @@ public class TooltipTests
         Assert.Same(warning, ((Border)tooltip.Part("Arrow")!).Background);
         var inner = (ContentPresenter)tooltip.Part("Inner")!;
         Assert.Equal(new Thickness(3), inner.Padding);
-        // What the override leaves is the tooltip's: Inner's font, the body's opacity state.
+        // What the override leaves is the tooltip's (an override is merged over Tooltip.Styled{Part}): Inner's fill and text
+        // colour, the body's shadow, the body's opacity state.
+        Assert.Equal(c.Inner.Background, $"#{((ISolidColorBrush)inner.Background!).Color.ToUInt32():X8}");
+        Assert.Equal(c.Inner.Foreground, $"#{((ISolidColorBrush)inner.Foreground!).Color.ToUInt32():X8}");
+        Assert.Equal(BoxShadows.Parse(c.Body.BoxShadow!), ((Border)tooltip.Part("Body")!).BoxShadow);
         Assert.Equal(c.Inner.Font.FontSize, inner.FontSize);
         Assert.Equal(1, Body(tooltip).Opacity);
     }

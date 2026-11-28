@@ -115,12 +115,26 @@ function defaults() {
   return { stateful: pick(stateful), tooltip: pick(controlled) };
 }
 
+/**
+ * The radius on a theme given its own radius300 (createTheme's overrides, deep-merged): Body's and Inner's follow it, as
+ * their style functions read it, where a popover's read popoverBorderRadius, the same 8 px in Base Web's own themes.
+ */
+function themed() {
+  const radius300 = '3px';
+  const t = { ...THEMES.Light, borders: { ...THEMES.Light.borders, radius300 } };
+  const body = evaluate(sc.Body, t, shared({ $isOpen: true, $isAnimating: true }));
+  const inner = evaluate(sc.Inner, t, shared());
+  if (css.px(THEMES.Light.borders.popoverBorderRadius) === css.px(radius300)) throw new Error('radius300 as popoverBorderRadius');
+  return { radius300: css.px(radius300), body: radius(body), inner: radius(inner), popoverBorderRadius: css.px(t.borders.popoverBorderRadius) };
+}
+
 function oracle(version) {
   return {
     baseui: version,
     constants: { arrowSize: C.ARROW_SIZE, arrowWidth: C.ARROW_WIDTH, animateInTime: C.ANIMATE_IN_TIME },
     defaults: defaults(),
     colours: colours(),
+    themed: themed(),
     body: body(),
     motion: motion(),
   };
