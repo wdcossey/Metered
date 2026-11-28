@@ -4,7 +4,7 @@
   this file holds only the structure.
 
   Root                       (a block; a row when vertical)
-    TabBar                   (drawn over the border: the highlight's z-index 1 in the root's stacking context)
+    TabBar                   (drawn over the border, its theme's ZIndex: the highlight's z-index 1 in the root's stacking context)
       TabList                (the scroller: Metered.Controls.TabList, its own template)
         PART_Tabs            (the line: the tabs make their children before the highlight)
           Tab                (a tab's button: Metered.Controls.TabButton)
@@ -23,7 +23,7 @@
     <Setter Property="Template">
       <ControlTemplate>
         <b:TabsRootPanel Name="Root" Theme="{DynamicResource Tabs.StyledRoot}">
-          <Grid Name="TabBar" ColumnDefinitions="*,Auto" ZIndex="1" Theme="{DynamicResource Tabs.StyledTabBar}">
+          <Grid Name="TabBar" ColumnDefinitions="*,Auto" Theme="{DynamicResource Tabs.StyledTabBar}">
             <b:TabList Name="TabList" Theme="{DynamicResource Tabs.StyledTabList}">
               <b:TabListPanel Name="PART_Tabs">
                 <!-- aria-hidden, role="presentation". -->

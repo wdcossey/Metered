@@ -440,6 +440,9 @@ public class TabsTests
         Assert.Same(Buttons(tabs)[1].Cursor, line.Cursor);
         scene.Hover(Buttons(tabs)[2]);
         Assert.Null(line.Cursor);
+        // The hovered tab disabled under the mouse: the cursor follows.
+        tabs.Items[2].Disabled = true;
+        Assert.Same(Buttons(tabs)[2].Cursor, line.Cursor);
     }
 
     // A button's text names it: a title that is a control is named by its own text.
@@ -465,8 +468,41 @@ public class TabsTests
         scene.Pump();
         tabs.Template = template;
         scene.Pump();
-        Assert.Contains(":animate", tabs.Part(Tabs.TabHighlightPart)!.Classes);
+        // Placed at once, not slid in from the start of the line; then moving again.
+        var highlight = (TabHighlight)tabs.Part(Tabs.TabHighlightPart)!;
+        Assert.Equal(Math.Round(Buttons(tabs)[1].Bounds.X), highlight.Distance);
+        Assert.Contains(":animate", highlight.Classes);
         Assert.True(Buttons(tabs)[1].IsActive);
+    }
+
+    // Shown again after it was taken out (a page left and come back to), it is mounted again: centred, not moving.
+    [AvaloniaFact]
+    public void Shown_again_it_is_mounted_again()
+    {
+        var tabs = Many("8");
+        var host = new StackPanel { Children = { tabs } };
+        using var scene = new Scene(host);
+        scene.Click(Buttons(tabs)[9]);
+        Assert.Contains(":animate", tabs.Part(Tabs.TabHighlightPart)!.Classes);
+        host.Children.Clear();
+        scene.Pump();
+        var list = (TabList)tabs.Part(Tabs.TabListPart)!;
+        list.Offset = default;
+        host.Children.Add(tabs);
+        scene.Pump();
+        Assert.DoesNotContain(":animate", tabs.Part(Tabs.TabHighlightPart)!.Classes);
+        var b = Buttons(tabs)[9];
+        Assert.Equal(b.Bounds.X + b.Bounds.Width / 2 - list.Viewport.Width / 2, list.Offset.X, 0);
+    }
+
+    // One Tab, one place: its content can be in one panel only.
+    [AvaloniaFact]
+    public void A_tab_is_in_one_tabs_once()
+    {
+        var tab = new Tab { Title = "A" };
+        var tabs = new Tabs { Items = { tab } };
+        Assert.Throws<InvalidOperationException>(() => tabs.Items.Add(tab));
+        Assert.Throws<InvalidOperationException>(() => new Tabs().Items.Add(tab));
     }
 
     // A mouse over a disabled tab is its :hover too (styled-components.js's :disabled:hover, background none).

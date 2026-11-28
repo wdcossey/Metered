@@ -113,7 +113,7 @@ page; its length stretches it along the line.
 - `Controls/TabsTests`: click, tap, disabled, a finger's drag sideways and up, the wheel, the highlight's motion and
   resize, centring and bringing into view, the tab stops, a vertical list's arrows, renderAll, content kept, the
   reducer, binding, overrides, UI Automation, tabs that change (the focus kept), hover, the fill's fade midway, a
-  disabled tab's cursor, a title that is a control named, a new template's highlight still moving (26).
+  disabled tab's cursor, a title that is a control named, a new template's highlight placed then moving, shown again mounted again, a tab in one tabs once (28).
 - `Controls/TabsFrames`: the highlight drawn over the border, light and dark; the gallery (`METERED_FRAMES`).
 - `Sample/TabsPageTests`: the sample's page, 4.
 
@@ -142,13 +142,19 @@ tab with stand-ins for the buttons: nothing of tabs.js is ported to get the expe
    `contentPrimary`, as Base Web's.
 7. **`transition: all` on the highlight** is written for what moves: its length, its distance and its colour.
 8. **The highlight is drawn over the border by the bar**: Base Web's highlight has `z-index: 1` in the root's stacking
-   context (`transform: scale(1)`); here the `TabBar` is drawn over the `TabBorder` (`ZIndex` 1 in the template), and the
-   highlight in it.
+   context (`transform: scale(1)`); here the `TabBar` is drawn over the `TabBorder` (its theme's `ZIndex`, the
+   highlight's `z-index`, which an override of `TabBar` can change), and the highlight in it.
 9. **Layout rounding**: each tab's edges are rounded to whole device pixels, so fixed tabs are within a pixel of an equal
    share and together fill the line; the highlight takes the tab's whole pixels, as `clientWidth` does.
 10. **A tab's min-content width is read, not measured**: its title's longest word, broken at spaces only (Avalonia's text
-    layout gives no min-content width), as FormControl's end enhancer's is.
-11. **Right to left isn't done**: Base Web turns the arrows and the highlight's side for `rtl`; Metered's themes are left
+    layout gives no min-content width), as FormControl's end enhancer's is: not after a hyphen nor between CJK characters,
+    where a browser also breaks, so such a title's minimum is wider than Base Web's.
+11. **Vertical tabs in a root too narrow for them don't shrink** (CSS's `flex-shrink: 1` down to the bar's min-content
+    width): the panels get what is left, none at worst. Horizontally the panels are as tall as their content, as a block
+    of auto height is: content that scrolls needs a height of its own. Not yet.
+12. **A tab moved to another place among the tabs loses the focus**: it is taken out and put back; a tab changed, added or
+    removed keeps it.
+13. **Right to left isn't done**: Base Web turns the arrows and the highlight's side for `rtl`; Metered's themes are left
     to right.
-12. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
-13. **Not yet on a phone or in a real window** (#159): built and tested headless only.
+14. **Fonts**: Base Web's stack starts with Uber Move, which can't ship ([ADR 0003](../../decisions/0003-font.md)).
+15. **Not yet on a phone or in a real window** (#159): built and tested headless only.

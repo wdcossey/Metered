@@ -189,6 +189,13 @@ public class TabButton : AvaloniaButton
         base.OnPointerPressed(e);
     }
 
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        // A scroller took the press: the next release is no tap of this one.
+        _pressedAt = null;
+        base.OnPointerCaptureLost(e);
+    }
+
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         if (_pressedAt is { } at)

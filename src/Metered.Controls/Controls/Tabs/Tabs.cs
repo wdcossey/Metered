@@ -98,8 +98,9 @@ public class Tabs : TemplatedControl
     private TabHighlight? _highlight;
     private int _keyUpdated;
     private bool _mounted;
+    private bool _reanimate;
 
-/// <summary>What it made of a tab: its button, its artwork's container, its title's presenter, its panel, their parts.</summary>
+    /// <summary>What it made of a tab: its button, its artwork's container, its title's presenter, its panel, their parts.</summary>
     private sealed class Built(Tab tab, TabButton button, Grid content, ContentPresenter title, ContentPresenter panel, Parts parts)
     {
         public Tab Tab { get; } = tab;
@@ -222,8 +223,8 @@ public class Tabs : TemplatedControl
         _list = e.NameScope.Find<TabList>(TabListPart);
         _endEnhancer = e.NameScope.Find<ContentPresenter>(EndEnhancerContainerPart);
         _highlight = e.NameScope.Find<TabHighlight>(TabHighlightPart);
-        // Once the key has changed, a new template's highlight moves too.
-        if (_highlight is not null) ((IPseudoClasses)_highlight.Classes).Set(":animate", _keyUpdated > 0);
+        // Once the key has changed, a new template's highlight moves too: once it has been placed, so it doesn't slide in.
+        _reanimate = _keyUpdated > 0;
         UpdateShared();
         Build();
     }
@@ -254,14 +255,25 @@ public class Tabs : TemplatedControl
         }
     }
 
+    /// <summary>Unmounted: shown again, it is mounted again, as Base Web's: centred, its highlight placed, not moved.</summary>
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        _mounted = false;
+        _keyUpdated = 0;
+        _reanimate = false;
+        if (_highlight is not null) ((IPseudoClasses)_highlight.Classes).Set(":animate", false);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         var p = change.Property;
         if (p == ActiveKeyProperty)
         {
-            if (string.IsNullOrEmpty(ActiveKey) && ((ILogical)this).IsAttachedToLogicalTree)
+            if (string.IsNullOrEmpty(ActiveKey) && Items.Count > 0 && ((ILogical)this).IsAttachedToLogicalTree)
             {
+                // The first tab's key, whose own change updates the parts.
                 Initial();
                 return;
             }
@@ -305,11 +317,15 @@ public class Tabs : TemplatedControl
             }
         }
 
-        foreach (var tab in Items)
+        if (e.NewItems is not null)
         {
-            if (tab.Parent is null)
+            foreach (Tab tab in e.NewItems)
             {
-                LogicalChildren.Add(tab);
+                // A tab's content can be shown by one panel only: a tab is in one tabs, once.
+                if (Items.Count(t => t == tab) > 1) throw new InvalidOperationException("A Tab can be in a Tabs' items only once.");
+                if (tab.Parent is { } owner && owner != this) throw new InvalidOperationException("The Tab is already another control's.");
+                if (tab.Parent is null) LogicalChildren.Add(tab);
+                tab.Changed -= OnTabChanged;
                 tab.Changed += OnTabChanged;
             }
         }
@@ -348,7 +364,7 @@ public class Tabs : TemplatedControl
         b.Title.Content = null;
         if (b.Artwork is not null) b.Artwork.Content = null;
         b.Panel.Content = null;
-        b.Parts.SetOverrides(null);
+        b.Parts.Detach();
     }
 
     /// <summary>Every part it made let go (a new template makes them again).</summary>
@@ -485,6 +501,9 @@ public class Tabs : TemplatedControl
             AutomationProperties.SetName(b.Panel, TextOf(b.Button));
             AutomationProperties.SetControlTypeOverride(b.Panel, AutomationControlType.Pane);
         }
+
+        // A hovered tab enabled or disabled: the line's cursor follows.
+        _line?.RefreshHover();
     }
 
     // ---- The highlight, and scrolling ----
@@ -512,6 +531,11 @@ public class Tabs : TemplatedControl
         var r = tab.Bounds;
         _highlight.SetValue(TabHighlight.LengthProperty, JsRound(vertical ? r.Height : r.Width), BindingPriority.Template);
         _highlight.SetValue(TabHighlight.DistanceProperty, JsRound(vertical ? r.Y : r.X), BindingPriority.Template);
+        if (_reanimate)
+        {
+            _reanimate = false;
+            ((IPseudoClasses)_highlight.Classes).Set(":animate", true);
+        }
     }
 
     /// <summary>scrollParentToCentreTarget: on mount, a list that overflows scrolled so the active tab's centre is its centre.</summary>

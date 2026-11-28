@@ -118,7 +118,7 @@ These are the ones to revisit first.
 
 | What | Detail |
 |---|---|
-| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences), [Tabs 11](controls/Tabs/README.md#known-differences) |
+| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences), [Tabs 13](controls/Tabs/README.md#known-differences) |
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** under `KeyboardInset`, Gboard's height changing, the focus moved to another input with the keyboard up and the ready line's `page=` (#108; its other checks passed on the Pixel 8 on 2026-11-23), handles left on an input the focus left (#109: Avalonia's, worked round and tried headless only), the desktop menu (#110: a phone's since, headless only), the grip focusing the textarea (#111: fixed since, headless only) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences), [KeyboardInset 5](controls/KeyboardInset/README.md#known-differences) |
@@ -132,4 +132,5 @@ These are the ones to revisit first.
 | **Select:** the Tag control (its tag is `SelectTag`, only what the select uses); `onFocus`, `onBlur`, `inputRef`, `mountNode`, `id`; the `aria-` props but its name; Base Web's locale | [Select 6, 9, 10, 11](controls/Select/README.md#known-differences) |
 | **On a phone and in a real window:** the Select (#133) | [Select 14](controls/Select/README.md#known-differences) |
 | **Tabs:** a new active tab brought into view at once, where Base Web's `scrollIntoView` is smooth | [Tabs 4](controls/Tabs/README.md#known-differences) |
-| **On a phone and in a real window:** the Tabs (#159) | [Tabs 13](controls/Tabs/README.md#known-differences) |
+| **Tabs:** vertical tabs in a root too narrow for them don't shrink; a tab moved among the tabs loses the focus | [Tabs 11, 12](controls/Tabs/README.md#known-differences) |
+| **On a phone and in a real window:** the Tabs (#159) | [Tabs 15](controls/Tabs/README.md#known-differences) |

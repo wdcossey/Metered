@@ -101,7 +101,11 @@ const PARTS = [
       // takes the rest, and the enhancer's, at its own width (Tabs.axaml).
       check(s, 'TabBar', ['display']);
       if (s.display !== undefined && s.display !== 'flex') throw new Error('TabBar display ' + s.display);
-      return {};
+      // The highlight's z-index, in the root's stacking context (its transform: scale(1)), lifts it over the border, which
+      // comes after the bar: the bar, which holds it, is drawn over the border.
+      const z = evaluate(sc.StyledTabHighlight, L, props({ orientation: ORIENTATION.horizontal, fill: FILL.intrinsic })).zIndex;
+      if (typeof z !== 'number') throw new Error('TabHighlight zIndex ' + z);
+      return { ZIndex: String(z) };
     },
   },
   {

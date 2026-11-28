@@ -202,12 +202,20 @@ public class TabListPanel : Panel
 
     private void Hover(TabButton? tab)
     {
-        if (tab == _hovered) return;
-        if (_hovered is not null) _hovered.IsHovered = false;
-        _hovered = tab;
-        if (tab is not null) tab.IsHovered = true;
-        // A disabled tab isn't hit, so the line's cursor is the one shown over it: its own (not-allowed).
-        if (tab is { IsEnabled: false }) Cursor = tab.Cursor;
+        if (tab != _hovered)
+        {
+            if (_hovered is not null) _hovered.IsHovered = false;
+            _hovered = tab;
+            if (tab is not null) tab.IsHovered = true;
+        }
+
+        RefreshHover();
+    }
+
+    /// <summary>A disabled tab isn't hit, so the line's cursor is the one shown over it: the hovered tab's own (not-allowed).</summary>
+    internal void RefreshHover()
+    {
+        if (_hovered is { IsEnabled: false } tab) Cursor = tab.Cursor;
         else ClearValue(CursorProperty);
     }
 

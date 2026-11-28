@@ -18,7 +18,9 @@
     </Style>
   </ControlTheme>
   <!-- TabBar: the tab list and the end enhancer, side by side. -->
-  <ControlTheme x:Key="Tabs.StyledTabBar" TargetType="Grid" />
+  <ControlTheme x:Key="Tabs.StyledTabBar" TargetType="Grid">
+    <Setter Property="ZIndex" Value="1" />
+  </ControlTheme>
   <!-- TabList: the line of tabs: a scroller with no bar while intrinsic, its padding where the highlight is and a margin as much under it, so the border meets it. -->
   <ControlTheme x:Key="Tabs.StyledTabList" TargetType="b:TabList">
     <Setter Property="Orientation" Value="Horizontal" />
