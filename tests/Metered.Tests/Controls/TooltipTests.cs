@@ -307,13 +307,18 @@ public class TooltipTests
     public void New_content_while_it_is_open_describes_its_anchor()
     {
         var button = new MeteredButton { Content = "Copy" };
-        var tooltip = new Tooltip { Anchor = button, Content = "Copy to the clipboard", Margin = new Thickness(100), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        // Text blocks of one size: the body isn't placed again, so nothing but the new content gives the help text.
+        var tooltip = new Tooltip
+        {
+            Anchor = button, Content = new TextBlock { Text = "Copy", Width = 100, Height = 16 }, Margin = new Thickness(100),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+        };
         using var scene = PopoverTests.Show(tooltip);
         Tap(scene, scene.CentreOf(button));
         PopoverTests.Settle(scene);
-        Assert.Equal("Copy to the clipboard", AutomationProperties.GetHelpText(button));
-        tooltip.Content = "Copied";
-        scene.Pump();
+        Assert.Equal("Copy", AutomationProperties.GetHelpText(button));
+        tooltip.Content = new TextBlock { Text = "Copied", Width = 100, Height = 16 };
+        PopoverTests.Settle(scene, 50);
         Assert.Equal("Copied", AutomationProperties.GetHelpText(button));
     }
 }
