@@ -127,6 +127,34 @@ public class MenuPageTests
         Assert.True(option.ChildMenuPopover!.IsOpen);
     }
 
+    // A child menu closed with the focus in it gives the focus back to its parent's list as its popup closes: a browser leaves
+    // the focus on the page, and moves nothing (#132).
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_Child_Menu_Closed_With_The_Focus_In_It_Leaves_The_Page_Where_It_Is(bool back)
+    {
+        var page = new MenuPage();
+        using var scene = PopoverTests.Show(page);
+        var scroller = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        var parent = page.Child;
+        var option = parent.OptionAt(4)!;
+        var foot = option.TranslatePoint(new Point(0, option.Bounds.Height), (Visual)scroller.Content!)!.Value.Y;
+        scroller.Offset = new Vector(0, foot - scroller.Viewport.Height + 20);
+        scene.Pump();
+        var at = scroller.Offset.Y;
+        MenuTests.Tap(scene, scene.CentreOf(option));
+        PopoverTests.Settle(scene);
+        var child = Assert.IsType<Menu>(option.ChildMenu);
+        MenuTests.Tap(scene, scene.CentreOf(child.OptionAt(1)!));
+        Assert.True(((Control)child.Part(Menu.ListPart)!).IsFocused);
+        if (back) Assert.True(ShellFrames.Back(scene.Window));
+        else MenuKit.Press(scene, "Escape");
+        PopoverTests.Settle(scene);
+        Assert.False(option.ChildMenuPopover!.IsOpen);
+        Assert.Equal(at, scroller.Offset.Y);
+    }
+
     // Back with the child menu open is its Escape: the parent reset and the child closed, and the shell stays on the page;
     // with the child closed, the shell goes back (#131).
     [AvaloniaFact]

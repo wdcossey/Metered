@@ -24,9 +24,10 @@ namespace Metered.Controls;
 /// clips the options to its round corners, the scroller in it, and the outline over them. It draws no scroll bars, as
 /// Metered's other scrollers. The keys are the menu's: it gives none to the scroller but Page Up and Page Down, which a
 /// browser's own scrolls a focused box by, as Base Web lets them through (docs/controls/Menu).
-/// <para>The focus a pointer gives it (a mouse coming over it, a press, a tap) scrolls no page round it, where Avalonia's
-/// scrollers would bring the whole list into view and move the option under the pointer: a deviation (#132,
-/// docs/controls/Menu). The keyboard's focus still brings it into view, as a browser's does.</para>
+/// <para>The focus a pointer gives it (a mouse coming over it, a press, a tap), and the one a closing child menu's popup
+/// gives back, scroll no page round it, where Avalonia's scrollers would bring the whole list into view and move the option
+/// under the pointer: a deviation (#132, docs/controls/Menu). The keyboard's focus still brings it into view, as a browser's
+/// does.</para>
 /// </remarks>
 public class MenuList : ScrollViewer
 {
@@ -100,8 +101,14 @@ public class MenuList : ScrollViewer
         AddHandler(RequestBringIntoViewEvent, OnRequestBringIntoView);
     }
 
-    /// <summary>The list is being focused by a pointer: its focus's GotFocus is on its way to the scrollers round it.</summary>
-    private bool _pointerFocus;
+    /// <summary>
+    /// The focus coming now scrolls no page round the list: a pointer's, or the one a closing child menu's popup gives back
+    /// (<see cref="Menu"/>), while its GotFocus is on its way to the scrollers round it.
+    /// </summary>
+    private bool _quietFocus;
+
+    /// <summary>The focus coming now, whatever gave it, scrolls no page round the list: called as its GotFocus reaches the list.</summary>
+    internal void QuietFocus() => _quietFocus = true;
 
     /// <summary>The shadow round the box; none by default.</summary>
     public BoxShadows BoxShadow { get => GetValue(BoxShadowProperty); set => SetValue(BoxShadowProperty, value); }
@@ -133,21 +140,21 @@ public class MenuList : ScrollViewer
     /// </summary>
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
-        _pointerFocus = e.Source == this && e.NavigationMethod == NavigationMethod.Pointer;
+        _quietFocus = e.Source == this && e.NavigationMethod == NavigationMethod.Pointer;
         base.OnGotFocus(e);
     }
 
-    /// <summary>The scrollers' requests for the list itself, while a pointer's focus is on its way to them, taken and done nothing with.</summary>
+    /// <summary>The scrollers' requests for the list itself, while a quiet focus is on its way to them, taken and done nothing with.</summary>
     private void OnRequestBringIntoView(object? sender, RequestBringIntoViewEventArgs e)
     {
-        if (_pointerFocus && e.TargetObject == this) e.Handled = true;
+        if (_quietFocus && e.TargetObject == this) e.Handled = true;
     }
 
     private sealed class FocusRouteFinished : IObserver<RoutedEventArgs>
     {
         public void OnNext(RoutedEventArgs e)
         {
-            if (e.Source is MenuList list) list._pointerFocus = false;
+            if (e.Source is MenuList list) list._quietFocus = false;
         }
 
         public void OnError(Exception error) { }

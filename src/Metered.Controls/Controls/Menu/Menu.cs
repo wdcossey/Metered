@@ -527,8 +527,9 @@ public class Menu : TemplatedControl
         if (e.Source != _list) return;
         if (_childClosing)
         {
-            // The focus a closing child's popup gives back: a browser leaves it on the page.
+            // The focus a closing child's popup gives back: a browser leaves it on the page, and moves nothing (#132).
             _childClosing = false;
+            _list?.QuietFocus();
             Dispatcher.UIThread.Post(() =>
             {
                 if (_list is { IsFocused: true } && !IsMenuFocused) TopLevel.GetTopLevel(this)?.FocusManager?.Focus(null);
