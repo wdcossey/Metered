@@ -157,6 +157,8 @@ files['../Controls/Popover.Parts.g.axaml'] = require('./popover').file(version);
 files['../Controls/Menu.Parts.g.axaml'] = require('./menu').file(version);
 // The themes of Select's parts and its tag's, from Base Web's select and tag (select.js).
 files['../Controls/Select.Parts.g.axaml'] = require('./select').file(version);
+// The themes of Tabs' parts, from Base Web's tabs-motion (tabs.js).
+files['../Controls/Tabs.Parts.g.axaml'] = require('./tabs').file(version);
 
 // The themes of Slider's parts, from Base Web's slider, and its thumb's box-shadow, a literal colour there (slider.js).
 const slider = require('./slider');
