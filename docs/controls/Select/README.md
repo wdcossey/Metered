@@ -127,7 +127,7 @@ every part recorded, and each part's style function evaluated with the props it 
 Popover's `content` as the Popover renders it; each tag rendered as Base Web's own Tag with `multi-value.js`'s props; and its
 own `Select` class driven step by step in Node as a browser and React would drive it (focus events, the document's
 listeners, React's batched state). The themes come from `tools/tokens/select.js`, which checks them against the style
-functions for every combination of states. 159 tests:
+functions for every combination of states. 160 tests:
 
 - `SelectBehaviourTests` (30): Base Web's state (open, focused, pseudo-focused, the text) and value after each step of 30
   sequences, replayed with a real mouse, real touch, real keys and typing: the click, the tap and the drag, the keys that
@@ -143,8 +143,8 @@ functions for every combination of states. 159 tests:
   padding, height, fonts, the icons, the input's box and the input, the single value, the search icon, the tags' boxes and
   places; the clear icon's sizes; tags wrapping and a long value cut.
 - `SelectFilterTests` (12): `defaultFilterOptions` against Base Web's.
-- `SelectTests` (30): a finger's drag over the select in a page that scrolls, a tap, a drag in the dropdown, a finger down
-  outside; typing and the menu's keys, Space's key and its text, the dropdown opened by a key, a tag's keys, the back request, disabled, `autoFocus`,
+- `SelectTests` (31): a finger's drag over the select in a page that scrolls, a tap, a tap on an option leaving a page
+  that scrolls where it is (#132), a drag in the dropdown, a finger down outside; typing and the menu's keys, Space's key and its text, the dropdown opened by a key, a tag's keys, the back request, disabled, `autoFocus`,
   the search icon's click; `controlRef`; labels and creatable; options changing while it is open; the dropdown's width and
   height; overrides (its own parts, the popover's, the dropdown's, a tag's, a collection changed after it is set); a tag's
   content, and a label of the app's own type drawn by the app's data template; opened out of the tree; a new template while open; the caret after a click; grouped options' highlight; tags
