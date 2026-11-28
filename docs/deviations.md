@@ -79,6 +79,8 @@ These are the ones to revisit first.
 | Select | Backspace or Delete on a focused tag removes it, then the select's handler removes the last value in its place | Only the focused tag is removed | as built (#97) | [Select 4](controls/Select/README.md#known-differences) |
 | Select | `placeholder` is any node | Text | as built (#97) | [Select 5](controls/Select/README.md#known-differences) |
 | Select | No counterpart: a browser's back button leaves the page | Avalonia's back request closes an open dropdown as Escape does (#123's rule) | as built (#97) | [Select 7](controls/Select/README.md#known-differences) |
+| Tabs | `Tabs` and `StatefulTabs` are separate | One: a click, a tap and the keys set `ActiveKey` whatever bound it | as built (#155) | [Tabs 1](controls/Tabs/README.md#known-differences) |
+| Tabs | A tab's plain `:hover`, kept after a tap on a phone | A mouse's only | as built (#155) | [Tabs 2](controls/Tabs/README.md#known-differences) |
 
 ## Forced
 
@@ -109,12 +111,14 @@ These are the ones to revisit first.
 | **Menu: the reducer sees focusMenu's change once**, where React's batched state calls it twice | Avalonia applies a state at once | [Menu 4](controls/Menu/README.md#known-differences) |
 | **Menu: `ItemSelect` gives the item, not a DOM event**; a relative `href` isn't opened | Avalonia's routed event; no page to resolve it against | [Menu 5, 11](controls/Menu/README.md#known-differences) |
 | **Menu: no `renderAll`, and no `List` of another element** (the virtualized example) | Nothing reads hidden content; an override is a theme (ADR 0001) | [Menu 9](controls/Menu/README.md#known-differences) |
+| **Tabs: a panel's content is the app's control, kept** when its tab isn't active, where Base Web unmounts it and mounts a new one | Avalonia's content is an instance, not a render function | [Tabs 3](controls/Tabs/README.md#known-differences) |
+| **Tabs: the artwork is content**, its colour its container's and its size the resource `Tabs.ArtworkSize`; no `uid`, `tabRef` or ids; `transition: all` written for what moves; the highlight drawn over the border by the bar; a tab's min-content width read, not measured | Avalonia's content model, no DOM, no stacking contexts, no min-content measure | [Tabs 5 to 10](controls/Tabs/README.md#known-differences) |
 
 ## Not yet
 
 | What | Detail |
 |---|---|
-| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences) |
+| **Right to left** | [Checkbox 9](controls/Checkbox/README.md#known-differences), [Switch 8](controls/Switch/README.md#known-differences), [ProgressBar 7](controls/ProgressBar/README.md#known-differences), [Slider 11](controls/Slider/README.md#known-differences), [Menu 13](controls/Menu/README.md#known-differences), [Select 12](controls/Select/README.md#known-differences), [Tabs 11](controls/Tabs/README.md#known-differences) |
 | **`borders.useRoundedCorners` false** | [ProgressBar 9](controls/ProgressBar/README.md#known-differences) |
 | **A group's items from `ItemsSource` with a template** | [Radio 12](controls/Radio/README.md#known-differences) |
 | **On a phone, open after the Pixel 8 run of 2026-11-21 (#64, #90):** under `KeyboardInset`, Gboard's height changing, the focus moved to another input with the keyboard up and the ready line's `page=` (#108; its other checks passed on the Pixel 8 on 2026-11-23), handles left on an input the focus left (#109: Avalonia's, worked round and tried headless only), the desktop menu (#110: a phone's since, headless only), the grip focusing the textarea (#111: fixed since, headless only) | [Slider 14](controls/Slider/README.md#known-differences), [Input 10](controls/Input/README.md#known-differences), [Textarea 6](controls/Textarea/README.md#known-differences), [KeyboardInset 5](controls/KeyboardInset/README.md#known-differences) |
@@ -127,3 +131,5 @@ These are the ones to revisit first.
 | **In a real window:** the Menu; **on a phone:** the keys, its profile pictures and links (#126; the rest passed on the Pixel 8 on 2026-11-24; found #132, a tap on an option scrolling the page, and #129, its child menu's popover over Android's navigation bar, cut to the safe area since, headless only) | [Menu 14](controls/Menu/README.md#known-differences) |
 | **Select:** the Tag control (its tag is `SelectTag`, only what the select uses); `onFocus`, `onBlur`, `inputRef`, `mountNode`, `id`; the `aria-` props but its name; Base Web's locale | [Select 6, 9, 10, 11](controls/Select/README.md#known-differences) |
 | **On a phone and in a real window:** the Select (#133) | [Select 14](controls/Select/README.md#known-differences) |
+| **Tabs:** a new active tab brought into view at once, where Base Web's `scrollIntoView` is smooth | [Tabs 4](controls/Tabs/README.md#known-differences) |
+| **On a phone and in a real window:** the Tabs (#159) | [Tabs 13](controls/Tabs/README.md#known-differences) |

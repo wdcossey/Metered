@@ -210,6 +210,8 @@ const PARTS = [
   },
   {
     part: 'TabPanel', type: 'ContentPresenter', styled: sc.StyledTabPanel, axes: SHARED,
+    // A div's text wraps where it may, a word longer than the line overflowing it.
+    fixed: { TextWrapping: 'WrapWithOverflow' },
     convert(s) {
       // flex-grow 1: the panel takes the rest of a vertical root's row (the panels' place in Tabs.axaml); outline none.
       check(s, 'TabPanel', ['flexGrow', 'outline', ...SIDES('padding')]);

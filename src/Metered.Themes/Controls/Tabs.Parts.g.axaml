@@ -136,6 +136,7 @@
   </ControlTheme>
   <!-- TabPanel: a tab's panel, padded; only the active tab's is shown. -->
   <ControlTheme x:Key="Tabs.StyledTabPanel" TargetType="ContentPresenter">
+    <Setter Property="TextWrapping" Value="WrapWithOverflow" />
     <Setter Property="Padding" Value="16" />
   </ControlTheme>
 </ResourceDictionary>

@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="https://github.com/wdcossey/Metered"
+             x:Class="Metered.Sample.Pages.TabsPage">
+  <!-- Base Web's tabs (tabs-motion), as its documentation's examples show them: basic, keyboard activation, an end
+       enhancer, vertical, fixed fill, disabled, a leading icon; and its scroll scenario's twenty tabs, the eighth active.
+       Headings are the shell's. A tap chooses a tab; a finger's drag sideways along tabs that overflow scrolls them; the
+       highlight moves to the tab chosen. -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16,0,16,32">
+      <TextBlock Classes="heading" Text="Basics" />
+      <b:Tabs x:Name="Basic">
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Keyboard activation" />
+      <!-- keyboard-activation.tsx: the arrows move the focus; Enter or Space chooses. -->
+      <b:Tabs x:Name="Manual" ActivateOnFocus="False">
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="End enhancer" />
+      <!-- enhancer.tsx: a compact pill Button (Base Web's compact is Metered's Small). -->
+      <b:Tabs x:Name="Enhancer">
+        <b:Tabs.EndEnhancer>
+          <b:Button x:Name="EnhancerButton" Size="Small" Shape="Pill" Content="Button" />
+        </b:Tabs.EndEnhancer>
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Vertical orientation" />
+      <b:Tabs x:Name="Vertical" Orientation="Vertical">
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Fixed fill" />
+      <b:Tabs x:Name="Fixed" Fill="Fixed">
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Disabled" />
+      <!-- disabled.tsx: every tab but the active one. -->
+      <b:Tabs x:Name="Disabled" Disabled="True">
+        <b:Tab Title="First">I must not fear.</b:Tab>
+        <b:Tab Title="Second">Fear is the mind-killer.</b:Tab>
+        <b:Tab Title="Third">Fear is the little-death that brings total obliteration.</b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Leading icon" />
+      <!-- artwork.tsx: Base Web's Check icon (its path, in its 24 px view box) at the artwork's size and colour. -->
+      <b:Tabs x:Name="Artwork">
+        <b:Tab Title="First" Content="I must not fear.">
+          <b:Tab.Artwork>
+              <Viewbox Width="{DynamicResource Tabs.ArtworkSize}" Height="{DynamicResource Tabs.ArtworkSize}">
+                <Canvas Width="24" Height="24">
+                  <Path Data="M17.6 7.20006C18.0418 7.53143 18.1314 8.15823 17.8 8.60006L11.8 16.6001C11.6261 16.832 11.3601 16.977 11.0709 16.9975C10.7817 17.0181 10.4979 16.9122 10.2929 16.7072L7.29289 13.7072C6.90237 13.3166 6.90237 12.6835 7.29289 12.293C7.68342 11.9024 8.31658 11.9024 8.70711 12.293L10.8918 14.4777L16.2 7.40006C16.5314 6.95823 17.1582 6.86869 17.6 7.20006Z" Fill="{Binding $self.(TextElement.Foreground)}" />
+                </Canvas>
+              </Viewbox>
+          </b:Tab.Artwork>
+        </b:Tab>
+        <b:Tab Title="Second" Content="Fear is the mind-killer.">
+          <b:Tab.Artwork>
+              <Viewbox Width="{DynamicResource Tabs.ArtworkSize}" Height="{DynamicResource Tabs.ArtworkSize}">
+                <Canvas Width="24" Height="24">
+                  <Path Data="M17.6 7.20006C18.0418 7.53143 18.1314 8.15823 17.8 8.60006L11.8 16.6001C11.6261 16.832 11.3601 16.977 11.0709 16.9975C10.7817 17.0181 10.4979 16.9122 10.2929 16.7072L7.29289 13.7072C6.90237 13.3166 6.90237 12.6835 7.29289 12.293C7.68342 11.9024 8.31658 11.9024 8.70711 12.293L10.8918 14.4777L16.2 7.40006C16.5314 6.95823 17.1582 6.86869 17.6 7.20006Z" Fill="{Binding $self.(TextElement.Foreground)}" />
+                </Canvas>
+              </Viewbox>
+          </b:Tab.Artwork>
+        </b:Tab>
+        <b:Tab Title="Third" Content="Fear is the little-death that brings total obliteration.">
+          <b:Tab.Artwork>
+              <Viewbox Width="{DynamicResource Tabs.ArtworkSize}" Height="{DynamicResource Tabs.ArtworkSize}">
+                <Canvas Width="24" Height="24">
+                  <Path Data="M17.6 7.20006C18.0418 7.53143 18.1314 8.15823 17.8 8.60006L11.8 16.6001C11.6261 16.832 11.3601 16.977 11.0709 16.9975C10.7817 17.0181 10.4979 16.9122 10.2929 16.7072L7.29289 13.7072C6.90237 13.3166 6.90237 12.6835 7.29289 12.293C7.68342 11.9024 8.31658 11.9024 8.70711 12.293L10.8918 14.4777L16.2 7.40006C16.5314 6.95823 17.1582 6.86869 17.6 7.20006Z" Fill="{Binding $self.(TextElement.Foreground)}" />
+                </Canvas>
+              </Viewbox>
+          </b:Tab.Artwork>
+        </b:Tab>
+      </b:Tabs>
+
+      <TextBlock Classes="heading" Text="Scroll" />
+      <!-- tabs-motion-scroll.scenario.tsx: twenty tabs, the eighth (key 8, Nine) active and centred. -->
+      <b:Tabs x:Name="Scroll" ActiveKey="8">
+        <b:Tab Title="One">One</b:Tab>
+        <b:Tab Title="Two">Two</b:Tab>
+        <b:Tab Title="Three">Three</b:Tab>
+        <b:Tab Title="Four">Four</b:Tab>
+        <b:Tab Title="Five">Five</b:Tab>
+        <b:Tab Title="Six">Six</b:Tab>
+        <b:Tab Title="Seven">Seven</b:Tab>
+        <b:Tab Title="Eight">Eight</b:Tab>
+        <b:Tab Title="Nine">Nine</b:Tab>
+        <b:Tab Title="Ten">Ten</b:Tab>
+        <b:Tab Title="Eleven">Eleven</b:Tab>
+        <b:Tab Title="Twelve">Twelve</b:Tab>
+        <b:Tab Title="Thirteen">Thirteen</b:Tab>
+        <b:Tab Title="Fourteen">Fourteen</b:Tab>
+        <b:Tab Title="Fifteen">Fifteen</b:Tab>
+        <b:Tab Title="Sixteen">Sixteen</b:Tab>
+        <b:Tab Title="Seventeen">Seventeen</b:Tab>
+        <b:Tab Title="Eighteen">Eighteen</b:Tab>
+        <b:Tab Title="Nineteen">Nineteen</b:Tab>
+        <b:Tab Title="Twenty">Twenty</b:Tab>
+      </b:Tabs>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
